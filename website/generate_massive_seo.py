@@ -25,8 +25,8 @@ RELATED_LINKS = [
     ("/blog/how-to-journal-when-you-hate-writing", "How to Journal When You Hate Writing"),
     ("/blog/ai-mood-prediction-vs-tracking", "AI Mood Prediction vs. Mood Tracking"),
     ("/blog/journal-every-day-90-days", "What Happens When You Journal Every Day for 90 Days"),
-    ("/blog/how-digital-twin-learns-personality", "How Your Digital Twin Learns Your Personality"),
-    ("/blog/talk-to-your-past-self-digital-twin", "How to Talk to Your Past Self"),
+    ("/blog/how-friday-ai-assistant-learns-personality", "How Friday Learns Your Personality"),
+    ("/blog/talk-to-your-past-self-friday-ai-assistant", "How to Talk to Your Past Self"),
     ("/blog/best-journal-app-for-privacy", "Best Private Journal App (2026)"),
     ("/blog/ai-journal-that-works-offline", "Why Your AI Journal Should Work Without Wi-Fi"),
     ("/blog/how-to-start-journaling", "How to Start Journaling"),
@@ -265,7 +265,7 @@ USE_CASES = {
     "meditation-alternative": ("Meditation Alternative", "Can't sit still and clear your mind? Voice journaling lets you use your busy mind instead of fighting it.", "meditation alternative journal app"),
     "prayer-journal": ("Prayer & Spiritual Practice", "Speak your prayers, reflections, and spiritual insights. Voice journaling preserves your faith journey privately on your device.", "prayer journal app private"),
     "goal-setting": ("Goal Setting", "Spoken commitments stick better than written ones. Voice journal your goals and track your progress through mood and reflection patterns.", "goal setting journal app"),
-    "year-in-review": ("Year in Review", "12 months of voice entries become the most honest year-in-review you've ever had. Your Digital Twin shows how you've changed.", "year in review journal app"),
+    "year-in-review": ("Year in Review", "12 months of voice entries become the most honest year-in-review you've ever had. Friday shows how you've changed.", "year in review journal app"),
     "monthly-reflection": ("Monthly Reflection", "A 5-minute monthly voice entry captures what no calendar or task list preserves — how the month actually felt.", "monthly reflection journal"),
     "relationship-checkin": ("Relationship Check-In", "Process your relationship feelings privately before bringing them to your partner. Clarity first, conversation second.", "relationship journal app private"),
     "interview-prep": ("Interview Prep", "Voice journal your thoughts before and after interviews. Hearing yourself articulate your story improves your real interview performance.", "interview prep journal app"),
@@ -287,18 +287,18 @@ USE_CASES = {
 # ============================================================
 ALTERNATIVES = {
     "day-one": ("Day One", "$34.99/year", "Cloud-based, requires account, AI features locked behind Gold tier ($49.99/yr). OffRecord AI Journal is free, on-device, voice-first."),
-    "reflectly": ("Reflectly", "$59.99/year", "Cloud AI processing, limited free tier. OffRecord AI Journal gives you all AI features — mood detection, Digital Twin, predictions — for free."),
+    "reflectly": ("Reflectly", "$59.99/year", "Cloud AI processing, limited free tier. OffRecord AI Journal gives you all AI features — mood detection, Friday, predictions — for free."),
     "journey": ("Journey App", "$29.99/year", "Cross-platform but cloud-dependent. OffRecord AI Journal is iOS-only but 100% offline with on-device AI. Your data never leaves your phone."),
     "daylio": ("Daylio", "$23.99/year", "Emoji-based mood logging, no actual journaling. OffRecord AI Journal gives you full voice entries with automatic mood detection — no tapping emojis."),
     "penzu": ("Penzu", "$19.99/year", "Text-only, cloud-based, subscription required. OffRecord AI Journal is voice-first, on-device, and completely free."),
     "five-minute-journal": ("Five Minute Journal", "$14.99 one-time", "Structured prompts only, no voice, no AI. OffRecord AI Journal lets you speak freely and AI handles the insights."),
-    "apple-journal": ("Apple Journal", "Free", "Basic and limited — no voice transcription, no AI insights, no mood tracking, no Digital Twin. OffRecord AI Journal adds intelligence Apple left out."),
+    "apple-journal": ("Apple Journal", "Free", "Basic and limited — no voice transcription, no AI insights, no mood tracking, no Friday. OffRecord AI Journal adds intelligence Apple left out."),
     "notion-journal": ("Notion for Journaling", "Free-$10/month", "Notion is a productivity tool, not a journal. No voice input, no mood tracking, no privacy focus. OffRecord AI Journal is purpose-built."),
     "grid-diary": ("Grid Diary", "$2.99/week", "Template-based, no voice, cloud sync. OffRecord AI Journal is free, voice-first, and keeps everything on your device."),
     "audio-diary": ("AudioDiary", "$59.99/year", "Voice journaling but cloud-based and expensive. OffRecord AI Journal does everything AudioDiary does for $0 — and keeps your data on-device."),
-    "stoic": ("Stoic App", "$39.99/year", "CBT-focused journaling, cloud-based. OffRecord AI Journal adds voice input and Digital Twin personality modeling — all free and on-device."),
+    "stoic": ("Stoic App", "$39.99/year", "CBT-focused journaling, cloud-based. OffRecord AI Journal adds voice input and Friday personality modeling — all free and on-device."),
     "rosebud": ("Rosebud Journal", "$9.99/month", "Cloud AI journaling, sends entries to servers. OffRecord AI Journal matches the AI features without sending a single byte to the cloud."),
-    "diarium": ("Diarium", "$7.99/year", "Cross-platform calendar diary. OffRecord AI Journal adds voice-first input, on-device AI, and a Digital Twin that learns your personality."),
+    "diarium": ("Diarium", "$7.99/year", "Cross-platform calendar diary. OffRecord AI Journal adds voice-first input, on-device AI, and a Friday that learns your personality."),
     "momento": ("Momento", "Free with IAP", "Social media aggregation journal. OffRecord AI Journal is the opposite — private, voice-based, and entirely offline."),
     "bear": ("Bear App", "$29.99/year", "Beautiful note-taking, not journaling. No voice, no mood tracking, no AI insights. OffRecord AI Journal is built specifically for journals."),
     "obsidian-journal": ("Obsidian for Journaling", "Free-$50/year", "Powerful but complex. No voice input, no mood detection, steep learning curve. OffRecord AI Journal is open-and-talk simple."),
@@ -475,16 +475,16 @@ for slug, (title, desc, when, benefit) in PROFESSIONS.items():
 
         <p>You speak 150 words per minute. You type 40. For {title.lower()} who are already exhausted at the end of the day, the 2-minute voice journal is the only journaling method that sticks. No typing, no blank page, no time commitment.</p>
 
-        <p>OffRecord AI Journal transcribes your voice on-device, detects your mood automatically, and builds a Digital Twin that learns your personality patterns over time. Everything stays on your phone — no servers, no cloud, no account required.</p>
+        <p>OffRecord AI Journal transcribes your voice on-device, detects your mood automatically, and lets Friday learn your personality patterns over time. Everything stays on your phone — no servers, no cloud, no account required.</p>
 
         <h2>How to Start</h2>
 
-        <p>Open OffRecord AI Journal {when}. Press record. Talk for 2 minutes about your day. That's it. The AI handles mood detection, keyword extraction, and personality modeling. You just talk. After a month, your Digital Twin will show you patterns you never noticed — because you were too busy being a {title.lower().rstrip('s') if title.endswith('s') and not title.endswith('ss') else title.lower()} to see them.</p>
+        <p>Open OffRecord AI Journal {when}. Press record. Talk for 2 minutes about your day. That's it. The AI handles mood detection, keyword extraction, and personality modeling. You just talk. After a month, your Friday will show you patterns you never noticed — because you were too busy being a {title.lower().rstrip('s') if title.endswith('s') and not title.endswith('ss') else title.lower()} to see them.</p>
 
         <p>Free forever. No subscription. No account. No data collection. Works offline.</p>"""
 
     bc = [("Home", DOMAIN + "/"), ("For " + title, ""), (full_title, "")]
-    html = page_html(full_title, meta, path, bc, body, f"Try OffRecord AI Journal — Free for {title}", f"Voice journal {when}. On-device AI, mood tracking, Digital Twin. Completely free and private.")
+    html = page_html(full_title, meta, path, bc, body, f"Try OffRecord AI Journal — Free for {title}", f"Voice journal {when}. On-device AI, mood tracking, Friday. Completely free and private.")
     write_page("for", f"{slug}.html", html)
     add_sitemap(path)
 
@@ -500,7 +500,7 @@ for slug, (title, desc, keyword) in USE_CASES.items():
 
         <p>Traditional journaling requires time, a desk, and the mental energy to write. Voice journaling needs 2 minutes and a phone. For {title.lower()}, this difference is everything — you can journal while walking, driving, cooking, or lying in bed.</p>
 
-        <p>OffRecord AI Journal automatically detects your mood from what you say, tracks the people and topics you mention, and builds a Digital Twin that learns your personality over time. No typing. No internet required. No data leaves your phone.</p>
+        <p>OffRecord AI Journal automatically detects your mood from what you say, tracks the people and topics you mention, and lets Friday learn your personality over time. No typing. No internet required. No data leaves your phone.</p>
 
         <h2>Getting Started</h2>
 
@@ -516,8 +516,8 @@ print("Generating alternative pages...")
 for slug, (name, price, comparison) in ALTERNATIVES.items():
     path = f"/alternative/{slug}"
     full_title = f"Best {name} Alternative (2026): Free, Private, Voice-First"
-    meta = f"Looking for a {name} alternative? OffRecord AI Journal offers voice journaling, AI mood tracking, and a Digital Twin — all free, all on-device."
-    body = f"""        <p>If you're considering {name} ({price}), there's an alternative worth knowing about. OffRecord AI Journal offers AI-powered voice journaling with mood detection, a Digital Twin that learns your personality, and encrypted backups — completely free, with no cloud servers.</p>
+    meta = f"Looking for a {name} alternative? OffRecord AI Journal offers voice journaling, AI mood tracking, and a Friday — all free, all on-device."
+    body = f"""        <p>If you're considering {name} ({price}), there's an alternative worth knowing about. OffRecord AI Journal offers AI-powered voice journaling with mood detection, a Friday that learns your personality, and encrypted backups — completely free, with no cloud servers.</p>
 
         <h2>{name} vs OffRecord AI Journal</h2>
 
@@ -530,7 +530,7 @@ for slug, (name, price, comparison) in ALTERNATIVES.items():
         <ul>
           <li>Voice-to-text journaling — speak for 2 minutes, get a full diary entry</li>
           <li>Automatic mood detection across 9 emotional categories</li>
-          <li>Digital Twin that learns your personality and predicts your moods</li>
+          <li>Friday that learns your personality and predicts your moods</li>
           <li>Works 100% offline — no internet required</li>
           <li>Face ID lock and AES-256 encrypted backups</li>
           <li>Export to PDF, JSON, Markdown, or CSV</li>
@@ -552,7 +552,7 @@ for city in CITIES:
     path = f"/in/{slug}"
     full_title = f"Best Journal App in {city} (2026)"
     meta = f"The best journal app for people in {city}. OffRecord AI Journal — free AI voice journal that works offline. No subscription, no data collection."
-    body = f"""        <p>Looking for a journal app in {city}? OffRecord AI Journal is a free AI voice journal that works anywhere — online or offline. No subscription, no account, no data collection. Speak your thoughts and the app transcribes, tracks your mood, and builds a Digital Twin of your personality.</p>
+    body = f"""        <p>Looking for a journal app in {city}? OffRecord AI Journal is a free AI voice journal that works anywhere — online or offline. No subscription, no account, no data collection. Speak your thoughts and the app transcribes, tracks your mood, and lets Friday learn your personality.</p>
 
         <h2>Why {city} Residents Love Voice Journaling</h2>
 
@@ -563,7 +563,7 @@ for city in CITIES:
         <ul>
           <li>Voice-to-text journaling with on-device AI transcription</li>
           <li>Automatic mood detection across 9 categories</li>
-          <li>Digital Twin that learns your personality over time</li>
+          <li>Friday that learns your personality over time</li>
           <li>Works 100% offline — no Wi-Fi or data needed</li>
           <li>Free forever. No subscription, no ads, no account</li>
           <li>Face ID lock and encrypted backups</li>
@@ -590,7 +590,7 @@ for prof_slug, prof_name in TOP_PROFESSIONS:
 
         <p>Voice journaling removes every barrier to consistent journaling. No typing, no blank page, no time commitment. For {prof_name.lower()} incorporating a {use_name.lower()} practice, the process is simple: open OffRecord AI Journal, press record, and talk for 2 minutes.</p>
 
-        <p>The AI automatically detects your mood, identifies the people and topics you mention, and builds a personality model over time. Your Digital Twin learns when your {use_name.lower()} entries are most insightful and what patterns emerge across weeks and months.</p>
+        <p>The AI automatically detects your mood, identifies the people and topics you mention, and builds a personality model over time. Friday learns when your {use_name.lower()} entries are most insightful and what patterns emerge across weeks and months.</p>
 
         <h2>Why It Works</h2>
 

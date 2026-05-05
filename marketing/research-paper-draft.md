@@ -8,9 +8,9 @@
 
 ## Abstract
 
-Voice journaling applications have gained significant traction as tools for self-reflection, emotional regulation, and personal growth. However, existing solutions—including Day One, Reflectly, and Rosebud—rely on cloud-based natural language processing pipelines, requiring users to transmit intimate personal narratives to remote servers. This architectural choice creates a fundamental tension: the most private form of self-expression becomes the most exposed data. We present OffRecord AI Journal, an on-device framework that constructs a personal Digital Twin entirely from voice journal data without any cloud dependency. OffRecord AI Journal implements a complete pipeline—from speech-to-text transcription via Apple's Speech framework, through sentiment analysis, named entity recognition, and part-of-speech tagging via the NaturalLanguage framework, to higher-order personality modeling—that executes exclusively on the user's device. The system builds four interconnected models from accumulated journal entries: (1) a Communication Style profile capturing vocabulary richness, expressiveness, formality, and directness through metrics such as type-token ratio and sentence-level analysis; (2) an Emotional Signature modeled along valence-arousal-dominance dimensions with temporal pattern detection across time-of-day and day-of-week; (3) a Personal Knowledge Graph with typed, sentiment-weighted nodes (people, places, topics, activities, goals) and relational edges that grow organically from named entity extraction; and (4) a Behavioral Pattern model that enables predictive capabilities including mood forecasting, topic shift detection, and rumination alerts. All data is encrypted with AES-256-GCM and stored in Core Data with zero network permissions. We describe the system architecture, evaluate the modeling pipeline across twin maturity stages from nascent through deep, and discuss a roadmap toward a conversational Digital Twin powered by on-device foundation models with retrieval-augmented generation. To our knowledge, OffRecord AI Journal is the first system to combine voice journaling, on-device NLP, personality modeling, knowledge graph construction, and mood prediction in a fully private, zero-cloud architecture.
+Voice journaling applications have gained significant traction as tools for self-reflection, emotional regulation, and personal growth. However, existing solutions—including Day One, Reflectly, and Rosebud—rely on cloud-based natural language processing pipelines, requiring users to transmit intimate personal narratives to remote servers. This architectural choice creates a fundamental tension: the most private form of self-expression becomes the most exposed data. We present OffRecord AI Journal, an on-device framework that powers Friday, a private AI assistant built entirely from voice journal data without any cloud dependency. OffRecord AI Journal implements a complete pipeline—from speech-to-text transcription via Apple's Speech framework, through sentiment analysis, named entity recognition, and part-of-speech tagging via the NaturalLanguage framework, to higher-order personality modeling—that executes exclusively on the user's device. The system builds four interconnected models from accumulated journal entries: (1) a Communication Style profile capturing vocabulary richness, expressiveness, formality, and directness through metrics such as type-token ratio and sentence-level analysis; (2) an Emotional Signature modeled along valence-arousal-dominance dimensions with temporal pattern detection across time-of-day and day-of-week; (3) a Personal Knowledge Graph with typed, sentiment-weighted nodes (people, places, topics, activities, goals) and relational edges that grow organically from named entity extraction; and (4) a Behavioral Pattern model that enables predictive capabilities including mood forecasting, topic shift detection, and rumination alerts. All data is encrypted with AES-256-GCM and stored in Core Data with zero network permissions. We describe the system architecture, evaluate the modeling pipeline across assistant maturity stages from nascent through deep, and discuss a roadmap toward a conversational Friday powered by on-device foundation models with retrieval-augmented generation. To our knowledge, OffRecord AI Journal is the first system to combine voice journaling, on-device NLP, personality modeling, knowledge graph construction, and mood prediction in a fully private, zero-cloud architecture.
 
-*Keywords: on-device NLP, digital twin, voice journaling, privacy-preserving AI, personality modeling, knowledge graph, mood prediction, mobile computing*
+*Keywords: on-device NLP, private AI assistant, voice journaling, privacy-preserving AI, personality modeling, knowledge graph, mood prediction, mobile computing*
 
 ---
 
@@ -24,7 +24,7 @@ Voice journaling applications have gained significant traction as tools for self
 
 - **On-device AI maturity.** Apple's Neural Engine (16-core on A17 Pro / M-series), combined with mature NLP frameworks (NaturalLanguage, Speech, NLTagger with sentiment, NER, and lexical class support), CoreML for model inference, and CryptoKit for encryption, now provides sufficient computational capacity to run sophisticated NLP pipelines entirely on-device. The gap between cloud and on-device capability is narrowing rapidly.
 
-- **The Digital Twin concept migrates to personal computing.** Digital Twins originated in industrial settings (Grieves, 2003) for modeling physical assets. We argue that the concept can be adapted to model a person's communication patterns, emotional baseline, and cognitive tendencies from their own journal data—a Personal Digital Twin that mirrors the owner's inner life.
+- **Private AI assistants move into personal computing.** Friday adapts on-device personality modeling to a journal context, learning communication patterns, emotional baseline, and recurring themes from the user's own entries while keeping the model local and private.
 
 - **Contribution statement.** We present OffRecord AI Journal, the first on-device framework that:
   1. Captures voice journal entries and transcribes them locally using Apple's Speech framework
@@ -60,13 +60,13 @@ Voice journaling applications have gained significant traction as tools for self
 - **Reflectly**: AI journaling with prompts and mood tracking. Cloud-processed NLP. Does not build a persistent user model.
 - **Gap:** Existing mood apps either require manual input or send data to the cloud. None build predictive mood models from on-device NLP analysis of voice transcriptions.
 
-### 2.4 Digital Twin Concept: From Industrial to Personal
+### 2.4 Private Assistant Modeling
 
-- **Grieves (2003)**: Original Digital Twin concept for manufacturing—a virtual representation of a physical asset.
-- **Healthcare Digital Twins** (Bruynseels et al., 2018): Patient-specific models for treatment optimization. Cloud-based, clinician-controlled.
-- **Cognitive Digital Twins** (Lu et al., 2020): Modeling human cognitive processes in manufacturing contexts.
-- **Personal Digital Twins for social media** (various): Attempts to create digital avatars from social media activity. Typically cloud-based and focused on outward-facing persona.
-- **Gap:** No existing work constructs a Personal Digital Twin from voice journal data on a mobile device. The combination of intimate self-expression (journaling) with on-device modeling is novel.
+- **Personal assistant models:** Existing systems generally focus on productivity, retrieval, or cloud-hosted chat rather than private pattern insight.
+- **Healthcare personalization** (Bruynseels et al., 2018): Patient-specific models for treatment optimization. Cloud-based, clinician-controlled.
+- **Cognitive modeling** (Lu et al., 2020): Modeling human cognitive processes in manufacturing contexts.
+- **Social media avatars** (various): Attempts to create outward-facing personas from public activity. Typically cloud-based and not designed for confiding.
+- **Gap:** No existing work constructs a private assistant from voice journal data on a mobile device. The combination of intimate self-expression (journaling) with on-device modeling is novel.
 
 ### 2.5 Privacy-Preserving AI on Mobile
 
@@ -143,7 +143,7 @@ No existing work combines: (a) voice journaling as the primary data source, (b) 
 
 ### 3.5 Temporal Pattern Analysis and Prediction
 
-- **TwinPredictionEngine** generates up to 3 contextual predictions per session, selecting for category diversity (mood, people, pattern, nudge, growth).
+- **FridayPredictionEngine** generates up to 3 contextual predictions per session, selecting for category diversity (mood, people, pattern, nudge, growth).
 - **Prediction types implemented:**
   - **Time-of-day mood prediction:** Compares morning vs. evening sentiment baselines. Surfaced contextually (e.g., "your mornings are brighter" shown in the evening).
   - **Day-of-week prediction:** Weekday vs. weekend mood comparison, shown on relevant days.
@@ -158,7 +158,7 @@ No existing work combines: (a) voice journaling as the primary data source, (b) 
 
 ### 3.6 Data Storage and Security
 
-- **Core Data** as the persistence layer. All diary entries, AI state (user profile, twin models), and metadata stored in the app's sandboxed container.
+- **Core Data** as the persistence layer. All diary entries, AI state (user profile, assistant models), and metadata stored in the app's sandboxed container.
 - **AIState entity** stores serialized model data (JSON-encoded via `Codable`) with type identifiers and timestamps. Enables atomic updates and migration.
 - **AES-256-GCM encryption** via Apple's CryptoKit for backup exports. Custom file format ("DVX1" magic bytes + 32-byte salt + nonce + ciphertext + authentication tag). Password-based key derivation using HKDF-SHA256.
 - **Zero network permissions.** The app's `Info.plist` declares no network entitlements. No `NSAppTransportSecurity` exceptions. No analytics SDKs, no crash reporting services, no telemetry.
@@ -166,16 +166,16 @@ No existing work combines: (a) voice journaling as the primary data source, (b) 
 
 ---
 
-## 4. Digital Twin Engine
+## 4. Friday Engine
 
 ### 4.1 Communication Style Analysis
 
-- **Implementation:** `DigitalTwinEngine.analyzeCommunicationStyle(text:)` runs on each new entry. Updates are incremental—no need to reprocess the full corpus.
+- **Implementation:** `FridayAssistantEngine.analyzeCommunicationStyle(text:)` runs on each new entry. Updates are incremental—no need to reprocess the full corpus.
 - **TTR computation:** Maintains running unique word set and total word count. TTR = uniqueWords / totalWords, reflecting overall vocabulary richness across the user's journal history.
 - **Expressiveness scoring:** Composite of exclamation frequency, emotional vocabulary density, and sentence length variance. A user who writes "I CANNOT believe how AMAZING that was!!!" scores higher than "The event was pleasant."
 - **Directness scoring:** Inverse of hedging marker frequency. Hedging markers include: "maybe", "I think", "sort of", "kind of", "perhaps", "possibly", "I guess", "not sure". Low hedging = high directness.
 - **Signature word extraction:** After filtering stop words and short words (<=3 characters), remaining vocabulary is frequency-ranked. Top words represent the user's linguistic fingerprint.
-- **Application:** Communication style data feeds the Twin Summary, providing the user a mirror of how they express themselves ("You write directly and expressively, with a rich vocabulary").
+- **Application:** Communication style data feeds Friday Summary, helping Friday describe how the user tends to express themselves ("You write directly and expressively, with a rich vocabulary").
 
 ### 4.2 Emotional Signature Modeling
 
@@ -198,7 +198,7 @@ No existing work combines: (a) voice journaling as the primary data source, (b) 
 
 - **Prediction selection algorithm:** Generate all candidate predictions, then select up to 3 with maximum category diversity. This prevents prediction fatigue and ensures variety.
 - **Minimum data thresholds:** Most predictions require `analysisCount >= 10` (approximately 10 entries) to avoid premature pattern claims. More complex predictions (growth, rumination) require 20+ entries.
-- **Twin maturity stages:** Predictions become richer as the twin matures:
+- **Friday maturity stages:** Predictions become richer as the assistant matures:
   - **Nascent** (<5 entries): Basic streak tracking only
   - **Emerging** (5-20): Time-of-day mood, basic patterns
   - **Developing** (20-50): Missing person detection, topic shifts, trigger associations
@@ -246,7 +246,7 @@ No existing work combines: (a) voice journaling as the primary data source, (b) 
 
 ---
 
-## 6. Future Work: Conversational Digital Twin
+## 6. Future Work: Conversational Friday
 
 ### 6.1 Apple Foundation Models (On-Device 3B LLM)
 
@@ -261,13 +261,13 @@ No existing work combines: (a) voice journaling as the primary data source, (b) 
   - `searchEntries(query: String, dateRange: DateRange?) -> [Entry]` — semantic search across journal history
   - `getKnowledgeGraphNode(name: String) -> KnowledgeNode` — retrieve entity details and connections
   - `getMoodHistory(period: TimePeriod) -> [MoodDataPoint]` — temporal mood data
-  - `getPredictions() -> [TwinPrediction]` — current prediction state
+  - `getPredictions() -> [FridayPrediction]` — current prediction state
 - **Conversational flow:** User asks "When did I last feel really happy?" The model calls `searchEntries` with a positive-sentiment filter, retrieves relevant entries, and synthesizes a natural language response grounded in the user's actual journal data.
 
 ### 6.3 Dynamic Instruction-Based Tone Matching
 
 - **System prompt construction:** Before each conversation turn, construct a system instruction that includes the user's CommunicationStyle metrics: "This user writes with high expressiveness (0.82), moderate formality (0.45), and high directness (0.78). They frequently use exclamation marks and tend to open entries with direct statements. Match this tone."
-- **Personality mirroring:** The Digital Twin should sound like the user, not like a generic assistant. Communication Style data makes this possible without fine-tuning.
+- **Personality insight:** Friday should feel personal and observant, not generic. Communication Style data gives responses context without pretending to be the user.
 - **Emotional context:** Include current EmotionalSignature state in the instruction: "User's recent sentiment trend is declining (-0.3 over 5 entries). Respond with appropriate sensitivity."
 
 ### 6.4 LoRA Adapter Training for Personal Voice
@@ -287,7 +287,7 @@ No existing work combines: (a) voice journaling as the primary data source, (b) 
   2. At query time: Embed the user's question, perform cosine similarity search against stored vectors, retrieve top-k relevant entries
   3. Inject retrieved entries into the foundation model's context as grounding documents
   4. Model generates response grounded in the user's actual journal data
-- **Context window efficiency:** RAG allows the conversational twin to access the user's entire journal history without fitting it into a single context window. A user with 1,000 entries can still get responses grounded in entries from years ago.
+- **Context window efficiency:** RAG allows the conversational assistant to access the user's entire journal history without fitting it into a single context window. A user with 1,000 entries can still get responses grounded in entries from years ago.
 - **Zero-cloud RAG:** The entire pipeline—embedding, indexing, retrieval, generation—runs on-device. This is, to our knowledge, the first proposed architecture for fully on-device RAG over personal data.
 
 ---
@@ -301,11 +301,11 @@ No existing work combines: (a) voice journaling as the primary data source, (b) 
 - **Language support.** While Apple's Speech framework supports 60+ languages for transcription, the NaturalLanguage framework's sentiment analysis performs best on English. Emotion keyword dictionaries in the current implementation are English-only. Extending to multilingual personality modeling is non-trivial.
 - **Keyword-based emotion detection.** The current emotion classifier relies on keyword matching rather than contextual understanding. It misses sarcasm ("Oh great, another meeting"), implicit emotion ("I stared at the ceiling for hours"), and culturally specific expressions. Foundation models will address this.
 - **No ground truth for personality modeling.** Unlike clinical personality assessments (Big Five, MBTI), OffRecord AI Journal's personality model is not validated against established psychometric instruments. The model captures behavioral patterns, not clinically validated traits. Future work should include convergent validity studies comparing OffRecord AI Journal's CommunicationStyle and EmotionalSignature outputs against standardized personality inventories.
-- **Single-device limitation.** Without iCloud sync enabled, the Digital Twin exists only on one device. Device loss means twin loss. Encrypted backups mitigate this but require user discipline.
+- **Single-device limitation.** Without iCloud sync enabled, Friday exists only on one device. Device loss means assistant loss. Encrypted backups mitigate this but require user discipline.
 
 ### 7.2 Ethical Considerations
 
-- **Digital self-preservation and grief technology.** A sufficiently mature Digital Twin raises questions about posthumous use. If a user's twin captures their communication style, emotional patterns, and personal knowledge, it could theoretically be used by family members after the user's death. This "grief tech" application was not designed for but emerges naturally from the architecture. We note this as an area requiring careful ethical guidelines.
+- **Posthumous use and grief technology.** A sufficiently mature Friday raises questions about whether assistant archives should survive the user. If Friday captures communication style, emotional patterns, and personal knowledge, misuse after a user's death is possible. This was not designed for the product and would require careful consent, access control, and ethical guidelines.
 - **Self-surveillance concerns.** Detailed mood tracking, rumination detection, and behavioral pattern analysis could become tools of self-surveillance, potentially increasing anxiety in users prone to self-monitoring. The system should present insights as observations, not judgments, and avoid pathologizing normal emotional variation.
 - **Bias in on-device models.** Apple's NaturalLanguage framework models were trained on data that may encode cultural and linguistic biases. Sentiment analysis may perform differently across dialects, socioeconomic registers, and cultural contexts. OffRecord AI Journal inherits these biases.
 - **Therapeutic boundary.** OffRecord AI Journal is not a therapeutic tool. Predictions like "your mood has been declining for 5 days" include sensitive prompts ("talk to someone you trust") but the system does not and should not replace professional mental health support. Clear disclaimers are essential.
@@ -317,7 +317,7 @@ No existing work combines: (a) voice journaling as the primary data source, (b) 
 - **Dyslexia accommodation.** Users with dyslexia can express complex thoughts through speech without the friction of spelling and typing. The system analyzes their expressed thoughts, not their typing ability.
 - **Motor impairments.** Voice capture eliminates the need for fine motor control. The large, simple recording interface (single tap to start/stop) is accessible to users with limited dexterity.
 - **Low literacy / oral cultures.** Voice journaling does not require literacy in the traditional sense. Users from oral traditions or with limited formal education can benefit from reflective practice through speech.
-- **Cognitive load reduction.** The AI-generated insights, mood predictions, and "Your Twin Thinks..." prompts reduce the cognitive load of self-reflection. The system does the pattern-finding; the user benefits from the observations.
+- **Cognitive load reduction.** The AI-generated insights, mood predictions, and "Friday noticed..." prompts reduce the cognitive load of self-reflection. The system does the pattern-finding; the user benefits from the observations.
 
 ---
 
@@ -325,13 +325,13 @@ No existing work combines: (a) voice journaling as the primary data source, (b) 
 
 ### Key Points:
 
-- **Summary of contributions.** OffRecord AI Journal demonstrates that a complete pipeline—from voice capture through transcription, NLP analysis, personality modeling, knowledge graph construction, and predictive insight generation—can run entirely on a mobile device with zero cloud dependency. The system builds a Personal Digital Twin that grows richer with each journal entry, progressing through defined maturity stages from nascent to deep.
+- **Summary of contributions.** OffRecord AI Journal demonstrates that a complete pipeline—from voice capture through transcription, NLP analysis, personality modeling, knowledge graph construction, and predictive insight generation—can run entirely on a mobile device with zero cloud dependency. The system helps Friday grow more useful with each journal entry, progressing through defined maturity stages from nascent to deep.
 
 - **Privacy as architecture, not policy.** Unlike cloud-based alternatives that promise privacy through policy (which can change), OffRecord AI Journal guarantees privacy through architecture (no networking code exists). This represents a fundamentally different approach to personal AI: the intelligence lives with the data, on the user's device, under the user's control.
 
 - **The on-device AI moment.** Apple's Neural Engine, NaturalLanguage framework, Speech framework, and upcoming Foundation Models create a stack sufficient for sophisticated personal AI. OffRecord AI Journal demonstrates what becomes possible when this stack is applied to the deeply personal domain of voice journaling.
 
-- **Toward the conversational twin.** The current system observes and predicts. The next generation—powered by on-device foundation models with tool calling, LoRA personalization, and RAG retrieval—will converse. A user will be able to ask their Digital Twin "How have I changed since January?" and receive a grounded, personalized, private answer synthesized from their own journal history.
+- **Toward the conversational assistant.** The current system observes and predicts. The next generation—powered by on-device foundation models with tool calling, LoRA personalization, and RAG retrieval—will converse. A user will be able to ask their Friday "How have I changed since January?" and receive a grounded, personalized, private answer synthesized from their own journal history.
 
 - **Call to action.** We invite the research community to investigate on-device personal modeling as a viable alternative to cloud-dependent AI. The tools exist. The compute exists. What remains is the will to prioritize the user's privacy over the developer's data access.
 
@@ -339,18 +339,18 @@ No existing work combines: (a) voice journaling as the primary data source, (b) 
 
 ## References (To Be Completed)
 
-1. Grieves, M. (2003). Digital Twin: Manufacturing Excellence through Virtual Factory Replication.
+1. Grieves, M. (2003). Friday: Manufacturing Excellence through Virtual Factory Replication.
 2. Russell, J.A. (1980). A circumplex model of affect. *Journal of Personality and Social Psychology*.
 3. McMahan, B. et al. (2017). Communication-Efficient Learning of Deep Networks from Decentralized Data. *AISTATS*.
 4. Dwork, C. (2006). Differential Privacy. *ICALP*.
-5. Bruynseels, K. et al. (2018). Digital Twins in Health Care. *Journal of Medical Internet Research*.
+5. Bruynseels, K. et al. (2018). Fridays in Health Care. *Journal of Medical Internet Research*.
 6. Kelly, G.A. (1955). *The Psychology of Personal Constructs*. Norton.
 7. Collins, A.M. & Loftus, E.F. (1975). A Spreading-Activation Theory of Semantic Processing. *Psychological Review*.
 8. Rizzolatti, G. et al. (1996). Premotor cortex and the recognition of motor actions. *Cognitive Brain Research*.
 9. Yao, Z. et al. (2024). PocketLLM: Running Large Language Models on Mobile Devices.
 10. Chen, T. et al. (2024). Memory-Efficient Backpropagation for On-Device Model Training.
 11. Hu, E.J. et al. (2022). LoRA: Low-Rank Adaptation of Large Language Models. *ICLR*.
-12. Lu, Y. et al. (2020). Digital Twin-driven smart manufacturing. *Journal of Manufacturing Systems*.
+12. Lu, Y. et al. (2020). Friday-driven smart manufacturing. *Journal of Manufacturing Systems*.
 13. Apple Inc. (2025). Apple Foundation Models. *WWDC 2025*.
 14. Lewis, P. et al. (2020). Retrieval-Augmented Generation for Knowledge-Intensive NLP Tasks. *NeurIPS*.
 
