@@ -31,12 +31,16 @@ enum RecordingState {
 struct TodayView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @AppStorage("authorName") private var authorName: String = ""
 
     @StateObject private var recorder = AudioRecorder()
     @State private var recordingState: RecordingState = .idle
     @State private var errorMessage: String?
     @State private var selectedPrompt: EntryPrompt? = nil
     @State private var selectedPhotos: [PhotosPickerItem] = []
+    @State private var noteEntry: DiaryEntry?
+    @State private var isShowingNoteEditor = false
+    @State private var shouldDeleteEmptyNoteDraft = false
 
     @FetchRequest private var todayEntries: FetchedResults<DiaryEntry>
     @FetchRequest(
@@ -107,6 +111,15 @@ struct TodayView: View {
                 }
             }
         }
+        .navigationDestination(isPresented: $isShowingNoteEditor) {
+            if let noteEntry {
+                EntryDetailView(
+                    entry: noteEntry,
+                    startEditing: true,
+                    deleteEmptyDraftOnDisappear: shouldDeleteEmptyNoteDraft
+                )
+            }
+        }
     }
 
     // MARK: - Header Section
@@ -151,12 +164,14 @@ struct TodayView: View {
 
     private var greeting: String {
         let hour = Calendar.current.component(.hour, from: Date())
+        let baseGreeting: String
         switch hour {
-        case 5..<12: return "Good morning"
-        case 12..<17: return "Good afternoon"
-        case 17..<21: return "Good evening"
-        default: return "Good night"
+        case 5..<12: baseGreeting = "Good morning"
+        case 12..<17: baseGreeting = "Good afternoon"
+        case 17..<21: baseGreeting = "Good evening"
+        default: baseGreeting = "Good night"
         }
+        return Personalization.appendFirstName(to: baseGreeting, name: authorName)
     }
 
     // MARK: - Prompts Section
@@ -254,15 +269,7 @@ struct TodayView: View {
                                             .foregroundColor(.secondary)
                                     }
                                 } else {
-                                    // Recording saved but no transcription (offline or failed)
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text("Recording saved")
-                                            .font(.subheadline)
-                                            .foregroundColor(.primary)
-                                        Text("Tap to add text or play your recording")
-                                            .font(.caption)
-                                            .foregroundColor(.secondary)
-                                    }
+                                    emptyEntryCopy(for: entry)
                                 }
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
@@ -354,32 +361,19 @@ struct TodayView: View {
                 .transition(.scale.combined(with: .opacity))
             }
 
-            // Record button + photo button
+            // Entry action buttons
             HStack(spacing: 24) {
                 Spacer()
 
-                // Photo picker
                 if recordingState == .idle {
-                    PhotosPicker(
-                        selection: $selectedPhotos,
-                        maxSelectionCount: 5,
-                        matching: .images
-                    ) {
-                        ZStack {
-                            Circle()
-                                .fill(Color(.tertiarySystemFill))
-                                .frame(width: isIPad ? 56 : 48, height: isIPad ? 56 : 48)
-                            Image(systemName: "photo.badge.plus")
-                                .font(.system(size: isIPad ? 22 : 18))
-                                .foregroundColor(.accentColor)
-                        }
-                    }
-                    .onChange(of: selectedPhotos) { _, newItems in
-                        handlePhotoPickerSelection(newItems)
-                    }
+                    photoButton
                 }
 
                 recordButton
+
+                if recordingState == .idle {
+                    noteButton
+                }
 
                 Spacer()
             }
@@ -390,7 +384,7 @@ struct TodayView: View {
                     Text(statusText)
                         .font(.subheadline.weight(.medium))
                         .foregroundColor(.primary)
-                    Text("Your voice stays on this device")
+                    Text("Your journal stays on this device")
                         .font(.caption)
                         .foregroundColor(.secondary)
 
@@ -412,6 +406,40 @@ struct TodayView: View {
 
     private var recordButtonSize: CGFloat { isIPad ? 88 : 72 }
     private var recordButtonOuterSize: CGFloat { isIPad ? 108 : 88 }
+    private var sideActionButtonSize: CGFloat { isIPad ? 56 : 48 }
+
+    private var photoButton: some View {
+        PhotosPicker(
+            selection: $selectedPhotos,
+            maxSelectionCount: 5,
+            matching: .images
+        ) {
+            sideActionButton(systemImage: "photo.badge.plus")
+        }
+        .onChange(of: selectedPhotos) { _, newItems in
+            handlePhotoPickerSelection(newItems)
+        }
+        .accessibilityLabel("Add photos")
+    }
+
+    private var noteButton: some View {
+        Button(action: startTypedNote) {
+            sideActionButton(systemImage: "square.and.pencil")
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Write note")
+    }
+
+    private func sideActionButton(systemImage: String) -> some View {
+        ZStack {
+            Circle()
+                .fill(Color(.tertiarySystemFill))
+                .frame(width: sideActionButtonSize, height: sideActionButtonSize)
+            Image(systemName: systemImage)
+                .font(.system(size: isIPad ? 22 : 18))
+                .foregroundColor(.accentColor)
+        }
+    }
 
     private var recordButton: some View {
         Button {
@@ -461,7 +489,7 @@ struct TodayView: View {
 
     private var statusText: String {
         switch recordingState {
-        case .idle: return "Tap to record"
+        case .idle: return "Tap to record or write"
         case .recording: return "Tap to stop"
         case .processing: return "Almost done..."
         }
@@ -514,6 +542,17 @@ struct TodayView: View {
         selectedPhotos = []
     }
 
+    private func startTypedNote() {
+        guard recordingState == .idle else { return }
+
+        let hadEntry = latestEntry != nil
+        let entry = getOrCreateTodayEntry()
+        noteEntry = entry
+        shouldDeleteEmptyNoteDraft = !hadEntry && entryHasNoContent(entry)
+        isShowingNoteEditor = true
+        HapticManager.shared.selectionChanged()
+    }
+
     private func getOrCreateTodayEntry() -> DiaryEntry {
         if let existing = latestEntry {
             return existing
@@ -528,6 +567,45 @@ struct TodayView: View {
         entry.updatedAt = now
         try? viewContext.save()
         return entry
+    }
+
+    @ViewBuilder
+    private func emptyEntryCopy(for entry: DiaryEntry) -> some View {
+        VStack(alignment: .leading, spacing: 4) {
+            if hasAudioReference(entry) {
+                Text("Recording saved")
+                    .font(.subheadline)
+                    .foregroundColor(.primary)
+                Text("Tap to add text or play your recording")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            } else if entry.photos?.count ?? 0 > 0 {
+                Text("Photos added")
+                    .font(.subheadline)
+                    .foregroundColor(.primary)
+                Text("Tap to add text or more photos")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            } else {
+                Text("Draft note")
+                    .font(.subheadline)
+                    .foregroundColor(.primary)
+                Text("Tap to start writing")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
+        }
+    }
+
+    private func hasAudioReference(_ entry: DiaryEntry) -> Bool {
+        (entry.value(forKey: "audioFileName") as? String)?.isEmpty == false
+    }
+
+    private func entryHasNoContent(_ entry: DiaryEntry) -> Bool {
+        let text = entry.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let duration = entry.value(forKey: "duration") as? Double ?? 0
+        let photoCount = entry.photos?.count ?? 0
+        return text.isEmpty && !hasAudioReference(entry) && duration <= 0 && photoCount == 0
     }
 
     // MARK: - Recording Logic
@@ -634,7 +712,7 @@ struct TodayView: View {
                         ReviewManager.shared.recordEntry()
 
                         // Feed into Digital Twin for learning
-                        DigitalTwinEngine.shared.processEntry(
+                        FridayAssistantEngine.shared.processEntry(
                             text: textSegment,
                             mood: entry.mood,
                             date: entry.date ?? Date(),
