@@ -7,7 +7,7 @@
 
 OffRecord AI Journal is a **free voice journal app** for iOS that turns your spoken thoughts into a searchable, AI-powered diary — entirely on your device. No accounts, no cloud servers, no data collection. It is the **private journal app** built for people who value both convenience and privacy.
 
-Speak naturally, and OffRecord AI Journal transcribes everything offline using Apple's on-device Speech framework. Over time, the app builds a **Digital Twin** — an on-device AI model of your personality, emotional patterns, and the people and topics in your life. Think of it as an **AI diary app** that actually understands you, without ever sending a byte of your data anywhere.
+Speak naturally, and OffRecord AI Journal transcribes everything offline using Apple's on-device Speech framework. Over time, **Friday** learns your personality, emotional patterns, and the people and topics in your life. Think of it as an **AI diary app** with a private assistant that actually understands you, without ever sending a byte of your data anywhere.
 
 **Your thoughts never leave your device. Ever.**
 
@@ -21,12 +21,12 @@ Speak naturally, and OffRecord AI Journal transcribes everything offline using A
   <img src="OffRecord/AppStore/screenshots/iPhone_67/01_TodayView.png" width="180" alt="OffRecord AI Journal voice journal app - Today view with daily entries" />
   <img src="OffRecord/AppStore/screenshots/iPhone_67/02_Timeline.png" width="180" alt="AI diary app timeline showing past journal entries" />
   <img src="OffRecord/AppStore/screenshots/iPhone_67/03_Insights.png" width="180" alt="On-device AI journal mood insights and analytics" />
-  <img src="OffRecord/AppStore/screenshots/iPhone_67/04_DigitalTwin.png" width="180" alt="Digital Twin journal - AI personality analysis on-device" />
+  <img src="OffRecord/AppStore/screenshots/iPhone_67/04_Friday.png" width="180" alt="Friday journal - AI personality analysis on-device" />
 </p>
 
 <p align="center">
-  <img src="OffRecord/AppStore/screenshots/iPhone_67/05_DigitalTwinEmotions.png" width="180" alt="Private journal app emotional pattern tracking" />
-  <img src="OffRecord/AppStore/screenshots/iPhone_67/06_DigitalTwinWorld.png" width="180" alt="Knowledge graph showing people and topics in your journal" />
+  <img src="OffRecord/AppStore/screenshots/iPhone_67/05_FridayEmotions.png" width="180" alt="Private journal app emotional pattern tracking" />
+  <img src="OffRecord/AppStore/screenshots/iPhone_67/06_FridayWorld.png" width="180" alt="Knowledge graph showing people and topics in your journal" />
   <img src="OffRecord/AppStore/screenshots/iPhone_67/07_EntryDetail.png" width="180" alt="Free journal app entry detail with photo attachments" />
   <img src="OffRecord/AppStore/screenshots/iPhone_67/08_Settings.png" width="180" alt="OffRecord AI Journal settings with theme and privacy options" />
 </p>
@@ -38,8 +38,8 @@ Speak naturally, and OffRecord AI Journal transcribes everything offline using A
 ### Voice Journaling That Works Offline
 Record your thoughts and OffRecord AI Journal transcribes them instantly using Apple's on-device Speech framework. No internet required. This is **voice journaling** the way it should work — fast, private, and always available.
 
-### Digital Twin AI — Your Personal AI Journal Companion
-The **Digital Twin journal** feature learns your personality, communication style, emotional patterns, and life themes. Everything runs on your iPhone's Neural Engine. No server-side AI, no API calls — a truly **on-device AI journal**.
+### Friday AI — Your Personal AI Journal Companion
+The **Friday journal** feature learns your personality, communication style, emotional patterns, and life themes. Everything runs on your iPhone's Neural Engine. No server-side AI, no API calls — a truly **on-device AI journal**.
 
 ### Knowledge Graph
 Automatically tracks the people, places, and topics you mention across entries. See how your world connects over time with an interactive relationship map.
@@ -87,7 +87,7 @@ OffRecord AI Journal carries Apple's **"Data Not Collected"** privacy nutrition 
 | **Ad tracking** | None | Common |
 | **AI processing** | On-device Neural Engine | Server-side APIs |
 
-All AI features — voice transcription, sentiment analysis, Digital Twin, knowledge graph — run entirely on your iPhone or iPad using Apple's NaturalLanguage and Speech frameworks. Nothing is ever transmitted off your device.
+All AI features — voice transcription, sentiment analysis, Friday, knowledge graph — run entirely on your iPhone or iPad using Apple's NaturalLanguage and Speech frameworks. Nothing is ever transmitted off your device.
 
 ---
 
@@ -103,7 +103,7 @@ Looking for the best **AI diary app for iOS**? Here is how OffRecord AI Journal 
 | Data collection | None | Analytics | Analytics + text | Analytics |
 | Account required | No | Yes | Yes | Yes |
 | Works offline | Fully | Partially | No | No |
-| Digital Twin | Yes | No | No | No |
+| Friday | Yes | No | No | No |
 | Knowledge graph | Yes | No | No | No |
 
 OffRecord AI Journal is the only **free journal app** with full AI capabilities that runs 100% on-device.
@@ -134,8 +134,8 @@ All data is stored locally on your device in Core Data. If you enable iCloud Syn
 ### Can I export my journal entries?
 Yes. You can export to PDF, JSON, Markdown, CSV, or create an AES-256 encrypted backup file.
 
-### What is the Digital Twin feature?
-The Digital Twin is an on-device AI model that learns your personality traits, communication style, emotional patterns, and life themes from your journal entries. It is unique to OffRecord AI Journal and runs entirely on your iPhone's Neural Engine.
+### What is Friday?
+Friday is an on-device AI assistant that learns your personality traits, communication style, emotional patterns, and life themes from your journal entries. It is unique to OffRecord AI Journal and runs entirely on your iPhone's Neural Engine.
 
 ### Does OffRecord AI Journal collect any analytics or telemetry?
 No. Zero data collection. No analytics SDKs, no crash reporting services, no telemetry of any kind. Check Apple's privacy label for confirmation.

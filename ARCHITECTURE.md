@@ -11,7 +11,7 @@ SpeechTranscriber (SFSpeechRecognizer, on-device)
     ↓
 LocalAIEngine + InsightsEngine (NLTagger analysis)
     ↓
-DigitalTwinEngine (personality modeling)
+FridayAssistantEngine (personality modeling)
     ↓
 Persistence (Core Data + optional CloudKit)
     ↓
@@ -30,17 +30,17 @@ All source files are in `OffRecord/OffRecord/`.
 | **SpeechTranscriber** | `SpeechTranscriber.swift` | On-device speech-to-text via SFSpeechRecognizer (`requiresOnDeviceRecognition = true`). Supports 60+ languages. Runs on Apple Neural Engine. |
 | **LocalAIEngine** | `LocalAIEngine.swift` | NLP analysis using NaturalLanguage framework. Sentiment analysis, topic extraction, intent recognition. Maintains a UserProfile for learned patterns. |
 | **InsightsEngine** | `InsightsEngine.swift` | Generates insight cards from journal data. Sentiment trends, topic frequency, journaling patterns. |
-| **DigitalTwinEngine** | `DigitalTwinEngine.swift` | Core personality model with four sub-models (see below). Processes NLTagger output per entry. Serializes to JSON in Core Data (~12 KB). |
+| **FridayAssistantEngine** | `FridayAssistantEngine.swift` | Core personality model with four sub-models (see below). Processes NLTagger output per entry. Serializes to JSON in Core Data (~12 KB). |
 | **Persistence** | `Persistence.swift` | Core Data with NSPersistentCloudKitContainer. Stores entries, synced photo attachments, audio metadata, and AI state. App Group for WidgetKit data sharing. |
 
-### Digital Twin Sub-Models
+### Friday Sub-Models
 
-The Twin engine (`DigitalTwinEngine.swift`) maintains four interconnected models:
+Friday engine (`FridayAssistantEngine.swift`) maintains four interconnected models:
 
 - **CommunicationStyle** — Vocabulary richness (TTR), directness, formality, signature words
 - **EmotionalSignature** — Valence/arousal/dominance baselines, daily/weekly cycles, emotional volatility
 - **PersonalKnowledgeGraph** — NER-extracted entities (people, places, orgs) with emotional weights and co-occurrence relationships
-- **TwinPredictions** (`TwinPredictions.swift`) — Mood forecasting, trigger anticipation, temporal patterns, seasonal detection
+- **FridayPredictions** (`FridayPredictions.swift`) — Mood forecasting, trigger anticipation, temporal patterns, seasonal detection
 
 ### Views
 
@@ -49,8 +49,8 @@ The Twin engine (`DigitalTwinEngine.swift`) maintains four interconnected models
 | **ContentView** | `ContentView.swift` | Main TabView container. Adapts to sidebar on iPadOS 18+. |
 | **TodayView** | `TodayView.swift` | Daily journaling interface with recording |
 | **TimelineView** | `TimelineView.swift` | Historical entry browsing |
-| **DigitalTwinView** | `DigitalTwinView.swift` | Twin personality display and insights |
-| **TwinChatView** | `TwinChatView.swift` | "Ask Your Twin" conversational interface |
+| **FridayView** | `FridayView.swift` | Friday personality display and insights |
+| **FridayChatView** | `FridayChatView.swift` | "Talk to Friday" conversational interface |
 | **EntryDetailView** | `EntryDetailView.swift` | Entry viewing and editing |
 | **InsightsView** | `StatsView.swift` | Mood trends, streaks, analytics |
 | **SettingsView** | `SettingsView.swift` | Preferences and configuration |
