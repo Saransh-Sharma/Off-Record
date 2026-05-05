@@ -46,6 +46,44 @@ struct MoodTests {
     }
 }
 
+// MARK: - Onboarding Tests
+
+struct OnboardingResponseTests {
+
+    @Test func defaultResponseStartsUnanswered() {
+        let response = OnboardingResponse()
+
+        #expect(response.goal == nil)
+        #expect(response.painPoints.isEmpty)
+        #expect(response.relatableStatements.isEmpty)
+        #expect(response.reflectionFocus == nil)
+        #expect(response.promptStyle == nil)
+        #expect(response.faceIDChoice == .notAsked)
+        #expect(response.microphoneChoice == .notAsked)
+        #expect(response.speechChoice == .notAsked)
+        #expect(response.firstEntryText.isEmpty)
+    }
+
+    @Test func responseCodableRoundTrip() throws {
+        var response = OnboardingResponse()
+        response.goal = .fridayInsights
+        response.painPoints = [.typingSlow, .privacyWorry]
+        response.relatableStatements = [.honestVersion, .patternWish]
+        response.reflectionFocus = .relationships
+        response.promptStyle = .gentle
+        response.moodBaseline = .hopeful
+        response.firstEntryText = "Today I noticed I needed a private place to think."
+        response.faceIDChoice = .enabled
+        response.microphoneChoice = .granted
+        response.speechChoice = .granted
+
+        let data = try JSONEncoder().encode(response)
+        let decoded = try JSONDecoder().decode(OnboardingResponse.self, from: data)
+
+        #expect(decoded == response)
+    }
+}
+
 // MARK: - Encryption Tests
 
 struct EncryptionTests {

@@ -18,6 +18,12 @@ struct ConcentricPageTransitionView<Content: View>: View {
     let pages: [PageContent]
     @Binding var currentIndex: Int
     var duration: Double = 0.8
+    let ctaTitle: String
+    let ctaIcon: String?
+    let isCTADisabled: Bool
+    let secondaryTitle: String?
+    let onPrimaryAction: () -> Void
+    let onSecondaryAction: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -36,10 +42,26 @@ struct ConcentricPageTransitionView<Content: View>: View {
     private var outAnimation: Animation { .easeOut(duration: duration / 2) }
     private var fullAnimation: Animation { .easeInOut(duration: duration) }
 
-    init(pages: [PageContent], currentIndex: Binding<Int>, duration: Double = 0.8) {
+    init(
+        pages: [PageContent],
+        currentIndex: Binding<Int>,
+        duration: Double = 0.8,
+        ctaTitle: String,
+        ctaIcon: String? = nil,
+        isCTADisabled: Bool = false,
+        secondaryTitle: String? = nil,
+        onPrimaryAction: @escaping () -> Void,
+        onSecondaryAction: @escaping () -> Void = { }
+    ) {
         self.pages = pages
         self._currentIndex = currentIndex
         self.duration = duration
+        self.ctaTitle = ctaTitle
+        self.ctaIcon = ctaIcon
+        self.isCTADisabled = isCTADisabled
+        self.secondaryTitle = secondaryTitle
+        self.onPrimaryAction = onPrimaryAction
+        self.onSecondaryAction = onSecondaryAction
 
         let safeIndex = pages.indices.contains(currentIndex.wrappedValue) ? currentIndex.wrappedValue : 0
         let nextIndex = pages.indices.contains(safeIndex + 1) ? safeIndex + 1 : safeIndex
@@ -86,9 +108,16 @@ struct ConcentricPageTransitionView<Content: View>: View {
                 .onAnimationCompleted(for: progress) {
                     animationCompleted()
                 }
+
+                VStack {
+                    Spacer()
+                    bottomControls
+                        .padding(.bottom, 52)
+                }
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
         }
+        .ignoresSafeArea()
         .onAppear {
             syncToCurrentIndex(animated: false)
         }
@@ -151,6 +180,73 @@ struct ConcentricPageTransitionView<Content: View>: View {
 
     private func incomingOffset(in size: CGSize) -> CGFloat {
         direction == .forward ? size.width : -size.width
+    }
+
+    private var isTerminalPage: Bool {
+        guard let lastIndex = pages.indices.last else { return false }
+        return displayedIndex == lastIndex && incomingIndex == displayedIndex
+    }
+
+    private var bottomControls: some View {
+        VStack(spacing: 12) {
+            if let secondaryTitle {
+                Button(secondaryTitle, action: onSecondaryAction)
+                    .font(.system(.subheadline, design: .rounded, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.82))
+                    .buttonStyle(.plain)
+                    .disabled(isAnimating)
+                    .opacity(isAnimating ? 0.55 : 1)
+            }
+
+            if isTerminalPage {
+                terminalPrimaryButton
+            } else {
+                primaryButton
+            }
+        }
+    }
+
+    private var primaryButton: some View {
+        Button(action: onPrimaryAction) {
+            ZStack {
+                Circle()
+                    .fill(isAnimating ? .clear : circleColor)
+                    .frame(width: 2 * radius, height: 2 * radius)
+                Image(systemName: ctaIcon ?? "chevron.forward")
+                    .font(.system(size: 20, weight: .black, design: .rounded))
+                    .foregroundStyle(backgroundColor)
+            }
+            .frame(width: 2 * radius, height: 2 * radius)
+            .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .disabled(isAnimating || isCTADisabled)
+        .opacity(isCTADisabled ? 0.42 : 1)
+        .accessibilityLabel(ctaTitle)
+    }
+
+    private var terminalPrimaryButton: some View {
+        Button(action: onPrimaryAction) {
+            HStack(spacing: 8) {
+                Text(ctaTitle)
+                if let ctaIcon {
+                    Image(systemName: ctaIcon)
+                }
+            }
+            .font(.system(.headline, design: .rounded, weight: .bold))
+            .foregroundStyle(backgroundColor)
+            .frame(maxWidth: 360)
+            .padding(.horizontal, 22)
+            .padding(.vertical, 17)
+            .background(Color.white)
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .shadow(color: .black.opacity(0.18), radius: 18, y: 8)
+        }
+        .buttonStyle(.plain)
+        .disabled(isAnimating || isCTADisabled)
+        .opacity(isCTADisabled ? 0.42 : 1)
+        .padding(.horizontal, 28)
+        .accessibilityLabel(ctaTitle)
     }
 }
 

@@ -105,6 +105,8 @@ struct AudioPlayerView: View {
                     Image(systemName: controller.isPlaying ? "pause.circle.fill" : "play.circle.fill")
                         .font(.system(size: 32))
                         .foregroundColor(.accentColor)
+                        .frame(width: 44, height: 44)
+                        .offRecordGlassControl(tint: .accentColor, in: Circle(), fallbackFill: Color.accentColor.opacity(0.1))
                 }
                 .buttonStyle(.plain)
 
@@ -146,9 +148,12 @@ struct AudioPlayerView: View {
                                 .font(.caption2.weight(controller.playbackRate == speed ? .bold : .regular))
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
-                                .background(controller.playbackRate == speed ? Color.accentColor.opacity(0.15) : Color(.tertiarySystemFill))
                                 .foregroundColor(controller.playbackRate == speed ? .accentColor : .secondary)
-                                .clipShape(Capsule())
+                                .offRecordGlassControl(
+                                    tint: controller.playbackRate == speed ? .accentColor : nil,
+                                    in: Capsule(),
+                                    fallbackFill: controller.playbackRate == speed ? Color.accentColor.opacity(0.15) : Color(.tertiarySystemFill)
+                                )
                         }
                         .buttonStyle(.plain)
                     }
@@ -156,8 +161,7 @@ struct AudioPlayerView: View {
             }
         }
         .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .offRecordContentCard(cornerRadius: 12)
         .onAppear {
             do {
                 try controller.load(url: audioURL)

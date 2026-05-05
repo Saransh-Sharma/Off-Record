@@ -57,6 +57,7 @@ struct SettingsView: View {
             appearanceSection
             journalingGoalSection
             securitySection
+            localAIPrivacySection
             dailyReminderSection
             storageSection
             iCloudSection
@@ -226,20 +227,48 @@ struct SettingsView: View {
 
     @ViewBuilder
     private var securitySection: some View {
-        Section(header: Text("Security")) {
-            Toggle("Enable Face ID", isOn: $lockManager.isEnabled)
+        Section(header: Text("Privacy Lock")) {
+            Toggle("Require \(lockManager.biometryTypeName) to open OffRecord", isOn: $lockManager.isEnabled)
 
             if lockManager.isEnabled {
-                Text("OffRecord AI Journal will require \\(lockManager.biometryTypeName) or your device passcode to open.")
+                Text("Your journal locks when you leave the app. OffRecord never sees or stores your \(lockManager.biometryTypeName).")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
 
             if !lockManager.biometricsAvailable {
-                Text("Your device will use your passcode to unlock OffRecord AI Journal.")
+                Text("If \(lockManager.biometryTypeName) is unavailable, iOS will use your device passcode.")
                     .font(.caption)
                     .foregroundColor(.secondary)
             }
+        }
+    }
+
+    @ViewBuilder
+    private var localAIPrivacySection: some View {
+        Section {
+            VStack(alignment: .leading, spacing: 12) {
+                PrivacyInfoRow(
+                    icon: "cpu.fill",
+                    title: "Local AI on your device",
+                    description: "All transcription, mood analysis, Friday insights, and knowledge graph updates run on this device."
+                )
+                PrivacyInfoRow(
+                    icon: "wifi.slash",
+                    title: "No internet required",
+                    description: "Core journaling and AI insights work without an internet connection."
+                )
+                PrivacyInfoRow(
+                    icon: "person.fill.xmark",
+                    title: "No accounts or tracking",
+                    description: "No accounts, analytics, tracking, or third-party AI servers."
+                )
+            }
+            .padding(.vertical, 4)
+        } header: {
+            Text("Local AI & Offline Privacy")
+        } footer: {
+            Text("Optional iCloud Sync is separate and uses your personal Apple iCloud account, not an OffRecord server.")
         }
     }
 
@@ -385,24 +414,24 @@ struct SettingsView: View {
                 PrivacyInfoRow(
                     icon: "waveform",
                     title: "On-Device Transcription",
-                    description: "Voice converted to text using Apple's speech recognition"
+                    description: "Voice is converted to text locally using Apple's speech recognition."
                 )
                 PrivacyInfoRow(
                     icon: "server.rack",
                     title: "No Third-Party Servers",
-                    description: "We never send your data to our servers"
+                    description: "OffRecord does not send your journal data to AI servers."
                 )
                 PrivacyInfoRow(
                     icon: "person.fill.xmark",
                     title: "No Account Required",
-                    description: "No sign-up, no tracking, no analytics"
+                    description: "No sign-up, no tracking, no analytics."
                 )
             }
             .padding(.vertical, 8)
         } header: {
             Text("Privacy & Security")
         } footer: {
-            Text("Your thoughts are yours alone. Data syncs only through your personal iCloud, encrypted with your Apple ID.")
+            Text("Your thoughts are yours alone. If enabled, sync uses your personal iCloud account, encrypted with your Apple ID.")
         }
     }
 
@@ -692,12 +721,12 @@ struct ThemeButton: View {
         Button(action: action) {
             VStack(spacing: 6) {
                 ZStack {
-                    Circle()
-                        .fill(theme.accentColor.opacity(0.2))
+                    Color.clear
                         .frame(width: 48, height: 48)
+                        .offRecordGlassControl(tint: isSelected ? theme.accentColor : nil, in: Circle(), fallbackFill: theme.accentColor.opacity(0.2))
                     
                     Circle()
-                        .fill(theme.accentColor)
+                        .fill(theme.accentColor.opacity(isSelected ? 1 : 0.8))
                         .frame(width: 32, height: 32)
                     
                     Image(systemName: theme.icon)

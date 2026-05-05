@@ -23,6 +23,7 @@ struct OffRecordApp: App {
     @ObservedObject private var themeManager = ThemeManager.shared
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
+    @State private var isShowingSplash = true
 
     init() {
         ScreenshotDataSeeder.seedIfNeeded(context: persistenceController.container.viewContext)
@@ -30,20 +31,30 @@ struct OffRecordApp: App {
 
     var body: some Scene {
         WindowGroup {
-            Group {
-                if !hasCompletedOnboarding {
-                    OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)
-                } else {
-                    ZStack {
-                        ContentView()
+            ZStack {
+                Group {
+                    if !hasCompletedOnboarding {
+                        OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)
+                    } else {
+                        ZStack {
+                            ContentView()
 
-                        // Show lock screen if app lock is enabled and not unlocked
-                        if lockManager.isEnabled && !lockManager.isUnlocked {
-                            LockScreenView()
-                                .transition(.opacity)
+                            // Show lock screen if app lock is enabled and not unlocked
+                            if lockManager.isEnabled && !lockManager.isUnlocked {
+                                LockScreenView()
+                                    .transition(.opacity)
+                            }
                         }
+                        .animation(.easeInOut(duration: 0.2), value: lockManager.isUnlocked)
                     }
-                    .animation(.easeInOut(duration: 0.2), value: lockManager.isUnlocked)
+                }
+
+                if isShowingSplash {
+                    SplashScreenView {
+                        isShowingSplash = false
+                    }
+                    .zIndex(1)
+                    .transition(.opacity)
                 }
             }
             .environment(\.managedObjectContext, persistenceController.container.viewContext)

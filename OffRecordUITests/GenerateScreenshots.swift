@@ -90,18 +90,18 @@ class ScreenshotTests: XCTestCase {
         takeScreenshot(named: "03_Insights")
     }
 
-    // MARK: - Screenshot 4: Digital Twin Overview
+    // MARK: - Screenshot 4: Friday Overview
 
-    func test04_DigitalTwin() throws {
-        navigateToTab("Twin")
+    func test04_Friday() throws {
+        navigateToTab("Friday")
         sleep(2)
-        takeScreenshot(named: "04_DigitalTwin")
+        takeScreenshot(named: "04_Friday")
     }
 
-    // MARK: - Screenshot 5: Digital Twin Emotions
+    // MARK: - Screenshot 5: Friday Emotions
 
-    func test05_DigitalTwinEmotions() throws {
-        navigateToTab("Twin")
+    func test05_FridayEmotions() throws {
+        navigateToTab("Friday")
         sleep(1)
 
         let emotionsButton = app.buttons["Emotions"]
@@ -109,13 +109,13 @@ class ScreenshotTests: XCTestCase {
             emotionsButton.tap()
             sleep(2)
         }
-        takeScreenshot(named: "05_DigitalTwinEmotions")
+        takeScreenshot(named: "05_FridayEmotions")
     }
 
-    // MARK: - Screenshot 6: Digital Twin My World
+    // MARK: - Screenshot 6: Friday My World
 
-    func test06_DigitalTwinWorld() throws {
-        navigateToTab("Twin")
+    func test06_FridayWorld() throws {
+        navigateToTab("Friday")
         sleep(1)
 
         // "My World" is the 4th button in a horizontal ScrollView — swipe left to reveal it
@@ -130,7 +130,7 @@ class ScreenshotTests: XCTestCase {
             worldButton.tap()
             sleep(2)
         }
-        takeScreenshot(named: "06_DigitalTwinWorld")
+        takeScreenshot(named: "06_FridayWorld")
     }
 
     // MARK: - Screenshot 7: Entry Detail

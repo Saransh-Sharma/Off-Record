@@ -5,15 +5,15 @@ All notable changes to OffRecord AI Journal are documented here.
 ## [1.2.0] — Unreleased
 
 ### Added
-- **Ask Your Twin**: Chat with your Digital Twin — ask about mood patterns, personality, journaling habits
+- **Talk to Friday**: Chat with your Friday — ask about mood patterns, personality, journaling habits
 - **Shareable Personality Cards**: Beautiful cards optimized for Instagram Stories (1080x1920) and Twitter/X (1200x675)
 - **Smarter Review Prompts**: Milestone-based App Store rating requests (at 5, 15, 40 entries) with 90-day cooldown
 
 ## [1.1.0] — 2026-03-26
 
 ### Added
-- **Twin Predictions**: Mood forecasting, trigger anticipation, temporal pattern detection
-- **Shareable Personality Card**: Visual snapshot of your Digital Twin profile
+- **Friday Predictions**: Mood forecasting, trigger anticipation, temporal pattern detection
+- **Shareable Personality Card**: Visual snapshot of your Friday profile
 - **Weekly Insight Cards**: Shareable summaries of your weekly emotional journey
 - **Improved NLP**: Better keyword extraction with refined text processing
 
@@ -21,7 +21,7 @@ All notable changes to OffRecord AI Journal are documented here.
 
 ### Added
 - Voice journaling with fully on-device transcription (Apple Speech framework)
-- Digital Twin: on-device personality model (communication style, emotional signature, knowledge graph)
+- Friday: on-device personality model (communication style, emotional signature, knowledge graph)
 - Mood tracking with automatic sentiment analysis (NLTagger)
 - Smart insights and pattern detection
 - Biometric security (Face ID / Touch ID)

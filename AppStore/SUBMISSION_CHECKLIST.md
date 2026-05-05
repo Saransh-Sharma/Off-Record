@@ -26,7 +26,7 @@
 
 ### Metadata (Ready in AppStoreMetadata.md)
 - [x] App Name: "OffRecord AI Journal"
-- [x] Subtitle: "Your Private Digital Twin"
+- [x] Subtitle: "Your Private AI Assistant"
 - [x] Description (under 4000 chars)
 - [x] Keywords (under 100 chars)
 - [x] Promotional Text

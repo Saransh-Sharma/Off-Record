@@ -13,7 +13,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OffRecord AI Journal Technology — On-Device AI Architecture for Private Voice Journaling</title>
   <meta name="description" content="A deep technical breakdown of OffRecord AI Journal's on-device AI pipeline. SFSpeechRecognizer, NLTagger, NLEmbedding, Foundation Models, Core Data, CryptoKit — nine Apple frameworks, zero third-party SDKs, all inference on Neural Engine.">
-  <meta name="keywords" content="on-device AI, voice journaling, digital twin, Apple Foundation Models, NLTagger, SFSpeechRecognizer, privacy, iOS development">
+  <meta name="keywords" content="on-device AI, voice journaling, private AI assistant, Apple Foundation Models, NLTagger, SFSpeechRecognizer, privacy, iOS development">
   <meta name="theme-color" content="#f7f7f2">
   <!-- logo inlined via CSS data URL -->
   <meta property="og:type" content="article">
@@ -449,28 +449,28 @@
     }
 
     /* ── TWIN ORGAN GRID ── */
-    .twin-organs {
+    .assistant-organs {
       display: grid;
       grid-template-columns: 1fr 1fr;
       gap: 12px;
       margin: 24px 0;
     }
-    .twin-organ {
+    .assistant-organ {
       background: var(--card);
       border: 1px solid var(--rule);
       border-radius: var(--r);
       padding: 20px 22px;
     }
-    .twin-organ-head {
+    .assistant-organ-head {
       display: flex; align-items: center; justify-content: space-between;
       margin-bottom: 10px;
     }
-    .twin-organ-head h4 {
+    .assistant-organ-head h4 {
       font-family: var(--display);
       font-size: 15px; font-weight: 600;
       letter-spacing: -0.015em;
     }
-    .twin-organ-tag {
+    .assistant-organ-tag {
       font-family: var(--mono); font-size: 9px; font-weight: 600;
       padding: 2px 7px; border-radius: 3px;
       letter-spacing: 0.1em; text-transform: uppercase;
@@ -479,12 +479,12 @@
     .tot-emo { background: var(--vital-soft); color: var(--vital); }
     .tot-graph { background: var(--ray-soft); color: #0e8a96; }
     .tot-pred { background: var(--bio-soft); color: #4c8f1f; }
-    .twin-organ p {
+    .assistant-organ p {
       font-size: 13px; color: var(--ink-dim);
       line-height: 1.55; margin-bottom: 10px;
     }
-    .twin-organ ul { list-style: none; margin: 0; padding: 0; }
-    .twin-organ ul li {
+    .assistant-organ ul { list-style: none; margin: 0; padding: 0; }
+    .assistant-organ ul li {
       font-family: var(--mono);
       font-size: 11px; color: var(--ink-dim);
       line-height: 1.85;
@@ -492,7 +492,7 @@
       position: relative;
       letter-spacing: -0.01em;
     }
-    .twin-organ ul li::before {
+    .assistant-organ ul li::before {
       content: '-'; position: absolute; left: 0;
       color: var(--uv); font-weight: 700;
     }
@@ -838,7 +838,7 @@
       .model-card-body { grid-template-columns: 1fr 1fr; }
       .mc-field:nth-child(2) { border-right: 0; }
       .mc-field:nth-child(1), .mc-field:nth-child(2) { border-bottom: 1px solid var(--rule); }
-      .twin-organs { grid-template-columns: 1fr; }
+      .assistant-organs { grid-template-columns: 1fr; }
       .privacy-block { padding: 40px 32px; margin: 30px -14px; }
       .site-footer .wrap { grid-template-columns: 1fr 1fr; }
     }
@@ -900,7 +900,7 @@
           <em>actually</em> works.
         </h1>
         <p class="subtitle">
-          A deep technical breakdown of the on-device AI pipeline behind the Twin.
+          A deep technical breakdown of the on-device AI pipeline behind Friday.
           <strong>Nine Apple frameworks. Zero third-party SDKs. No cloud calls.</strong>
           Every layer — capture, transcription, NLP, personality modeling, storage — runs on your phone.
         </p>
@@ -940,11 +940,11 @@
    <span class="arrow">│</span>
    <span class="arrow">▼</span>
 <span class="label">PERSONALITY MODEL</span>
-<span class="node">TwinEngine</span>
+<span class="node">FridayAssistantEngine</span>
    <span class="arrow">├▶</span> CommunicationStyle   <span class="arrow">(TTR, formality, directness)</span>
    <span class="arrow">├▶</span> EmotionalSignature   <span class="arrow">(valence, arousal, dominance)</span>
    <span class="arrow">├▶</span> PersonalKnowledgeGraph <span class="arrow">(entities + emotional weights)</span>
-   <span class="arrow">└▶</span> TwinPredictions      <span class="arrow">(temporal patterns, forecasts)</span>
+   <span class="arrow">└▶</span> FridayPredictions      <span class="arrow">(temporal patterns, forecasts)</span>
    <span class="arrow">│</span>
    <span class="arrow">▼</span>
 <span class="label">STORAGE</span>
@@ -958,7 +958,7 @@
 <span class="node">SwiftUI</span> <span class="arrow">─▶</span> <span class="node">WidgetKit</span> <span class="arrow">│</span> <span class="node">AppIntents · Siri</span></div>
         </div>
 
-        <p>The key constraint: <strong>data never leaves the device for processing.</strong> Transcription runs on the Neural Engine. NLP runs locally. The Twin is computed and stored in Core Data. The only optional network path is Apple's encrypted iCloud sync — which the user can disable.</p>
+        <p>The key constraint: <strong>data never leaves the device for processing.</strong> Transcription runs on the Neural Engine. NLP runs locally. Friday is computed and stored in Core Data. The only optional network path is Apple's encrypted iCloud sync — which the user can disable.</p>
       </section>
 
       <!-- §02 Stack -->
@@ -1047,13 +1047,13 @@
             </div>
             <h3>Foundation Models</h3>
             <div class="st-fw">iOS 26 · 3B on-device LLM</div>
-            <p>Apple's on-device large language model, enabling conversational Twin interactions in v2.0.</p>
+            <p>Apple's on-device large language model, enabling conversational Friday interactions in v2.0.</p>
             <ul>
               <li><code>LanguageModelSession</code> — multi-turn conversation with transcript memory</li>
-              <li><strong>Tool calling</strong> — Twin autonomously queries Core Data via custom Tool protocol</li>
+              <li><strong>Tool calling</strong> — Friday autonomously queries Core Data via custom Tool protocol</li>
               <li><code>@Generable</code> — type-safe structured outputs (mood reports as Swift structs)</li>
               <li><code>streamResponse()</code> — real-time streaming chat UI</li>
-              <li>Dynamic instructions from TwinEngine for tone matching</li>
+              <li>Dynamic instructions from FridayAssistantEngine for tone matching</li>
               <li>Requires iPhone 15 Pro+. Entire pipeline on-device.</li>
             </ul>
           </div>
@@ -1069,7 +1069,7 @@
             <ul>
               <li>SQLite wrapped by NSPersistentCloudKitContainer</li>
               <li>Local-first: app works fully offline</li>
-              <li>AIState entity stores the Twin as Codable JSON</li>
+              <li>AIState entity stores Friday as Codable JSON</li>
               <li>iCloud sync uses Apple's encrypted infrastructure</li>
               <li>Sync is optional — user can disable entirely</li>
             </ul>
@@ -1124,19 +1124,19 @@
         </div>
       </section>
 
-      <!-- §03 Twin Engine -->
+      <!-- §03 Friday Engine -->
       <section class="sec-block">
         <div class="sec-head">
           <span class="sec-num">§03</span>
-          <h2 class="sec-title">The <em>Twin Engine</em>.</h2>
+          <h2 class="sec-title">The <em>Friday Engine</em>.</h2>
           <span class="sec-tag">model card</span>
         </div>
-        <p>The <code>TwinEngine</code> is a custom personality-modeling system that builds a multi-dimensional profile of the user from their voice journal entries. It uses no external models or APIs. The entire model is computed from NLTagger output and stored as serialized JSON in Core Data's <code>AIState</code> entity.</p>
+        <p>The <code>FridayAssistantEngine</code> is a custom personality-modeling system that builds a multi-dimensional profile of the user from their voice journal entries. It uses no external models or APIs. The entire model is computed from NLTagger output and stored as serialized JSON in Core Data's <code>AIState</code> entity.</p>
 
         <div class="model-card">
           <div class="model-card-head">
             <div class="mc-name">
-              TwinEngine <span class="mc-chip">v1.1 · SHIPPED</span>
+              FridayAssistantEngine <span class="mc-chip">v1.1 · SHIPPED</span>
             </div>
             <div class="mc-meta">
               storage: Core Data / AIState · size: ~12 KB · network: 0 rpc
@@ -1151,7 +1151,7 @@
             <div class="mc-field">
               <div class="mc-field-lbl">Update cadence</div>
               <div class="mc-field-val">per entry · online</div>
-              <div class="mc-field-desc">Every voice entry updates the Twin incrementally. No batch jobs.</div>
+              <div class="mc-field-desc">Every voice entry updates Friday incrementally. No batch jobs.</div>
             </div>
             <div class="mc-field">
               <div class="mc-field-lbl">Inputs</div>
@@ -1168,11 +1168,11 @@
 
         <p>The engine consists of four interconnected sub-models.</p>
 
-        <div class="twin-organs">
-          <div class="twin-organ">
-            <div class="twin-organ-head">
+        <div class="assistant-organs">
+          <div class="assistant-organ">
+            <div class="assistant-organ-head">
               <h4>CommunicationStyle</h4>
-              <span class="twin-organ-tag tot-style">STYLE</span>
+              <span class="assistant-organ-tag tot-style">STYLE</span>
             </div>
             <p>How the user expresses themselves. Updated with each entry.</p>
             <ul>
@@ -1185,10 +1185,10 @@
               <li>Pronoun patterns (I vs we)</li>
             </ul>
           </div>
-          <div class="twin-organ">
-            <div class="twin-organ-head">
+          <div class="assistant-organ">
+            <div class="assistant-organ-head">
               <h4>EmotionalSignature</h4>
-              <span class="twin-organ-tag tot-emo">EMOTION</span>
+              <span class="assistant-organ-tag tot-emo">EMOTION</span>
             </div>
             <p>The user's emotional baseline and patterns over time.</p>
             <ul>
@@ -1201,10 +1201,10 @@
               <li>Emotional volatility index</li>
             </ul>
           </div>
-          <div class="twin-organ">
-            <div class="twin-organ-head">
+          <div class="assistant-organ">
+            <div class="assistant-organ-head">
               <h4>PersonalKnowledgeGraph</h4>
-              <span class="twin-organ-tag tot-graph">GRAPH</span>
+              <span class="assistant-organ-tag tot-graph">GRAPH</span>
             </div>
             <p>A network of people, places, and topics with emotional weights.</p>
             <ul>
@@ -1216,10 +1216,10 @@
               <li>Topic clusters from entity groupings</li>
             </ul>
           </div>
-          <div class="twin-organ">
-            <div class="twin-organ-head">
-              <h4>TwinPredictions</h4>
-              <span class="twin-organ-tag tot-pred">PREDICT</span>
+          <div class="assistant-organ">
+            <div class="assistant-organ-head">
+              <h4>FridayPredictions</h4>
+              <span class="assistant-organ-tag tot-pred">PREDICT</span>
             </div>
             <p>Forecasts based on temporal pattern analysis.</p>
             <ul>
@@ -1248,7 +1248,7 @@
         <p>Privacy is not a feature of OffRecord AI Journal. It is the architectural constraint every technical decision is built around. The system is designed so that private data <strong>physically cannot</strong> leave the device for processing.</p>
 
         <h3 style="font-family: var(--display); font-size: 18px; font-weight: 600; color: var(--paper); margin: 28px 0 10px; letter-spacing: -0.02em;">Zero network processing</h3>
-        <p>Every AI operation runs on the device's Neural Engine. Transcription uses <code>requiresOnDeviceRecognition = true</code>. NLTagger runs locally. The Twin is computed and stored in Core Data. There are no API calls, no cloud functions, no telemetry on journal content.</p>
+        <p>Every AI operation runs on the device's Neural Engine. Transcription uses <code>requiresOnDeviceRecognition = true</code>. NLTagger runs locally. Friday is computed and stored in Core Data. There are no API calls, no cloud functions, no telemetry on journal content.</p>
 
         <h3 style="font-family: var(--display); font-size: 18px; font-weight: 600; color: var(--paper); margin: 28px 0 10px; letter-spacing: -0.02em;">No third-party SDKs</h3>
         <p>OffRecord AI Journal contains zero third-party dependencies for core functionality. No analytics SDKs. No crash reporting that sends journal content. No ad networks. The only external code is Google Analytics on this website (not in the app) and Apple's own frameworks.</p>
@@ -1303,18 +1303,18 @@
             <div class="rd-dot rd-done">✓</div>
             <div class="rd-body">
               <div class="rd-tag rd-done-txt">Shipped · v1.1</div>
-              <h3>Twin + personality model</h3>
-              <p>Custom TwinEngine with communication style, emotional signature, knowledge graph, and temporal mood forecasting.</p>
-              <div class="rd-tags"><span>TwinEngine</span><span>CommunicationStyle</span><span>EmotionalSignature</span><span>PersonalKnowledgeGraph</span><span>TwinPredictions</span></div>
+              <h3>Friday + personality model</h3>
+              <p>Custom FridayAssistantEngine with communication style, emotional signature, knowledge graph, and temporal mood forecasting.</p>
+              <div class="rd-tags"><span>FridayAssistantEngine</span><span>CommunicationStyle</span><span>EmotionalSignature</span><span>PersonalKnowledgeGraph</span><span>FridayPredictions</span></div>
             </div>
           </div>
           <div class="rd-item">
             <div class="rd-dot rd-now">→</div>
             <div class="rd-body">
               <div class="rd-tag rd-now-txt">Building now · v1.2</div>
-              <h3>Ask Your Twin + social sharing</h3>
-              <p>TwinChatView with pattern-matched query system. ShareablePersonalityCardView renders at 3× for Instagram Stories and X. Review prompts via SKStoreReviewController at milestone entries.</p>
-              <div class="rd-tags"><span>TwinChatView</span><span>ShareablePersonalityCardView</span><span>SKStoreReviewController</span><span>UIActivityViewController</span><span>ImageRenderer</span></div>
+              <h3>Talk to Friday + social sharing</h3>
+              <p>FridayChatView with pattern-matched query system. ShareablePersonalityCardView renders at 3× for Instagram Stories and X. Review prompts via SKStoreReviewController at milestone entries.</p>
+              <div class="rd-tags"><span>FridayChatView</span><span>ShareablePersonalityCardView</span><span>SKStoreReviewController</span><span>UIActivityViewController</span><span>ImageRenderer</span></div>
             </div>
           </div>
           <div class="rd-item">
@@ -1338,17 +1338,17 @@
           <div class="rd-item">
             <div class="rd-dot rd-next">○</div>
             <div class="rd-body">
-              <div class="rd-tag rd-next-txt">v2.0 · Conversational Twin (iOS 26)</div>
+              <div class="rd-tag rd-next-txt">v2.0 · Conversational Friday (iOS 26)</div>
               <h3>Foundation Models + tool calling + SpeechAnalyzer</h3>
-              <p>On-device 3B Foundation Model. Tool calling lets the Twin autonomously query Core Data. <code>@Generable</code> for structured output. <code>streamResponse()</code> for streaming. SpeechAnalyzer replaces SFSpeechRecognizer. Requires iPhone 15 Pro+. Zero network calls.</p>
+              <p>On-device 3B Foundation Model. Tool calling lets Friday autonomously query Core Data. <code>@Generable</code> for structured output. <code>streamResponse()</code> for streaming. SpeechAnalyzer replaces SFSpeechRecognizer. Requires iPhone 15 Pro+. Zero network calls.</p>
               <div class="rd-tags"><span>Foundation Models</span><span>LanguageModelSession</span><span>Tool Calling</span><span>@Generable</span><span>streamResponse()</span><span>SpeechAnalyzer</span></div>
             </div>
           </div>
           <div class="rd-item">
             <div class="rd-dot rd-next">○</div>
             <div class="rd-body">
-              <div class="rd-tag rd-next-txt">v2.5 · Train Your Twin</div>
-              <h3>LoRA fine-tuning — Twin learns to sound like you</h3>
+              <div class="rd-tag rd-next-txt">v2.5 · Train Friday</div>
+              <h3>LoRA fine-tuning — Friday learns your tone</h3>
               <p>Apple's Foundation Models Adapter Training toolkit for Low-Rank Adaptation. Export 100–1,000 entries as JSONL. Train a personal adapter on Mac. ~160 MB adapter delivered via Background Assets. Loaded via <code>SystemLanguageModel(adapter:)</code>. Training data never leaves your Mac.</p>
               <div class="rd-tags"><span>LoRA Adapters</span><span>Adapter Training</span><span>JSONL Export</span><span>Background Assets</span><span>~160 MB adapter</span></div>
             </div>
@@ -1357,9 +1357,9 @@
             <div class="rd-dot rd-next">○</div>
             <div class="rd-body">
               <div class="rd-tag rd-next-txt">v3.0 · The vision</div>
-              <h3>A true digital version of you</h3>
-              <p>The end state: an on-device AI that acts, speaks, and responds like you — built from years of entries. Full RAG. Personal LoRA adapter. Tool calling for autonomous data access. Context condensation over long conversations. Encrypted. On your device. Exportable only by you.</p>
-              <div class="rd-tags"><span>Full RAG</span><span>Personal LoRA</span><span>Vector Retrieval</span><span>Context Condensation</span><span>Secure Enclave</span><span>Digital Self-Preservation</span></div>
+              <h3>A private assistant with memory</h3>
+              <p>The end state: an on-device AI assistant grounded in years of entries. Full RAG. Personal LoRA adapter. Tool calling for autonomous data access. Context condensation over long conversations. Encrypted. On your device. Exportable only by you.</p>
+              <div class="rd-tags"><span>Full RAG</span><span>Personal LoRA</span><span>Vector Retrieval</span><span>Context Condensation</span><span>Secure Enclave</span><span>Private Assistant Archive</span></div>
             </div>
           </div>
         </div>
@@ -1388,7 +1388,7 @@
             <span class="cit-year">2025</span>
             <div class="cit-body">
               <div class="cit-title">MoPHES: On-Device LLMs for Mobile Psychological Health</div>
-              <div class="cit-desc">Using on-device LLMs for psychological health applications — parallel to the Twin's emotional modelling.</div>
+              <div class="cit-desc">Using on-device LLMs for psychological health applications — parallel to Friday's emotional modelling.</div>
             </div>
           </li>
           <li class="citation">
@@ -1410,7 +1410,7 @@
         </ol>
 
         <div class="callout">
-          <strong>What makes OffRecord AI Journal different:</strong> no existing paper covers OffRecord AI Journal's specific combination — a private Twin built from voice journal data using on-device NLP (NLTagger, NLEmbedding) plus Apple Foundation Models. The combination of voice-first input, personality modelling from NER/sentiment, and on-device LLM generation with tool calling for autonomous retrieval is a novel architecture. To our knowledge, OffRecord AI Journal is the first app to attempt this full pipeline privately on-device.
+          <strong>What makes OffRecord AI Journal different:</strong> no existing paper covers OffRecord AI Journal's specific combination — a private Friday built from voice journal data using on-device NLP (NLTagger, NLEmbedding) plus Apple Foundation Models. The combination of voice-first input, personality modelling from NER/sentiment, and on-device LLM generation with tool calling for autonomous retrieval is a novel architecture. To our knowledge, OffRecord AI Journal is the first app to attempt this full pipeline privately on-device.
         </div>
       </section>
 
@@ -1421,13 +1421,13 @@
           <h2 class="sec-title">Open <em>source.</em></h2>
           <span class="sec-tag">auditable</span>
         </div>
-        <p>OffRecord AI Journal is open source. The full codebase — the TwinEngine, all NLP processing, the Core Data stack, the SwiftUI interface — is on GitHub.</p>
+        <p>OffRecord AI Journal is open source. The full codebase — FridayAssistantEngine, all NLP processing, the Core Data stack, the SwiftUI interface — is on GitHub.</p>
         <p>Privacy-critical software should be auditable. If you claim data never leaves the device, people should be able to verify that claim by reading the code.</p>
 
         <div class="oss">
           <div class="oss-body">
             <h3>Build with us.</h3>
-            <p>OffRecord AI Journal is open source and contributions are welcome — improving the Twin engine, adding language support, building the Foundation Models integration.</p>
+            <p>OffRecord AI Journal is open source and contributions are welcome — improving Friday engine, adding language support, building the Foundation Models integration.</p>
           </div>
           <a href="https://github.com/intrepidkarthi/offrecord" class="btn-github" target="_blank" rel="noopener">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>

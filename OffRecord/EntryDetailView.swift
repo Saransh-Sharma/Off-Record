@@ -24,6 +24,7 @@ struct EntryDetailView: View {
     @State private var isEditing = false
     @State private var showAIInsights = false
     @State private var aiAnalysis: AIAnalysisResult?
+    private let deleteEmptyDraftOnDisappear: Bool
 
     // Photo state
     @State private var selectedPhotos: [PhotosPickerItem] = []
@@ -34,9 +35,15 @@ struct EntryDetailView: View {
 
     private var isIPad: Bool { horizontalSizeClass == .regular }
 
-    init(entry: DiaryEntry) {
+    init(
+        entry: DiaryEntry,
+        startEditing: Bool = false,
+        deleteEmptyDraftOnDisappear: Bool = false
+    ) {
         self.entry = entry
+        self.deleteEmptyDraftOnDisappear = deleteEmptyDraftOnDisappear
         _text = State(initialValue: entry.text ?? "")
+        _isEditing = State(initialValue: startEditing)
         let moodString = entry.value(forKey: "mood") as? String ?? ""
         _selectedMood = State(initialValue: Mood(rawValue: moodString) ?? .none)
     }
@@ -96,8 +103,13 @@ struct EntryDetailView: View {
                 }
             }
         }
-        .onDisappear(perform: saveIfNeeded)
-        .onAppear(perform: loadPhotos)
+        .onDisappear {
+            saveIfNeeded()
+            deleteEmptyDraftIfNeeded()
+        }
+        .onAppear {
+            loadPhotos()
+        }
         .onChange(of: selectedPhotos) { _, newItems in
             handlePhotoSelection(newItems)
         }
@@ -138,8 +150,7 @@ struct EntryDetailView: View {
                             .foregroundColor(.accentColor)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
-                            .background(Color.accentColor.opacity(0.1))
-                            .clipShape(Capsule())
+                            .offRecordGlassControl(tint: .accentColor, in: Capsule(), fallbackFill: Color.accentColor.opacity(0.1))
                     } else {
                         HStack(spacing: 6) {
                             Image(systemName: selectedMood.icon)
@@ -150,8 +161,7 @@ struct EntryDetailView: View {
                         .foregroundColor(selectedMood.color)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
-                        .background(selectedMood.color.opacity(0.15))
-                        .clipShape(Capsule())
+                        .offRecordGlassControl(tint: selectedMood.color, in: Capsule(), fallbackFill: selectedMood.color.opacity(0.15))
                     }
                 }
                 .buttonStyle(.plain)
@@ -185,8 +195,7 @@ struct EntryDetailView: View {
             }
         }
         .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .offRecordContentCard(cornerRadius: 12)
     }
 
     // MARK: - Reading View
@@ -220,6 +229,9 @@ struct EntryDetailView: View {
                             isEditing = true
                         }
                         .font(.subheadline.weight(.medium))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .offRecordGlassControl(tint: .accentColor, in: Capsule(), fallbackFill: Color.accentColor.opacity(0.1))
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 60)
@@ -234,8 +246,7 @@ struct EntryDetailView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .offRecordContentCard(cornerRadius: 12)
         .padding(.horizontal)
         .padding(.vertical, 8)
         .onTapGesture {
@@ -268,8 +279,10 @@ struct EntryDetailView: View {
                         .foregroundColor(.secondary)
                 }
                 .padding()
-                .background(Color(.secondarySystemGroupedBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .offRecordGlassControl(
+                    tint: showAIInsights ? .teal : nil,
+                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                )
             }
             .buttonStyle(.plain)
             
@@ -358,8 +371,7 @@ struct EntryDetailView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
                 .padding()
-                .background(Color(.secondarySystemGroupedBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .offRecordContentCard(cornerRadius: 12)
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
@@ -378,8 +390,7 @@ struct EntryDetailView: View {
                 .scrollContentBackground(.hidden)
                 .frame(minHeight: 300)
                 .padding()
-                .background(Color(.secondarySystemGroupedBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .offRecordContentCard(cornerRadius: 12)
                 .padding(.horizontal)
                 .padding(.vertical, 8)
 
@@ -400,7 +411,7 @@ struct EntryDetailView: View {
                 }
                 .padding(.horizontal)
                 .padding(.vertical, 8)
-                .background(Color(.secondarySystemGroupedBackground))
+                .offRecordGlassBar(cornerRadius: 0, fallbackFill: Color(.secondarySystemGroupedBackground))
             }
         }
         .onAppear {
@@ -455,8 +466,7 @@ struct EntryDetailView: View {
                 .foregroundColor(.accentColor)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
-                .background(Color.accentColor.opacity(0.1))
-                .clipShape(Capsule())
+                .offRecordGlassControl(tint: .accentColor, in: Capsule(), fallbackFill: Color.accentColor.opacity(0.1))
             }
 
             if !photoAttachments.isEmpty {
@@ -603,11 +613,11 @@ struct EntryDetailView: View {
             do {
                 try viewContext.save()
 
-                // Feed into Digital Twin — use reprocess if text was edited
+                // Feed into Friday — use reprocess if text was edited
                 if !trimmed.isEmpty {
                     if !oldText.isEmpty && trimmed != oldText {
                         // Text was edited — re-process to update entity names
-                        DigitalTwinEngine.shared.reprocessEditedEntry(
+                        FridayAssistantEngine.shared.reprocessEditedEntry(
                             oldText: oldText,
                             newText: trimmed,
                             mood: selectedMood.rawValue,
@@ -615,7 +625,7 @@ struct EntryDetailView: View {
                             duration: entry.duration
                         )
                     } else {
-                        DigitalTwinEngine.shared.processEntry(
+                        FridayAssistantEngine.shared.processEntry(
                             text: trimmed,
                             mood: selectedMood.rawValue,
                             date: entry.date ?? Date(),
@@ -627,6 +637,29 @@ struct EntryDetailView: View {
                 // ignore
             }
         }
+    }
+
+    private func deleteEmptyDraftIfNeeded() {
+        guard deleteEmptyDraftOnDisappear, entryHasNoContent else { return }
+
+        viewContext.delete(entry)
+        do {
+            try viewContext.save()
+        } catch {
+            viewContext.rollback()
+        }
+    }
+
+    private var entryHasNoContent: Bool {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let persistedText = entry.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let duration = entry.value(forKey: "duration") as? Double ?? 0
+        let photoCount = entry.photos?.count ?? 0
+        return trimmed.isEmpty
+            && persistedText.isEmpty
+            && !hasAudioReference
+            && duration <= 0
+            && photoCount == 0
     }
 
     private func saveMood() {

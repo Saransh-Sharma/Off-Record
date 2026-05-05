@@ -2,7 +2,7 @@
 //  ShareablePersonalityCardView.swift
 //  OffRecord
 //
-//  Social-media-optimized personality card for sharing your Digital Twin.
+//  Social-media-optimized personality card for sharing your Friday.
 //  Supports Instagram Stories (1080x1920) and Twitter/X (1200x675) formats.
 //  Follows the same pattern as ShareableInsightCardView + InsightCardRenderer.
 //
@@ -37,7 +37,7 @@ struct PersonalityCardRenderer {
 
     /// Renders the personality card as a UIImage for sharing
     @MainActor
-    static func renderCard(profile: TwinProfile, format: PersonalityCardFormat = .story) -> UIImage? {
+    static func renderCard(profile: FridayProfile, format: PersonalityCardFormat = .story) -> UIImage? {
         let cardView = ShareablePersonalityCardExport(profile: profile, format: format)
             .frame(width: format.layoutSize.width, height: format.layoutSize.height)
 
@@ -47,13 +47,13 @@ struct PersonalityCardRenderer {
     }
 
     /// Share text to include alongside the image
-    static let shareText = "My Digital Twin personality from OffRecord AI Journal \u{2014} free AI voice journal. offrecord.example.com"
+    static let shareText = "My Friday personality from OffRecord AI Journal \u{2014} free AI voice journal. offrecord.example.com"
 }
 
 // MARK: - Story Format Export (1080x1920 at 3x)
 
 private struct ShareablePersonalityCardExport: View {
-    let profile: TwinProfile
+    let profile: FridayProfile
     let format: PersonalityCardFormat
 
     var body: some View {
@@ -81,7 +81,7 @@ private struct ShareablePersonalityCardExport: View {
             .padding(.bottom, 20)
 
             // Header
-            Text("MY DIGITAL TWIN")
+            Text("FRIDAY NOTICED")
                 .font(.system(size: 13, weight: .heavy, design: .rounded))
                 .tracking(2.5)
                 .foregroundColor(.teal.opacity(0.9))
@@ -231,7 +231,7 @@ private struct ShareablePersonalityCardExport: View {
                         .foregroundColor(.white.opacity(0.4))
                 }
 
-                Text("MY DIGITAL TWIN")
+                Text("FRIDAY NOTICED")
                     .font(.system(size: 11, weight: .heavy, design: .rounded))
                     .tracking(2.0)
                     .foregroundColor(.teal.opacity(0.9))
@@ -318,7 +318,7 @@ private struct ShareablePersonalityCardExport: View {
             .cornerRadius(compact ? 6 : 10)
     }
 
-    private func storyTraitRow(_ trait: TwinProfile.Trait) -> some View {
+    private func storyTraitRow(_ trait: FridayProfile.Trait) -> some View {
         VStack(spacing: 3) {
             HStack {
                 Text(trait.label)
@@ -357,7 +357,7 @@ private struct ShareablePersonalityCardExport: View {
         }
     }
 
-    private func landscapeTraitRow(_ trait: TwinProfile.Trait) -> some View {
+    private func landscapeTraitRow(_ trait: FridayProfile.Trait) -> some View {
         VStack(spacing: 2) {
             HStack {
                 Text(trait.label)
@@ -392,7 +392,7 @@ private struct ShareablePersonalityCardExport: View {
 
 #Preview("Story Format") {
     ShareablePersonalityCardExport(
-        profile: TwinProfile(
+        profile: FridayProfile(
             traits: [
                 .init(label: "Expression", value: 0.7, lowLabel: "Reserved", highLabel: "Expressive", displayLabel: "Expressive"),
                 .init(label: "Directness", value: 0.8, lowLabel: "Nuanced", highLabel: "Direct", displayLabel: "Direct"),
@@ -421,7 +421,7 @@ private struct ShareablePersonalityCardExport: View {
 
 #Preview("Landscape Format") {
     ShareablePersonalityCardExport(
-        profile: TwinProfile(
+        profile: FridayProfile(
             traits: [
                 .init(label: "Expression", value: 0.7, lowLabel: "Reserved", highLabel: "Expressive", displayLabel: "Expressive"),
                 .init(label: "Directness", value: 0.8, lowLabel: "Nuanced", highLabel: "Direct", displayLabel: "Direct"),

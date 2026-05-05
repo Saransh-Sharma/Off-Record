@@ -7,11 +7,11 @@ OffRecord AI Journal - AI Voice Journal
 Private Journal & Mood Tracker
 
 ## Promotional Text (170 characters max)
-NEW: Ask your Digital Twin questions about your mood patterns and personality. Share personality cards on social media. All AI on your iPhone.
+NEW: Ask your Friday questions about your mood patterns and personality. Share personality cards on social media. All AI on your iPhone.
 
 ## Description (4000 characters max)
 
-OffRecord AI Journal is a private voice journal that turns your spoken thoughts into a searchable diary with AI mood tracking — all 100% on-device. Speak your thoughts, and OffRecord AI Journal transforms them into a living journal while building a digital twin that reflects your inner world.
+OffRecord AI Journal is a private voice journal that turns your spoken thoughts into a searchable diary with AI mood tracking — all 100% on-device. Speak your thoughts, and OffRecord AI Journal transforms them into a living journal while building a private AI assistant that reflects your inner world.
 
 YOUR VOICE, YOUR DIARY
 Record your thoughts naturally with voice. OffRecord AI Journal transcribes everything on-device using Apple's speech recognition - no servers, no uploads, no compromises. Your voice literally never leaves your phone.
@@ -24,7 +24,7 @@ This is what makes OffRecord AI Journal different. As you journal, OffRecord AI 
 - Writing Patterns: When you journal, how much you write, your streaks and consistency
 - Top Themes: The subjects that come up most in your entries, ranked by importance
 
-Your twin grows with every entry, giving you a clearer picture of your journaling journey over time.
+Your assistant grows with every entry, giving you a clearer picture of your journaling journey over time.
 
 SMART INSIGHTS
 OffRecord AI Journal uses Apple's on-device NLP to surface patterns you might not notice:
@@ -78,7 +78,7 @@ OffRecord AI Journal helps you build a journaling habit. Daily reminder notifica
 Your thoughts deserve a home. OffRecord AI Journal is that home.
 
 ## Keywords (100 characters max, comma-separated)
-diary,journal,voice,mood tracker,digital twin,private,speech to text,mindfulness,encrypted,anxiety
+diary,journal,voice,mood tracker,private AI assistant,private,speech to text,mindfulness,encrypted,anxiety
 
 ## Category
 Primary: Health & Fitness
@@ -99,16 +99,16 @@ https://offrecord.example.com/privacy
 ## What's New (Version 1.2)
 New in v1.2:
 
-- Ask Your Twin: Chat with your Digital Twin. Ask questions about your mood patterns, personality, and journaling habits — all answered from your on-device data.
-- Share Personality Cards: Beautiful shareable cards optimized for Instagram Stories and Twitter/X. Show the world your Digital Twin.
+- Talk to Friday: Chat with your Friday. Ask questions about your mood patterns, personality, and journaling habits — all answered from your on-device data.
+- Share Personality Cards: Beautiful shareable cards optimized for Instagram Stories and Twitter/X. Show the world your Friday.
 - Smarter Review Prompts: We'll gently ask for a rating at the right moment — never annoyingly.
 - All AI stays on-device. Always.
 
 ## What's New (Version 1.1)
 New in v1.1:
 
-- Twin Predictions: Your Digital Twin now predicts your likely mood, topics, and best journaling times based on your patterns
-- Shareable Personality Card: Share a beautiful snapshot of your Digital Twin profile
+- Friday Predictions: Friday now predicts your likely mood, topics, and best journaling times based on your patterns
+- Shareable Personality Card: Share a beautiful snapshot of your Friday profile
 - Weekly Insight Cards: Shareable visual summaries of your weekly emotional journey
 - Improved NLP: Better keyword extraction with refined text processing
 - 100% privacy-first: all new features run entirely on-device

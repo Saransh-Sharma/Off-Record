@@ -46,17 +46,17 @@ class ScreenshotTests: XCTestCase {
         add(attachment)
     }
 
-    // MARK: - Screenshot 2: Digital Twin Overview (with Predictions + Profile Card)
-    // Caption: "Your AI Digital Twin Learns Your Patterns"
-    func test02_DigitalTwin() throws {
-        let twinTab = app.tabBars.buttons["Twin"]
-        XCTAssertTrue(twinTab.waitForExistence(timeout: 5))
-        twinTab.tap()
+    // MARK: - Screenshot 2: Friday Overview (with Predictions + Profile Card)
+    // Caption: "Your AI Friday Learns Your Patterns"
+    func test02_Friday() throws {
+        let fridayTab = app.tabBars.buttons["Friday"]
+        XCTAssertTrue(fridayTab.waitForExistence(timeout: 5))
+        fridayTab.tap()
         sleep(1)
 
         let screenshot = app.screenshot()
         let attachment = XCTAttachment(screenshot: screenshot)
-        attachment.name = "02_DigitalTwin"
+        attachment.name = "02_Friday"
         attachment.lifetime = .keepAlways
         add(attachment)
     }
@@ -76,12 +76,12 @@ class ScreenshotTests: XCTestCase {
         add(attachment)
     }
 
-    // MARK: - Screenshot 4: Digital Twin Emotions
+    // MARK: - Screenshot 4: Friday Emotions
     // Caption: "9 Emotions Tracked. Zero Manual Input."
-    func test04_DigitalTwinEmotions() throws {
-        let twinTab = app.tabBars.buttons["Twin"]
-        XCTAssertTrue(twinTab.waitForExistence(timeout: 5))
-        twinTab.tap()
+    func test04_FridayEmotions() throws {
+        let fridayTab = app.tabBars.buttons["Friday"]
+        XCTAssertTrue(fridayTab.waitForExistence(timeout: 5))
+        fridayTab.tap()
         sleep(1)
 
         // Scroll to emotions section or tap emotions segment
@@ -93,7 +93,7 @@ class ScreenshotTests: XCTestCase {
 
         let screenshot = app.screenshot()
         let attachment = XCTAttachment(screenshot: screenshot)
-        attachment.name = "04_DigitalTwinEmotions"
+        attachment.name = "04_FridayEmotions"
         attachment.lifetime = .keepAlways
         add(attachment)
     }
@@ -113,12 +113,12 @@ class ScreenshotTests: XCTestCase {
         add(attachment)
     }
 
-    // MARK: - Screenshot 6: Digital Twin Knowledge Graph / My World
+    // MARK: - Screenshot 6: Friday Knowledge Graph / My World
     // Caption: "People, Places & Topics — Your Knowledge Graph"
-    func test06_DigitalTwinWorld() throws {
-        let twinTab = app.tabBars.buttons["Twin"]
-        XCTAssertTrue(twinTab.waitForExistence(timeout: 5))
-        twinTab.tap()
+    func test06_FridayWorld() throws {
+        let fridayTab = app.tabBars.buttons["Friday"]
+        XCTAssertTrue(fridayTab.waitForExistence(timeout: 5))
+        fridayTab.tap()
         sleep(1)
 
         let worldButton = app.buttons["My World"]
@@ -129,7 +129,7 @@ class ScreenshotTests: XCTestCase {
 
         let screenshot = app.screenshot()
         let attachment = XCTAttachment(screenshot: screenshot)
-        attachment.name = "06_DigitalTwinWorld"
+        attachment.name = "06_FridayWorld"
         attachment.lifetime = .keepAlways
         add(attachment)
     }

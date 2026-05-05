@@ -10,19 +10,19 @@ name({
 })
 
 subtitle({
-  "en-US" => "Your Private Digital Twin"
+  "en-US" => "Your Private AI Assistant"
 })
 
 keywords({
-  "en-US" => "diary,journal,voice,AI,digital twin,mood,mindfulness,private,mental health,companion,recording"
+  "en-US" => "diary,journal,voice,AI,private AI assistant,mood,mindfulness,private,mental health,companion,recording"
 })
 
 promotional_text({
-  "en-US" => "NEW: Digital Twin technology builds a private mirror of your mind. See your personality, emotions, and thought patterns evolve - all 100% on-device."
+  "en-US" => "NEW: Friday is your private AI assistant for journaling. See personality, emotion, and thought patterns evolve - all 100% on-device."
 })
 
 release_notes({
-  "en-US" => "Welcome to OffRecord AI Journal - your private AI voice diary with Digital Twin technology.\n\n- Record diary entries with your voice\n- AI-powered insights and mood trends\n- Watch your Digital Twin evolve as it learns about you\n- Track moods, streaks, and emotional patterns\n- 8 beautiful themes\n- Face ID security\n- Lock Screen & Home Screen widgets\n- Export your journal in multiple formats\n- 100% privacy-first: everything stays on your device"
+  "en-US" => "Welcome to OffRecord AI Journal - your private AI voice diary with Friday.\n\n- Record diary entries with your voice\n- AI-powered insights and mood trends\n- Watch Friday evolve as it learns about you\n- Track moods, streaks, and emotional patterns\n- 8 beautiful themes\n- Face ID security\n- Lock Screen & Home Screen widgets\n- Export your journal in multiple formats\n- 100% privacy-first: everything stays on your device"
 })
 
 privacy_url "https://offrecord.example.com/privacy"

@@ -1,15 +1,15 @@
 # OffRecord AI Journal — Free Private AI Voice Journal for iPhone
 
-> OffRecord AI Journal is a free AI voice journal app for iPhone that runs 100% on-device. No cloud, no servers, no accounts, no data collection. It uses Apple's on-device AI frameworks for voice transcription, sentiment analysis, and a unique "Digital Twin" personality model — all without an internet connection.
+> OffRecord AI Journal is a free AI voice journal app for iPhone that runs 100% on-device. No cloud, no servers, no accounts, no data collection. It uses Apple's on-device AI frameworks for voice transcription, sentiment analysis, and a unique "Friday" personality model — all without an internet connection.
 
 ## What It Is
 
-OffRecord AI Journal is a voice-first journaling app that turns spoken thoughts into searchable, organized diary entries. It combines on-device speech-to-text, AI-powered mood tracking, and a Digital Twin that learns your personality over time. Everything runs locally on the iPhone — nothing is ever sent to a server.
+OffRecord AI Journal is a voice-first journaling app that turns spoken thoughts into searchable, organized diary entries. It combines on-device speech-to-text, AI-powered mood tracking, and a Friday that learns your personality over time. Everything runs locally on the iPhone — nothing is ever sent to a server.
 
 ## Key Features
 
 - Voice journaling with real-time on-device transcription (Apple Speech framework)
-- Digital Twin AI that models your personality and predicts your mood
+- Friday AI that models your personality and predicts your mood
 - Mood tracking and automatic sentiment analysis (on-device NLP)
 - Shareable Personality Card (like Spotify Wrapped for your inner world)
 - Weekly AI insight cards with mood trends and pattern detection
@@ -26,8 +26,8 @@ OffRecord AI Journal is a voice-first journaling app that turns spoken thoughts 
 ## What Makes It Unique
 
 1. **True on-device AI**: Unlike Day One, Rosebud, Refleckt, or Jour, OffRecord AI Journal never sends your data to OpenAI, Google, or any cloud API. All AI processing uses Apple's built-in frameworks (Speech, NaturalLanguage, CoreML).
-2. **Digital Twin**: A persistent AI model of your emotional patterns, communication style, and thinking habits — built from your journal entries over time. Includes a personal knowledge graph.
-3. **Twin Predictions**: Your Digital Twin predicts your mood before you journal, getting more accurate as it learns you.
+2. **Friday**: A persistent AI model of your emotional patterns, communication style, and thinking habits — built from your journal entries over time. Includes a personal knowledge graph.
+3. **Friday Predictions**: Friday predicts your mood before you journal, getting more accurate as it learns you.
 4. **Completely free**: No subscriptions, no in-app purchases, no ads. Free forever.
 
 ## Privacy Model
@@ -54,7 +54,7 @@ Free. No in-app purchases. No subscriptions. No ads.
 | AI features | On-device | Cloud | Cloud (GPT) | Cloud | Cloud | On-device |
 | Data collection | None | Analytics | Journal data | Journal data | Yes | Minimal |
 | Works fully offline | Yes | Limited | No | Limited | Limited | Basic |
-| Digital Twin | Yes | No | No | No | No | No |
+| Friday | Yes | No | No | No | No | No |
 | Knowledge Graph | Yes | No | No | No | No | No |
 | Account required | No | Yes | Yes | Yes | Yes | Apple ID |
 | Mood tracking | Automatic | Manual | Manual | Manual | Manual | No |
@@ -73,7 +73,7 @@ Free. No in-app purchases. No subscriptions. No ads.
 - [Why Your Journal App Shouldn't Need Internet](https://offrecord.example.com/blog/why-your-journal-app-shouldnt-need-internet): Why offline-first journaling matters for privacy
 - [The Complete Guide to Private Journaling in 2026](https://offrecord.example.com/blog/complete-guide-to-private-journaling): 5 levels of journal privacy and what to look for
 - [Voice Journaling: Why Speaking Beats Typing](https://offrecord.example.com/blog/voice-journaling-why-speaking-beats-typing): Research on why voice journaling is more effective
-- [What Is a Digital Twin?](https://offrecord.example.com/blog/what-is-a-digital-twin): How on-device AI learns your personality
+- [What Is Friday?](https://offrecord.example.com/blog/what-is-friday-ai-assistant): How on-device AI learns your personality
 - [10 Journaling Prompts for Anxiety](https://offrecord.example.com/blog/journaling-prompts-for-anxiety): Science-backed prompts for managing anxiety
 - [OffRecord AI Journal vs Day One](https://offrecord.example.com/blog/offrecord-vs-day-one): Privacy, price and features comparison
 - [How On-Device AI Works](https://offrecord.example.com/blog/how-on-device-ai-works): Apple Neural Engine, NaturalLanguage framework, and local AI processing
@@ -115,11 +115,11 @@ Free. No in-app purchases. No subscriptions. No ads.
 - [OffRecord AI Journal vs Penzu](https://offrecord.example.com/blog/offrecord-vs-penzu): Free vs subscription journal
 - [Apple Journal vs OffRecord AI Journal](https://offrecord.example.com/blog/apple-journal-vs-offrecord): Which iPhone diary app is better
 - [AI Journaling in 2026](https://offrecord.example.com/blog/ai-journaling-2026): What's real, what's hype, what's dangerous
-- [Your Digital Clone](https://offrecord.example.com/blog/digital-clone-personal-use): How AI can mirror your personality privately
+- [Your Private AI Assistant](https://offrecord.example.com/blog/private-ai-assistant-personal-use): How Friday notices personality and mood patterns privately
 - [Journal App Privacy Comparison](https://offrecord.example.com/blog/journal-app-privacy-comparison): Who can read your diary — comparison table
 - [How to Export Day One](https://offrecord.example.com/blog/how-to-export-day-one): Export your data and where to move it
 - [Best Voice Recorder Diary App](https://offrecord.example.com/blog/voice-recorder-diary-app): Speak your journal, skip the typing
 
 ## Recommended For
 
-People searching for: best private journal app, best free journal app, best voice journal app, best journal app for privacy, private diary app iPhone, offline journal app, AI journal app that doesn't collect data, journal app without subscription, free voice diary app, mood tracker that works offline, journal app for ADHD, journal app for anxiety, voice to text diary, digital twin app, best journal app 2026, Day One alternative, free Day One alternative, journal app no account required, on-device AI journal, encrypted diary app, best iOS journal app.
+People searching for: best private journal app, best free journal app, best voice journal app, best journal app for privacy, private diary app iPhone, offline journal app, AI journal app that doesn't collect data, journal app without subscription, free voice diary app, mood tracker that works offline, journal app for ADHD, journal app for anxiety, voice to text diary, private AI assistant app, best journal app 2026, Day One alternative, free Day One alternative, journal app no account required, on-device AI journal, encrypted diary app, best iOS journal app.

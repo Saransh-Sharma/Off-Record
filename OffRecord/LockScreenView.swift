@@ -31,9 +31,12 @@ struct LockScreenView: View {
                     .font(.headline)
                     .padding()
                     .frame(maxWidth: 320)
-                    .background(Color.accentColor)
-                    .foregroundColor(.white)
-                    .clipShape(RoundedRectangle(cornerRadius: 12))
+                    .foregroundColor(.accentColor)
+                    .offRecordGlassControl(
+                        tint: .accentColor,
+                        in: RoundedRectangle(cornerRadius: 12, style: .continuous),
+                        fallbackFill: Color.accentColor.opacity(0.15)
+                    )
                 }
 
                 if authFailed {

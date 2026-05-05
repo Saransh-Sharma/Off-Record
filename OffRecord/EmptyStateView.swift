@@ -54,11 +54,10 @@ struct EmptyStateView: View {
                 Button(action: action) {
                     Text(actionTitle)
                         .font(.subheadline.weight(.semibold))
-                        .foregroundColor(.white)
+                        .foregroundColor(.accentColor)
                         .padding(.horizontal, 24)
                         .padding(.vertical, 12)
-                        .background(Color.accentColor)
-                        .clipShape(Capsule())
+                        .offRecordGlassControl(tint: .accentColor, in: Capsule(), fallbackFill: Color.accentColor.opacity(0.15))
                 }
             }
         }
@@ -105,13 +104,17 @@ extension EmptyStateView {
 // MARK: - Welcome Card (for Today view)
 
 struct WelcomeCard: View {
+    @AppStorage("authorName") private var authorName: String = ""
+
     var body: some View {
         VStack(spacing: 20) {
             // Privacy badge
             PrivacyBadge()
 
+            FridayMascotView(pose: .wave, size: 82)
+
             VStack(spacing: 12) {
-                Text("Welcome to Your Private Diary")
+                Text(Personalization.appendFirstName(to: "Welcome to Your Private Diary", name: authorName))
                     .font(.title2.weight(.bold))
                     .multilineTextAlignment(.center)
 
@@ -126,13 +129,13 @@ struct WelcomeCard: View {
             VStack(alignment: .leading, spacing: 16) {
                 FeatureRow(icon: "mic.fill", color: .blue, text: "Tap to record your voice")
                 FeatureRow(icon: "text.quote", color: .purple, text: "Automatically transcribed to text")
+                FeatureRow(icon: "sparkles", color: .orange, text: "Friday notices patterns privately")
                 FeatureRow(icon: "lock.fill", color: .green, text: "100% private, stored locally")
             }
             .padding(.top, 8)
         }
         .padding(24)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .offRecordContentCard(cornerRadius: 20)
     }
 }
 

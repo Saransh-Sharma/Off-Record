@@ -32,13 +32,13 @@ struct TimelineView: View {
     @State private var startDate: Date? = nil
     @State private var endDate: Date? = nil
     @State private var isListening: Bool = false
-    @State private var searchSuggestions: [DigitalTwinEngine.SearchSuggestion] = []
+    @State private var searchSuggestions: [FridayAssistantEngine.SearchSuggestion] = []
 
     #if os(iOS)
     @StateObject private var voiceSearch = VoiceSearchManager()
     #endif
 
-    private var twin: DigitalTwinEngine { DigitalTwinEngine.shared }
+    private var assistant: FridayAssistantEngine { FridayAssistantEngine.shared }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -144,7 +144,7 @@ struct TimelineView: View {
         .onChange(of: searchText) { _, newValue in
             let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
             if trimmed.count >= 2 {
-                searchSuggestions = twin.searchSuggestions(for: trimmed)
+                searchSuggestions = assistant.searchSuggestions(for: trimmed)
             } else {
                 searchSuggestions = []
             }
@@ -172,8 +172,8 @@ struct TimelineView: View {
     // MARK: - Quick Filter Chips
 
     private var quickFilterChips: some View {
-        let topPeople = twin.knowledgeGraph.topNodes(ofType: .person, limit: 3)
-        let topTopics = twin.knowledgeGraph.topNodes(ofType: .topic, limit: 3)
+        let topPeople = assistant.knowledgeGraph.topNodes(ofType: .person, limit: 3)
+        let topTopics = assistant.knowledgeGraph.topNodes(ofType: .topic, limit: 3)
         let chips = topPeople + topTopics
 
         return Group {
@@ -193,9 +193,8 @@ struct TimelineView: View {
                                 }
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 6)
-                                .background(Color.accentColor.opacity(0.1))
                                 .foregroundColor(.accentColor)
-                                .clipShape(Capsule())
+                                .offRecordGlassControl(tint: .accentColor, in: Capsule(), fallbackFill: Color.accentColor.opacity(0.1))
                             }
                             .buttonStyle(.plain)
                         }
@@ -236,9 +235,12 @@ struct TimelineView: View {
                             .font(.caption)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
-                            .background(selectedMoodFilter == mood ? mood.color.opacity(0.2) : Color(.tertiarySystemFill))
                             .foregroundColor(selectedMoodFilter == mood ? mood.color : .secondary)
-                            .clipShape(Capsule())
+                            .offRecordGlassControl(
+                                tint: selectedMoodFilter == mood ? mood.color : nil,
+                                in: Capsule(),
+                                fallbackFill: selectedMoodFilter == mood ? mood.color.opacity(0.2) : Color(.tertiarySystemFill)
+                            )
                         }
                         .buttonStyle(.plain)
                     }
@@ -268,7 +270,7 @@ struct TimelineView: View {
             .padding(.horizontal)
         }
         .padding(.vertical, 12)
-        .background(Color(.secondarySystemGroupedBackground))
+        .offRecordGlassBar(cornerRadius: 0, fallbackFill: Color(.secondarySystemGroupedBackground))
     }
     
     // MARK: - Active Filters Bar
@@ -312,7 +314,7 @@ struct TimelineView: View {
             .padding(.horizontal)
             .padding(.vertical, 8)
         }
-        .background(Color(.systemGroupedBackground))
+        .offRecordGlassBar(cornerRadius: 0)
     }
     
     // MARK: - Empty State
@@ -591,9 +593,8 @@ struct FilterChip: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .background(color.opacity(0.15))
         .foregroundColor(color)
-        .clipShape(Capsule())
+        .offRecordGlassControl(tint: color, in: Capsule(), fallbackFill: color.opacity(0.15))
     }
 }
 
@@ -624,9 +625,12 @@ struct DateRangeButton: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(date != nil ? Color.accentColor.opacity(0.1) : Color(.tertiarySystemFill))
             .foregroundColor(date != nil ? .accentColor : .secondary)
-            .clipShape(Capsule())
+            .offRecordGlassControl(
+                tint: date != nil ? .accentColor : nil,
+                in: Capsule(),
+                fallbackFill: date != nil ? Color.accentColor.opacity(0.1) : Color(.tertiarySystemFill)
+            )
         }
         .buttonStyle(.plain)
         .sheet(isPresented: $showPicker) {
