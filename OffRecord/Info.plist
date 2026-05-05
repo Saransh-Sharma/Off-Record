@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleDisplayName</key>
+	<string>OffRecord</string>
+	<key>ITSAppUsesNonExemptEncryption</key>
+	<false/>
+	<key>NSFaceIDUsageDescription</key>
+	<string>OffRecord AI Journal uses Face ID to lock and unlock access to your private journal entries.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>OffRecord AI Journal needs microphone access to record your voice journal entries.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>OffRecord AI Journal lets you attach photos to your journal entries. Photos are stored on your device only.</string>
+	<key>NSSpeechRecognitionUsageDescription</key>
+	<string>OffRecord AI Journal uses speech recognition to transcribe your voice recordings into text.</string>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>remote-notification</string>
+	</array>
+</dict>
+</plist>
