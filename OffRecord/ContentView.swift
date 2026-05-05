@@ -44,10 +44,10 @@ struct ContentView: View {
             }
 
             NavigationStack {
-                DigitalTwinView()
+                FridayView()
             }
             .tabItem {
-                Label("Twin", systemImage: "person.crop.circle.fill")
+                Label("Friday", systemImage: "sparkles")
             }
 
             NavigationStack {
