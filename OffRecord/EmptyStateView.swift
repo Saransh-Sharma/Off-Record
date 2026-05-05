@@ -112,6 +112,8 @@ struct WelcomeCard: View {
             // Privacy badge
             PrivacyBadge()
 
+            FridayMascotView(pose: .wave, size: 82)
+
             VStack(spacing: 12) {
                 Text(Personalization.appendFirstName(to: "Welcome to Your Private Diary", name: authorName))
                     .font(.title2.weight(.bold))
@@ -128,6 +130,7 @@ struct WelcomeCard: View {
             VStack(alignment: .leading, spacing: 16) {
                 FeatureRow(icon: "mic.fill", color: .blue, text: "Tap to record your voice")
                 FeatureRow(icon: "text.quote", color: .purple, text: "Automatically transcribed to text")
+                FeatureRow(icon: "sparkles", color: .orange, text: "Friday notices patterns privately")
                 FeatureRow(icon: "lock.fill", color: .green, text: "100% private, stored locally")
             }
             .padding(.top, 8)

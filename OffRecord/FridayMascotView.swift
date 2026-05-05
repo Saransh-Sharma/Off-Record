@@ -16,45 +16,18 @@ enum FridayMascotPose {
     case walking
     case confiding
 
-    var frames: [FridaySpriteFrame] {
+    fileprivate var animation: FridayMascotAnimation {
         switch self {
         case .idle:
-            return [
-                .init(column: 0, row: 0),
-                .init(column: 0, row: 0),
-                .init(column: 1, row: 0),
-                .init(column: 0, row: 0)
-            ]
+            return .idle
         case .wave:
-            return [
-                .init(column: 0, row: 3),
-                .init(column: 1, row: 3),
-                .init(column: 2, row: 3),
-                .init(column: 1, row: 3)
-            ]
-        case .listening:
-            return [
-                .init(column: 0, row: 0),
-                .init(column: 1, row: 0)
-            ]
-        case .thinking:
-            return [
-                .init(column: 4, row: 5),
-                .init(column: 5, row: 5)
-            ]
+            return .waving
+        case .listening, .thinking:
+            return .waiting
         case .walking:
-            return [
-                .init(column: 0, row: 4),
-                .init(column: 1, row: 4),
-                .init(column: 2, row: 4),
-                .init(column: 3, row: 4)
-            ]
+            return .running
         case .confiding:
-            return [
-                .init(column: 0, row: 5),
-                .init(column: 1, row: 5),
-                .init(column: 2, row: 5)
-            ]
+            return .review
         }
     }
 
@@ -70,44 +43,79 @@ enum FridayMascotPose {
     }
 }
 
-struct FridaySpriteFrame: Hashable {
-    static let width = 256
-    static let height = 208
+fileprivate enum FridayMascotAnimation: CaseIterable, Hashable {
+    case idle
+    case runRight
+    case runLeft
+    case waving
+    case jumping
+    case failed
+    case waiting
+    case running
+    case review
 
-    let column: Int
-    let row: Int
+    static let frameDuration: TimeInterval = 0.13
+
+    var rowIndex: Int {
+        switch self {
+        case .idle: return 0
+        case .runRight: return 1
+        case .runLeft: return 2
+        case .waving: return 3
+        case .jumping: return 4
+        case .failed: return 5
+        case .waiting: return 6
+        case .running: return 7
+        case .review: return 8
+        }
+    }
+
+    var frameCount: Int {
+        switch self {
+        case .idle: return 6
+        case .runRight, .runLeft: return 8
+        case .waving: return 4
+        case .jumping: return 5
+        case .failed: return 8
+        case .waiting, .running, .review: return 6
+        }
+    }
+}
+
+private struct FridaySpriteFrame: Hashable {
+    let animation: FridayMascotAnimation
+    let index: Int
 }
 
 struct FridayMascotView: View {
     let pose: FridayMascotPose
     var size: CGFloat = 96
-    var animationSpeed: TimeInterval = 0.55
+    var animationSpeed: TimeInterval = FridayMascotAnimation.frameDuration
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var frameIndex = 0
-
-    private var frames: [FridaySpriteFrame] { pose.frames }
-    private var currentFrame: FridaySpriteFrame {
-        reduceMotion ? frames[0] : frames[frameIndex % frames.count]
-    }
 
     var body: some View {
-        FridaySpriteImage(frame: currentFrame)
-            .interpolation(.none)
-            .scaledToFit()
-            .frame(width: size, height: size)
-            .accessibilityLabel(pose.accessibilityLabel)
-            .onAppear {
-                guard !reduceMotion, frames.count > 1 else { return }
-                frameIndex = 0
-            }
-            .task(id: pose) {
-                guard !reduceMotion, frames.count > 1 else { return }
-                while !Task.isCancelled {
-                    try? await Task.sleep(nanoseconds: UInt64(animationSpeed * 1_000_000_000))
-                    frameIndex = (frameIndex + 1) % frames.count
+        Group {
+            if reduceMotion || pose.animation.frameCount <= 1 {
+                FridaySpriteImage(frame: FridaySpriteFrame(animation: pose.animation, index: 0))
+            } else {
+                SwiftUI.TimelineView(.periodic(from: .now, by: max(0.01, animationSpeed))) { timeline in
+                    FridaySpriteImage(frame: FridaySpriteFrame(
+                        animation: pose.animation,
+                        index: frameIndex(for: timeline.date, animation: pose.animation)
+                    ))
                 }
             }
+        }
+        .scaledToFit()
+        .frame(width: size, height: size)
+        .accessibilityLabel(pose.accessibilityLabel)
+    }
+
+    private func frameIndex(for date: Date, animation: FridayMascotAnimation) -> Int {
+        let duration = max(0.01, animationSpeed)
+        let tick = Int(date.timeIntervalSinceReferenceDate / duration)
+        return tick % animation.frameCount
     }
 }
 
@@ -118,6 +126,8 @@ private struct FridaySpriteImage: View {
         if let image = FridaySpriteCache.image(for: frame) {
             Image(uiImage: image)
                 .resizable()
+                .interpolation(.none)
+                .antialiased(false)
         } else {
             Image(systemName: "sparkles")
                 .resizable()
@@ -127,26 +137,70 @@ private struct FridaySpriteImage: View {
     }
 }
 
-private enum FridaySpriteCache {
-    private static var cache: [FridaySpriteFrame: UIImage] = [:]
+private final class FridaySpriteCache {
+    static let shared = FridaySpriteCache()
+
+    private static let cellWidth = 192
+    private static let cellHeight = 208
+
+    private var sheetCache: CGImage?
+    private var frameCache: [FridaySpriteFrame: UIImage] = [:]
+    private let lock = NSLock()
 
     static func image(for frame: FridaySpriteFrame) -> UIImage? {
-        if let cached = cache[frame] { return cached }
-        guard let source = UIImage(named: "FridaySpritesheet"),
-              let cgImage = source.cgImage else {
-            return nil
+        shared.image(for: frame)
+    }
+
+    private func image(for frame: FridaySpriteFrame) -> UIImage? {
+        lock.lock()
+        if let cached = frameCache[frame] {
+            lock.unlock()
+            return cached
         }
+        lock.unlock()
+
+        guard let sheet = sheet() else { return nil }
+
+        let clampedIndex = max(0, min(frame.index, frame.animation.frameCount - 1))
 
         let cropRect = CGRect(
-            x: frame.column * FridaySpriteFrame.width,
-            y: frame.row * FridaySpriteFrame.height,
-            width: FridaySpriteFrame.width,
-            height: FridaySpriteFrame.height
+            x: clampedIndex * Self.cellWidth,
+            y: frame.animation.rowIndex * Self.cellHeight,
+            width: Self.cellWidth,
+            height: Self.cellHeight
         )
-        guard let cropped = cgImage.cropping(to: cropRect) else { return nil }
-        let image = UIImage(cgImage: cropped, scale: source.scale, orientation: source.imageOrientation)
-        cache[frame] = image
+        guard let cropped = sheet.cropping(to: cropRect) else { return nil }
+        let image = UIImage(cgImage: cropped, scale: UIScreen.main.scale, orientation: .up)
+
+        lock.lock()
+        frameCache[frame] = image
+        lock.unlock()
         return image
+    }
+
+    private func sheet() -> CGImage? {
+        lock.lock()
+        if let sheetCache {
+            lock.unlock()
+            return sheetCache
+        }
+        lock.unlock()
+
+        let decodedSheet: CGImage?
+        if let url = Bundle.main.url(forResource: "spritesheet", withExtension: "webp", subdirectory: "Friday AI"),
+           let data = try? Data(contentsOf: url),
+           let image = UIImage(data: data)?.cgImage {
+            decodedSheet = image
+        } else {
+            decodedSheet = UIImage(named: "FridaySpritesheet")?.cgImage
+        }
+
+        guard let decodedSheet else { return nil }
+
+        lock.lock()
+        sheetCache = decodedSheet
+        lock.unlock()
+        return decodedSheet
     }
 }
 

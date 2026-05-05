@@ -40,7 +40,6 @@ struct FridayProfileGenerator {
 
     static func generate() -> FridayProfile {
         let assistant = FridayAssistantEngine.shared
-        let profile = LocalAIEngine.shared.userProfile
 
         // Traits
         var traits: [FridayProfile.Trait] = []
@@ -183,8 +182,7 @@ struct FridayProfileCardSection: View {
             if let profile = profile, profile.totalEntries >= 3 {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
-                        Image(systemName: "person.text.rectangle")
-                            .foregroundColor(.teal)
+                        FridayMascotView(pose: .idle, size: 34)
                         Text("Your Personality Card")
                             .font(.headline)
                         Spacer()

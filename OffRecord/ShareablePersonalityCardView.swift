@@ -81,7 +81,7 @@ private struct ShareablePersonalityCardExport: View {
             .padding(.bottom, 20)
 
             // Header
-            Text("MY DIGITAL TWIN")
+            Text("FRIDAY NOTICED")
                 .font(.system(size: 13, weight: .heavy, design: .rounded))
                 .tracking(2.5)
                 .foregroundColor(.teal.opacity(0.9))
@@ -231,7 +231,7 @@ private struct ShareablePersonalityCardExport: View {
                         .foregroundColor(.white.opacity(0.4))
                 }
 
-                Text("MY DIGITAL TWIN")
+                Text("FRIDAY NOTICED")
                     .font(.system(size: 11, weight: .heavy, design: .rounded))
                     .tracking(2.0)
                     .foregroundColor(.teal.opacity(0.9))

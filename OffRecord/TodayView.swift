@@ -711,7 +711,7 @@ struct TodayView: View {
                         HapticManager.shared.entrySaved()
                         ReviewManager.shared.recordEntry()
 
-                        // Feed into Digital Twin for learning
+                        // Feed into Friday for learning
                         FridayAssistantEngine.shared.processEntry(
                             text: textSegment,
                             mood: entry.mood,

@@ -236,7 +236,7 @@ struct FridayView: View {
 
     private var overviewSection: some View {
         VStack(spacing: 16) {
-            // Friday Predictions — "Friday Thinks..."
+            // Friday Predictions — "Friday noticed..."
             FridayPredictionsSection(entries: Array(entries))
 
             // Shareable Personality Card

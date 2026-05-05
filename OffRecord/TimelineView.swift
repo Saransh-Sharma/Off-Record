@@ -38,7 +38,7 @@ struct TimelineView: View {
     @StateObject private var voiceSearch = VoiceSearchManager()
     #endif
 
-    private var twin: FridayAssistantEngine { FridayAssistantEngine.shared }
+    private var assistant: FridayAssistantEngine { FridayAssistantEngine.shared }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -144,7 +144,7 @@ struct TimelineView: View {
         .onChange(of: searchText) { _, newValue in
             let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
             if trimmed.count >= 2 {
-                searchSuggestions = twin.searchSuggestions(for: trimmed)
+                searchSuggestions = assistant.searchSuggestions(for: trimmed)
             } else {
                 searchSuggestions = []
             }
@@ -172,8 +172,8 @@ struct TimelineView: View {
     // MARK: - Quick Filter Chips
 
     private var quickFilterChips: some View {
-        let topPeople = twin.knowledgeGraph.topNodes(ofType: .person, limit: 3)
-        let topTopics = twin.knowledgeGraph.topNodes(ofType: .topic, limit: 3)
+        let topPeople = assistant.knowledgeGraph.topNodes(ofType: .person, limit: 3)
+        let topTopics = assistant.knowledgeGraph.topNodes(ofType: .topic, limit: 3)
         let chips = topPeople + topTopics
 
         return Group {

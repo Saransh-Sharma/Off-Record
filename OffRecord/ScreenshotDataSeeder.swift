@@ -25,7 +25,7 @@ struct ScreenshotDataSeeder {
         try? context.execute(deleteRequest)
         context.reset()
 
-        // Delete existing AI state so Digital Twin rebuilds fresh
+        // Delete existing AI state so Friday rebuilds fresh
         let aiRequest: NSFetchRequest<NSFetchRequestResult> = NSFetchRequest(entityName: "AIState")
         let aiDelete = NSBatchDeleteRequest(fetchRequest: aiRequest)
         try? context.execute(aiDelete)
@@ -118,7 +118,7 @@ struct ScreenshotDataSeeder {
                 "happy", 30, true, 140
             ),
 
-            // Additional entries to populate Twin features (knowledge graph, predictions, personality card)
+            // Additional entries to populate Friday features (knowledge graph, predictions, personality card)
             (
                 "Lunch with Sarah again today. She's been going through a rough patch at her new job and I'm glad she feels comfortable opening up to me. We talked about boundaries and how hard it is to say no. I gave her the same advice James once gave me — protect your energy first.",
                 "calm", 7, false, 85
@@ -205,7 +205,7 @@ struct ScreenshotDataSeeder {
             #endif
         }
 
-        // Process entries through FridayAssistantEngine so Twin tab populates
+        // Process entries through FridayAssistantEngine so Friday tab populates
         for entry in entries {
             let entryDate = calendar.date(byAdding: .day, value: -entry.daysAgo, to: now)!
             FridayAssistantEngine.shared.processEntry(

@@ -615,7 +615,7 @@ struct EntryDetailView: View {
             do {
                 try viewContext.save()
 
-                // Feed into Digital Twin — use reprocess if text was edited
+                // Feed into Friday — use reprocess if text was edited
                 if !trimmed.isEmpty {
                     if !oldText.isEmpty && trimmed != oldText {
                         // Text was edited — re-process to update entity names

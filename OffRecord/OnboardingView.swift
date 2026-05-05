@@ -2,232 +2,1729 @@
 //  OnboardingView.swift
 //  OffRecord
 //
-//  Privacy-focused onboarding experience
+//  Questionnaire-style first launch experience.
 //
 
 import SwiftUI
+import CoreData
+import AVFoundation
 
 struct OnboardingView: View {
     @Binding var hasCompletedOnboarding: Bool
+
+    @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    @ObservedObject private var lockManager = AppLockManager.shared
+    @ObservedObject private var reminderManager = ReminderManager.shared
+    @ObservedObject private var goalManager = GoalManager.shared
+    @StateObject private var recorder = AudioRecorder()
+
     @AppStorage("authorName") private var authorName: String = ""
-    @State private var currentPage = 0
+
+    @State private var store = OnboardingStore()
+    @State private var response = OnboardingStore.load()
+    @State private var step: OnboardingStep = .welcome
     @State private var nameDraft = ""
+    @State private var firstEntryDraft = ""
+    @State private var selectedMood: Mood = .calm
+    @State private var isRecording = false
+    @State private var isTranscribing = false
+    @State private var entryCreated = false
+    @State private var onboardingError: String?
+    @State private var showNotificationDeniedAlert = false
 
     private var isIPad: Bool { horizontalSizeClass == .regular }
 
-    private let pages: [OnboardingPage] = [
-        OnboardingPage(
-            icon: "brain.head.profile",
-            iconColor: .teal,
-            title: "Meet OffRecord AI Journal",
-            subtitle: "The only AI that truly knows you",
-            description: "Not just another diary. OffRecord AI Journal remembers your life — your dreams, struggles, the people you love, and what makes you, you.",
-            background: Color(red: 5/255, green: 8/255, blue: 22/255),
-            textColor: .white
-        ),
-        OnboardingPage(
-            icon: "person.crop.circle.fill",
-            iconColor: .pink,
-            title: "Meet Your Digital Twin",
-            subtitle: "A mirror of your inner world",
-            description: "Your Digital Twin learns your personality, emotional patterns, and the people and topics in your life. Watch it grow as you journal.",
-            background: Color(red: 76/255, green: 36/255, blue: 90/255),
-            textColor: .white
-        ),
-        OnboardingPage(
-            icon: "chart.bar.fill",
-            iconColor: .orange,
-            title: "Insights That Matter",
-            subtitle: "Understand yourself better",
-            description: "Track mood trends, writing streaks, and emotional patterns. See your personal knowledge graph grow with the people, places, and topics in your life.",
-            background: Color(red: 92/255, green: 51/255, blue: 63/255),
-            textColor: .white
-        ),
-        OnboardingPage(
-            icon: "person.text.rectangle",
-            iconColor: .cyan,
-            title: "What should we call you?",
-            subtitle: "Make OffRecord feel like yours",
-            description: "Your name stays on your device and can be changed anytime in Settings.",
-            background: Color(red: 30/255, green: 63/255, blue: 82/255),
-            textColor: .white,
-            kind: .nameCapture
-        ),
-        OnboardingPage(
-            icon: "lock.shield",
-            iconColor: .mint,
-            title: "100% Private. Always.",
-            subtitle: "Your innermost thoughts stay yours",
-            description: "All AI runs on YOUR device. No third-party servers. No accounts. Optionally sync via your personal iCloud. Your mind belongs only to you.",
-            background: Color(red: 20/255, green: 40/255, blue: 60/255),
-            textColor: .white
-        )
-    ]
-
     var body: some View {
         ZStack {
-            ConcentricPageTransitionView(
-                pages: pages.map { page in
-                    (OnboardingPageView(page: page, nameDraft: $nameDraft), page.background)
-                },
-                currentIndex: $currentPage,
-                duration: reduceMotion ? 0 : 0.8,
-                ctaTitle: currentPage == pages.count - 1 ? "Get Started" : "Continue",
-                ctaIcon: currentPage == pages.count - 1 ? "arrow.right" : nil,
-                onPrimaryAction: primaryAction
+            LinearGradient(
+                colors: [
+                    Color(red: 0.08, green: 0.11, blue: 0.16),
+                    Color(red: 0.07, green: 0.17, blue: 0.19),
+                    Color(red: 0.04, green: 0.05, blue: 0.08)
+                ],
+                startPoint: .topLeading,
+                endPoint: .bottomTrailing
             )
+            .ignoresSafeArea()
 
             VStack(spacing: 0) {
-                HStack {
-                    Spacer()
-                    if currentPage < pages.count - 1 {
-                        Button("Skip") {
-                            currentPage = pages.count - 1
-                        }
-                        .font(.subheadline.weight(.medium))
-                        .foregroundColor(pages[currentPage].textColor.opacity(0.65))
-                        .padding(.horizontal, isIPad ? 44 : 24)
-                        .padding(.top, 18)
-                        .padding(.bottom, 8)
-                    }
-                }
-                .frame(height: 64)
+                OnboardingProgressHeader(
+                    step: step,
+                    canGoBack: step.canGoBack,
+                    onBack: goBack
+                )
+                .padding(.horizontal, isIPad ? 44 : 20)
+                .padding(.top, 14)
 
+                ScrollView {
+                    VStack(spacing: isIPad ? 28 : 22) {
+                        currentStepContent
+                    }
+                    .frame(maxWidth: isIPad ? 620 : .infinity)
+                    .padding(.horizontal, isIPad ? 0 : 20)
+                    .padding(.top, 20)
+                    .padding(.bottom, 120)
+                    .frame(maxWidth: .infinity)
+                }
+            }
+
+            VStack {
                 Spacer()
-
-                HStack(spacing: 10) {
-                    ForEach(0..<pages.count, id: \.self) { index in
-                        Circle()
-                            .fill(index == currentPage ? pages[currentPage].textColor : pages[currentPage].textColor.opacity(0.3))
-                            .frame(width: 7, height: 7)
-                            .scaleEffect(index == currentPage ? 1.2 : 1)
-                            .animation(.spring(response: 0.3), value: currentPage)
-                    }
-                }
+                OnboardingBottomBar(
+                    primaryTitle: primaryTitle,
+                    primaryIcon: primaryIcon,
+                    secondaryTitle: secondaryTitle,
+                    isPrimaryDisabled: isPrimaryDisabled,
+                    onPrimary: primaryAction,
+                    onSecondary: secondaryAction
+                )
+                .padding(.horizontal, isIPad ? 44 : 20)
                 .padding(.bottom, 18)
             }
         }
+        .foregroundStyle(.white)
         .onAppear {
             nameDraft = authorName
+            firstEntryDraft = response.firstEntryText
+        }
+        .onChange(of: response) { _, newValue in
+            store.save(newValue)
+        }
+        .onChange(of: step) { _, newStep in
+            guard newStep == .processing else { return }
+            DispatchQueue.main.asyncAfter(deadline: .now() + (reduceMotion ? 0.25 : 1.45)) {
+                if step == .processing {
+                    goForward()
+                }
+            }
+        }
+        .alert("OffRecord could not continue", isPresented: Binding(
+            get: { onboardingError != nil },
+            set: { if !$0 { onboardingError = nil } }
+        )) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text(onboardingError ?? "")
+        }
+        .alert("Notifications Disabled", isPresented: $showNotificationDeniedAlert) {
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("You can enable reminders later in Settings. OffRecord still works fully offline.")
+        }
+    }
+
+    @ViewBuilder
+    private var currentStepContent: some View {
+        switch step {
+        case .welcome:
+            WelcomeStep(nameDraft: $nameDraft)
+        case .goal:
+            GoalStep(selectedGoal: $response.goal)
+        case .painPoints:
+            PainPointsStep(selectedPainPoints: $response.painPoints)
+        case .privacyProof:
+            PrivacyProofStep()
+        case .faceID:
+            FaceIDStep(
+                biometryName: lockManager.biometryTypeName,
+                isEnabled: lockManager.isEnabled,
+                isAvailable: lockManager.biometricsAvailable
+            )
+        case .relatable:
+            RelatableStep(selectedStatements: $response.relatableStatements)
+        case .solution:
+            PersonalizedSolutionStep(response: response)
+        case .preferences:
+            PreferencesStep(response: $response)
+        case .microphone:
+            PermissionPrimerStep(
+                icon: "mic.fill",
+                title: "Capture thoughts before they disappear.",
+                subtitle: "Voice is the fastest way to journal honestly.",
+                bullets: [
+                    "Record a private reflection in seconds.",
+                    "Audio stays in the app sandbox on this device.",
+                    "Typing is always available if you skip microphone access."
+                ]
+            )
+        case .speech:
+            PermissionPrimerStep(
+                icon: "text.bubble.fill",
+                title: "Turn voice into a private journal entry.",
+                subtitle: "OffRecord uses Apple's speech recognition and asks for permission only when it transcribes.",
+                bullets: [
+                    "No third-party AI servers.",
+                    "No account and no analytics.",
+                    "Core journaling and insights work without internet."
+                ]
+            )
+        case .processing:
+            ProcessingStep()
+        case .firstEntry:
+            FirstEntryStep(
+                recorder: recorder,
+                isRecording: isRecording,
+                isTranscribing: isTranscribing,
+                elapsedTime: recorder.currentTime,
+                level: recorder.level,
+                draft: $firstEntryDraft,
+                selectedMood: $selectedMood,
+                entryCreated: entryCreated,
+                onRecordTap: toggleRecording
+            )
+        case .valueReveal:
+            ValueRevealStep(response: response, entryText: firstEntryDraft, mood: selectedMood)
+        case .habit:
+            HabitSetupStep(
+                reminderManager: reminderManager,
+                goalManager: goalManager,
+                onReminderDenied: { showNotificationDeniedAlert = true }
+            )
+        case .finish:
+            FinishStep()
+        }
+    }
+
+    private var primaryTitle: String {
+        switch step {
+        case .welcome: return "Get Started"
+        case .goal, .painPoints, .relatable, .preferences: return "Continue"
+        case .privacyProof: return "Keep my journal private"
+        case .faceID: return lockManager.isEnabled ? "Face ID is on" : "Protect my journal with Face ID"
+        case .solution: return "Build my starter map"
+        case .microphone: return "Continue"
+        case .speech: return "I understand"
+        case .processing: return "Building..."
+        case .firstEntry: return entryCreated ? "Show my starter map" : "Save my first entry"
+        case .valueReveal: return "Set up my habit"
+        case .habit: return "Continue"
+        case .finish: return "Enter OffRecord"
+        }
+    }
+
+    private var primaryIcon: String? {
+        switch step {
+        case .welcome, .finish:
+            return "arrow.right"
+        case .faceID:
+            return lockManager.isEnabled ? "checkmark" : "faceid"
+        case .firstEntry:
+            return entryCreated ? "sparkles" : "checkmark"
+        default:
+            return nil
+        }
+    }
+
+    private var secondaryTitle: String? {
+        switch step {
+        case .faceID:
+            return lockManager.isEnabled ? nil : "Not now"
+        case .firstEntry:
+            return isRecording ? nil : "Skip first entry"
+        default:
+            return nil
+        }
+    }
+
+    private var isPrimaryDisabled: Bool {
+        switch step {
+        case .goal:
+            return response.goal == nil
+        case .painPoints:
+            return response.painPoints.isEmpty
+        case .preferences:
+            return response.reflectionFocus == nil || response.promptStyle == nil
+        case .processing:
+            return true
+        case .firstEntry:
+            return isRecording || isTranscribing || (!entryCreated && firstEntryDraft.trimmed.isEmpty)
+        default:
+            return false
         }
     }
 
     private func primaryAction() {
-        commitNameDraft()
-        if currentPage < pages.count - 1 {
-            currentPage += 1
-        } else {
+        switch step {
+        case .welcome:
+            authorName = Personalization.trimmedName(from: nameDraft)
+            goForward()
+        case .faceID:
+            if lockManager.isEnabled {
+                goForward()
+            } else {
+                enableFaceID()
+            }
+        case .firstEntry:
+            if entryCreated {
+                response.firstEntryText = firstEntryDraft.trimmed
+                goForward()
+            } else {
+                saveTypedEntryIfNeeded()
+            }
+        case .finish:
             completeOnboarding()
+        default:
+            goForward()
         }
     }
 
+    private func secondaryAction() {
+        switch step {
+        case .faceID:
+            response.faceIDChoice = .skipped
+            goForward()
+        case .firstEntry:
+            response.firstEntrySkipped = true
+            goForward()
+        default:
+            break
+        }
+    }
+
+    private func goForward() {
+        guard let next = step.next else { return }
+        withAnimation(.easeInOut(duration: 0.22)) {
+            step = next
+        }
+    }
+
+    private func goBack() {
+        guard let previous = step.previous else { return }
+        withAnimation(.easeInOut(duration: 0.22)) {
+            step = previous
+        }
+    }
+
+    private func enableFaceID() {
+        lockManager.authenticate { success in
+            if success {
+                lockManager.isEnabled = true
+                response.faceIDChoice = .enabled
+                goForward()
+            } else {
+                response.faceIDChoice = .failed
+                onboardingError = "Face ID was not enabled. You can try again or skip it for now."
+            }
+        }
+    }
+
+    private func toggleRecording() {
+        if isRecording {
+            stopRecording()
+        } else {
+            startRecording()
+        }
+    }
+
+    private func startRecording() {
+        #if os(iOS)
+        AVAudioApplication.requestRecordPermission { granted in
+            DispatchQueue.main.async {
+                response.microphoneChoice = granted ? .granted : .denied
+                guard granted else {
+                    onboardingError = "Microphone access was not granted. You can still type your first entry."
+                    return
+                }
+                do {
+                    try recorder.startRecording()
+                    isRecording = true
+                    HapticManager.shared.recordingStarted()
+                } catch {
+                    onboardingError = "Unable to start recording. Please type your first entry instead."
+                    HapticManager.shared.error()
+                }
+            }
+        }
+        #else
+        onboardingError = "Recording is only available on iOS."
+        #endif
+    }
+
+    private func stopRecording() {
+        guard let result = recorder.stopRecording() else {
+            isRecording = false
+            return
+        }
+
+        isRecording = false
+        isTranscribing = true
+        HapticManager.shared.recordingStopped()
+        let entry = createEntry(text: "", audioFileName: result.url.lastPathComponent, duration: result.duration)
+        entryCreated = true
+
+        SpeechTranscriber.shared.transcribe(from: result.url) { result in
+            DispatchQueue.main.async {
+                switch result {
+                case .success(let text):
+                    response.speechChoice = .granted
+                    firstEntryDraft = text
+                    response.firstEntryText = text
+                    entry.text = text
+                    entry.setValue(selectedMood.rawValue, forKey: "mood")
+                    entry.updatedAt = Date()
+                    try? viewContext.save()
+                    FridayAssistantEngine.shared.processEntry(
+                        text: text,
+                        mood: selectedMood.rawValue,
+                        date: entry.date ?? Date(),
+                        duration: entry.duration
+                    )
+                    HapticManager.shared.entrySaved()
+                case .failure:
+                    response.speechChoice = .denied
+                    onboardingError = "Your recording was saved, but transcription did not finish. You can type a few words before continuing."
+                }
+                isTranscribing = false
+            }
+        }
+    }
+
+    private func saveTypedEntryIfNeeded() {
+        let text = firstEntryDraft.trimmed
+        guard !text.isEmpty else { return }
+
+        let entry = createEntry(text: text, audioFileName: nil, duration: 0)
+        entryCreated = true
+        response.firstEntryText = text
+        FridayAssistantEngine.shared.processEntry(
+            text: text,
+            mood: selectedMood.rawValue,
+            date: entry.date ?? Date(),
+            duration: 0
+        )
+        HapticManager.shared.entrySaved()
+        goForward()
+    }
+
+    @discardableResult
+    private func createEntry(text: String, audioFileName: String?, duration: TimeInterval) -> DiaryEntry {
+        let now = Date()
+        let entry = DiaryEntry(context: viewContext)
+        entry.id = UUID()
+        entry.date = now
+        entry.createdAt = now
+        entry.updatedAt = now
+        entry.text = text
+        entry.isStarred = false
+        entry.setValue(audioFileName, forKey: "audioFileName")
+        entry.setValue(duration, forKey: "duration")
+        entry.setValue(selectedMood.rawValue, forKey: "mood")
+        try? viewContext.save()
+        return entry
+    }
+
     private func completeOnboarding() {
+        authorName = Personalization.trimmedName(from: nameDraft)
+        response.completedAt = Date()
+        store.save(response)
         withAnimation(.easeInOut(duration: 0.3)) {
             hasCompletedOnboarding = true
         }
         UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
     }
+}
 
-    private func commitNameDraft() {
-        authorName = Personalization.trimmedName(from: nameDraft)
+// MARK: - Flow State
+
+enum OnboardingStep: Int, CaseIterable, Identifiable {
+    case welcome
+    case goal
+    case painPoints
+    case privacyProof
+    case faceID
+    case relatable
+    case solution
+    case preferences
+    case microphone
+    case speech
+    case processing
+    case firstEntry
+    case valueReveal
+    case habit
+    case finish
+
+    var id: Int { rawValue }
+
+    var previous: OnboardingStep? {
+        OnboardingStep(rawValue: rawValue - 1)
+    }
+
+    var next: OnboardingStep? {
+        OnboardingStep(rawValue: rawValue + 1)
+    }
+
+    var canGoBack: Bool {
+        self != .welcome && self != .processing
+    }
+
+    var progress: Double {
+        Double(rawValue + 1) / Double(Self.allCases.count)
+    }
+
+    var progressText: String {
+        "\(rawValue + 1) of \(Self.allCases.count)"
     }
 }
 
-struct OnboardingPage {
-    let icon: String
-    let iconColor: Color
-    let title: String
-    let subtitle: String
-    let description: String
-    let background: Color
-    let textColor: Color
-    var kind: OnboardingPageKind = .standard
+struct OnboardingResponse: Codable, Equatable {
+    var goal: OnboardingGoal?
+    var painPoints: Set<OnboardingPainPoint> = []
+    var relatableStatements: Set<RelatableStatement> = []
+    var reflectionFocus: ReflectionFocus?
+    var promptStyle: PromptStyle?
+    var moodBaseline: MoodChoice = .calm
+    var firstEntryText: String = ""
+    var firstEntrySkipped: Bool = false
+    var faceIDChoice: PermissionChoice = .notAsked
+    var microphoneChoice: PermissionChoice = .notAsked
+    var speechChoice: PermissionChoice = .notAsked
+    var completedAt: Date?
 }
 
-enum OnboardingPageKind {
-    case standard
-    case nameCapture
+struct OnboardingStore {
+    private static let responseKey = "offrecord_onboarding_response"
+
+    func save(_ response: OnboardingResponse) {
+        guard let data = try? JSONEncoder().encode(response) else { return }
+        UserDefaults.standard.set(data, forKey: Self.responseKey)
+    }
+
+    static func load() -> OnboardingResponse {
+        guard let data = UserDefaults.standard.data(forKey: responseKey),
+              let response = try? JSONDecoder().decode(OnboardingResponse.self, from: data) else {
+            return OnboardingResponse()
+        }
+        return response
+    }
 }
 
-struct OnboardingPageView: View {
-    let page: OnboardingPage
+enum PermissionChoice: String, Codable, Equatable {
+    case notAsked
+    case granted
+    case denied
+    case enabled
+    case skipped
+    case failed
+}
+
+enum OnboardingGoal: String, CaseIterable, Codable, Identifiable {
+    case moodPatterns
+    case clearerThoughts
+    case privateVenting
+    case consistency
+    case peopleTopics
+    case fridayInsights
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .moodPatterns: return "Understand my mood patterns"
+        case .clearerThoughts: return "Clear my head faster"
+        case .privateVenting: return "Vent without worrying"
+        case .consistency: return "Build a journaling habit"
+        case .peopleTopics: return "See people and topics over time"
+        case .fridayInsights: return "Let Friday notice patterns"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .moodPatterns: return "chart.line.uptrend.xyaxis"
+        case .clearerThoughts: return "brain.head.profile"
+        case .privateVenting: return "lock.shield.fill"
+        case .consistency: return "flame.fill"
+        case .peopleTopics: return "point.3.connected.trianglepath.dotted"
+        case .fridayInsights: return "sparkles"
+        }
+    }
+}
+
+enum OnboardingPainPoint: String, CaseIterable, Codable, Identifiable {
+    case typingSlow
+    case detailsFade
+    case privacyWorry
+    case blankPage
+    case manualMood
+    case hardToSearch
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .typingSlow: return "Typing takes too long"
+        case .detailsFade: return "Details fade before I write"
+        case .privacyWorry: return "I worry where my thoughts go"
+        case .blankPage: return "I do not know what to write"
+        case .manualMood: return "Mood tracking feels manual"
+        case .hardToSearch: return "Old entries are hard to search"
+        }
+    }
+
+    var solutionTitle: String {
+        switch self {
+        case .typingSlow: return "Speak naturally and let OffRecord transcribe."
+        case .detailsFade: return "Capture the honest version while it is fresh."
+        case .privacyWorry: return "Local AI means no journal server ever sees it."
+        case .blankPage: return "Private prompts make the first sentence easier."
+        case .manualMood: return "Mood trends emerge from entries over time."
+        case .hardToSearch: return "Friday connects people, topics, and themes."
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .typingSlow: return "keyboard"
+        case .detailsFade: return "timer"
+        case .privacyWorry: return "lock"
+        case .blankPage: return "doc.text.magnifyingglass"
+        case .manualMood: return "heart.text.square"
+        case .hardToSearch: return "magnifyingglass"
+        }
+    }
+}
+
+enum RelatableStatement: String, CaseIterable, Codable, Identifiable {
+    case honestVersion
+    case cloudConcern
+    case patternWish
+    case voiceEasier
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .honestVersion: return "I lose the honest version when I wait to write."
+        case .cloudConcern: return "I avoid journaling when I think an app might upload it."
+        case .patternWish: return "I want to see patterns without tagging everything manually."
+        case .voiceEasier: return "I can say more in 30 seconds than I can type in minutes."
+        }
+    }
+}
+
+enum ReflectionFocus: String, CaseIterable, Codable, Identifiable {
+    case emotions
+    case relationships
+    case decisions
+    case growth
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .emotions: return "Emotions"
+        case .relationships: return "People"
+        case .decisions: return "Decisions"
+        case .growth: return "Growth"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .emotions: return "heart.fill"
+        case .relationships: return "person.2.fill"
+        case .decisions: return "arrow.triangle.branch"
+        case .growth: return "leaf.fill"
+        }
+    }
+}
+
+enum PromptStyle: String, CaseIterable, Codable, Identifiable {
+    case gentle
+    case direct
+    case gratitude
+    case evening
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .gentle: return "Gentle check-ins"
+        case .direct: return "Straight questions"
+        case .gratitude: return "Gratitude prompts"
+        case .evening: return "End-of-day recaps"
+        }
+    }
+}
+
+enum MoodChoice: String, CaseIterable, Codable, Identifiable {
+    case calm
+    case mixed
+    case stretched
+    case hopeful
+
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .calm: return "Calm"
+        case .mixed: return "Mixed"
+        case .stretched: return "Stretched"
+        case .hopeful: return "Hopeful"
+        }
+    }
+
+    var mood: Mood {
+        switch self {
+        case .calm: return .calm
+        case .mixed: return .tired
+        case .stretched: return .anxious
+        case .hopeful: return .grateful
+        }
+    }
+}
+
+// MARK: - Steps
+
+private struct WelcomeStep: View {
     @Binding var nameDraft: String
-    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-
-    private var isIPad: Bool { horizontalSizeClass == .regular }
 
     var body: some View {
-        VStack(alignment: .center, spacing: isIPad ? 42 : 34) {
-            Spacer()
+        VStack(alignment: .leading, spacing: 24) {
+            LocalAIBadge()
 
-            Text(page.title)
-                .font(.system(size: isIPad ? 48 : 39, weight: .bold, design: .rounded))
-                .foregroundColor(page.textColor)
-                .multilineTextAlignment(.center)
-                .lineLimit(3)
-                .minimumScaleFactor(0.78)
-                .frame(maxWidth: isIPad ? 620 : 340)
-                .padding(.horizontal, 24)
+            VStack(alignment: .leading, spacing: 14) {
+                Text("Understand yourself, privately.")
+                    .font(.system(size: 42, weight: .bold, design: .rounded))
+                    .lineLimit(3)
+                    .minimumScaleFactor(0.78)
 
+                Text("Speak freely. OffRecord turns your voice into insights using local AI on your device, even without internet.")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.76))
+                    .lineSpacing(4)
+            }
+
+            JournalPreviewCard()
+
+            TextField("Your name (optional)", text: $nameDraft)
+                .textContentType(.givenName)
+                .textInputAutocapitalization(.words)
+                .autocorrectionDisabled()
+                .font(.headline)
+                .foregroundStyle(.primary)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 14)
+                .background(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+        }
+    }
+}
+
+private struct GoalStep: View {
+    @Binding var selectedGoal: OnboardingGoal?
+
+    var body: some View {
+        OnboardingQuestion(
+            eyebrow: "Your goal",
+            title: "What do you want your journal to help with?",
+            subtitle: "Pick the outcome that would make OffRecord worth opening every day."
+        ) {
+            VStack(spacing: 10) {
+                ForEach(OnboardingGoal.allCases) { goal in
+                    ChoiceRow(
+                        title: goal.title,
+                        icon: goal.icon,
+                        isSelected: selectedGoal == goal
+                    ) {
+                        selectedGoal = goal
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct PainPointsStep: View {
+    @Binding var selectedPainPoints: Set<OnboardingPainPoint>
+
+    var body: some View {
+        OnboardingQuestion(
+            eyebrow: "What gets in the way",
+            title: "What usually stops you from journaling honestly?",
+            subtitle: "Choose all that feel true. OffRecord will shape your starter experience around them."
+        ) {
+            VStack(spacing: 10) {
+                ForEach(OnboardingPainPoint.allCases) { pain in
+                    ChoiceRow(
+                        title: pain.title,
+                        icon: pain.icon,
+                        isSelected: selectedPainPoints.contains(pain),
+                        style: .checkbox
+                    ) {
+                        if selectedPainPoints.contains(pain) {
+                            selectedPainPoints.remove(pain)
+                        } else {
+                            selectedPainPoints.insert(pain)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct PrivacyProofStep: View {
+    var body: some View {
+        OnboardingQuestion(
+            eyebrow: "Privacy proof",
+            title: "No internet required. No account. No servers.",
+            subtitle: "Your thoughts stay on your iPhone. OffRecord uses local Apple frameworks for transcription, mood analysis, Friday insights, and your private graph."
+        ) {
+            VStack(spacing: 12) {
+                PrivacyComparisonRow(label: "Voice and journal text", offRecord: "On device", other: "Often uploaded")
+                PrivacyComparisonRow(label: "AI insights", offRecord: "Local AI", other: "Cloud AI")
+                PrivacyComparisonRow(label: "Account", offRecord: "Not needed", other: "Usually required")
+                PrivacyComparisonRow(label: "Analytics", offRecord: "None", other: "Common")
+                PrivacyComparisonRow(label: "Offline use", offRecord: "Core app works", other: "Often limited")
+            }
+        }
+    }
+}
+
+private struct FaceIDStep: View {
+    let biometryName: String
+    let isEnabled: Bool
+    let isAvailable: Bool
+
+    var body: some View {
+        OnboardingQuestion(
+            eyebrow: "Privacy lock",
+            title: "Protect your journal before you write.",
+            subtitle: "OffRecord can lock when you leave the app. iOS handles \(biometryName); OffRecord never sees or stores your biometrics."
+        ) {
+            VStack(spacing: 16) {
+                ZStack {
+                    Circle()
+                        .fill(Color.green.opacity(0.18))
+                        .frame(width: 132, height: 132)
+                    Image(systemName: isEnabled ? "checkmark.shield.fill" : "faceid")
+                        .font(.system(size: 54, weight: .semibold))
+                        .foregroundStyle(.green)
+                }
+
+                VStack(alignment: .leading, spacing: 12) {
+                    BenefitRow(icon: "lock.fill", text: "Require \(biometryName) or device passcode to open OffRecord.")
+                    BenefitRow(icon: "iphone", text: "Lock automatically when the app goes to the background.")
+                    BenefitRow(icon: "eye.slash.fill", text: "Keep private entries away from anyone holding your phone.")
+                }
+
+                if !isAvailable {
+                    Text("Biometrics are unavailable on this device, so iOS will use your passcode.")
+                        .font(.footnote.weight(.medium))
+                        .foregroundStyle(.white.opacity(0.72))
+                        .padding()
+                        .background(.white.opacity(0.10))
+                        .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                }
+            }
+        }
+    }
+}
+
+private struct RelatableStep: View {
+    @Binding var selectedStatements: Set<RelatableStatement>
+
+    var body: some View {
+        OnboardingQuestion(
+            eyebrow: "A quick check",
+            title: "Which statements sound like you?",
+            subtitle: "Tap any that feel true. This helps Friday understand what matters first."
+        ) {
+            VStack(spacing: 12) {
+                ForEach(RelatableStatement.allCases) { statement in
+                    StatementCard(
+                        statement: statement.title,
+                        isSelected: selectedStatements.contains(statement)
+                    ) {
+                        if selectedStatements.contains(statement) {
+                            selectedStatements.remove(statement)
+                        } else {
+                            selectedStatements.insert(statement)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct PersonalizedSolutionStep: View {
+    let response: OnboardingResponse
+
+    private var rows: [OnboardingPainPoint] {
+        let selected = Array(response.painPoints).prefix(4)
+        return selected.isEmpty ? Array(OnboardingPainPoint.allCases.prefix(4)) : Array(selected)
+    }
+
+    var body: some View {
+        OnboardingQuestion(
+            eyebrow: "Your private setup",
+            title: "A smarter way to reflect, built around you.",
+            subtitle: "Everything below runs locally. No internet connection, account, analytics, or third-party AI server is needed."
+        ) {
+            VStack(spacing: 12) {
+                ForEach(rows) { pain in
+                    SolutionRow(pain: pain)
+                }
+            }
+        }
+    }
+}
+
+private struct PreferencesStep: View {
+    @Binding var response: OnboardingResponse
+
+    var body: some View {
+        OnboardingQuestion(
+            eyebrow: "Make it yours",
+            title: "What should Friday pay attention to first?",
+            subtitle: "These choices shape your starter snapshot and first prompts."
+        ) {
+            VStack(alignment: .leading, spacing: 22) {
+                PreferencePicker(
+                    title: "Reflection focus",
+                    items: ReflectionFocus.allCases,
+                    selection: $response.reflectionFocus
+                ) { item in
+                    Label(item.title, systemImage: item.icon)
+                }
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("How you feel lately")
+                        .font(.headline)
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                        ForEach(MoodChoice.allCases) { item in
+                            Button {
+                                response.moodBaseline = item
+                            } label: {
+                                Text(item.title)
+                                    .font(.subheadline.weight(.bold))
+                                    .foregroundStyle(response.moodBaseline == item ? Color.black : Color.white)
+                                    .frame(maxWidth: .infinity, minHeight: 46)
+                                    .padding(.horizontal, 10)
+                                    .background(response.moodBaseline == item ? Color.teal : Color.white.opacity(0.10))
+                                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+
+                PreferencePicker(
+                    title: "Prompt style",
+                    items: PromptStyle.allCases,
+                    selection: $response.promptStyle
+                ) { item in
+                    Text(item.title)
+                }
+            }
+        }
+    }
+}
+
+private struct PermissionPrimerStep: View {
+    let icon: String
+    let title: String
+    let subtitle: String
+    let bullets: [String]
+
+    var body: some View {
+        OnboardingQuestion(
+            eyebrow: "Before your first entry",
+            title: title,
+            subtitle: subtitle
+        ) {
+            VStack(spacing: 20) {
+                ZStack {
+                    Circle()
+                        .fill(Color.teal.opacity(0.16))
+                        .frame(width: 128, height: 128)
+                    Image(systemName: icon)
+                        .font(.system(size: 48, weight: .semibold))
+                        .foregroundStyle(.teal)
+                }
+
+                VStack(alignment: .leading, spacing: 12) {
+                    ForEach(bullets, id: \.self) { bullet in
+                        BenefitRow(icon: "checkmark.circle.fill", text: bullet)
+                    }
+                }
+            }
+        }
+    }
+}
+
+private struct ProcessingStep: View {
+    @State private var animate = false
+
+    var body: some View {
+        VStack(spacing: 24) {
+            Spacer(minLength: 80)
             ZStack {
                 Circle()
-                    .fill(page.textColor.opacity(0.18))
-                    .frame(width: isIPad ? 210 : 164, height: isIPad ? 210 : 164)
-
+                    .stroke(.white.opacity(0.10), lineWidth: 18)
+                    .frame(width: 150, height: 150)
                 Circle()
-                    .stroke(page.textColor.opacity(0.28), lineWidth: 2)
-                    .frame(width: isIPad ? 244 : 196, height: isIPad ? 244 : 196)
+                    .trim(from: 0.1, to: 0.82)
+                    .stroke(Color.teal, style: StrokeStyle(lineWidth: 18, lineCap: .round))
+                    .frame(width: 150, height: 150)
+                    .rotationEffect(.degrees(animate ? 360 : 0))
+                    .animation(.linear(duration: 1.1).repeatForever(autoreverses: false), value: animate)
+                Image(systemName: "sparkles")
+                    .font(.system(size: 42, weight: .bold))
+                    .foregroundStyle(.white)
+            }
 
-                Image(systemName: page.icon)
-                    .font(.system(size: isIPad ? 84 : 66, weight: .semibold, design: .rounded))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [page.textColor, page.iconColor.opacity(0.95)],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
+            VStack(spacing: 10) {
+                Text("Building your private starter map on this device...")
+                    .font(.title2.bold())
+                    .multilineTextAlignment(.center)
+                Text("No network call. No account lookup. Just local AI preparing your first reflection.")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.white.opacity(0.72))
+                    .multilineTextAlignment(.center)
+            }
+            Spacer(minLength: 80)
+        }
+        .onAppear { animate = true }
+    }
+}
+
+private struct FirstEntryStep: View {
+    @ObservedObject var recorder: AudioRecorder
+    let isRecording: Bool
+    let isTranscribing: Bool
+    let elapsedTime: TimeInterval
+    let level: Float
+    @Binding var draft: String
+    @Binding var selectedMood: Mood
+    let entryCreated: Bool
+    let onRecordTap: () -> Void
+
+    var body: some View {
+        OnboardingQuestion(
+            eyebrow: "First entry",
+            title: "Say one honest thing about today.",
+            subtitle: "Record 20 to 30 seconds or type instead. This becomes your first real OffRecord entry."
+        ) {
+            VStack(spacing: 18) {
+                Button(action: onRecordTap) {
+                    VStack(spacing: 14) {
+                        ZStack {
+                            Circle()
+                                .fill(isRecording ? Color.red : Color.teal)
+                                .frame(width: 104, height: 104)
+                            Image(systemName: isRecording ? "stop.fill" : "mic.fill")
+                                .font(.system(size: 38, weight: .bold))
+                                .foregroundStyle(.white)
+                        }
+
+                        if isRecording {
+                            Text(formatTime(elapsedTime))
+                                .font(.system(size: 34, weight: .light, design: .monospaced))
+                            WaveformMeter(level: level)
+                            Text("Tap to stop")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.white.opacity(0.76))
+                        } else if isTranscribing {
+                            ProgressView("Transcribing on this device...")
+                                .tint(.white)
+                                .foregroundStyle(.white)
+                        } else if entryCreated {
+                            Label("First entry saved", systemImage: "checkmark.circle.fill")
+                                .font(.headline)
+                                .foregroundStyle(.green)
+                        } else {
+                            Text("Tap to record privately")
+                                .font(.headline)
+                            Text("Your recording is stored locally.")
+                                .font(.caption.weight(.medium))
+                                .foregroundStyle(.white.opacity(0.64))
+                        }
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 22)
+                    .background(.white.opacity(0.10))
+                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+                }
+                .buttonStyle(.plain)
+                .disabled(isTranscribing)
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Or type your first entry")
+                        .font(.headline)
+                    TextEditor(text: $draft)
+                        .scrollContentBackground(.hidden)
+                        .foregroundStyle(.primary)
+                        .frame(minHeight: 130)
+                        .padding(10)
+                        .background(.white)
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                }
+
+                VStack(alignment: .leading, spacing: 10) {
+                    Text("Add a starting mood")
+                        .font(.headline)
+                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                        ForEach(Mood.selectableMoods.prefix(6)) { mood in
+                            Button {
+                                selectedMood = mood
+                            } label: {
+                                HStack {
+                                    Image(systemName: mood.icon)
+                                    Text(mood.displayName)
+                                    Spacer()
+                                }
+                                .font(.subheadline.weight(.semibold))
+                                .padding(12)
+                                .foregroundStyle(selectedMood == mood ? .black : .white)
+                                .background(selectedMood == mood ? mood.color : .white.opacity(0.10))
+                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private func formatTime(_ time: TimeInterval) -> String {
+        let minutes = Int(time) / 60
+        let seconds = Int(time) % 60
+        return String(format: "%d:%02d", minutes, seconds)
+    }
+}
+
+private struct ValueRevealStep: View {
+    let response: OnboardingResponse
+    let entryText: String
+    let mood: Mood
+
+    var body: some View {
+        OnboardingQuestion(
+            eyebrow: "Your starter snapshot",
+            title: "Friday has enough to start listening for patterns.",
+            subtitle: "This preview was generated from your onboarding choices and first reflection. Future insights stay local too."
+        ) {
+            VStack(spacing: 14) {
+                StarterSnapshotCard(response: response, entryText: entryText, mood: mood)
+                TopicGraphCard(response: response, entryText: entryText)
+            }
+        }
+    }
+}
+
+private struct HabitSetupStep: View {
+    @ObservedObject var reminderManager: ReminderManager
+    @ObservedObject var goalManager: GoalManager
+    let onReminderDenied: () -> Void
+
+    var body: some View {
+        OnboardingQuestion(
+            eyebrow: "Build the habit",
+            title: "Make reflection easy to repeat.",
+            subtitle: "Optional reminders and weekly goals stay in iOS and OffRecord settings. The app still works fully offline."
+        ) {
+            VStack(spacing: 16) {
+                Toggle(isOn: Binding(
+                    get: { reminderManager.isEnabled },
+                    set: { newValue in
+                        if newValue {
+                            reminderManager.requestPermissionIfNeeded { granted in
+                                if granted {
+                                    reminderManager.isEnabled = true
+                                } else {
+                                    reminderManager.isEnabled = false
+                                    onReminderDenied()
+                                }
+                            }
+                        } else {
+                            reminderManager.isEnabled = false
+                        }
+                    }
+                )) {
+                    Label("Remind me once a day", systemImage: "bell.badge.fill")
+                }
+                .tint(.teal)
+                .padding()
+                .background(.white.opacity(0.10))
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+
+                if reminderManager.isEnabled {
+                    DatePicker(
+                        "Reminder time",
+                        selection: Binding(
+                            get: { reminderManager.reminderTime },
+                            set: { reminderManager.reminderTime = $0 }
+                        ),
+                        displayedComponents: .hourAndMinute
                     )
-            }
-
-            VStack(alignment: .center, spacing: 8) {
-                Text(page.subtitle)
-                    .font(.system(size: isIPad ? 28 : 24, weight: .bold, design: .rounded))
-                    .foregroundColor(page.textColor)
-                    .multilineTextAlignment(.center)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.82)
-
-                Text(page.description)
-                    .font(.system(size: isIPad ? 20 : 17, weight: .bold, design: .rounded))
-                    .foregroundColor(page.textColor.opacity(0.78))
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(3)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .frame(maxWidth: isIPad ? 560 : 330)
-            .padding(.horizontal, 28)
-
-            if page.kind == .nameCapture {
-                TextField("Your name", text: $nameDraft)
-                    .textContentType(.givenName)
-                    .textInputAutocapitalization(.words)
-                    .autocorrectionDisabled()
-                    .submitLabel(.continue)
-                    .font(.system(size: isIPad ? 22 : 18, weight: .semibold, design: .rounded))
-                    .foregroundColor(page.background)
-                    .multilineTextAlignment(.center)
-                    .padding(.vertical, 16)
-                    .padding(.horizontal, 18)
-                    .background(page.textColor)
+                    .padding()
+                    .background(.white.opacity(0.10))
                     .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-                    .frame(maxWidth: isIPad ? 420 : 300)
-                    .padding(.horizontal, 28)
+                }
+
+                Toggle(isOn: $goalManager.isEnabled) {
+                    Label("Set a weekly journaling goal", systemImage: "flame.fill")
+                }
+                .tint(.orange)
+                .padding()
+                .background(.white.opacity(0.10))
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+
+                if goalManager.isEnabled {
+                    Stepper("Target: \(goalManager.weeklyTarget) entries/week", value: $goalManager.weeklyTarget, in: 1...7)
+                        .padding()
+                        .background(.white.opacity(0.10))
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                }
+            }
+        }
+    }
+}
+
+private struct FinishStep: View {
+    var body: some View {
+        VStack(spacing: 24) {
+            Spacer(minLength: 80)
+            ZStack {
+                Circle()
+                    .fill(Color.teal.opacity(0.16))
+                    .frame(width: 150, height: 150)
+                FridayMascotView(pose: .wave, size: 104)
             }
 
-            Spacer()
-            Spacer()
+            VStack(spacing: 12) {
+                Text("Your private journal is ready.")
+                    .font(.system(size: 34, weight: .bold, design: .rounded))
+                    .multilineTextAlignment(.center)
+                Text("Record, reflect, and let Friday notice patterns entirely on this device. No internet connection required for the core experience.")
+                    .font(.title3.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.74))
+                    .multilineTextAlignment(.center)
+                    .lineSpacing(4)
+            }
+            Spacer(minLength: 80)
+        }
+    }
+}
+
+// MARK: - Components
+
+private struct OnboardingProgressHeader: View {
+    let step: OnboardingStep
+    let canGoBack: Bool
+    let onBack: () -> Void
+
+    var body: some View {
+        VStack(spacing: 14) {
+            HStack {
+                Button(action: onBack) {
+                    Image(systemName: "chevron.left")
+                        .font(.headline.weight(.bold))
+                        .frame(width: 36, height: 36)
+                        .background(.white.opacity(canGoBack ? 0.12 : 0.04))
+                        .clipShape(Circle())
+                }
+                .buttonStyle(.plain)
+                .disabled(!canGoBack)
+                .opacity(canGoBack ? 1 : 0)
+
+                Spacer()
+
+                Text(step.progressText)
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.white.opacity(0.68))
+            }
+
+            GeometryReader { proxy in
+                ZStack(alignment: .leading) {
+                    Capsule()
+                        .fill(.white.opacity(0.12))
+                    Capsule()
+                        .fill(Color.teal)
+                        .frame(width: max(8, proxy.size.width * step.progress))
+                }
+            }
+            .frame(height: 6)
+        }
+    }
+}
+
+private struct OnboardingBottomBar: View {
+    let primaryTitle: String
+    let primaryIcon: String?
+    let secondaryTitle: String?
+    let isPrimaryDisabled: Bool
+    let onPrimary: () -> Void
+    let onSecondary: () -> Void
+
+    var body: some View {
+        VStack(spacing: 12) {
+            Button(action: onPrimary) {
+                HStack(spacing: 8) {
+                    Text(primaryTitle)
+                    if let primaryIcon {
+                        Image(systemName: primaryIcon)
+                    }
+                }
+                .font(.headline)
+                .foregroundStyle(Color(red: 0.05, green: 0.08, blue: 0.10))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 17)
+                .background(isPrimaryDisabled ? Color.white.opacity(0.42) : Color.white)
+                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            }
+            .buttonStyle(.plain)
+            .disabled(isPrimaryDisabled)
+
+            if let secondaryTitle {
+                Button(secondaryTitle, action: onSecondary)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(.white.opacity(0.72))
+                    .buttonStyle(.plain)
+            }
+        }
+        .padding(.top, 16)
+        .background(
+            LinearGradient(
+                colors: [.clear, Color(red: 0.04, green: 0.05, blue: 0.08).opacity(0.92)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea()
+        )
+    }
+}
+
+private struct OnboardingQuestion<Content: View>: View {
+    let eyebrow: String
+    let title: String
+    let subtitle: String
+    @ViewBuilder let content: Content
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 22) {
+            VStack(alignment: .leading, spacing: 10) {
+                Text(eyebrow.uppercased())
+                    .font(.caption.weight(.black))
+                    .foregroundStyle(Color.teal)
+                Text(title)
+                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .lineLimit(4)
+                    .minimumScaleFactor(0.78)
+                Text(subtitle)
+                    .font(.subheadline.weight(.semibold))
+                    .foregroundStyle(.white.opacity(0.70))
+                    .lineSpacing(3)
+            }
+            content
+        }
+    }
+}
+
+private enum ChoiceRowStyle {
+    case radio
+    case checkbox
+}
+
+private struct ChoiceRow: View {
+    let title: String
+    let icon: String
+    let isSelected: Bool
+    var style: ChoiceRowStyle = .radio
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(spacing: 14) {
+                Image(systemName: icon)
+                    .font(.headline)
+                    .frame(width: 34, height: 34)
+                    .foregroundStyle(isSelected ? Color.black : Color.teal)
+                    .background(isSelected ? Color.teal : Color.teal.opacity(0.14))
+                    .clipShape(Circle())
+
+                Text(title)
+                    .font(.headline)
+                    .foregroundStyle(.white)
+                    .multilineTextAlignment(.leading)
+
+                Spacer()
+
+                Image(systemName: selectedIconName)
+                    .font(.headline.weight(.bold))
+                    .foregroundStyle(isSelected ? Color.teal : .white.opacity(0.24))
+            }
+            .padding(14)
+            .background(isSelected ? Color.white.opacity(0.16) : Color.white.opacity(0.08))
+            .overlay(
+                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                    .stroke(isSelected ? Color.teal : Color.white.opacity(0.08), lineWidth: 1.5)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
+
+    private var selectedIconName: String {
+        switch style {
+        case .radio:
+            return isSelected ? "checkmark.circle.fill" : "circle"
+        case .checkbox:
+            return isSelected ? "checkmark.square.fill" : "square"
+        }
+    }
+}
+
+private struct StatementCard: View {
+    let statement: String
+    let isSelected: Bool
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            HStack(alignment: .top, spacing: 14) {
+                Image(systemName: isSelected ? "checkmark.circle.fill" : "quote.opening")
+                    .font(.title3.weight(.bold))
+                    .foregroundStyle(isSelected ? Color.green : Color.teal)
+                Text(statement)
+                    .font(.title3.weight(.bold))
+                    .lineSpacing(3)
+                Spacer()
+            }
+            .padding(18)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(isSelected ? Color.green.opacity(0.14) : Color.white.opacity(0.09))
+            .overlay(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .stroke(isSelected ? Color.green : Color.white.opacity(0.08), lineWidth: 1.5)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
+}
+
+private struct PrivacyComparisonRow: View {
+    let label: String
+    let offRecord: String
+    let other: String
+
+    var body: some View {
+        HStack(spacing: 10) {
+            Text(label)
+                .font(.subheadline.weight(.bold))
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            Text(offRecord)
+                .font(.caption.weight(.black))
+                .foregroundStyle(.black)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .background(Color.green)
+                .clipShape(Capsule())
+
+            Text(other)
+                .font(.caption.weight(.bold))
+                .foregroundStyle(.white.opacity(0.70))
+                .padding(.horizontal, 10)
+                .padding(.vertical, 7)
+                .background(.white.opacity(0.10))
+                .clipShape(Capsule())
+        }
+        .padding(14)
+        .background(.white.opacity(0.08))
+        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+}
+
+private struct SolutionRow: View {
+    let pain: OnboardingPainPoint
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 14) {
+            Image(systemName: pain.icon)
+                .font(.headline)
+                .foregroundStyle(Color.teal)
+                .frame(width: 34, height: 34)
+                .background(Color.teal.opacity(0.14))
+                .clipShape(Circle())
+
+            VStack(alignment: .leading, spacing: 4) {
+                Text(pain.title)
+                    .font(.caption.weight(.bold))
+                    .foregroundStyle(.white.opacity(0.52))
+                Text(pain.solutionTitle)
+                    .font(.headline)
+                    .foregroundStyle(.white)
+            }
+        }
+        .padding(16)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(.white.opacity(0.09))
+        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+    }
+}
+
+private struct BenefitRow: View {
+    let icon: String
+    let text: String
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: icon)
+                .font(.subheadline.weight(.bold))
+                .foregroundStyle(Color.teal)
+                .frame(width: 22)
+            Text(text)
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.white.opacity(0.78))
+                .fixedSize(horizontal: false, vertical: true)
+        }
+    }
+}
+
+private struct PreferencePicker<Item: Identifiable & Equatable, Label: View>: View {
+    let title: String
+    let items: [Item]
+    @Binding var selection: Item?
+    let label: (Item) -> Label
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text(title)
+                .font(.headline)
+            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
+                ForEach(items) { item in
+                    Button {
+                        selection = item
+                    } label: {
+                        label(item)
+                            .font(.subheadline.weight(.bold))
+                            .foregroundStyle(selection == item ? Color.black : Color.white)
+                            .frame(maxWidth: .infinity, minHeight: 46)
+                            .padding(.horizontal, 10)
+                            .background(selection == item ? Color.teal : Color.white.opacity(0.10))
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+    }
+}
+
+private struct LocalAIBadge: View {
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "cpu.fill")
+            Text("Local AI")
+            Circle().fill(.white.opacity(0.42)).frame(width: 4, height: 4)
+            Text("No internet required")
+        }
+        .font(.caption.weight(.black))
+        .foregroundStyle(.black)
+        .padding(.horizontal, 12)
+        .padding(.vertical, 8)
+        .background(Color.teal)
+        .clipShape(Capsule())
+    }
+}
+
+private struct JournalPreviewCard: View {
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            HStack {
+                Label("Today", systemImage: "mic.fill")
+                    .font(.headline)
+                Spacer()
+                OfflineIndicator()
+            }
+
+            Text("I finally said the thing I kept editing in my head...")
+                .font(.title3.weight(.bold))
+                .lineSpacing(3)
+
+            HStack(spacing: 10) {
+                PreviewPill(icon: "heart.fill", text: "Calm")
+                PreviewPill(icon: "person.2.fill", text: "People")
+                PreviewPill(icon: "sparkles", text: "Friday")
+            }
+        }
+        .padding(18)
+        .background(.white.opacity(0.10))
+        .overlay(
+            RoundedRectangle(cornerRadius: 24, style: .continuous)
+                .stroke(.white.opacity(0.10), lineWidth: 1)
+        )
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+    }
+}
+
+private struct PreviewPill: View {
+    let icon: String
+    let text: String
+
+    var body: some View {
+        Label(text, systemImage: icon)
+            .font(.caption.weight(.bold))
+            .foregroundStyle(.white.opacity(0.82))
+            .padding(.horizontal, 10)
+            .padding(.vertical, 7)
+            .background(.white.opacity(0.10))
+            .clipShape(Capsule())
+    }
+}
+
+private struct WaveformMeter: View {
+    let level: Float
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(0..<18, id: \.self) { index in
+                RoundedRectangle(cornerRadius: 2)
+                    .fill(Color.teal)
+                    .frame(width: 4, height: barHeight(index))
+                    .opacity(indexOpacity(index))
+            }
+        }
+        .frame(height: 34)
+    }
+
+    private func barHeight(_ index: Int) -> CGFloat {
+        let normalized = CGFloat(max(0.12, min(1, level)))
+        let wave = CGFloat(sin(Double(index) * 0.55 + Date().timeIntervalSince1970 * 7) * 0.28 + 0.72)
+        return 8 + normalized * wave * 24
+    }
+
+    private func indexOpacity(_ index: Int) -> Double {
+        let threshold = Double(index) / 18.0
+        return Double(level) > threshold ? 1 : 0.35
+    }
+}
+
+private struct StarterSnapshotCard: View {
+    let response: OnboardingResponse
+    let entryText: String
+    let mood: Mood
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Label("Friday Starter Snapshot", systemImage: "sparkles")
+                .font(.headline)
+                .foregroundStyle(Color.teal)
+
+            Text(snapshotText)
+                .font(.title3.weight(.bold))
+                .lineSpacing(4)
+
+            VStack(alignment: .leading, spacing: 10) {
+                BenefitRow(icon: mood.icon, text: "Starting mood: \(mood.displayName)")
+                BenefitRow(icon: "lock.shield.fill", text: "This insight was prepared locally on your device.")
+                BenefitRow(icon: "wifi.slash", text: "No internet connection is required for core journaling.")
+            }
+        }
+        .padding(18)
+        .background(.white.opacity(0.10))
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+    }
+
+    private var snapshotText: String {
+        let goal = response.goal?.title ?? "reflect more clearly"
+        let focus = response.reflectionFocus?.title.lowercased() ?? "patterns"
+        if entryText.trimmed.isEmpty {
+            return "You want to \(goal.lowercased()). Friday will start by watching for \(focus) across your entries."
+        }
+        return "You want to \(goal.lowercased()). From your first entry, Friday will start watching for \(focus) while keeping everything private."
+    }
+}
+
+private struct TopicGraphCard: View {
+    let response: OnboardingResponse
+    let entryText: String
+
+    private var nodes: [String] {
+        var values = [
+            response.reflectionFocus?.title ?? "Reflection",
+            response.goal?.title.components(separatedBy: " ").suffix(2).joined(separator: " ") ?? "Patterns",
+            response.promptStyle?.title ?? "Prompts"
+        ]
+
+        let words = entryText
+            .split { !$0.isLetter }
+            .map(String.init)
+            .filter { $0.count > 4 }
+            .prefix(2)
+        values.append(contentsOf: words)
+        return Array(values.prefix(5))
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 16) {
+            Label("Sample People and Topics Graph", systemImage: "point.3.connected.trianglepath.dotted")
+                .font(.headline)
+                .foregroundStyle(Color.teal)
+
+            ZStack {
+                ForEach(Array(nodes.enumerated()), id: \.offset) { index, node in
+                    TopicNode(title: node, index: index)
+                }
+            }
+            .frame(height: 210)
+            .frame(maxWidth: .infinity)
+
+            Text("As you journal, OffRecord connects recurring people, places, moods, and themes locally. This graph never leaves your device.")
+                .font(.subheadline.weight(.semibold))
+                .foregroundStyle(.white.opacity(0.70))
+        }
+        .padding(18)
+        .background(.white.opacity(0.10))
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
+    }
+}
+
+private struct TopicNode: View {
+    let title: String
+    let index: Int
+
+    private var position: CGPoint {
+        switch index {
+        case 0: return CGPoint(x: 0.50, y: 0.18)
+        case 1: return CGPoint(x: 0.22, y: 0.50)
+        case 2: return CGPoint(x: 0.76, y: 0.48)
+        case 3: return CGPoint(x: 0.36, y: 0.82)
+        default: return CGPoint(x: 0.66, y: 0.78)
+        }
+    }
+
+    var body: some View {
+        GeometryReader { proxy in
+            ZStack {
+                if index != 0 {
+                    Path { path in
+                        path.move(to: CGPoint(x: proxy.size.width * 0.50, y: proxy.size.height * 0.18))
+                        path.addLine(to: CGPoint(x: proxy.size.width * position.x, y: proxy.size.height * position.y))
+                    }
+                    .stroke(Color.teal.opacity(0.35), lineWidth: 2)
+                }
+
+                Text(title)
+                    .font(.caption.weight(.black))
+                    .foregroundStyle(index == 0 ? .black : .white)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.72)
+                    .padding(.horizontal, 12)
+                    .padding(.vertical, 9)
+                    .background(index == 0 ? Color.teal : Color.white.opacity(0.14))
+                    .clipShape(Capsule())
+                    .position(x: proxy.size.width * position.x, y: proxy.size.height * position.y)
+            }
         }
     }
 }
@@ -275,6 +1772,13 @@ struct OfflineIndicator: View {
     }
 }
 
+private extension String {
+    var trimmed: String {
+        trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+}
+
 #Preview {
     OnboardingView(hasCompletedOnboarding: .constant(false))
+        .environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
 }
