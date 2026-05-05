@@ -163,11 +163,6 @@ But every voice diary app I tried wanted to upload my recordings to their server
 
 ---
 
-## Contact
-
-- **Developer:** Karthikeyan NG
-- **Email:** intrepidkarthi@gmail.com
-- **GitHub:** [intrepidkarthi](https://github.com/intrepidkarthi)
 
 ---
 
