@@ -31,11 +31,11 @@
 
 ---
 
-## Screenshot 2: Digital Twin (NEW — shows Predictions + Profile Card)
-**Caption**: "Your AI Digital Twin Learns Your Patterns"
+## Screenshot 2: Friday (NEW — shows Predictions + Profile Card)
+**Caption**: "Your AI Friday Learns Your Patterns"
 **Layout**:
-- Show DigitalTwinView overview section
-- **NEW: Twin Predictions section visible** ("Your Twin Thinks..." with mood, topic, timing predictions)
+- Show FridayView overview section
+- **NEW: Friday Predictions section visible** ("Friday noticed..." with mood, topic, timing predictions)
 - **NEW: Shareable Personality Card** visible below predictions
 - Personality trait bars (Expressive, Direct, Analytical)
 - Background: dark with purple glow around orb
@@ -60,7 +60,7 @@
 ## Screenshot 4: Emotional Insights
 **Caption**: "9 Emotions Tracked. Zero Manual Input."
 **Layout**:
-- Show Digital Twin emotions section
+- Show Friday emotions section
 - Emotional baseline meters (Valence, Arousal, Range)
 - Mood rhythms showing morning/evening/weekday/weekend
 - Emotional triggers section (positive in green, negative in orange)
@@ -85,7 +85,7 @@
 ## Screenshot 6: Knowledge Graph / My World
 **Caption**: "People, Places & Topics — Your Knowledge Graph"
 **Layout**:
-- Show Digital Twin "My World" section
+- Show Friday "My World" section
 - People In Your Life with mention counts
 - Places That Matter
 - Themes & Topics with importance dots
@@ -171,7 +171,7 @@
 
 **10-15s**: Transition to StatsView. Streak counter animates up, mood trend chart draws in, AI insight card appears. Text: "Insights that grow with you"
 
-**15-22s**: Digital Twin view. Camera pans through personality traits, emotional signature, knowledge graph. Orb glows. Text: "Watch your Digital Twin grow"
+**15-22s**: Friday view. Camera pans through personality traits, emotional signature, knowledge graph. Orb glows. Text: "Watch Friday grow"
 
 **22-27s**: Quick montage: Face ID lock, theme switching, widgets on Lock Screen, export options. Text: "Private. Beautiful. Yours."
 
@@ -182,13 +182,13 @@
 ## Promotional Text Variations
 
 ### Short (for social media - 280 chars)
-OffRecord AI Journal is a private AI voice diary that builds a digital twin of your mind. Speak your thoughts, discover AI-powered insights about your patterns, and watch your personality profile evolve. 100% on-device. Your twin never leaves your phone.
+OffRecord AI Journal is a private AI voice diary that builds a private AI assistant of your mind. Speak your thoughts, discover AI-powered insights about your patterns, and watch your personality profile evolve. 100% on-device. Your assistant never leaves your phone.
 
 ### Medium (for press)
-OffRecord AI Journal reimagines personal journaling with AI-powered Digital Twin technology. By combining voice-to-text recording with cognitive science-based AI, OffRecord AI Journal builds a comprehensive model of your personality, emotions, and thought patterns - all processed entirely on-device. No cloud, no accounts, no compromises. Features include a Digital Twin that deepens its understanding over time using Bayesian learning, Plutchik's emotional model, and AI-powered insights into your mood trends and behavioral patterns. With 8 themes, widgets, Face ID security, and multiple export formats, OffRecord AI Journal is the most private and intelligent diary app available.
+OffRecord AI Journal reimagines personal journaling with AI-powered Friday assistant. By combining voice-to-text recording with cognitive science-based AI, OffRecord AI Journal builds a comprehensive personality pattern model, emotions, and thought patterns - all processed entirely on-device. No cloud, no accounts, no compromises. Features include a Friday that deepens its understanding over time using Bayesian learning, Plutchik's emotional model, and AI-powered insights into your mood trends and behavioral patterns. With 8 themes, widgets, Face ID security, and multiple export formats, OffRecord AI Journal is the most private and intelligent diary app available.
 
 ### Long (for blog/feature)
-In a world where every app wants your data, OffRecord AI Journal takes a radical stance: your most personal thoughts should never leave your device. OffRecord AI Journal is an AI-powered voice diary that builds a "Digital Twin" - a living, learning model of who you are. As you journal, OffRecord AI Journal learns your communication style, maps your emotional landscape, tracks your thought patterns, and builds a knowledge graph of the people, places, and topics in your life. All powered by cognitive science (Plutchik's emotions, Big Five personality, Bayesian inference) and running 100% on-device using Apple's NaturalLanguage framework. The result is the most personal and private AI journal possible.
+In a world where every app wants your data, OffRecord AI Journal takes a radical stance: your most personal thoughts should never leave your device. OffRecord AI Journal is an AI-powered voice diary that builds a "Friday" - a living, learning model of who you are. As you journal, OffRecord AI Journal learns your communication style, maps your emotional landscape, tracks your thought patterns, and builds a knowledge graph of the people, places, and topics in your life. All powered by cognitive science (Plutchik's emotions, Big Five personality, Bayesian inference) and running 100% on-device using Apple's NaturalLanguage framework. The result is the most personal and private AI journal possible.
 
 ---
 
@@ -197,7 +197,7 @@ In a world where every app wants your data, OffRecord AI Journal takes a radical
 1. "Your thoughts deserve a home."
 2. "The most private diary in the world."
 3. "An AI that grows with you."
-4. "Your digital twin. Your rules."
+4. "Your private AI assistant. Your rules."
 5. "Speak freely. Stay private."
 
 **Recommended**: "Your thoughts deserve a home."
@@ -208,7 +208,7 @@ In a world where every app wants your data, OffRecord AI Journal takes a radical
 **Primary Category**: Health & Fitness
 **Secondary Category**: Lifestyle
 
-**Positioning**: Unlike Day One (cloud-based), Journey (social features), or generic journal apps, OffRecord AI Journal is positioned as the **privacy-first AI companion** with Digital Twin technology. No other diary app offers on-device personality modeling, emotional signature tracking, or a personal knowledge graph.
+**Positioning**: Unlike Day One (cloud-based), Journey (social features), or generic journal apps, OffRecord AI Journal is positioned as the **privacy-first AI companion** with Friday. No other diary app offers on-device personality modeling, emotional signature tracking, or a personal knowledge graph.
 
 ---
 
@@ -216,7 +216,7 @@ In a world where every app wants your data, OffRecord AI Journal takes a radical
 Tier 1 (High Priority):
 - voice diary
 - ai journal
-- digital twin
+- private AI assistant
 - private diary
 - voice journal
 - mood tracker

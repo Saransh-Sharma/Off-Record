@@ -14,8 +14,8 @@ OffRecord AI Journal processes the following types of data **entirely on your de
 - **Transcriptions**: Text converted from your voice recordings using Apple's Speech framework
 - **Journal Entries**: Text you write or dictate
 - **Mood Data**: Mood selections you make for your entries
-- **AI Analysis**: Emotional patterns, personality insights, and your Digital Twin model
-- **Digital Twin Data**: Personality model, emotional signature, and knowledge graph generated from your entries
+- **AI Analysis**: Emotional patterns, personality insights, and your Friday model
+- **Friday Data**: Personality model, emotional signature, and knowledge graph generated from your entries
 - **Photos**: Images you attach to diary entries (stored on-device only, never uploaded)
 
 ## Where Your Data Lives
@@ -51,7 +51,7 @@ All AI processing in OffRecord AI Journal happens **100% on-device**:
 
 - **Speech Recognition**: Uses Apple's built-in Speech framework. When online, Apple may process audio for better accuracy (per Apple's privacy policy). When offline, all processing is entirely on-device.
 - **Emotion Detection**: On-device using Apple's NaturalLanguage framework
-- **Digital Twin Engine**: On-device machine learning that builds your personal model
+- **Friday Engine**: On-device machine learning that builds your personal model
 - **OffRecord AI Journal Brain**: Rule-based cognitive AI running locally
 **No AI processing is sent to external servers.**
 
@@ -126,6 +126,6 @@ If you have questions about this privacy policy:
 
 ## Summary
 
-**We built OffRecord AI Journal because we believe your most personal thoughts deserve absolute privacy.** Your diary entries, voice recordings, emotional patterns, insights, and Digital Twin data all stay on your device. We can't see them, access them, or share them - because they never leave your phone.
+**We built OffRecord AI Journal because we believe your most personal thoughts deserve absolute privacy.** Your diary entries, voice recordings, emotional patterns, insights, and Friday data all stay on your device. We can't see them, access them, or share them - because they never leave your phone.
 
-Your twin is yours. Your thoughts are yours. Always.
+Your assistant is yours. Your thoughts are yours. Always.
