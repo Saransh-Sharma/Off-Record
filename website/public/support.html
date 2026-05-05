@@ -1,28 +1,23 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-R544S4KDBQ"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-R544S4KDBQ');
-</script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Support & FAQ - OffRecord AI Journal | Private AI Voice Diary</title>
-  <meta name="description" content="Get help with OffRecord AI Journal. Find answers about offline voice journaling, Friday AI, privacy, iCloud sync, encrypted backups, and more.">
-  <meta name="theme-color" content="#05081a">
+  <title>OffRecord AI Journal Support - Help, Privacy, and Contact</title>
+  <meta name="description" content="Get support for OffRecord AI Journal. Find help for voice recording, transcription, Friday AI, app lock, iCloud sync, exports, backups, privacy, and contact information.">
+  <meta name="author" content="OffRecord AI Journal">
+  <meta name="theme-color" content="#f6f2ea">
+  <link rel="canonical" href="https://offrecord.example.com/support">
+  <link rel="icon" href="/app-icon.png">
+  <link rel="apple-touch-icon" href="/app-icon.png">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://offrecord.example.com/support">
-  <meta property="og:title" content="Support & FAQ - OffRecord AI Journal">
-  <meta property="og:description" content="Find answers about OffRecord AI Journal's offline voice journaling, Friday AI, privacy, and more.">
-  <link rel="canonical" href="https://offrecord.example.com/support">
-  <link rel="stylesheet" href="style.css">
-  <link rel="icon" href="/app-icon.png">
-
-  <!-- FAQ Schema for rich results -->
+  <meta property="og:title" content="OffRecord AI Journal Support">
+  <meta property="og:description" content="Help and contact information for OffRecord AI Journal.">
+  <meta property="og:image" content="https://offrecord.example.com/og-image.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700;800&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -30,143 +25,400 @@
     "mainEntity": [
       {
         "@type": "Question",
-        "name": "Is my data private in OffRecord AI Journal?",
+        "name": "How do I contact OffRecord AI Journal support?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Yes. OffRecord AI Journal processes everything on your device. We don't have servers that receive your data. Your voice recordings, transcriptions, photos, and Friday model never leave your phone."
+          "text": "Email saransh1337@gmail.com with your question, device model, iOS version, app version, and any steps needed to reproduce the issue."
         }
       },
       {
         "@type": "Question",
-        "name": "Does OffRecord AI Journal work offline?",
+        "name": "Does OffRecord AI Journal collect my data?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Yes. Recording, journaling, and all AI features work fully offline. Speech transcription also works offline, though accuracy may be slightly better with an internet connection."
+          "text": "No. OffRecord AI Journal does not collect personal data, does not use tracking, and processes AI features on device."
         }
       },
       {
         "@type": "Question",
-        "name": "How do I back up my OffRecord AI Journal data?",
+        "name": "What devices are supported?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Go to Settings > Export Data. You can export in JSON, Markdown, CSV, plain text, or password-protected encrypted format (AES-256-GCM). You can also enable iCloud sync for automatic backup."
+          "text": "OffRecord AI Journal supports iPhone and iPad running iOS 17 or iPadOS 17 or later."
         }
       },
       {
         "@type": "Question",
-        "name": "What is Friday in OffRecord AI Journal?",
+        "name": "How do I export or delete my journal data?",
         "acceptedAnswer": {
           "@type": "Answer",
-          "text": "Friday is a private AI model that learns your personality, emotional patterns, communication style, and personal knowledge graph from your journal entries. It grows more accurate with every entry and stays 100% on your device."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "Is OffRecord AI Journal really free?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "Yes. OffRecord AI Journal is completely free with no in-app purchases, no subscriptions, and no ads. All features are included."
-        }
-      },
-      {
-        "@type": "Question",
-        "name": "What iOS version does OffRecord AI Journal require?",
-        "acceptedAnswer": {
-          "@type": "Answer",
-          "text": "OffRecord AI Journal requires iOS 17.0 or later."
+          "text": "Use Settings > Export Data to export supported formats or encrypted backups. Delete individual entries from Timeline, or uninstall the app to remove local app data."
         }
       }
     ]
   }
   </script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      margin: 0;
+      font-family: "Barlow", sans-serif;
+      background: #f6f2ea;
+      color: #1f211f;
+      line-height: 1.58;
+      -webkit-font-smoothing: antialiased;
+    }
+    :root {
+      --ink: #1f211f;
+      --muted: #66655f;
+      --paper: #f6f2ea;
+      --panel: #fffdf8;
+      --coal: #222222;
+      --sage: #607063;
+      --line: rgba(31, 33, 31, 0.12);
+      --shadow: 0 18px 50px rgba(39, 34, 25, 0.12);
+      --ease: cubic-bezier(0.32, 0.72, 0, 1);
+    }
+    a { color: inherit; }
+    .wrap { width: min(1080px, calc(100% - 40px)); margin: 0 auto; }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+      background: rgba(246, 242, 234, 0.92);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+    }
+    .nav {
+      min-height: 70px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 24px;
+    }
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--ink);
+      text-decoration: none;
+      font-size: 16px;
+      font-weight: 800;
+    }
+    .brand img {
+      width: 34px;
+      height: 34px;
+      border-radius: 8px;
+      box-shadow: 0 1px 2px rgba(0,0,0,0.14);
+    }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .nav-links a {
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--muted);
+      padding: 10px 12px;
+      border-radius: 999px;
+      transition: color 420ms var(--ease), background 420ms var(--ease);
+    }
+    .nav-links a:hover { color: var(--ink); background: rgba(31,33,31,0.07); }
+    .hero {
+      padding: 86px 0 42px;
+    }
+    .eyebrow {
+      margin: 0 0 14px;
+      color: var(--sage);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    h1, h2, h3 { margin: 0; letter-spacing: 0; }
+    h1 {
+      max-width: 760px;
+      font-size: 62px;
+      line-height: 0.98;
+      font-weight: 800;
+    }
+    h1 em {
+      display: block;
+      font-family: "Instrument Serif", serif;
+      font-size: 76px;
+      font-style: italic;
+      font-weight: 400;
+    }
+    .intro {
+      max-width: 720px;
+      margin: 24px 0 0;
+      color: var(--muted);
+      font-size: 19px;
+      font-weight: 500;
+    }
+    .support-card {
+      display: grid;
+      grid-template-columns: 1fr auto;
+      gap: 28px;
+      align-items: center;
+      margin-top: 34px;
+      padding: 28px;
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+    .support-card h2 {
+      font-size: 30px;
+      line-height: 1.1;
+    }
+    .support-card p {
+      margin: 10px 0 0;
+      color: var(--muted);
+      font-size: 16px;
+      font-weight: 500;
+    }
+    .email-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 48px;
+      padding: 12px 18px;
+      border-radius: 999px;
+      background: var(--coal);
+      color: #fffdf8;
+      text-decoration: none;
+      font-weight: 800;
+      white-space: nowrap;
+      transition: transform 420ms var(--ease), background 420ms var(--ease);
+    }
+    .email-button:hover { transform: translateY(-2px); background: #3a3a36; }
+    main { padding-bottom: 84px; }
+    .grid {
+      display: grid;
+      grid-template-columns: 0.8fr 1.2fr;
+      gap: 22px;
+      align-items: start;
+      margin-top: 54px;
+    }
+    .panel {
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 26px;
+    }
+    .panel h2 {
+      font-size: 28px;
+      line-height: 1.12;
+      margin-bottom: 16px;
+    }
+    .panel h3 {
+      font-size: 21px;
+      line-height: 1.2;
+      margin-top: 26px;
+      margin-bottom: 8px;
+    }
+    .panel h3:first-child { margin-top: 0; }
+    .panel p, .panel li {
+      color: var(--muted);
+      font-size: 16px;
+      font-weight: 500;
+    }
+    .panel p { margin: 0 0 13px; }
+    .panel ul, .panel ol {
+      margin: 0;
+      padding-left: 20px;
+    }
+    .quick-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      display: grid;
+      gap: 10px;
+    }
+    .quick-list a {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 13px 14px;
+      border-radius: 8px;
+      background: #f0eadf;
+      text-decoration: none;
+      font-weight: 800;
+      color: var(--ink);
+    }
+    .quick-list a::after {
+      content: "";
+      width: 10px;
+      height: 10px;
+      border-top: 2px solid currentColor;
+      border-right: 2px solid currentColor;
+      transform: rotate(45deg);
+      margin-top: 6px;
+      flex: 0 0 auto;
+    }
+    .status {
+      margin-top: 18px;
+      padding: 16px;
+      border-radius: 8px;
+      background: #e8efe3;
+      color: #405343;
+      font-weight: 700;
+    }
+    .faq-section {
+      display: grid;
+      gap: 16px;
+    }
+    .faq-item {
+      padding-bottom: 18px;
+      border-bottom: 1px solid var(--line);
+    }
+    .faq-item:last-child {
+      border-bottom: 0;
+      padding-bottom: 0;
+    }
+    footer {
+      background: #1f211f;
+      color: #fffdf8;
+      padding: 42px 0;
+    }
+    .footer-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 24px;
+      align-items: center;
+      color: rgba(255,253,248,0.7);
+    }
+    .footer-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+    .footer-links a {
+      color: rgba(255,253,248,0.86);
+      text-decoration: none;
+      font-weight: 700;
+    }
+    @media (max-width: 760px) {
+      .wrap { width: min(100% - 28px, 1080px); }
+      .nav { align-items: flex-start; flex-direction: column; padding: 16px 0; }
+      .nav-links { flex-wrap: wrap; }
+      .hero { padding-top: 58px; }
+      h1 { font-size: 42px; }
+      h1 em { font-size: 50px; }
+      .support-card, .grid { grid-template-columns: 1fr; }
+      .email-button { width: 100%; }
+      .footer-row { flex-direction: column; align-items: flex-start; }
+    }
+  </style>
 </head>
 <body>
-  <nav>
-    <div class="container">
-      <a href="/" class="nav-brand">
-        <img src="/app-icon.png" alt="OffRecord AI Journal">
+  <header class="topbar">
+    <nav class="wrap nav" aria-label="Support navigation">
+      <a class="brand" href="/">
+        <img src="/app-icon.png" alt="">
         <span>OffRecord AI Journal</span>
       </a>
-      <ul class="nav-links">
-        <li><a href="/blog">Blog</a></li>
-        <li><a href="/privacy">Privacy</a></li>
-        <li><a href="/support">Support</a></li>
-      </ul>
-    </div>
-  </nav>
-
-  <main class="container">
-    <div class="page-header">
-      <h1>Support</h1>
-    </div>
-
-    <div class="page-content">
-      <div class="support-card">
-        <div class="icon"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#9b7dd8" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"/></svg></div>
-        <h3>Get in Touch</h3>
-        <p>Have a question, found a bug, or want to suggest a feature? We'd love to hear from you.</p>
-        <a href="mailto:intrepidkarthi@gmail.com" class="email-link">intrepidkarthi@gmail.com</a>
+      <div class="nav-links">
+        <a href="/">Home</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/faq">FAQ</a>
+        <a href="mailto:saransh1337@gmail.com">Contact</a>
       </div>
+    </nav>
+  </header>
 
-      <div class="faq">
-        <h2>Common Questions</h2>
+  <main class="wrap">
+    <section class="hero">
+      <p class="eyebrow">App Store support</p>
+      <h1>Help for OffRecord <em>when something feels stuck.</em></h1>
+      <p class="intro">Find support for recording, transcription, Friday AI, privacy, iCloud sync, encrypted exports, and account-free data ownership.</p>
+      <div class="support-card">
+        <div>
+          <h2>Contact support</h2>
+          <p>Email is the fastest way to get help. Include your iPhone or iPad model, iOS version, app version, and the steps that led to the issue. Support is handled by the developer, Saransh, so detailed reports help fix problems faster.</p>
+        </div>
+        <a class="email-button" href="mailto:saransh1337@gmail.com?subject=OffRecord%20AI%20Journal%20Support">saransh1337@gmail.com</a>
+      </div>
+    </section>
 
-        <div class="faq-item">
-          <h3>Is my data private?</h3>
-          <p>Yes. OffRecord AI Journal processes everything on your device. We don't have servers that receive your data. Your voice recordings, transcriptions, photos, and Friday model never leave your phone. See our <a href="/privacy">Privacy Policy</a> for details.</p>
+    <div class="grid">
+      <aside class="panel" aria-label="Quick support links">
+        <h2>Quick links</h2>
+        <ul class="quick-list">
+          <li><a href="#troubleshooting">Troubleshooting</a></li>
+          <li><a href="#privacy">Privacy and data</a></li>
+          <li><a href="#export">Export and delete</a></li>
+          <li><a href="#sync">iCloud sync</a></li>
+          <li><a href="#lock">App lock</a></li>
+          <li><a href="/privacy">Privacy Policy</a></li>
+          <li><a href="/faq">Full FAQ</a></li>
+        </ul>
+        <div class="status">Supported on iPhone and iPad running iOS 17 or iPadOS 17 and later.</div>
+      </aside>
+
+      <section class="panel faq-section" aria-label="Support topics">
+        <div class="faq-item" id="troubleshooting">
+          <h3>Recording or transcription is not working</h3>
+          <p>Confirm that Microphone and Speech Recognition permissions are enabled in iOS Settings. If transcription is unavailable, restart the app and try a short test recording in a quiet environment. Offline transcription depends on Apple's on-device Speech support for the selected language.</p>
         </div>
 
         <div class="faq-item">
-          <h3>Does the app work offline?</h3>
-          <p>Yes. Recording, journaling, and all AI features work fully offline. Speech transcription also works offline, though accuracy may be slightly better with an internet connection.</p>
+          <h3>Friday insights are missing or sparse</h3>
+          <p>Friday improves as you add more entries. New journals may show fewer patterns until there is enough writing or voice data to analyze communication style, sentiment, topics, and recurring people or places.</p>
         </div>
 
-        <div class="faq-item">
-          <h3>How do I back up my data?</h3>
-          <p>Go to Settings &gt; Export Data. You can export in JSON, Markdown, CSV, plain text, or password-protected encrypted format (AES-256-GCM). You can also enable iCloud sync for automatic backup.</p>
+        <div class="faq-item" id="privacy">
+          <h3>Is my journal data collected?</h3>
+          <p>No. OffRecord AI Journal is built around on-device processing. Journal entries, voice recordings, transcriptions, photos, mood data, and Friday data stay on your device unless you choose optional iCloud sync through your Apple account.</p>
+          <p>The app does not require an account and does not use advertising, analytics, or tracking SDKs.</p>
         </div>
 
-        <div class="faq-item">
-          <h3>Can I sync across devices?</h3>
-          <p>Yes. Enable iCloud sync in Settings to sync diary entries across your Apple devices via CloudKit. Your data is encrypted with your Apple ID.</p>
+        <div class="faq-item" id="export">
+          <h3>How do I export or delete data?</h3>
+          <p>Use Settings &gt; Export Data to export PDF, JSON, Markdown, CSV, plain text, or an AES-256-GCM encrypted backup. Delete individual entries from the Timeline. To remove local app data entirely, uninstall OffRecord AI Journal. If iCloud sync is enabled, manage iCloud data from your Apple ID iCloud settings.</p>
         </div>
 
-        <div class="faq-item">
-          <h3>What is Friday?</h3>
-          <p>Friday is a private AI model that learns your personality, emotional patterns, communication style, and personal knowledge graph from your journal entries. It grows more accurate with every entry and stays 100% on your device.</p>
+        <div class="faq-item" id="sync">
+          <h3>How does optional iCloud sync work?</h3>
+          <p>iCloud sync uses Apple's CloudKit infrastructure tied to your Apple ID. OffRecord AI Journal does not operate a server and cannot access your iCloud journal data. You can leave sync off and use the app locally.</p>
         </div>
 
-        <div class="faq-item">
-          <h3>How do I lock the app?</h3>
-          <p>Go to Settings &gt; App Lock and enable Face ID or Touch ID protection. The app locks automatically when you leave it and requires authentication to re-enter.</p>
+        <div class="faq-item" id="lock">
+          <h3>How do I protect the app with Face ID or Touch ID?</h3>
+          <p>Open Settings inside OffRecord AI Journal and enable App Lock. When enabled, the app uses LocalAuthentication so your journal is protected by Face ID or Touch ID when you return to it.</p>
         </div>
 
         <div class="faq-item">
           <h3>Can I attach photos?</h3>
-          <p>Yes. You can attach up to 5 photos per diary entry. Photos are stored locally on your device and are never uploaded to any server.</p>
+          <p>Yes. You can attach up to five photos per entry. Photo attachments are stored locally in the app sandbox and are not uploaded to an OffRecord server.</p>
         </div>
 
         <div class="faq-item">
-          <h3>How do I delete my data?</h3>
-          <p>Swipe left on any entry in the Timeline view to delete it. To remove all data, uninstall the app. For iCloud data, manage it through your device's iCloud settings.</p>
+          <h3>Is OffRecord AI Journal a medical or therapy app?</h3>
+          <p>No. OffRecord AI Journal is for private journaling, self-reflection, mood awareness, and personal insight. It is not a medical device, crisis service, therapist, or substitute for professional care.</p>
         </div>
 
         <div class="faq-item">
-          <h3>What iOS version is required?</h3>
-          <p>OffRecord AI Journal requires iOS 17.0 or later.</p>
+          <h3>What should I include in a bug report?</h3>
+          <p>Include your device model, iOS or iPadOS version, app version, what you expected to happen, what happened instead, and any steps needed to reproduce the issue. Do not include private journal content unless you choose to share it.</p>
         </div>
-      </div>
+      </section>
     </div>
   </main>
 
   <footer>
-    <div class="container">
+    <div class="wrap footer-row">
+      <div>&copy; 2026 OffRecord AI Journal. All rights reserved.</div>
       <div class="footer-links">
-        <a href="/blog">Blog</a>
-        <a href="/privacy">Privacy Policy</a>
-        <a href="/support">Support</a>
+        <a href="/">Home</a>
+        <a href="/privacy">Privacy</a>
+        <a href="/faq">FAQ</a>
+        <a href="mailto:saransh1337@gmail.com">Contact</a>
       </div>
-      <p>&copy; 2026 OffRecord AI Journal. All rights reserved.</p>
     </div>
   </footer>
 </body>
