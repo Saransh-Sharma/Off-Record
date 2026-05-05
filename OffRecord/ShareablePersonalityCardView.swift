@@ -37,7 +37,7 @@ struct PersonalityCardRenderer {
 
     /// Renders the personality card as a UIImage for sharing
     @MainActor
-    static func renderCard(profile: TwinProfile, format: PersonalityCardFormat = .story) -> UIImage? {
+    static func renderCard(profile: FridayProfile, format: PersonalityCardFormat = .story) -> UIImage? {
         let cardView = ShareablePersonalityCardExport(profile: profile, format: format)
             .frame(width: format.layoutSize.width, height: format.layoutSize.height)
 
@@ -53,7 +53,7 @@ struct PersonalityCardRenderer {
 // MARK: - Story Format Export (1080x1920 at 3x)
 
 private struct ShareablePersonalityCardExport: View {
-    let profile: TwinProfile
+    let profile: FridayProfile
     let format: PersonalityCardFormat
 
     var body: some View {
@@ -318,7 +318,7 @@ private struct ShareablePersonalityCardExport: View {
             .cornerRadius(compact ? 6 : 10)
     }
 
-    private func storyTraitRow(_ trait: TwinProfile.Trait) -> some View {
+    private func storyTraitRow(_ trait: FridayProfile.Trait) -> some View {
         VStack(spacing: 3) {
             HStack {
                 Text(trait.label)
@@ -357,7 +357,7 @@ private struct ShareablePersonalityCardExport: View {
         }
     }
 
-    private func landscapeTraitRow(_ trait: TwinProfile.Trait) -> some View {
+    private func landscapeTraitRow(_ trait: FridayProfile.Trait) -> some View {
         VStack(spacing: 2) {
             HStack {
                 Text(trait.label)
@@ -392,7 +392,7 @@ private struct ShareablePersonalityCardExport: View {
 
 #Preview("Story Format") {
     ShareablePersonalityCardExport(
-        profile: TwinProfile(
+        profile: FridayProfile(
             traits: [
                 .init(label: "Expression", value: 0.7, lowLabel: "Reserved", highLabel: "Expressive", displayLabel: "Expressive"),
                 .init(label: "Directness", value: 0.8, lowLabel: "Nuanced", highLabel: "Direct", displayLabel: "Direct"),
@@ -421,7 +421,7 @@ private struct ShareablePersonalityCardExport: View {
 
 #Preview("Landscape Format") {
     ShareablePersonalityCardExport(
-        profile: TwinProfile(
+        profile: FridayProfile(
             traits: [
                 .init(label: "Expression", value: 0.7, lowLabel: "Reserved", highLabel: "Expressive", displayLabel: "Expressive"),
                 .init(label: "Directness", value: 0.8, lowLabel: "Nuanced", highLabel: "Direct", displayLabel: "Direct"),

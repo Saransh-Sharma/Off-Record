@@ -205,10 +205,10 @@ struct ScreenshotDataSeeder {
             #endif
         }
 
-        // Process entries through DigitalTwinEngine so Twin tab populates
+        // Process entries through FridayAssistantEngine so Twin tab populates
         for entry in entries {
             let entryDate = calendar.date(byAdding: .day, value: -entry.daysAgo, to: now)!
-            DigitalTwinEngine.shared.processEntry(
+            FridayAssistantEngine.shared.processEntry(
                 text: entry.text,
                 mood: entry.mood,
                 date: entryDate,

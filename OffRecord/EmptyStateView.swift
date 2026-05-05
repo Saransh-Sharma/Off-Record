@@ -105,13 +105,15 @@ extension EmptyStateView {
 // MARK: - Welcome Card (for Today view)
 
 struct WelcomeCard: View {
+    @AppStorage("authorName") private var authorName: String = ""
+
     var body: some View {
         VStack(spacing: 20) {
             // Privacy badge
             PrivacyBadge()
 
             VStack(spacing: 12) {
-                Text("Welcome to Your Private Diary")
+                Text(Personalization.appendFirstName(to: "Welcome to Your Private Diary", name: authorName))
                     .font(.title2.weight(.bold))
                     .multilineTextAlignment(.center)
 

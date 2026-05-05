@@ -32,13 +32,13 @@ struct TimelineView: View {
     @State private var startDate: Date? = nil
     @State private var endDate: Date? = nil
     @State private var isListening: Bool = false
-    @State private var searchSuggestions: [DigitalTwinEngine.SearchSuggestion] = []
+    @State private var searchSuggestions: [FridayAssistantEngine.SearchSuggestion] = []
 
     #if os(iOS)
     @StateObject private var voiceSearch = VoiceSearchManager()
     #endif
 
-    private var twin: DigitalTwinEngine { DigitalTwinEngine.shared }
+    private var twin: FridayAssistantEngine { FridayAssistantEngine.shared }
 
     var body: some View {
         VStack(spacing: 0) {

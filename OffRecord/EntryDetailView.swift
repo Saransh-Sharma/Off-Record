@@ -24,6 +24,7 @@ struct EntryDetailView: View {
     @State private var isEditing = false
     @State private var showAIInsights = false
     @State private var aiAnalysis: AIAnalysisResult?
+    private let deleteEmptyDraftOnDisappear: Bool
 
     // Photo state
     @State private var selectedPhotos: [PhotosPickerItem] = []
@@ -34,9 +35,15 @@ struct EntryDetailView: View {
 
     private var isIPad: Bool { horizontalSizeClass == .regular }
 
-    init(entry: DiaryEntry) {
+    init(
+        entry: DiaryEntry,
+        startEditing: Bool = false,
+        deleteEmptyDraftOnDisappear: Bool = false
+    ) {
         self.entry = entry
+        self.deleteEmptyDraftOnDisappear = deleteEmptyDraftOnDisappear
         _text = State(initialValue: entry.text ?? "")
+        _isEditing = State(initialValue: startEditing)
         let moodString = entry.value(forKey: "mood") as? String ?? ""
         _selectedMood = State(initialValue: Mood(rawValue: moodString) ?? .none)
     }
@@ -96,8 +103,13 @@ struct EntryDetailView: View {
                 }
             }
         }
-        .onDisappear(perform: saveIfNeeded)
-        .onAppear(perform: loadPhotos)
+        .onDisappear {
+            saveIfNeeded()
+            deleteEmptyDraftIfNeeded()
+        }
+        .onAppear {
+            loadPhotos()
+        }
         .onChange(of: selectedPhotos) { _, newItems in
             handlePhotoSelection(newItems)
         }
@@ -607,7 +619,7 @@ struct EntryDetailView: View {
                 if !trimmed.isEmpty {
                     if !oldText.isEmpty && trimmed != oldText {
                         // Text was edited — re-process to update entity names
-                        DigitalTwinEngine.shared.reprocessEditedEntry(
+                        FridayAssistantEngine.shared.reprocessEditedEntry(
                             oldText: oldText,
                             newText: trimmed,
                             mood: selectedMood.rawValue,
@@ -615,7 +627,7 @@ struct EntryDetailView: View {
                             duration: entry.duration
                         )
                     } else {
-                        DigitalTwinEngine.shared.processEntry(
+                        FridayAssistantEngine.shared.processEntry(
                             text: trimmed,
                             mood: selectedMood.rawValue,
                             date: entry.date ?? Date(),
@@ -627,6 +639,29 @@ struct EntryDetailView: View {
                 // ignore
             }
         }
+    }
+
+    private func deleteEmptyDraftIfNeeded() {
+        guard deleteEmptyDraftOnDisappear, entryHasNoContent else { return }
+
+        viewContext.delete(entry)
+        do {
+            try viewContext.save()
+        } catch {
+            viewContext.rollback()
+        }
+    }
+
+    private var entryHasNoContent: Bool {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let persistedText = entry.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let duration = entry.value(forKey: "duration") as? Double ?? 0
+        let photoCount = entry.photos?.count ?? 0
+        return trimmed.isEmpty
+            && persistedText.isEmpty
+            && !hasAudioReference
+            && duration <= 0
+            && photoCount == 0
     }
 
     private func saveMood() {

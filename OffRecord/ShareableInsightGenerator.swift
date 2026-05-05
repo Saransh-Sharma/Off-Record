@@ -7,7 +7,7 @@
 //  but reveal nothing private.
 //
 //  All analysis is performed on-device using existing data from
-//  DigitalTwinEngine, LocalAIEngine, and raw diary entries.
+//  FridayAssistantEngine, LocalAIEngine, and raw diary entries.
 //
 
 import Foundation
@@ -72,7 +72,7 @@ struct ShareableInsightGenerator {
 
         guard weekEntries.count >= 3 else { return [] }
 
-        let twin = DigitalTwinEngine.shared
+        let twin = FridayAssistantEngine.shared
         let profile = LocalAIEngine.shared.userProfile
 
         var insights: [ShareableInsight] = []
@@ -167,7 +167,7 @@ struct ShareableInsightGenerator {
     }
 
     /// "You mentioned Sarah 8 times. Your mood drops every time."
-    private static func personSentimentInsight(weekEntries: [DiaryEntry], twin: DigitalTwinEngine) -> ShareableInsight? {
+    private static func personSentimentInsight(weekEntries: [DiaryEntry], twin: FridayAssistantEngine) -> ShareableInsight? {
         let tagger = NLTagger(tagSchemes: [.nameType, .sentimentScore])
         var personSentiments: [String: (count: Int, totalSentiment: Double)] = [:]
 
@@ -491,7 +491,7 @@ struct ShareableInsightGenerator {
     }
 
     /// "You used 347 unique words this week. That's more expressive than 80% of your weeks."
-    private static func vocabularyInsight(weekEntries: [DiaryEntry], twin: DigitalTwinEngine) -> ShareableInsight? {
+    private static func vocabularyInsight(weekEntries: [DiaryEntry], twin: FridayAssistantEngine) -> ShareableInsight? {
         let allText = weekEntries.compactMap { $0.text }.joined(separator: " ")
         let words = allText.lowercased().split { $0.isWhitespace || $0.isPunctuation }
         let uniqueWords = Set(words)
@@ -532,7 +532,7 @@ struct ShareableInsightGenerator {
     }
 
     /// "Your #1 concern this week: work. It showed up in every single entry."
-    private static func topConcernInsight(weekEntries: [DiaryEntry], twin: DigitalTwinEngine) -> ShareableInsight? {
+    private static func topConcernInsight(weekEntries: [DiaryEntry], twin: FridayAssistantEngine) -> ShareableInsight? {
         let tagger = NLTagger(tagSchemes: [.lexicalClass])
         var topicCounts: [String: Int] = [:]
         let entriesWithTopic: [String: Int] = [:]
