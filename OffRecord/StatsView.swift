@@ -101,8 +101,7 @@ struct StatsView: View {
         .frame(maxWidth: .infinity)
         .padding(.vertical, 32)
         .padding(.horizontal, 16)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .offRecordContentCard()
     }
 
     // MARK: - Streak Card
@@ -449,13 +448,11 @@ struct StatsView: View {
                 .font(.headline)
                 .padding(.horizontal, 32)
                 .padding(.vertical, 12)
-                .background(Color.orange)
-                .foregroundColor(.white)
-                .clipShape(Capsule())
+                .foregroundColor(.orange)
+                .offRecordGlassControl(tint: .orange, in: Capsule(), fallbackFill: Color.orange.opacity(0.15))
             }
             .padding(32)
-            .background(Color(.systemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 24))
+            .offRecordGlassBar(cornerRadius: 24, fallbackFill: Color(.systemBackground))
             .shadow(radius: 20)
             .padding(40)
             .transition(.scale.combined(with: .opacity))

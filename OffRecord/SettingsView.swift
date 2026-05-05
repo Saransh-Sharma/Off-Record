@@ -721,12 +721,12 @@ struct ThemeButton: View {
         Button(action: action) {
             VStack(spacing: 6) {
                 ZStack {
-                    Circle()
-                        .fill(theme.accentColor.opacity(0.2))
+                    Color.clear
                         .frame(width: 48, height: 48)
+                        .offRecordGlassControl(tint: isSelected ? theme.accentColor : nil, in: Circle(), fallbackFill: theme.accentColor.opacity(0.2))
                     
                     Circle()
-                        .fill(theme.accentColor)
+                        .fill(theme.accentColor.opacity(isSelected ? 1 : 0.8))
                         .frame(width: 32, height: 32)
                     
                     Image(systemName: theme.icon)

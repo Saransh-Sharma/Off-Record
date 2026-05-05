@@ -278,8 +278,7 @@ struct TodayView: View {
                     }
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color(.secondarySystemGroupedBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .offRecordContentCard()
                 }
                 .buttonStyle(.plain)
             } else {
@@ -309,8 +308,7 @@ struct TodayView: View {
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 32)
-                    .background(Color(.secondarySystemGroupedBackground))
-                    .clipShape(RoundedRectangle(cornerRadius: 16))
+                    .offRecordContentCard()
                 }
             }
         }
@@ -331,8 +329,7 @@ struct TodayView: View {
                 }
                 .padding(.vertical, 12)
                 .padding(.horizontal, 20)
-                .background(Color(.secondarySystemGroupedBackground))
-                .clipShape(Capsule())
+                .offRecordGlassControl(in: Capsule())
                 .transition(.scale.combined(with: .opacity))
             }
 
@@ -399,8 +396,12 @@ struct TodayView: View {
             }
         }
         .padding(.vertical, 20)
+        .padding(.horizontal, 20)
+        .frame(maxWidth: isIPad ? 560 : .infinity)
+        .offRecordGlassBar()
         .padding(.horizontal)
-        .background(Color(.systemGroupedBackground))
+        .padding(.bottom, 8)
+        .safeAreaPadding(.bottom, 4)
         .animation(.spring(response: 0.4), value: recordingState)
     }
 
@@ -432,13 +433,12 @@ struct TodayView: View {
 
     private func sideActionButton(systemImage: String) -> some View {
         ZStack {
-            Circle()
-                .fill(Color(.tertiarySystemFill))
-                .frame(width: sideActionButtonSize, height: sideActionButtonSize)
             Image(systemName: systemImage)
                 .font(.system(size: isIPad ? 22 : 18))
-                .foregroundColor(.accentColor)
+                .foregroundColor(sideActionIconColor)
         }
+        .frame(width: sideActionButtonSize, height: sideActionButtonSize)
+        .offRecordGlassControl(tint: .accentColor, in: Circle(), fallbackFill: Color(.tertiarySystemFill))
     }
 
     private var recordButton: some View {
@@ -448,35 +448,52 @@ struct TodayView: View {
             }
         } label: {
             ZStack {
-                // Main circle
-                Circle()
-                    .fill(buttonColor)
-                    .frame(width: recordButtonSize, height: recordButtonSize)
+                if #available(iOS 26.0, *) {
+                    Circle()
+                        .stroke(buttonColor.opacity(0.35), lineWidth: 4)
+                        .frame(width: recordButtonOuterSize, height: recordButtonOuterSize)
+                } else {
+                    Circle()
+                        .fill(buttonColor)
+                        .frame(width: recordButtonSize, height: recordButtonSize)
 
-                // Outer ring (subtle)
-                Circle()
-                    .stroke(buttonColor.opacity(0.3), lineWidth: 4)
-                    .frame(width: recordButtonOuterSize, height: recordButtonOuterSize)
+                    Circle()
+                        .stroke(buttonColor.opacity(0.3), lineWidth: 4)
+                        .frame(width: recordButtonOuterSize, height: recordButtonOuterSize)
+                }
 
                 // Icon
                 if recordingState == .recording {
                     // Stop square
                     RoundedRectangle(cornerRadius: 6)
-                        .fill(.white)
+                        .fill(recordIconColor)
                         .frame(width: isIPad ? 30 : 24, height: isIPad ? 30 : 24)
                 } else if recordingState == .processing {
                     ProgressView()
-                        .tint(.white)
+                        .tint(recordIconColor)
                 } else {
                     // Mic icon
                     Image(systemName: "mic.fill")
                         .font(.system(size: isIPad ? 34 : 28))
-                        .foregroundColor(.white)
+                        .foregroundColor(recordIconColor)
                 }
             }
+            .frame(width: recordButtonOuterSize, height: recordButtonOuterSize)
+            .offRecordGlassControl(tint: buttonColor, in: Circle(), fallbackFill: buttonColor)
         }
         .buttonStyle(.plain)
         .accessibilityLabel(recordingState == .recording ? "Stop recording" : "Start recording")
+    }
+
+    private var recordIconColor: Color {
+        .white
+    }
+
+    private var sideActionIconColor: Color {
+        if #available(iOS 26.0, *) {
+            return .white
+        }
+        return .accentColor
     }
 
     private var buttonColor: Color {
@@ -828,8 +845,7 @@ struct StatBadge: View {
         .foregroundColor(color)
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(color.opacity(0.12))
-        .clipShape(Capsule())
+        .offRecordGlassControl(tint: color, in: Capsule(), fallbackFill: color.opacity(0.12))
     }
 }
 
@@ -884,9 +900,12 @@ struct PromptChip: View {
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
             .frame(maxWidth: 280, alignment: .leading)
-            .background(isSelected ? Color.accentColor.opacity(0.15) : Color(.secondarySystemGroupedBackground))
             .foregroundColor(.primary)
-            .clipShape(RoundedRectangle(cornerRadius: 12))
+            .offRecordGlassControl(
+                tint: isSelected ? .accentColor : nil,
+                in: RoundedRectangle(cornerRadius: 12, style: .continuous),
+                fallbackFill: isSelected ? Color.accentColor.opacity(0.15) : Color(.secondarySystemGroupedBackground)
+            )
         }
         .buttonStyle(.plain)
     }

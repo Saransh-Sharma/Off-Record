@@ -39,18 +39,19 @@ struct OnboardingView: View {
 
     var body: some View {
         ZStack {
-            LinearGradient(
-                colors: [
-                    Color(red: 0.08, green: 0.11, blue: 0.16),
-                    Color(red: 0.07, green: 0.17, blue: 0.19),
-                    Color(red: 0.04, green: 0.05, blue: 0.08)
-                ],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
+            ConcentricPageTransitionView(
+                pages: concentricPages,
+                currentIndex: stepIndex,
+                duration: reduceMotion ? 0.01 : 0.86,
+                ctaTitle: primaryTitle,
+                ctaIcon: primaryIcon ?? "chevron.forward",
+                isCTADisabled: isPrimaryDisabled,
+                secondaryTitle: secondaryTitle,
+                onPrimaryAction: primaryAction,
+                onSecondaryAction: secondaryAction
             )
-            .ignoresSafeArea()
 
-            VStack(spacing: 0) {
+            VStack {
                 OnboardingProgressHeader(
                     step: step,
                     canGoBack: step.canGoBack,
@@ -58,31 +59,7 @@ struct OnboardingView: View {
                 )
                 .padding(.horizontal, isIPad ? 44 : 20)
                 .padding(.top, 14)
-
-                ScrollView {
-                    VStack(spacing: isIPad ? 28 : 22) {
-                        currentStepContent
-                    }
-                    .frame(maxWidth: isIPad ? 620 : .infinity)
-                    .padding(.horizontal, isIPad ? 0 : 20)
-                    .padding(.top, 20)
-                    .padding(.bottom, 120)
-                    .frame(maxWidth: .infinity)
-                }
-            }
-
-            VStack {
                 Spacer()
-                OnboardingBottomBar(
-                    primaryTitle: primaryTitle,
-                    primaryIcon: primaryIcon,
-                    secondaryTitle: secondaryTitle,
-                    isPrimaryDisabled: isPrimaryDisabled,
-                    onPrimary: primaryAction,
-                    onSecondary: secondaryAction
-                )
-                .padding(.horizontal, isIPad ? 44 : 20)
-                .padding(.bottom, 18)
             }
         }
         .foregroundStyle(.white)
@@ -116,8 +93,31 @@ struct OnboardingView: View {
         }
     }
 
+    private var stepIndex: Binding<Int> {
+        Binding(
+            get: { step.rawValue },
+            set: { newValue in
+                guard let newStep = OnboardingStep(rawValue: newValue) else { return }
+                step = newStep
+            }
+        )
+    }
+
+    private var concentricPages: [ConcentricPageTransitionView<AnyView>.PageContent] {
+        OnboardingStep.allCases.map { step in
+            (
+                view: AnyView(
+                    ConcentricOnboardingPage(isIPad: isIPad) {
+                        currentStepContent(for: step)
+                    }
+                ),
+                background: step.backgroundColor
+            )
+        }
+    }
+
     @ViewBuilder
-    private var currentStepContent: some View {
+    private func currentStepContent(for step: OnboardingStep) -> some View {
         switch step {
         case .welcome:
             WelcomeStep(nameDraft: $nameDraft)
@@ -286,16 +286,12 @@ struct OnboardingView: View {
 
     private func goForward() {
         guard let next = step.next else { return }
-        withAnimation(.easeInOut(duration: 0.22)) {
-            step = next
-        }
+        step = next
     }
 
     private func goBack() {
         guard let previous = step.previous else { return }
-        withAnimation(.easeInOut(duration: 0.22)) {
-            step = previous
-        }
+        step = previous
     }
 
     private func enableFaceID() {
@@ -466,6 +462,60 @@ enum OnboardingStep: Int, CaseIterable, Identifiable {
 
     var progressText: String {
         "\(rawValue + 1) of \(Self.allCases.count)"
+    }
+
+    var headerTitle: String {
+        switch self {
+        case .welcome: return ""
+        case .goal: return "Your goal"
+        case .painPoints: return "What gets in the way"
+        case .privacyProof: return "Privacy proof"
+        case .faceID: return "Privacy lock"
+        case .relatable: return "A quick check"
+        case .solution: return "Your private setup"
+        case .preferences: return "Make it yours"
+        case .microphone, .speech: return "Before your first entry"
+        case .processing: return "Building"
+        case .firstEntry: return "First entry"
+        case .valueReveal: return "Your starter snapshot"
+        case .habit: return "Build the habit"
+        case .finish: return "Ready"
+        }
+    }
+
+    var backgroundColor: Color {
+        switch self {
+        case .welcome:
+            return Color(red: 0.84, green: 0.28, blue: 0.36)
+        case .goal:
+            return Color(red: 0.16, green: 0.50, blue: 0.57)
+        case .painPoints:
+            return Color(red: 0.78, green: 0.42, blue: 0.18)
+        case .privacyProof:
+            return Color(red: 0.20, green: 0.36, blue: 0.64)
+        case .faceID:
+            return Color(red: 0.13, green: 0.55, blue: 0.42)
+        case .relatable:
+            return Color(red: 0.48, green: 0.31, blue: 0.72)
+        case .solution:
+            return Color(red: 0.10, green: 0.45, blue: 0.52)
+        case .preferences:
+            return Color(red: 0.58, green: 0.34, blue: 0.58)
+        case .microphone:
+            return Color(red: 0.72, green: 0.27, blue: 0.42)
+        case .speech:
+            return Color(red: 0.25, green: 0.43, blue: 0.76)
+        case .processing:
+            return Color(red: 0.13, green: 0.16, blue: 0.24)
+        case .firstEntry:
+            return Color(red: 0.10, green: 0.42, blue: 0.48)
+        case .valueReveal:
+            return Color(red: 0.38, green: 0.42, blue: 0.20)
+        case .habit:
+            return Color(red: 0.66, green: 0.38, blue: 0.16)
+        case .finish:
+            return Color(red: 0.12, green: 0.28, blue: 0.48)
+        }
     }
 }
 
@@ -677,35 +727,76 @@ enum MoodChoice: String, CaseIterable, Codable, Identifiable {
     }
 }
 
+private struct ConcentricOnboardingPage<Content: View>: View {
+    let isIPad: Bool
+    let content: Content
+
+    init(isIPad: Bool, @ViewBuilder content: () -> Content) {
+        self.isIPad = isIPad
+        self.content = content()
+    }
+
+    var body: some View {
+        GeometryReader { proxy in
+            ScrollView(showsIndicators: false) {
+                VStack {
+                    Spacer(minLength: 0)
+
+                    content
+                        .frame(maxWidth: isIPad ? 620 : .infinity)
+
+                    Spacer(minLength: 0)
+                }
+                .frame(maxWidth: .infinity)
+                .frame(minHeight: max(proxy.size.height - 190, 520))
+                .padding(.horizontal, isIPad ? 44 : 24)
+                .padding(.top, 88)
+                .padding(.bottom, 150)
+            }
+        }
+    }
+}
+
 // MARK: - Steps
 
 private struct WelcomeStep: View {
     @Binding var nameDraft: String
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 24) {
-            LocalAIBadge()
+        VStack(alignment: .center, spacing: 26) {
+            ZStack {
+                Circle()
+                    .fill(.white.opacity(0.18))
+                    .frame(width: 148, height: 148)
+                FridayMascotView(pose: .wave, size: 104)
+            }
 
-            VStack(alignment: .leading, spacing: 14) {
+            VStack(alignment: .center, spacing: 14) {
                 Text("Understand yourself, privately.")
                     .font(.system(size: 42, weight: .bold, design: .rounded))
+                    .multilineTextAlignment(.center)
                     .lineLimit(3)
                     .minimumScaleFactor(0.78)
 
                 Text("Speak freely. OffRecord turns your voice into insights using local AI on your device, even without internet.")
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(.white.opacity(0.76))
+                    .multilineTextAlignment(.center)
                     .lineSpacing(4)
             }
 
-            JournalPreviewCard()
-
-            TextField("Your name (optional)", text: $nameDraft)
+            TextField(
+                "Your name (optional)",
+                text: $nameDraft,
+                prompt: Text("Your name (optional)")
+                    .foregroundStyle(Color.black.opacity(0.46))
+            )
                 .textContentType(.givenName)
                 .textInputAutocapitalization(.words)
                 .autocorrectionDisabled()
                 .font(.headline)
-                .foregroundStyle(.primary)
+                .foregroundColor(.black)
+                .tint(Color(red: 0.84, green: 0.28, blue: 0.36))
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
                 .background(.white)
@@ -906,7 +997,7 @@ private struct PreferencesStep: View {
                                     .foregroundStyle(response.moodBaseline == item ? Color.black : Color.white)
                                     .frame(maxWidth: .infinity, minHeight: 46)
                                     .padding(.horizontal, 10)
-                                    .background(response.moodBaseline == item ? Color.teal : Color.white.opacity(0.10))
+                                    .background(response.moodBaseline == item ? Color.white : Color.white.opacity(0.12))
                                     .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                             }
                             .buttonStyle(.plain)
@@ -941,11 +1032,11 @@ private struct PermissionPrimerStep: View {
             VStack(spacing: 20) {
                 ZStack {
                     Circle()
-                        .fill(Color.teal.opacity(0.16))
+                        .fill(Color.white.opacity(0.18))
                         .frame(width: 128, height: 128)
                     Image(systemName: icon)
                         .font(.system(size: 48, weight: .semibold))
-                        .foregroundStyle(.teal)
+                        .foregroundStyle(.white)
                 }
 
                 VStack(alignment: .leading, spacing: 12) {
@@ -970,7 +1061,7 @@ private struct ProcessingStep: View {
                     .frame(width: 150, height: 150)
                 Circle()
                     .trim(from: 0.1, to: 0.82)
-                    .stroke(Color.teal, style: StrokeStyle(lineWidth: 18, lineCap: .round))
+                    .stroke(Color.white, style: StrokeStyle(lineWidth: 18, lineCap: .round))
                     .frame(width: 150, height: 150)
                     .rotationEffect(.degrees(animate ? 360 : 0))
                     .animation(.linear(duration: 1.1).repeatForever(autoreverses: false), value: animate)
@@ -981,7 +1072,7 @@ private struct ProcessingStep: View {
 
             VStack(spacing: 10) {
                 Text("Building your private starter map on this device...")
-                    .font(.title2.bold())
+                    .font(.system(.title2, design: .rounded, weight: .bold))
                     .multilineTextAlignment(.center)
                 Text("No network call. No account lookup. Just local AI preparing your first reflection.")
                     .font(.subheadline.weight(.medium))
@@ -1016,11 +1107,11 @@ private struct FirstEntryStep: View {
                     VStack(spacing: 14) {
                         ZStack {
                             Circle()
-                                .fill(isRecording ? Color.red : Color.teal)
+                                .fill(isRecording ? Color.red : Color.white)
                                 .frame(width: 104, height: 104)
                             Image(systemName: isRecording ? "stop.fill" : "mic.fill")
                                 .font(.system(size: 38, weight: .bold))
-                                .foregroundStyle(.white)
+                                .foregroundStyle(isRecording ? .white : Color(red: 0.10, green: 0.42, blue: 0.48))
                         }
 
                         if isRecording {
@@ -1150,7 +1241,7 @@ private struct HabitSetupStep: View {
                 )) {
                     Label("Remind me once a day", systemImage: "bell.badge.fill")
                 }
-                .tint(.teal)
+                .tint(.white)
                 .padding()
                 .background(.white.opacity(0.10))
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
@@ -1194,7 +1285,7 @@ private struct FinishStep: View {
             Spacer(minLength: 80)
             ZStack {
                 Circle()
-                    .fill(Color.teal.opacity(0.16))
+                    .fill(Color.white.opacity(0.18))
                     .frame(width: 150, height: 150)
                 FridayMascotView(pose: .wave, size: 104)
             }
@@ -1220,10 +1311,11 @@ private struct OnboardingProgressHeader: View {
     let step: OnboardingStep
     let canGoBack: Bool
     let onBack: () -> Void
+    private let sideWidth: CGFloat = 58
 
     var body: some View {
         VStack(spacing: 14) {
-            HStack {
+            HStack(spacing: 0) {
                 Button(action: onBack) {
                     Image(systemName: "chevron.left")
                         .font(.headline.weight(.bold))
@@ -1234,24 +1326,41 @@ private struct OnboardingProgressHeader: View {
                 .buttonStyle(.plain)
                 .disabled(!canGoBack)
                 .opacity(canGoBack ? 1 : 0)
+                .frame(width: sideWidth, alignment: .leading)
 
-                Spacer()
+                headerCenterContent
+                    .frame(maxWidth: .infinity)
 
                 Text(step.progressText)
-                    .font(.caption.weight(.bold))
-                    .foregroundStyle(.white.opacity(0.68))
+                    .font(.system(.caption, design: .rounded, weight: .black))
+                    .foregroundStyle(.white.opacity(0.74))
+                    .frame(width: sideWidth, alignment: .trailing)
             }
 
             GeometryReader { proxy in
                 ZStack(alignment: .leading) {
                     Capsule()
-                        .fill(.white.opacity(0.12))
+                        .fill(.black.opacity(0.14))
                     Capsule()
-                        .fill(Color.teal)
+                        .fill(.white)
                         .frame(width: max(8, proxy.size.width * step.progress))
                 }
             }
             .frame(height: 6)
+        }
+    }
+
+    @ViewBuilder
+    private var headerCenterContent: some View {
+        if step == .welcome {
+            LocalAIBadge()
+        } else {
+            Text(step.headerTitle)
+                .font(.system(.caption, design: .rounded, weight: .black))
+                .foregroundStyle(.white.opacity(0.82))
+                .lineLimit(1)
+                .minimumScaleFactor(0.76)
+                .multilineTextAlignment(.center)
         }
     }
 }
@@ -1309,21 +1418,24 @@ private struct OnboardingQuestion<Content: View>: View {
     @ViewBuilder let content: Content
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 22) {
-            VStack(alignment: .leading, spacing: 10) {
+        VStack(alignment: .center, spacing: 24) {
+            VStack(alignment: .center, spacing: 10) {
                 Text(eyebrow.uppercased())
-                    .font(.caption.weight(.black))
-                    .foregroundStyle(Color.teal)
+                    .font(.system(.caption, design: .rounded, weight: .black))
+                    .foregroundStyle(.white.opacity(0.72))
                 Text(title)
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .font(.system(size: 34, weight: .bold, design: .rounded))
+                    .multilineTextAlignment(.center)
                     .lineLimit(4)
                     .minimumScaleFactor(0.78)
                 Text(subtitle)
-                    .font(.subheadline.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.70))
+                    .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.76))
+                    .multilineTextAlignment(.center)
                     .lineSpacing(3)
             }
             content
+                .frame(maxWidth: .infinity)
         }
     }
 }
@@ -1346,26 +1458,29 @@ private struct ChoiceRow: View {
                 Image(systemName: icon)
                     .font(.headline)
                     .frame(width: 34, height: 34)
-                    .foregroundStyle(isSelected ? Color.black : Color.teal)
-                    .background(isSelected ? Color.teal : Color.teal.opacity(0.14))
+                    .foregroundStyle(isSelected ? Color.black : .white)
+                    .background(isSelected ? Color.white : Color.white.opacity(0.16))
                     .clipShape(Circle())
 
                 Text(title)
-                    .font(.headline)
+                    .font(.system(.headline, design: .rounded, weight: .bold))
                     .foregroundStyle(.white)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.86)
                     .multilineTextAlignment(.leading)
+                    .layoutPriority(1)
 
                 Spacer()
 
                 Image(systemName: selectedIconName)
                     .font(.headline.weight(.bold))
-                    .foregroundStyle(isSelected ? Color.teal : .white.opacity(0.24))
+                    .foregroundStyle(isSelected ? .white : .white.opacity(0.26))
             }
             .padding(14)
-            .background(isSelected ? Color.white.opacity(0.16) : Color.white.opacity(0.08))
+            .background(isSelected ? Color.white.opacity(0.22) : Color.white.opacity(0.11))
             .overlay(
                 RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .stroke(isSelected ? Color.teal : Color.white.opacity(0.08), lineWidth: 1.5)
+                    .stroke(isSelected ? Color.white.opacity(0.58) : Color.white.opacity(0.10), lineWidth: 1.5)
             )
             .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
@@ -1392,18 +1507,18 @@ private struct StatementCard: View {
             HStack(alignment: .top, spacing: 14) {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "quote.opening")
                     .font(.title3.weight(.bold))
-                    .foregroundStyle(isSelected ? Color.green : Color.teal)
+                    .foregroundStyle(.white)
                 Text(statement)
-                    .font(.title3.weight(.bold))
+                    .font(.system(.title3, design: .rounded, weight: .bold))
                     .lineSpacing(3)
                 Spacer()
             }
             .padding(18)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(isSelected ? Color.green.opacity(0.14) : Color.white.opacity(0.09))
+            .background(isSelected ? Color.white.opacity(0.22) : Color.white.opacity(0.11))
             .overlay(
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .stroke(isSelected ? Color.green : Color.white.opacity(0.08), lineWidth: 1.5)
+                    .stroke(isSelected ? Color.white.opacity(0.58) : Color.white.opacity(0.10), lineWidth: 1.5)
             )
             .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         }
@@ -1427,7 +1542,7 @@ private struct PrivacyComparisonRow: View {
                 .foregroundStyle(.black)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 7)
-                .background(Color.green)
+                .background(Color.white)
                 .clipShape(Capsule())
 
             Text(other)
@@ -1451,9 +1566,9 @@ private struct SolutionRow: View {
         HStack(alignment: .top, spacing: 14) {
             Image(systemName: pain.icon)
                 .font(.headline)
-                .foregroundStyle(Color.teal)
+                .foregroundStyle(.white)
                 .frame(width: 34, height: 34)
-                .background(Color.teal.opacity(0.14))
+                .background(Color.white.opacity(0.16))
                 .clipShape(Circle())
 
             VStack(alignment: .leading, spacing: 4) {
@@ -1480,7 +1595,7 @@ private struct BenefitRow: View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: icon)
                 .font(.subheadline.weight(.bold))
-                .foregroundStyle(Color.teal)
+                .foregroundStyle(.white)
                 .frame(width: 22)
             Text(text)
                 .font(.subheadline.weight(.semibold))
@@ -1505,14 +1620,14 @@ private struct PreferencePicker<Item: Identifiable & Equatable, Label: View>: Vi
                     Button {
                         selection = item
                     } label: {
-                        label(item)
-                            .font(.subheadline.weight(.bold))
-                            .foregroundStyle(selection == item ? Color.black : Color.white)
-                            .frame(maxWidth: .infinity, minHeight: 46)
-                            .padding(.horizontal, 10)
-                            .background(selection == item ? Color.teal : Color.white.opacity(0.10))
-                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
-                    }
+                            label(item)
+                                .font(.subheadline.weight(.bold))
+                                .foregroundStyle(selection == item ? Color.black : Color.white)
+                                .frame(maxWidth: .infinity, minHeight: 46)
+                                .padding(.horizontal, 10)
+                                .background(selection == item ? Color.white : Color.white.opacity(0.12))
+                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        }
                     .buttonStyle(.plain)
                 }
             }
@@ -1530,9 +1645,11 @@ private struct LocalAIBadge: View {
         }
         .font(.caption.weight(.black))
         .foregroundStyle(.black)
+        .lineLimit(1)
+        .minimumScaleFactor(0.78)
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .background(Color.teal)
+        .background(Color.white)
         .clipShape(Capsule())
     }
 }
@@ -1589,7 +1706,7 @@ private struct WaveformMeter: View {
         HStack(spacing: 4) {
             ForEach(0..<18, id: \.self) { index in
                 RoundedRectangle(cornerRadius: 2)
-                    .fill(Color.teal)
+                    .fill(Color.white)
                     .frame(width: 4, height: barHeight(index))
                     .opacity(indexOpacity(index))
             }
@@ -1618,7 +1735,7 @@ private struct StarterSnapshotCard: View {
         VStack(alignment: .leading, spacing: 14) {
             Label("Friday Starter Snapshot", systemImage: "sparkles")
                 .font(.headline)
-                .foregroundStyle(Color.teal)
+                .foregroundStyle(.white)
 
             Text(snapshotText)
                 .font(.title3.weight(.bold))
@@ -1669,7 +1786,7 @@ private struct TopicGraphCard: View {
         VStack(alignment: .leading, spacing: 16) {
             Label("Sample People and Topics Graph", systemImage: "point.3.connected.trianglepath.dotted")
                 .font(.headline)
-                .foregroundStyle(Color.teal)
+                .foregroundStyle(.white)
 
             ZStack {
                 ForEach(Array(nodes.enumerated()), id: \.offset) { index, node in
@@ -1711,7 +1828,7 @@ private struct TopicNode: View {
                         path.move(to: CGPoint(x: proxy.size.width * 0.50, y: proxy.size.height * 0.18))
                         path.addLine(to: CGPoint(x: proxy.size.width * position.x, y: proxy.size.height * position.y))
                     }
-                    .stroke(Color.teal.opacity(0.35), lineWidth: 2)
+                    .stroke(Color.white.opacity(0.35), lineWidth: 2)
                 }
 
                 Text(title)
@@ -1721,7 +1838,7 @@ private struct TopicNode: View {
                     .minimumScaleFactor(0.72)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 9)
-                    .background(index == 0 ? Color.teal : Color.white.opacity(0.14))
+                    .background(index == 0 ? Color.white : Color.white.opacity(0.14))
                     .clipShape(Capsule())
                     .position(x: proxy.size.width * position.x, y: proxy.size.height * position.y)
             }

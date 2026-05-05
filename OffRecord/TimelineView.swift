@@ -193,9 +193,8 @@ struct TimelineView: View {
                                 }
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 6)
-                                .background(Color.accentColor.opacity(0.1))
                                 .foregroundColor(.accentColor)
-                                .clipShape(Capsule())
+                                .offRecordGlassControl(tint: .accentColor, in: Capsule(), fallbackFill: Color.accentColor.opacity(0.1))
                             }
                             .buttonStyle(.plain)
                         }
@@ -236,9 +235,12 @@ struct TimelineView: View {
                             .font(.caption)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
-                            .background(selectedMoodFilter == mood ? mood.color.opacity(0.2) : Color(.tertiarySystemFill))
                             .foregroundColor(selectedMoodFilter == mood ? mood.color : .secondary)
-                            .clipShape(Capsule())
+                            .offRecordGlassControl(
+                                tint: selectedMoodFilter == mood ? mood.color : nil,
+                                in: Capsule(),
+                                fallbackFill: selectedMoodFilter == mood ? mood.color.opacity(0.2) : Color(.tertiarySystemFill)
+                            )
                         }
                         .buttonStyle(.plain)
                     }
@@ -268,7 +270,7 @@ struct TimelineView: View {
             .padding(.horizontal)
         }
         .padding(.vertical, 12)
-        .background(Color(.secondarySystemGroupedBackground))
+        .offRecordGlassBar(cornerRadius: 0, fallbackFill: Color(.secondarySystemGroupedBackground))
     }
     
     // MARK: - Active Filters Bar
@@ -312,7 +314,7 @@ struct TimelineView: View {
             .padding(.horizontal)
             .padding(.vertical, 8)
         }
-        .background(Color(.systemGroupedBackground))
+        .offRecordGlassBar(cornerRadius: 0)
     }
     
     // MARK: - Empty State
@@ -591,9 +593,8 @@ struct FilterChip: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .background(color.opacity(0.15))
         .foregroundColor(color)
-        .clipShape(Capsule())
+        .offRecordGlassControl(tint: color, in: Capsule(), fallbackFill: color.opacity(0.15))
     }
 }
 
@@ -624,9 +625,12 @@ struct DateRangeButton: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .background(date != nil ? Color.accentColor.opacity(0.1) : Color(.tertiarySystemFill))
             .foregroundColor(date != nil ? .accentColor : .secondary)
-            .clipShape(Capsule())
+            .offRecordGlassControl(
+                tint: date != nil ? .accentColor : nil,
+                in: Capsule(),
+                fallbackFill: date != nil ? Color.accentColor.opacity(0.1) : Color(.tertiarySystemFill)
+            )
         }
         .buttonStyle(.plain)
         .sheet(isPresented: $showPicker) {
