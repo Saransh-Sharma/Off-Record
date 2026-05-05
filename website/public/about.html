@@ -12,7 +12,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>About OffRecord AI Journal — Why I Built a Free On-Device AI Voice Journal</title>
-  <meta name="description" content="The story behind OffRecord AI Journal. Built by Karthikeyan NG, a 20-year diary writer who started talking instead of writing. The vision: a Digital Twin that lives on your phone, not someone else's server.">
+  <meta name="description" content="The story behind OffRecord AI Journal. Built by Karthikeyan NG, a 20-year diary writer who started talking instead of writing. The vision: a Friday that lives on your phone, not someone else's server.">
   <meta name="theme-color" content="#f7f7f2">
   <!-- logo inlined via CSS data URL -->
   <meta property="og:type" content="website">
@@ -697,23 +697,23 @@
       <section class="sec-block">
         <div class="sec-head">
           <span class="sec-num">§04</span>
-          <h2 class="sec-title">The <em>Digital Twin</em> vision.</h2>
+          <h2 class="sec-title">The <em>Friday</em> vision.</h2>
           <span class="sec-tag">north star</span>
         </div>
         <p>After I started building OffRecord AI Journal, I realized it could go far beyond just recording voice entries.</p>
         <p>If you talk to this app every day — about your thoughts, your decisions, how you react to things, what makes you happy, what frustrates you — it builds a picture. A detailed, honest picture of who you are.</p>
-        <p>That's when I built the <strong>Twin</strong>. A multi-dimensional model of communication style, emotional signature, a personal knowledge graph of people and topics, and temporal mood predictions. All derived on-device from NLTagger signals. All serialized as Codable JSON in a single Core Data entity. All yours.</p>
+        <p>That's when I built <strong>Friday</strong>. A private assistant with a multi-dimensional model of communication style, emotional signature, a personal knowledge graph of people and topics, and temporal mood predictions. All derived on-device from NLTagger signals. All serialized as Codable JSON in a single Core Data entity. All yours.</p>
 
         <div class="pull-quote">
-          <p><span class="mark">&ldquo;</span>I want the Twin to eventually act like you. Speak like you. Respond like you. A true <em>digital version of yourself</em> — private, on-device, yours.<span class="mark">&rdquo;</span></p>
+          <p><span class="mark">&ldquo;</span>I want Friday to become the assistant you can confide in: observant, discreet, and grounded in what you've actually shared. Private, on-device, yours.<span class="mark">&rdquo;</span></p>
         </div>
 
         <p>We already leave digital traces everywhere — social media, messages, emails. But all of that is scattered across platforms owned by other companies. None of it is organized. None of it is truly yours.</p>
         <p>What if you had one place where you deliberately stored the most honest version of yourself? Not the curated version you put on social media. The real version.</p>
-        <p>I believe keeping a digital version of yourself will be an important part of the near future. Not science fiction — practical. And OffRecord AI Journal is built to make that happen.</p>
+        <p>I believe keeping a private, organized record of your inner life will be an important part of the near future. Not science fiction — practical. And OffRecord AI Journal is built to make that happen.</p>
 
         <div class="callout">
-          <strong>But not by sending your data to a server.</strong> Everything works on-device. Your Twin lives on your phone. Nobody else has access to it. I won't compromise on that.
+          <strong>But not by sending your data to a server.</strong> Everything works on-device. Friday lives on your phone. Nobody else has access to it. I won't compromise on that.
         </div>
       </section>
 
@@ -782,16 +782,16 @@
             <div class="rd-dot rd-done">✓</div>
             <div class="rd-body">
               <div class="rd-tag rd-done"><span class="rd-tag-text">Shipped · v1.1</span></div>
-              <h3>Twin + personality model</h3>
-              <p><strong>Tech:</strong> Custom <code>TwinEngine</code>. <code>CommunicationStyle</code> (TTR, expressiveness, directness, formality, signature words). <code>EmotionalSignature</code> (valence / arousal / dominance baselines, time-based patterns, trigger topic correlations). <code>PersonalKnowledgeGraph</code> via NER mapping entities with emotional weights. <code>TwinPredictions</code> for day-of-week mood forecasting. All models as <code>Codable</code> JSON in the Core Data <code>AIState</code> entity.</p>
+              <h3>Friday + personality model</h3>
+              <p><strong>Tech:</strong> Custom <code>FridayAssistantEngine</code>. <code>CommunicationStyle</code> (TTR, expressiveness, directness, formality, signature words). <code>EmotionalSignature</code> (valence / arousal / dominance baselines, time-based patterns, trigger topic correlations). <code>PersonalKnowledgeGraph</code> via NER mapping entities with emotional weights. <code>FridayPredictions</code> for day-of-week mood forecasting. All models as <code>Codable</code> JSON in the Core Data <code>AIState</code> entity.</p>
             </div>
           </div>
           <div class="rd-item">
             <div class="rd-dot rd-now">→</div>
             <div class="rd-body">
               <div class="rd-tag rd-now"><span class="rd-tag-text">Building now · v1.2</span></div>
-              <h3>Ask Your Twin + social sharing</h3>
-              <p><strong>Tech:</strong> <code>TwinChatView</code> with pattern-matched query system. <code>TwinResponseGenerator</code> assembles natural-language replies from Twin data. <code>ShareablePersonalityCardView</code> renders cards via SwiftUI <code>ImageRenderer</code> at 3x (Instagram Stories 1080×1920, X 1200×675). <code>UIActivityViewController</code> for native share sheet. <code>SKStoreReviewController</code> at milestone entries with 90-day cooldown.</p>
+              <h3>Talk to Friday + social sharing</h3>
+              <p><strong>Tech:</strong> <code>FridayChatView</code> with pattern-matched query system. <code>FridayResponseGenerator</code> assembles natural-language replies from Friday data. <code>ShareablePersonalityCardView</code> renders cards via SwiftUI <code>ImageRenderer</code> at 3x (Instagram Stories 1080×1920, X 1200×675). <code>UIActivityViewController</code> for native share sheet. <code>SKStoreReviewController</code> at milestone entries with 90-day cooldown.</p>
             </div>
           </div>
           <div class="rd-item">
@@ -813,25 +813,25 @@
           <div class="rd-item">
             <div class="rd-dot rd-next">○</div>
             <div class="rd-body">
-              <div class="rd-tag rd-next"><span class="rd-tag-text">v2.0 · Conversational Twin (iOS 26)</span></div>
+              <div class="rd-tag rd-next"><span class="rd-tag-text">v2.0 · Conversational Friday (iOS 26)</span></div>
               <h3>Foundation Models + tool calling + SpeechAnalyzer</h3>
-              <p><strong>Tech:</strong> Apple's on-device 3B Foundation Model via <code>LanguageModelSession</code>. Twin becomes a real chatbot with multi-turn transcript memory. Autonomous Core Data querying via <code>Tool</code> protocol. Dynamic instructions fed from <code>TwinEngine</code> for tone matching. <code>@Generable</code> for type-safe structured outputs. <code>streamResponse()</code> for real-time streaming. <code>SpeechAnalyzer</code> replaces <code>SFSpeechRecognizer</code>. Requires iPhone 15 Pro+. Zero network calls.</p>
+              <p><strong>Tech:</strong> Apple's on-device 3B Foundation Model via <code>LanguageModelSession</code>. Friday becomes a real chatbot with multi-turn transcript memory. Autonomous Core Data querying via <code>Tool</code> protocol. Dynamic instructions fed from <code>FridayAssistantEngine</code> for tone matching. <code>@Generable</code> for type-safe structured outputs. <code>streamResponse()</code> for real-time streaming. <code>SpeechAnalyzer</code> replaces <code>SFSpeechRecognizer</code>. Requires iPhone 15 Pro+. Zero network calls.</p>
             </div>
           </div>
           <div class="rd-item">
             <div class="rd-dot rd-next">○</div>
             <div class="rd-body">
-              <div class="rd-tag rd-next"><span class="rd-tag-text">v2.5 · Train Your Twin</span></div>
-              <h3>LoRA fine-tuning — Twin learns to sound like you</h3>
-              <p><strong>Tech:</strong> Apple's Foundation Models Adapter Training toolkit for Low-Rank Adaptation. Export 100–1,000 entries as JSONL prompt/response pairs. Train a personal adapter on Mac (32GB+ Apple Silicon). ~160 MB adapter delivered via Background Assets. Loaded via <code>SystemLanguageModel(adapter:)</code>. The Twin doesn't just know your data — it sounds like you. Training data never leaves your Mac.</p>
+              <div class="rd-tag rd-next"><span class="rd-tag-text">v2.5 · Train Friday</span></div>
+              <h3>LoRA fine-tuning — Friday learns your tone</h3>
+              <p><strong>Tech:</strong> Apple's Foundation Models Adapter Training toolkit for Low-Rank Adaptation. Export 100–1,000 entries as JSONL prompt/response pairs. Train a personal adapter on Mac (32GB+ Apple Silicon). ~160 MB adapter delivered via Background Assets. Loaded via <code>SystemLanguageModel(adapter:)</code>. Friday doesn't just know your data — she understands your tone. Training data never leaves your Mac.</p>
             </div>
           </div>
           <div class="rd-item">
             <div class="rd-dot rd-next">○</div>
             <div class="rd-body">
               <div class="rd-tag rd-next"><span class="rd-tag-text">v3.0 · The vision</span></div>
-              <h3>A true digital version of you</h3>
-              <p><strong>End state:</strong> an on-device AI that acts like you, speaks like you, responds like you — built from years of your own entries. Full RAG. Personal LoRA adapter. Tool calling for data retrieval. Session transcript with context condensation. Encrypted. On your device. Exportable only by you. Your data never touches a server. Your digital self is yours alone.</p>
+              <h3>A private assistant with memory</h3>
+              <p><strong>End state:</strong> an on-device AI assistant grounded in years of your own entries. Full RAG. Personal LoRA adapter. Tool calling for data retrieval. Session transcript with context condensation. Encrypted. On your device. Exportable only by you. Your data never touches a server. Your private assistant archive is yours alone.</p>
             </div>
           </div>
         </div>
