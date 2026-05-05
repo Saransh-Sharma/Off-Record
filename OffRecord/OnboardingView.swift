@@ -32,6 +32,7 @@ struct OnboardingView: View {
     @State private var isRecording = false
     @State private var isTranscribing = false
     @State private var entryCreated = false
+    @State private var firstEntryMode: FirstEntryMode = .voice
     @State private var onboardingError: String?
     @State private var showNotificationDeniedAlert = false
 
@@ -66,6 +67,9 @@ struct OnboardingView: View {
         .onAppear {
             nameDraft = authorName
             firstEntryDraft = response.firstEntryText
+            if response.microphoneChoice == .denied {
+                firstEntryMode = .textFallback
+            }
         }
         .onChange(of: response) { _, newValue in
             store.save(newValue)
@@ -172,6 +176,7 @@ struct OnboardingView: View {
                 level: recorder.level,
                 draft: $firstEntryDraft,
                 selectedMood: $selectedMood,
+                mode: firstEntryMode,
                 entryCreated: entryCreated,
                 onRecordTap: toggleRecording
             )
@@ -321,7 +326,7 @@ struct OnboardingView: View {
             DispatchQueue.main.async {
                 response.microphoneChoice = granted ? .granted : .denied
                 guard granted else {
-                    onboardingError = "Microphone access was not granted. You can still type your first entry."
+                    firstEntryMode = .textFallback
                     return
                 }
                 do {
@@ -329,12 +334,14 @@ struct OnboardingView: View {
                     isRecording = true
                     HapticManager.shared.recordingStarted()
                 } catch {
+                    firstEntryMode = .textFallback
                     onboardingError = "Unable to start recording. Please type your first entry instead."
                     HapticManager.shared.error()
                 }
             }
         }
         #else
+        firstEntryMode = .textFallback
         onboardingError = "Recording is only available on iOS."
         #endif
     }
@@ -464,22 +471,23 @@ enum OnboardingStep: Int, CaseIterable, Identifiable {
         "\(rawValue + 1) of \(Self.allCases.count)"
     }
 
-    var headerTitle: String {
+    var pageTitle: String {
         switch self {
-        case .welcome: return ""
-        case .goal: return "Your goal"
-        case .painPoints: return "What gets in the way"
-        case .privacyProof: return "Privacy proof"
-        case .faceID: return "Privacy lock"
-        case .relatable: return "A quick check"
-        case .solution: return "Your private setup"
-        case .preferences: return "Make it yours"
-        case .microphone, .speech: return "Before your first entry"
-        case .processing: return "Building"
-        case .firstEntry: return "First entry"
-        case .valueReveal: return "Your starter snapshot"
-        case .habit: return "Build the habit"
-        case .finish: return "Ready"
+        case .welcome: return "Understand yourself, privately."
+        case .goal: return "What do you want your journal to help with?"
+        case .painPoints: return "What usually stops you from journaling honestly?"
+        case .privacyProof: return "No internet required. No account. No servers."
+        case .faceID: return "Protect your journal before you write."
+        case .relatable: return "Which statements sound like you?"
+        case .solution: return "A smarter way to reflect, built around you."
+        case .preferences: return "What should Friday pay attention to first?"
+        case .microphone: return "Capture thoughts before they disappear."
+        case .speech: return "Turn voice into a private journal entry."
+        case .processing: return "Building..."
+        case .firstEntry: return "Say one honest thing about today."
+        case .valueReveal: return "Friday has enough to start listening for patterns."
+        case .habit: return "Make reflection easy to repeat."
+        case .finish: return "Your private journal is ready."
         }
     }
 
@@ -558,6 +566,11 @@ enum PermissionChoice: String, Codable, Equatable {
     case enabled
     case skipped
     case failed
+}
+
+private enum FirstEntryMode {
+    case voice
+    case textFallback
 }
 
 enum OnboardingGoal: String, CaseIterable, Codable, Identifiable {
@@ -748,9 +761,9 @@ private struct ConcentricOnboardingPage<Content: View>: View {
                     Spacer(minLength: 0)
                 }
                 .frame(maxWidth: .infinity)
-                .frame(minHeight: max(proxy.size.height - 190, 520))
+                .frame(minHeight: max(proxy.size.height - 280, 520))
                 .padding(.horizontal, isIPad ? 44 : 24)
-                .padding(.top, 88)
+                .padding(.top, 220)
                 .padding(.bottom, 150)
             }
         }
@@ -771,19 +784,11 @@ private struct WelcomeStep: View {
                 FridayMascotView(pose: .wave, size: 104)
             }
 
-            VStack(alignment: .center, spacing: 14) {
-                Text("Understand yourself, privately.")
-                    .font(.system(size: 42, weight: .bold, design: .rounded))
-                    .multilineTextAlignment(.center)
-                    .lineLimit(3)
-                    .minimumScaleFactor(0.78)
-
-                Text("Speak freely. OffRecord turns your voice into insights using local AI on your device, even without internet.")
-                    .font(.title3.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.76))
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(4)
-            }
+            Text("Speak freely. OffRecord turns your voice into insights using local AI on your device, even without internet.")
+                .font(.title3.weight(.semibold))
+                .foregroundStyle(.white.opacity(0.76))
+                .multilineTextAlignment(.center)
+                .lineSpacing(4)
 
             TextField(
                 "Your name (optional)",
@@ -1071,9 +1076,6 @@ private struct ProcessingStep: View {
             }
 
             VStack(spacing: 10) {
-                Text("Building your private starter map on this device...")
-                    .font(.system(.title2, design: .rounded, weight: .bold))
-                    .multilineTextAlignment(.center)
                 Text("No network call. No account lookup. Just local AI preparing your first reflection.")
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(.white.opacity(0.72))
@@ -1093,68 +1095,26 @@ private struct FirstEntryStep: View {
     let level: Float
     @Binding var draft: String
     @Binding var selectedMood: Mood
+    let mode: FirstEntryMode
     let entryCreated: Bool
     let onRecordTap: () -> Void
+
+    @FocusState private var isTextEditorFocused: Bool
 
     var body: some View {
         OnboardingQuestion(
             eyebrow: "First entry",
             title: "Say one honest thing about today.",
-            subtitle: "Record 20 to 30 seconds or type instead. This becomes your first real OffRecord entry."
+            subtitle: mode == .voice
+                ? "Record 20 to 30 seconds. This becomes your first real OffRecord entry."
+                : "Type one honest thing. This becomes your first real OffRecord entry."
         ) {
             VStack(spacing: 18) {
-                Button(action: onRecordTap) {
-                    VStack(spacing: 14) {
-                        ZStack {
-                            Circle()
-                                .fill(isRecording ? Color.red : Color.white)
-                                .frame(width: 104, height: 104)
-                            Image(systemName: isRecording ? "stop.fill" : "mic.fill")
-                                .font(.system(size: 38, weight: .bold))
-                                .foregroundStyle(isRecording ? .white : Color(red: 0.10, green: 0.42, blue: 0.48))
-                        }
-
-                        if isRecording {
-                            Text(formatTime(elapsedTime))
-                                .font(.system(size: 34, weight: .light, design: .monospaced))
-                            WaveformMeter(level: level)
-                            Text("Tap to stop")
-                                .font(.subheadline.weight(.semibold))
-                                .foregroundStyle(.white.opacity(0.76))
-                        } else if isTranscribing {
-                            ProgressView("Transcribing on this device...")
-                                .tint(.white)
-                                .foregroundStyle(.white)
-                        } else if entryCreated {
-                            Label("First entry saved", systemImage: "checkmark.circle.fill")
-                                .font(.headline)
-                                .foregroundStyle(.green)
-                        } else {
-                            Text("Tap to record privately")
-                                .font(.headline)
-                            Text("Your recording is stored locally.")
-                                .font(.caption.weight(.medium))
-                                .foregroundStyle(.white.opacity(0.64))
-                        }
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 22)
-                    .background(.white.opacity(0.10))
-                    .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-                }
-                .buttonStyle(.plain)
-                .disabled(isTranscribing)
-
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("Or type your first entry")
-                        .font(.headline)
-                    TextEditor(text: $draft)
-                        .scrollContentBackground(.hidden)
-                        .foregroundStyle(.primary)
-                        .frame(minHeight: 130)
-                        .padding(10)
-                        .background(.white)
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                switch mode {
+                case .voice:
+                    voiceRecorder
+                case .textFallback:
+                    textFallbackEditor
                 }
 
                 VStack(alignment: .leading, spacing: 10) {
@@ -1180,6 +1140,88 @@ private struct FirstEntryStep: View {
                         }
                     }
                 }
+            }
+        }
+        .onAppear {
+            focusTextEditorIfNeeded()
+        }
+        .onChange(of: mode) { _, _ in
+            focusTextEditorIfNeeded()
+        }
+    }
+
+    private var voiceRecorder: some View {
+        Button(action: onRecordTap) {
+            VStack(spacing: 14) {
+                ZStack {
+                    Circle()
+                        .fill(isRecording ? Color.red : Color.white)
+                        .frame(width: 104, height: 104)
+                    Image(systemName: isRecording ? "stop.fill" : "mic.fill")
+                        .font(.system(size: 38, weight: .bold))
+                        .foregroundStyle(isRecording ? .white : Color(red: 0.10, green: 0.42, blue: 0.48))
+                }
+
+                if isRecording {
+                    Text(formatTime(elapsedTime))
+                        .font(.system(size: 34, weight: .light, design: .monospaced))
+                    WaveformMeter(level: level)
+                    Text("Tap to stop")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(.white.opacity(0.76))
+                } else if isTranscribing {
+                    ProgressView("Transcribing on this device...")
+                        .tint(.white)
+                        .foregroundStyle(.white)
+                } else if entryCreated {
+                    Label("First entry saved", systemImage: "checkmark.circle.fill")
+                        .font(.headline)
+                        .foregroundStyle(.green)
+                } else {
+                    Text("Tap to record privately")
+                        .font(.headline)
+                    Text("Your recording is stored locally.")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.white.opacity(0.64))
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 22)
+            .background(.white.opacity(0.10))
+            .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .disabled(isTranscribing)
+    }
+
+    private var textFallbackEditor: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Type your first entry")
+                .font(.headline)
+            TextField("Write your first entry...", text: $draft, axis: .vertical)
+                .focused($isTextEditorFocused)
+                .foregroundColor(.black)
+                .lineLimit(6...10)
+                .frame(minHeight: 160)
+                .frame(maxWidth: .infinity, alignment: .topLeading)
+                .padding(14)
+                .background(.white)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+        .onAppear {
+            focusTextEditorIfNeeded()
+        }
+    }
+
+    private func focusTextEditorIfNeeded() {
+        guard mode == .textFallback else {
+            isTextEditorFocused = false
+            return
+        }
+
+        [0.1, 0.45, 0.8].forEach { delay in
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+                isTextEditorFocused = true
             }
         }
     }
@@ -1291,9 +1333,6 @@ private struct FinishStep: View {
             }
 
             VStack(spacing: 12) {
-                Text("Your private journal is ready.")
-                    .font(.system(size: 34, weight: .bold, design: .rounded))
-                    .multilineTextAlignment(.center)
                 Text("Record, reflect, and let Friday notice patterns entirely on this device. No internet connection required for the core experience.")
                     .font(.title3.weight(.semibold))
                     .foregroundStyle(.white.opacity(0.74))
@@ -1311,11 +1350,11 @@ private struct OnboardingProgressHeader: View {
     let step: OnboardingStep
     let canGoBack: Bool
     let onBack: () -> Void
-    private let sideWidth: CGFloat = 58
+    private let sideWidth: CGFloat = 54
 
     var body: some View {
-        VStack(spacing: 14) {
-            HStack(spacing: 0) {
+        VStack(spacing: 12) {
+            HStack(alignment: .center, spacing: 0) {
                 Button(action: onBack) {
                     Image(systemName: "chevron.left")
                         .font(.headline.weight(.bold))
@@ -1352,16 +1391,13 @@ private struct OnboardingProgressHeader: View {
 
     @ViewBuilder
     private var headerCenterContent: some View {
-        if step == .welcome {
-            LocalAIBadge()
-        } else {
-            Text(step.headerTitle)
-                .font(.system(.caption, design: .rounded, weight: .black))
-                .foregroundStyle(.white.opacity(0.82))
-                .lineLimit(1)
-                .minimumScaleFactor(0.76)
-                .multilineTextAlignment(.center)
-        }
+        Text(step.pageTitle.uppercased())
+            .font(.system(size: 34, weight: .bold, design: .rounded))
+            .foregroundStyle(.white)
+            .lineLimit(3)
+            .minimumScaleFactor(0.58)
+            .allowsTightening(true)
+            .multilineTextAlignment(.center)
     }
 }
 
@@ -1412,28 +1448,27 @@ private struct OnboardingBottomBar: View {
 }
 
 private struct OnboardingQuestion<Content: View>: View {
-    let eyebrow: String
-    let title: String
     let subtitle: String
-    @ViewBuilder let content: Content
+    let content: Content
+
+    init(
+        eyebrow _: String,
+        title _: String,
+        subtitle: String,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.subtitle = subtitle
+        self.content = content()
+    }
 
     var body: some View {
         VStack(alignment: .center, spacing: 24) {
-            VStack(alignment: .center, spacing: 10) {
-                Text(eyebrow.uppercased())
-                    .font(.system(.caption, design: .rounded, weight: .black))
-                    .foregroundStyle(.white.opacity(0.72))
-                Text(title)
-                    .font(.system(size: 34, weight: .bold, design: .rounded))
-                    .multilineTextAlignment(.center)
-                    .lineLimit(4)
-                    .minimumScaleFactor(0.78)
-                Text(subtitle)
-                    .font(.system(.subheadline, design: .rounded, weight: .semibold))
-                    .foregroundStyle(.white.opacity(0.76))
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(3)
-            }
+            Text(subtitle)
+                .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                .foregroundStyle(.white.opacity(0.76))
+                .multilineTextAlignment(.center)
+                .lineSpacing(3)
+
             content
                 .frame(maxWidth: .infinity)
         }

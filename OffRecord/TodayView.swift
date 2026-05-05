@@ -79,8 +79,8 @@ struct TodayView: View {
                         // Entry Card
                         entryCardSection
 
-                        // Show prompts only before today's first entry is recorded
-                        if recordingState == .idle && latestEntry == nil {
+                        // Show prompts whenever the recorder is ready.
+                        if recordingState == .idle {
                             promptsSection
                         }
                     }

@@ -182,6 +182,11 @@ struct ConcentricPageTransitionView<Content: View>: View {
         direction == .forward ? size.width : -size.width
     }
 
+    private var isTerminalPage: Bool {
+        guard let lastIndex = pages.indices.last else { return false }
+        return displayedIndex == lastIndex && incomingIndex == displayedIndex
+    }
+
     private var bottomControls: some View {
         VStack(spacing: 12) {
             if let secondaryTitle {
@@ -193,7 +198,11 @@ struct ConcentricPageTransitionView<Content: View>: View {
                     .opacity(isAnimating ? 0.55 : 1)
             }
 
-            primaryButton
+            if isTerminalPage {
+                terminalPrimaryButton
+            } else {
+                primaryButton
+            }
         }
     }
 
@@ -213,6 +222,30 @@ struct ConcentricPageTransitionView<Content: View>: View {
         .buttonStyle(.plain)
         .disabled(isAnimating || isCTADisabled)
         .opacity(isCTADisabled ? 0.42 : 1)
+        .accessibilityLabel(ctaTitle)
+    }
+
+    private var terminalPrimaryButton: some View {
+        Button(action: onPrimaryAction) {
+            HStack(spacing: 8) {
+                Text(ctaTitle)
+                if let ctaIcon {
+                    Image(systemName: ctaIcon)
+                }
+            }
+            .font(.system(.headline, design: .rounded, weight: .bold))
+            .foregroundStyle(backgroundColor)
+            .frame(maxWidth: 360)
+            .padding(.horizontal, 22)
+            .padding(.vertical, 17)
+            .background(Color.white)
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .shadow(color: .black.opacity(0.18), radius: 18, y: 8)
+        }
+        .buttonStyle(.plain)
+        .disabled(isAnimating || isCTADisabled)
+        .opacity(isCTADisabled ? 0.42 : 1)
+        .padding(.horizontal, 28)
         .accessibilityLabel(ctaTitle)
     }
 }
