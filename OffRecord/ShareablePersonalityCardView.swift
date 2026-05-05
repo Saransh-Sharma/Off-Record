@@ -2,7 +2,7 @@
 //  ShareablePersonalityCardView.swift
 //  OffRecord
 //
-//  Social-media-optimized personality card for sharing your Digital Twin.
+//  Social-media-optimized personality card for sharing your Friday.
 //  Supports Instagram Stories (1080x1920) and Twitter/X (1200x675) formats.
 //  Follows the same pattern as ShareableInsightCardView + InsightCardRenderer.
 //
@@ -47,7 +47,7 @@ struct PersonalityCardRenderer {
     }
 
     /// Share text to include alongside the image
-    static let shareText = "My Digital Twin personality from OffRecord AI Journal \u{2014} free AI voice journal. offrecord.example.com"
+    static let shareText = "My Friday personality from OffRecord AI Journal \u{2014} free AI voice journal. offrecord.example.com"
 }
 
 // MARK: - Story Format Export (1080x1920 at 3x)

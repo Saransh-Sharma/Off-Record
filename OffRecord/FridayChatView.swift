@@ -54,7 +54,7 @@ struct FridayChatMessage: Identifiable {
 
 struct FridayResponseGenerator {
 
-    private static let insufficientData = "I need more journal entries to answer that well. Keep journaling and I'll have better insights for you soon!"
+    private static let insufficientData = FridayPersonality.insufficientData
 
     static func generateResponse(for question: FridayQuestion) -> String {
         let assistant = FridayAssistantEngine.shared
@@ -498,33 +498,14 @@ struct FridayChatView: View {
 
     private var welcomeCard: some View {
         VStack(spacing: 16) {
-            // Small assistant orb
-            ZStack {
-                Circle()
-                    .fill(
-                        RadialGradient(
-                            colors: [
-                                themeManager.accentColor.opacity(0.6),
-                                themeManager.accentColor.opacity(0.2),
-                                .clear
-                            ],
-                            center: .center,
-                            startRadius: 10,
-                            endRadius: 40
-                        )
-                    )
-                    .frame(width: 80, height: 80)
+            FridayMascotView(pose: .listening, size: 92)
 
-                Image(systemName: "person.crop.circle.fill")
-                    .font(.system(size: 30))
-                    .foregroundStyle(.white)
-            }
-
-            Text(Personalization.appendFirstName(to: "Ask me anything about your journal", name: authorName))
+            Text(FridayPersonality.welcome(name: authorName))
                 .font(.headline)
                 .foregroundColor(themeManager.textColor)
+                .multilineTextAlignment(.center)
 
-            Text("Tap a question below to get insights from your Friday. All answers come from your on-device data.")
+            Text("Tap a question below. Friday answers from on-device patterns in your journal.")
                 .font(.subheadline)
                 .foregroundColor(themeManager.secondaryTextColor)
                 .multilineTextAlignment(.center)
@@ -540,26 +521,7 @@ struct FridayChatView: View {
             if message.isUser {
                 Spacer(minLength: 60)
             } else {
-                // Friday orb icon
-                ZStack {
-                    Circle()
-                        .fill(
-                            RadialGradient(
-                                colors: [
-                                    themeManager.accentColor.opacity(0.7),
-                                    themeManager.accentColor.opacity(0.3)
-                                ],
-                                center: .center,
-                                startRadius: 2,
-                                endRadius: 14
-                            )
-                        )
-                        .frame(width: 28, height: 28)
-
-                    Image(systemName: "person.crop.circle.fill")
-                        .font(.system(size: 12))
-                        .foregroundStyle(.white)
-                }
+                FridayMascotView(pose: .thinking, size: 34)
                 .padding(.top, 4)
             }
 

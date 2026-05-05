@@ -2,7 +2,7 @@
 //  FridayPredictions.swift
 //  OffRecord
 //
-//  "Friday Thinks..." — proactive predictions based on journal patterns.
+//  "Friday noticed..." — proactive observations based on journal patterns.
 //  Uses FridayAssistantEngine data to anticipate moods, surface observations,
 //  and give users a reason to open the app even when they don't feel like journaling.
 //
@@ -38,8 +38,6 @@ struct FridayPredictionEngine {
     /// Generate up to 3 relevant predictions based on current state
     static func generatePredictions(entries: [DiaryEntry]) -> [FridayPrediction] {
         let assistant = FridayAssistantEngine.shared
-        let profile = LocalAIEngine.shared.userProfile
-
         var candidates: [FridayPrediction] = []
 
         // Time-based mood prediction
@@ -432,10 +430,9 @@ struct FridayPredictionsSection: View {
         Group {
             if !predictions.isEmpty {
                 VStack(alignment: .leading, spacing: 12) {
-                    HStack(spacing: 6) {
-                        Image(systemName: "brain.head.profile")
-                            .foregroundColor(.purple)
-                        Text("Friday Thinks...")
+                    HStack(spacing: 8) {
+                        FridayMascotView(pose: .thinking, size: 34)
+                        Text("Friday noticed...")
                             .font(.headline)
                     }
 
