@@ -119,22 +119,12 @@ struct FridayView: View {
             HStack(spacing: 12) {
                 ZStack {
                     Circle()
-                        .fill(
-                            RadialGradient(
-                                colors: [
-                                    themeManager.accentColor.opacity(0.7),
-                                    themeManager.accentColor.opacity(0.3)
-                                ],
-                                center: .center,
-                                startRadius: 2,
-                                endRadius: 16
-                            )
-                        )
+                        .fill(themeManager.accentColor.opacity(0.16))
                         .frame(width: 32, height: 32)
 
                     Image(systemName: "bubble.left.and.bubble.right.fill")
                         .font(.system(size: 13))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(themeManager.accentColor)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -153,8 +143,11 @@ struct FridayView: View {
                     .foregroundColor(themeManager.secondaryTextColor)
             }
             .padding()
-            .background(themeManager.cardBackgroundColor)
-            .cornerRadius(16)
+            .offRecordGlassControl(
+                tint: themeManager.accentColor,
+                in: RoundedRectangle(cornerRadius: 16, style: .continuous),
+                fallbackFill: themeManager.cardBackgroundColor
+            )
         }
     }
 
@@ -218,12 +211,13 @@ struct FridayView: View {
                     } label: {
                         Text(section.rawValue)
                             .font(.subheadline.weight(selectedSection == section ? .bold : .regular))
-                            .foregroundColor(selectedSection == section ? .white : themeManager.textColor)
+                            .foregroundColor(selectedSection == section ? themeManager.accentColor : themeManager.textColor)
                             .padding(.horizontal, 16)
                             .padding(.vertical, 8)
-                            .background(
-                                Capsule()
-                                    .fill(selectedSection == section ? themeManager.accentColor : themeManager.cardBackgroundColor)
+                            .offRecordGlassControl(
+                                tint: selectedSection == section ? themeManager.accentColor : nil,
+                                in: Capsule(),
+                                fallbackFill: selectedSection == section ? themeManager.accentColor.opacity(0.15) : themeManager.cardBackgroundColor
                             )
                     }
                 }
@@ -367,21 +361,12 @@ struct FridayView: View {
                     .font(.system(size: 13, weight: .semibold))
                     .opacity(0.4)
             }
-            .foregroundColor(.white)
+            .foregroundColor(.primary)
             .padding(16)
-            .background(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .fill(
-                        LinearGradient(
-                            colors: [.teal.opacity(0.4), .purple.opacity(0.3)],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        )
-                    )
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 16, style: .continuous)
-                            .stroke(Color.teal.opacity(0.3), lineWidth: 1)
-                    )
+            .offRecordGlassControl(
+                tint: .teal,
+                in: RoundedRectangle(cornerRadius: 16, style: .continuous),
+                fallbackFill: Color.teal.opacity(0.14)
             )
         }
     }
@@ -845,8 +830,7 @@ struct FridayView: View {
         }
         .padding()
         .frame(maxWidth: .infinity)
-        .background(Color.green.opacity(0.1))
-        .cornerRadius(12)
+        .offRecordGlassControl(tint: .green, in: RoundedRectangle(cornerRadius: 12, style: .continuous), fallbackFill: Color.green.opacity(0.1))
     }
 
     // MARK: - Helpers

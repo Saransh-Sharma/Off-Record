@@ -574,29 +574,22 @@ struct FridayChatView: View {
                                              : themeManager.accentColor)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
-                            .background(
-                                Capsule()
-                                    .fill(askedQuestions.contains(question)
-                                          ? themeManager.cardBackgroundColor.opacity(0.6)
-                                          : themeManager.accentColor.opacity(0.15))
-                            )
-                            .overlay(
-                                Capsule()
-                                    .strokeBorder(
-                                        askedQuestions.contains(question)
-                                        ? Color.clear
-                                        : themeManager.accentColor.opacity(0.3),
-                                        lineWidth: 1
-                                    )
+                            .offRecordGlassControl(
+                                tint: askedQuestions.contains(question) ? nil : themeManager.accentColor,
+                                in: Capsule(),
+                                fallbackFill: askedQuestions.contains(question)
+                                    ? themeManager.cardBackgroundColor.opacity(0.6)
+                                    : themeManager.accentColor.opacity(0.15)
                             )
                         }
+                        .buttonStyle(.plain)
                     }
                 }
                 .padding(.horizontal)
             }
             .padding(.vertical, 10)
         }
-        .background(themeManager.backgroundColor)
+        .offRecordGlassBar(cornerRadius: 0, fallbackFill: themeManager.backgroundColor)
     }
 
     // MARK: - Logic
