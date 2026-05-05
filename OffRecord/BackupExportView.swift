@@ -177,6 +177,9 @@ struct BackupExportView: View {
                             .fontWeight(.semibold)
                         Spacer()
                     }
+                    .padding(.vertical, 10)
+                    .foregroundColor(.accentColor)
+                    .offRecordGlassControl(tint: .accentColor, in: Capsule(), fallbackFill: Color.accentColor.opacity(0.12))
                 }
                 .disabled(isExporting || filteredEntryCount == 0 || (selectedFormat == .encryptedBackup && (encryptionPassword.isEmpty || encryptionPassword != confirmPassword)))
             }
@@ -346,6 +349,9 @@ struct ImportBackupView: View {
                             .fontWeight(.semibold)
                         Spacer()
                     }
+                    .padding(.vertical, 10)
+                    .foregroundColor(.accentColor)
+                    .offRecordGlassControl(tint: .accentColor, in: Capsule(), fallbackFill: Color.accentColor.opacity(0.12))
                 }
                 .disabled(isImporting)
             }
@@ -371,11 +377,18 @@ struct ImportBackupView: View {
                     }
 
                     Section {
-                        Button("Decrypt & Import") {
+                        Button {
                             showPasswordPrompt = false
                             if let url = pendingEncryptedURL {
                                 importEncryptedBackup(from: url)
                             }
+                        } label: {
+                            Text("Decrypt & Import")
+                                .fontWeight(.semibold)
+                                .frame(maxWidth: .infinity)
+                                .padding(.vertical, 10)
+                                .foregroundColor(.accentColor)
+                                .offRecordGlassControl(tint: .accentColor, in: Capsule(), fallbackFill: Color.accentColor.opacity(0.12))
                         }
                         .disabled(importPassword.isEmpty)
                     }

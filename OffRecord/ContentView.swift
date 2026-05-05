@@ -21,6 +21,15 @@ struct ContentView: View {
     private var entries: FetchedResults<DiaryEntry>
 
     var body: some View {
+        if #available(iOS 26.0, *) {
+            tabs
+                .tabViewStyle(.sidebarAdaptable)
+        } else {
+            tabs
+        }
+    }
+
+    private var tabs: some View {
         TabView {
             NavigationStack {
                 TodayView()

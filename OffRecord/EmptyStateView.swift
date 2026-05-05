@@ -54,11 +54,10 @@ struct EmptyStateView: View {
                 Button(action: action) {
                     Text(actionTitle)
                         .font(.subheadline.weight(.semibold))
-                        .foregroundColor(.white)
+                        .foregroundColor(.accentColor)
                         .padding(.horizontal, 24)
                         .padding(.vertical, 12)
-                        .background(Color.accentColor)
-                        .clipShape(Capsule())
+                        .offRecordGlassControl(tint: .accentColor, in: Capsule(), fallbackFill: Color.accentColor.opacity(0.15))
                 }
             }
         }
@@ -136,8 +135,7 @@ struct WelcomeCard: View {
             .padding(.top, 8)
         }
         .padding(24)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 20))
+        .offRecordContentCard(cornerRadius: 20)
     }
 }
 

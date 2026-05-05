@@ -150,8 +150,7 @@ struct EntryDetailView: View {
                             .foregroundColor(.accentColor)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
-                            .background(Color.accentColor.opacity(0.1))
-                            .clipShape(Capsule())
+                            .offRecordGlassControl(tint: .accentColor, in: Capsule(), fallbackFill: Color.accentColor.opacity(0.1))
                     } else {
                         HStack(spacing: 6) {
                             Image(systemName: selectedMood.icon)
@@ -162,8 +161,7 @@ struct EntryDetailView: View {
                         .foregroundColor(selectedMood.color)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
-                        .background(selectedMood.color.opacity(0.15))
-                        .clipShape(Capsule())
+                        .offRecordGlassControl(tint: selectedMood.color, in: Capsule(), fallbackFill: selectedMood.color.opacity(0.15))
                     }
                 }
                 .buttonStyle(.plain)
@@ -197,8 +195,7 @@ struct EntryDetailView: View {
             }
         }
         .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .offRecordContentCard(cornerRadius: 12)
     }
 
     // MARK: - Reading View
@@ -232,6 +229,9 @@ struct EntryDetailView: View {
                             isEditing = true
                         }
                         .font(.subheadline.weight(.medium))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 8)
+                        .offRecordGlassControl(tint: .accentColor, in: Capsule(), fallbackFill: Color.accentColor.opacity(0.1))
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 60)
@@ -246,8 +246,7 @@ struct EntryDetailView: View {
             }
         }
         .frame(maxWidth: .infinity)
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .offRecordContentCard(cornerRadius: 12)
         .padding(.horizontal)
         .padding(.vertical, 8)
         .onTapGesture {
@@ -280,8 +279,10 @@ struct EntryDetailView: View {
                         .foregroundColor(.secondary)
                 }
                 .padding()
-                .background(Color(.secondarySystemGroupedBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .offRecordGlassControl(
+                    tint: showAIInsights ? .teal : nil,
+                    in: RoundedRectangle(cornerRadius: 12, style: .continuous)
+                )
             }
             .buttonStyle(.plain)
             
@@ -370,8 +371,7 @@ struct EntryDetailView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
                 .padding()
-                .background(Color(.secondarySystemGroupedBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .offRecordContentCard(cornerRadius: 12)
                 .transition(.opacity.combined(with: .move(edge: .top)))
             }
         }
@@ -390,8 +390,7 @@ struct EntryDetailView: View {
                 .scrollContentBackground(.hidden)
                 .frame(minHeight: 300)
                 .padding()
-                .background(Color(.secondarySystemGroupedBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 12))
+                .offRecordContentCard(cornerRadius: 12)
                 .padding(.horizontal)
                 .padding(.vertical, 8)
 
@@ -412,7 +411,7 @@ struct EntryDetailView: View {
                 }
                 .padding(.horizontal)
                 .padding(.vertical, 8)
-                .background(Color(.secondarySystemGroupedBackground))
+                .offRecordGlassBar(cornerRadius: 0, fallbackFill: Color(.secondarySystemGroupedBackground))
             }
         }
         .onAppear {
@@ -467,8 +466,7 @@ struct EntryDetailView: View {
                 .foregroundColor(.accentColor)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
-                .background(Color.accentColor.opacity(0.1))
-                .clipShape(Capsule())
+                .offRecordGlassControl(tint: .accentColor, in: Capsule(), fallbackFill: Color.accentColor.opacity(0.1))
             }
 
             if !photoAttachments.isEmpty {
