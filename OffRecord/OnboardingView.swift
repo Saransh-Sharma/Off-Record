@@ -11,7 +11,9 @@ struct OnboardingView: View {
     @Binding var hasCompletedOnboarding: Bool
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @AppStorage("authorName") private var authorName: String = ""
     @State private var currentPage = 0
+    @State private var nameDraft = ""
 
     private var isIPad: Bool { horizontalSizeClass == .regular }
 
@@ -44,6 +46,16 @@ struct OnboardingView: View {
             textColor: .white
         ),
         OnboardingPage(
+            icon: "person.text.rectangle",
+            iconColor: .cyan,
+            title: "What should we call you?",
+            subtitle: "Make OffRecord feel like yours",
+            description: "Your name stays on your device and can be changed anytime in Settings.",
+            background: Color(red: 30/255, green: 63/255, blue: 82/255),
+            textColor: .white,
+            kind: .nameCapture
+        ),
+        OnboardingPage(
             icon: "lock.shield",
             iconColor: .mint,
             title: "100% Private. Always.",
@@ -58,10 +70,13 @@ struct OnboardingView: View {
         ZStack {
             ConcentricPageTransitionView(
                 pages: pages.map { page in
-                    (OnboardingPageView(page: page), page.background)
+                    (OnboardingPageView(page: page, nameDraft: $nameDraft), page.background)
                 },
                 currentIndex: $currentPage,
-                duration: reduceMotion ? 0 : 0.8
+                duration: reduceMotion ? 0 : 0.8,
+                ctaTitle: currentPage == pages.count - 1 ? "Get Started" : "Continue",
+                ctaIcon: currentPage == pages.count - 1 ? "arrow.right" : nil,
+                onPrimaryAction: primaryAction
             )
 
             VStack(spacing: 0) {
@@ -92,33 +107,19 @@ struct OnboardingView: View {
                     }
                 }
                 .padding(.bottom, 18)
-
-                Button(action: {
-                    if currentPage < pages.count - 1 {
-                        currentPage += 1
-                    } else {
-                        completeOnboarding()
-                    }
-                }) {
-                    HStack {
-                        Text(currentPage == pages.count - 1 ? "Get Started" : "Continue")
-                            .font(.headline)
-                        if currentPage == pages.count - 1 {
-                            Image(systemName: "arrow.right")
-                                .font(.headline)
-                        }
-                    }
-                    .foregroundColor(pages[currentPage].background)
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 17)
-                    .background(pages[currentPage].textColor)
-                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-                    .shadow(color: .black.opacity(0.18), radius: 18, y: 8)
-                }
-                .frame(maxWidth: isIPad ? 500 : .infinity)
-                .padding(.horizontal, isIPad ? 60 : 28)
-                .padding(.bottom, isIPad ? 56 : 44)
             }
+        }
+        .onAppear {
+            nameDraft = authorName
+        }
+    }
+
+    private func primaryAction() {
+        commitNameDraft()
+        if currentPage < pages.count - 1 {
+            currentPage += 1
+        } else {
+            completeOnboarding()
         }
     }
 
@@ -127,6 +128,10 @@ struct OnboardingView: View {
             hasCompletedOnboarding = true
         }
         UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
+    }
+
+    private func commitNameDraft() {
+        authorName = Personalization.trimmedName(from: nameDraft)
     }
 }
 
@@ -138,10 +143,17 @@ struct OnboardingPage {
     let description: String
     let background: Color
     let textColor: Color
+    var kind: OnboardingPageKind = .standard
+}
+
+enum OnboardingPageKind {
+    case standard
+    case nameCapture
 }
 
 struct OnboardingPageView: View {
     let page: OnboardingPage
+    @Binding var nameDraft: String
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     private var isIPad: Bool { horizontalSizeClass == .regular }
@@ -196,6 +208,23 @@ struct OnboardingPageView: View {
             }
             .frame(maxWidth: isIPad ? 560 : 330)
             .padding(.horizontal, 28)
+
+            if page.kind == .nameCapture {
+                TextField("Your name", text: $nameDraft)
+                    .textContentType(.givenName)
+                    .textInputAutocapitalization(.words)
+                    .autocorrectionDisabled()
+                    .submitLabel(.continue)
+                    .font(.system(size: isIPad ? 22 : 18, weight: .semibold, design: .rounded))
+                    .foregroundColor(page.background)
+                    .multilineTextAlignment(.center)
+                    .padding(.vertical, 16)
+                    .padding(.horizontal, 18)
+                    .background(page.textColor)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    .frame(maxWidth: isIPad ? 420 : 300)
+                    .padding(.horizontal, 28)
+            }
 
             Spacer()
             Spacer()
