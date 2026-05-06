@@ -132,7 +132,7 @@ private struct FridaySpriteImage: View {
             Image(systemName: "sparkles")
                 .resizable()
                 .scaledToFit()
-                .foregroundStyle(.secondary)
+                .foregroundStyle(OffRecordColor.textLavender)
         }
     }
 }

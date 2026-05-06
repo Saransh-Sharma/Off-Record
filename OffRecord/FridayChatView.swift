@@ -491,7 +491,7 @@ struct FridayChatView: View {
             questionChips
         }
         .navigationTitle("Talk to Friday")
-        .background(themeManager.backgroundColor.ignoresSafeArea())
+        .background(OffRecordColor.appBackgroundGradient.ignoresSafeArea())
     }
 
     // MARK: - Welcome Card
@@ -528,14 +528,14 @@ struct FridayChatView: View {
             VStack(alignment: message.isUser ? .trailing : .leading, spacing: 4) {
                 Text(message.text)
                     .font(.subheadline)
-                    .foregroundColor(message.isUser ? .white : themeManager.textColor)
+                    .foregroundColor(message.isUser ? OffRecordColor.textInverse : themeManager.textColor)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
                     .background(
                         RoundedRectangle(cornerRadius: 18)
                             .fill(message.isUser
-                                  ? themeManager.accentColor
-                                  : themeManager.cardBackgroundColor)
+                                  ? OffRecordColor.brandLavenderDark
+                                  : OffRecordColor.surfaceWarm)
                     )
             }
 
@@ -571,15 +571,15 @@ struct FridayChatView: View {
                             }
                             .foregroundColor(askedQuestions.contains(question)
                                              ? themeManager.secondaryTextColor
-                                             : themeManager.accentColor)
+                                             : OffRecordColor.textBrand)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
                             .offRecordGlassControl(
-                                tint: askedQuestions.contains(question) ? nil : themeManager.accentColor,
+                                tint: askedQuestions.contains(question) ? nil : OffRecordColor.brandLavenderDark,
                                 in: Capsule(),
                                 fallbackFill: askedQuestions.contains(question)
-                                    ? themeManager.cardBackgroundColor.opacity(0.6)
-                                    : themeManager.accentColor.opacity(0.15)
+                                    ? OffRecordColor.surfaceWarm.opacity(0.7)
+                                    : OffRecordColor.surfaceLavender
                             )
                         }
                         .buttonStyle(.plain)
@@ -589,7 +589,7 @@ struct FridayChatView: View {
             }
             .padding(.vertical, 10)
         }
-        .offRecordGlassBar(cornerRadius: 0, fallbackFill: themeManager.backgroundColor)
+        .offRecordGlassBar(cornerRadius: 0, fallbackFill: OffRecordColor.surfaceWarm)
     }
 
     // MARK: - Logic
