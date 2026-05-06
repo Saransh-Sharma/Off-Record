@@ -175,3 +175,87 @@ struct EncryptionErrorTests {
         }
     }
 }
+
+// MARK: - Daypart Hero Tests
+
+struct DaypartHeroTests {
+
+    @Test func daypartBoundaries() {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = TimeZone(secondsFromGMT: 0)!
+
+        #expect(DayPart.current(for: date(hour: 4, minute: 59, calendar: calendar), calendar: calendar) == .night)
+        #expect(DayPart.current(for: date(hour: 5, minute: 0, calendar: calendar), calendar: calendar) == .morning)
+        #expect(DayPart.current(for: date(hour: 12, minute: 0, calendar: calendar), calendar: calendar) == .afternoon)
+        #expect(DayPart.current(for: date(hour: 17, minute: 0, calendar: calendar), calendar: calendar) == .evening)
+        #expect(DayPart.current(for: date(hour: 21, minute: 0, calendar: calendar), calendar: calendar) == .night)
+    }
+
+    @Test func assetPrefixMappingCoversSuppliedImages() {
+        #expect(DaypartHeroLibrary.assets.count == 17)
+        #expect(DaypartHeroLibrary.assets.filter { $0.dayPart == .morning }.count == 4)
+        #expect(DaypartHeroLibrary.assets.filter { $0.dayPart == .afternoon }.count == 5)
+        #expect(DaypartHeroLibrary.assets.filter { $0.dayPart == .evening }.count == 6)
+        #expect(DaypartHeroLibrary.assets.filter { $0.dayPart == .night }.count == 2)
+        #expect(DaypartHeroAsset(imageName: "morning_04_sunlit_window_coffee")?.dayPart == .morning)
+        #expect(DaypartHeroAsset(imageName: "not_a_daypart") == nil)
+    }
+
+    @Test func promptFilteringUsesDaypartAndUseCase() {
+        let morningEmpty = DaypartHeroLibrary.prompts(dayPart: .morning, useCase: .noEntryYet)
+        let morningFull = DaypartHeroLibrary.prompts(dayPart: .morning, useCase: .hasEntryAlready)
+
+        #expect(morningEmpty.count == 6)
+        #expect(morningFull.count == 3)
+        #expect(morningEmpty.allSatisfy { $0.dayPart == .morning && $0.useCase == .noEntryYet })
+        #expect(morningFull.allSatisfy { $0.dayPart == .morning && $0.useCase == .hasEntryAlready })
+    }
+
+    @Test func selectionAvoidsImmediatePromptAndRecentTitleRepeat() {
+        let store = makeStore()
+        let first = DaypartHeroLibrary.selectHero(dayPart: .evening, hasEntryToday: false, store: store, randomIndex: { _ in 0 })
+        store.recordExposure(first)
+
+        let second = DaypartHeroLibrary.selectHero(dayPart: .evening, hasEntryToday: false, store: store, randomIndex: { _ in 0 })
+
+        #expect(second.prompt.id != first.prompt.id)
+        #expect(second.prompt.title != first.prompt.title)
+    }
+
+    @Test func twoSkipsSuppressPromptForFourteenDays() {
+        let store = makeStore()
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let skipped = DaypartHeroLibrary.prompts(dayPart: .night, useCase: .noEntryYet)[0]
+
+        store.recordSkip(promptID: skipped.id, now: now)
+        #expect(!store.isSuppressed(promptID: skipped.id, now: now))
+
+        store.recordSkip(promptID: skipped.id, now: now.addingTimeInterval(60))
+        #expect(store.isSuppressed(promptID: skipped.id, now: now.addingTimeInterval(120)))
+
+        let selected = DaypartHeroLibrary.selectHero(dayPart: .night, hasEntryToday: false, store: store, now: now.addingTimeInterval(120), randomIndex: { _ in 0 })
+        #expect(selected.prompt.id != skipped.id)
+    }
+
+    @Test func longPromptResponseIncrementsAffinityAndAffectsSelectionWeight() {
+        let store = makeStore()
+        let boosted = DaypartHeroLibrary.prompts(dayPart: .afternoon, useCase: .noEntryYet)[0]
+        store.recordPromptResponse(promptID: boosted.id, wordCount: 41)
+
+        #expect(store.history.affinity[boosted.id] == 1)
+
+        let selected = DaypartHeroLibrary.selectHero(dayPart: .afternoon, hasEntryToday: false, store: store, randomIndex: { _ in 1 })
+        #expect(selected.prompt.id == boosted.id)
+    }
+
+    private func makeStore() -> DaypartHeroStore {
+        let suiteName = "daypart-hero-tests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suiteName)!
+        defaults.removePersistentDomain(forName: suiteName)
+        return DaypartHeroStore(defaults: defaults, key: "history")
+    }
+
+    private func date(hour: Int, minute: Int, calendar: Calendar) -> Date {
+        calendar.date(from: DateComponents(year: 2026, month: 5, day: 6, hour: hour, minute: minute))!
+    }
+}

@@ -40,4 +40,61 @@ final class OffRecordUITests: XCTestCase {
             }
         }
     }
+
+    @MainActor
+    func testDaypartHeroShowsForEmptyToday() throws {
+        let app = launchHeroNudgeApp(arguments: ["-HeroNudgeEmptyToday"])
+
+        XCTAssertTrue(app.otherElements["daypartHero.large"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.descendants(matching: .any)["daypartHero.imageSurface"].firstMatch.waitForExistence(timeout: 4))
+        XCTAssertFalse(app.otherElements["daypartHero.compact"].exists)
+    }
+
+    @MainActor
+    func testDaypartHeroShowsCompactAfterTodayEntry() throws {
+        let app = launchHeroNudgeApp(arguments: ["-HeroNudgeHasToday"])
+
+        XCTAssertTrue(app.staticTexts["Today's Entry"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.otherElements["daypartHero.compact"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.descendants(matching: .any)["daypartHero.imageSurface"].firstMatch.waitForExistence(timeout: 4))
+        XCTAssertFalse(app.descendants(matching: .any)["daypartHero.thumbnail"].exists)
+    }
+
+    @MainActor
+    func testDaypartHeroWelcomeForFirstEntry() throws {
+        let app = launchHeroNudgeApp(arguments: ["-HeroNudgeFirstRun"])
+
+        XCTAssertTrue(app.otherElements["daypartHero.welcome"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] %@", "Welcome to your private diary")).firstMatch.exists)
+    }
+
+    @MainActor
+    func testDaypartHeroPrimaryCTAEntersRecordingMode() throws {
+        let app = launchHeroNudgeApp(arguments: ["-HeroNudgeEmptyToday"])
+        XCTAssertTrue(app.otherElements["daypartHero.large"].waitForExistence(timeout: 8))
+
+        addUIInterruptionMonitor(withDescription: "Microphone Permission") { alert in
+            let allowButton = alert.buttons["Allow"]
+            if allowButton.exists {
+                allowButton.tap()
+                return true
+            }
+            return false
+        }
+
+        let primaryCTA = app.descendants(matching: .any)["daypartHero.primaryCTA"].firstMatch
+        XCTAssertTrue(primaryCTA.waitForExistence(timeout: 4))
+        primaryCTA.tap()
+        app.tap()
+
+        let recordingMeter = app.descendants(matching: .any)["daypartHero.recordingMeter"].firstMatch
+        XCTAssertTrue(recordingMeter.waitForExistence(timeout: 8))
+    }
+
+    private func launchHeroNudgeApp(arguments: [String]) -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchArguments = ["-UITesting", "-HeroNudgeUITest"] + arguments
+        app.launch()
+        return app
+    }
 }
