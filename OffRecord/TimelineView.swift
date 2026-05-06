@@ -58,10 +58,10 @@ struct TimelineView: View {
             }
             
             // Entry list
-            List {
+                List {
                 ForEach(sectionKeys, id: \.self) { key in
                     if let sectionEntries = groupedEntries[key] {
-                        Section(header: Text(sectionTitle(for: key))) {
+                        Section(header: Text(sectionTitle(for: key)).foregroundColor(OffRecordColor.textBrand)) {
                             ForEach(sectionEntries) { entry in
                                 NavigationLink {
                                     EntryDetailView(entry: entry)
@@ -72,6 +72,9 @@ struct TimelineView: View {
                                         dateString: entryDateString(entry)
                                     )
                                 }
+                                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
                             }
                             .onDelete { indexSet in
                                 delete(entries: sectionEntries, at: indexSet)
@@ -86,8 +89,9 @@ struct TimelineView: View {
                 }
             }
             .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
         }
-        .searchable(text: $searchText, prompt: "Search entries")
+        .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search entries")
         .refreshable {
             HapticManager.shared.pullToRefresh()
             try? await Task.sleep(nanoseconds: 300_000_000)
@@ -101,7 +105,7 @@ struct TimelineView: View {
                         toggleVoiceSearch()
                     } label: {
                         Image(systemName: isListening ? "mic.fill" : "mic")
-                            .foregroundColor(isListening ? .red : .accentColor)
+                            .foregroundColor(isListening ? OffRecordColor.brandCoral : OffRecordColor.brandPlum)
                     }
                     .accessibilityLabel("Voice search")
                     
@@ -126,12 +130,12 @@ struct TimelineView: View {
                     HapticManager.shared.selectionChanged()
                 }) {
                     Image(systemName: showStarredOnly ? "star.fill" : "star")
-                        .foregroundColor(showStarredOnly ? .yellow : .accentColor)
+                        .foregroundColor(showStarredOnly ? OffRecordColor.brandYellow : OffRecordColor.brandPlum)
                 }
                 .accessibilityLabel("Show starred only")
             }
         }
-        .background(Color(.systemGroupedBackground))
+        .background(OffRecordColor.appBackgroundGradient)
         .navigationTitle("Timeline")
         #if os(iOS)
         .onChange(of: voiceSearch.transcribedText) { _, newValue in
@@ -193,8 +197,8 @@ struct TimelineView: View {
                                 }
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 6)
-                                .foregroundColor(.accentColor)
-                                .offRecordGlassControl(tint: .accentColor, in: Capsule(), fallbackFill: Color.accentColor.opacity(0.1))
+                                .foregroundColor(OffRecordColor.textBrand)
+                                .offRecordGlassControl(tint: OffRecordColor.brandSageDark, in: Capsule(), fallbackFill: OffRecordColor.backgroundSageTint)
                             }
                             .buttonStyle(.plain)
                         }
@@ -215,7 +219,7 @@ struct TimelineView: View {
                 HStack(spacing: 8) {
                     Text("Mood:")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(OffRecordColor.textSecondary)
                     
                     ForEach(Mood.allCases.filter { $0 != .none }, id: \.self) { mood in
                         Button {
@@ -235,11 +239,11 @@ struct TimelineView: View {
                             .font(.caption)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
-                            .foregroundColor(selectedMoodFilter == mood ? mood.color : .secondary)
+                            .foregroundColor(selectedMoodFilter == mood ? OffRecordColor.textBrand : OffRecordColor.textSecondary)
                             .offRecordGlassControl(
                                 tint: selectedMoodFilter == mood ? mood.color : nil,
                                 in: Capsule(),
-                                fallbackFill: selectedMoodFilter == mood ? mood.color.opacity(0.2) : Color(.tertiarySystemFill)
+                                fallbackFill: selectedMoodFilter == mood ? mood.color.opacity(0.22) : OffRecordColor.surfaceWarm
                             )
                         }
                         .buttonStyle(.plain)
@@ -264,13 +268,13 @@ struct TimelineView: View {
                         HapticManager.shared.buttonTap()
                     }
                     .font(.caption)
-                    .foregroundColor(.red)
+                    .foregroundColor(OffRecordColor.textCoral)
                 }
             }
             .padding(.horizontal)
         }
         .padding(.vertical, 12)
-        .offRecordGlassBar(cornerRadius: 0, fallbackFill: Color(.secondarySystemGroupedBackground))
+        .offRecordGlassBar(cornerRadius: 0, fallbackFill: OffRecordColor.surfaceWarm)
     }
     
     // MARK: - Active Filters Bar
@@ -279,7 +283,7 @@ struct TimelineView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 if showStarredOnly {
-                    FilterChip(label: "Starred", icon: "star.fill", color: .yellow) {
+                    FilterChip(label: "Starred", icon: "star.fill", color: OffRecordColor.brandYellow) {
                         showStarredOnly = false
                     }
                 }
@@ -291,13 +295,13 @@ struct TimelineView: View {
                 }
                 
                 if let start = startDate {
-                    FilterChip(label: "From \(formatShortDate(start))", icon: "calendar", color: .blue) {
+                    FilterChip(label: "From \(formatShortDate(start))", icon: "calendar", color: OffRecordColor.brandSky) {
                         startDate = nil
                     }
                 }
                 
                 if let end = endDate {
-                    FilterChip(label: "To \(formatShortDate(end))", icon: "calendar", color: .blue) {
+                    FilterChip(label: "To \(formatShortDate(end))", icon: "calendar", color: OffRecordColor.brandSky) {
                         endDate = nil
                     }
                 }
@@ -307,7 +311,7 @@ struct TimelineView: View {
                         clearAllFilters()
                     }
                     .font(.caption.weight(.medium))
-                    .foregroundColor(.red)
+                    .foregroundColor(OffRecordColor.textCoral)
                     .padding(.leading, 8)
                 }
             }
@@ -323,18 +327,18 @@ struct TimelineView: View {
         VStack(spacing: 16) {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 40))
-                .foregroundColor(.secondary.opacity(0.5))
+                .foregroundColor(OffRecordColor.textSecondary)
             
             Text("No entries found")
                 .font(.headline)
-                .foregroundColor(.secondary)
+                .foregroundColor(OffRecordColor.textHeading)
             
             if hasActiveFilters {
                 Button("Clear Filters") {
                     clearAllFilters()
                 }
                 .font(.subheadline)
-                .foregroundColor(.accentColor)
+                .foregroundColor(OffRecordColor.brandPlum)
             }
         }
         .frame(maxWidth: .infinity)
@@ -496,7 +500,7 @@ struct EntryRowView: View {
                 HStack(spacing: 6) {
                     Text(dateString)
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(OffRecordColor.textPeach)
 
                     if let moodString = entry.value(forKey: "mood") as? String,
                        let mood = Mood(rawValue: moodString),
@@ -509,13 +513,13 @@ struct EntryRowView: View {
                     if wordCount > 0 {
                         Text("\(wordCount) words")
                             .font(.caption2)
-                            .foregroundColor(.secondary.opacity(0.7))
+                            .foregroundColor(OffRecordColor.textSecondary)
                     }
 
                     if hasPhotos {
                         Image(systemName: "photo")
                             .font(.caption2)
-                            .foregroundColor(.secondary.opacity(0.7))
+                            .foregroundColor(OffRecordColor.textSecondary)
                     }
                 }
 
@@ -524,18 +528,26 @@ struct EntryRowView: View {
                         .lineLimit(2)
                 } else {
                     Text("Tap to add text")
-                        .foregroundColor(.secondary)
+                        .foregroundColor(OffRecordColor.textSecondary)
                         .italic()
                 }
             }
             Spacer()
             if entry.isStarred {
                 Image(systemName: "star.fill")
-                    .foregroundColor(.yellow)
+                    .foregroundColor(OffRecordColor.brandYellow)
                     .font(.caption)
             }
         }
-        .padding(.vertical, 2)
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: OffRecordRadius.md, style: .continuous)
+                .fill(OffRecordColor.surfaceWarm)
+                .overlay(
+                    RoundedRectangle(cornerRadius: OffRecordRadius.md, style: .continuous)
+                        .stroke(OffRecordColor.borderSoft, lineWidth: 1)
+                )
+        )
     }
 
     @ViewBuilder
@@ -543,9 +555,11 @@ struct EntryRowView: View {
         if searchText.isEmpty {
             Text(text)
                 .font(.subheadline)
+                .foregroundColor(OffRecordColor.textPrimary)
         } else {
             Text(attributedString(for: text))
                 .font(.subheadline)
+                .foregroundColor(OffRecordColor.textPrimary)
         }
     }
 
@@ -557,8 +571,8 @@ struct EntryRowView: View {
         var searchStart = textLower.startIndex
         while let range = textLower.range(of: searchLower, range: searchStart..<textLower.endIndex) {
             if let attrRange = Range(range, in: attributedString) {
-                attributedString[attrRange].backgroundColor = .yellow.opacity(0.3)
-                attributedString[attrRange].foregroundColor = .primary
+                attributedString[attrRange].backgroundColor = OffRecordColor.brandYellow.opacity(0.32)
+                attributedString[attrRange].foregroundColor = OffRecordColor.textPrimary
             }
             searchStart = range.upperBound
         }
@@ -593,7 +607,7 @@ struct FilterChip: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .foregroundColor(color)
+        .foregroundColor(OffRecordColor.textBrand)
         .offRecordGlassControl(tint: color, in: Capsule(), fallbackFill: color.opacity(0.15))
     }
 }
@@ -625,11 +639,11 @@ struct DateRangeButton: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .foregroundColor(date != nil ? .accentColor : .secondary)
+            .foregroundColor(date != nil ? OffRecordColor.textBrand : OffRecordColor.textSecondary)
             .offRecordGlassControl(
-                tint: date != nil ? .accentColor : nil,
+                tint: date != nil ? OffRecordColor.brandSageDark : nil,
                 in: Capsule(),
-                fallbackFill: date != nil ? Color.accentColor.opacity(0.1) : Color(.tertiarySystemFill)
+                fallbackFill: date != nil ? OffRecordColor.backgroundSageTint : OffRecordColor.surfaceWarm
             )
         }
         .buttonStyle(.plain)
