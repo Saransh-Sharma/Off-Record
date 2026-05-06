@@ -9,11 +9,12 @@
 - **iPad 12.9" (iPad Pro)**: 2048 x 2732 pixels
 
 ### Color Palette for Screenshots
-- Primary: #8B5CF6 (Purple)
-- Secondary: #EC4899 (Pink)
-- Background: #1A1A2E (Dark) or #F8F9FA (Light)
-- Accent: #10B981 (Green - for privacy indicators)
-- Text: #FFFFFF on dark, #1F2937 on light
+- Primary: #342044 (Deep Plum)
+- Secondary: #7FA08A (Sage)
+- Friday/AI: #BBA7E8 (Lavender)
+- Journaling Warmth: #F6B98F (Peach)
+- Background: #FFF8F0 -> #F8F1F7 -> #F3F6EF
+- Text: #18131D on pastel surfaces, #FFFFFF only on plum/sage/lavender CTAs
 
 ---
 
@@ -23,7 +24,7 @@
 - Show TodayView with active recording animation
 - Waveform visualization prominently displayed
 - Recording timer showing "1:23"
-- Background gradient: purple to pink
+- Background gradient: warm cream to lavender/peach
 - Overlay text at top: "Your voice diary"
 - Small privacy badge at bottom: "100% on-device"
 
@@ -38,7 +39,7 @@
 - **NEW: Friday Predictions section visible** ("Friday noticed..." with mood, topic, timing predictions)
 - **NEW: Shareable Personality Card** visible below predictions
 - Personality trait bars (Expressive, Direct, Analytical)
-- Background: dark with purple glow around orb
+- Background: warm cream with a soft lavender Friday glow
 
 **Feature callout**: AI-powered predictions and self-understanding
 
@@ -63,7 +64,7 @@
 - Show Friday emotions section
 - Emotional baseline meters (Valence, Arousal, Range)
 - Mood rhythms showing morning/evening/weekday/weekend
-- Emotional triggers section (positive in green, negative in orange)
+- Emotional triggers section (positive in sage/mint, negative in softened peach/coral)
 
 **Feature callout**: Automatic emotion detection across 9 types
 
@@ -119,7 +120,7 @@
   - No tracking or analytics
   - Face ID / Touch ID protection
   - AES-256 encrypted backups
-- Green shield icon or privacy badge
+- Sage shield icon or privacy badge
 
 **Feature callout**: Zero data collection, architectural privacy
 
