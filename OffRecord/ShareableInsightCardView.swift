@@ -28,10 +28,10 @@ struct ShareableInsightCardView: View {
                     Text("Share")
                         .font(.system(size: 14, weight: .semibold))
                 }
-                .foregroundColor(.white.opacity(0.9))
+                .foregroundColor(OffRecordColor.textInverse)
                 .padding(.horizontal, 20)
                 .padding(.vertical, 10)
-                .background(Capsule().fill(.white.opacity(0.15)))
+                .background(Capsule().fill(OffRecordColor.brandPlum.opacity(0.88)))
             }
         }
     }
@@ -52,14 +52,14 @@ struct ShareableInsightCardView: View {
             // Headline
             Text(insight.headline)
                 .font(.system(size: 22, weight: .bold, design: .default))
-                .foregroundColor(.white)
+                .foregroundColor(OffRecordColor.textHeading)
                 .lineSpacing(4)
                 .fixedSize(horizontal: false, vertical: true)
 
             // Subtext
             Text(insight.subtext)
                 .font(.system(size: 15, weight: .regular))
-                .foregroundColor(.white.opacity(0.6))
+                .foregroundColor(OffRecordColor.textSecondary)
                 .lineSpacing(2)
 
             // Data point badge (if available)
@@ -70,7 +70,7 @@ struct ShareableInsightCardView: View {
                         .frame(width: 6, height: 6)
                     Text(dataPoint)
                         .font(.system(size: 12, weight: .medium, design: .monospaced))
-                        .foregroundColor(.white.opacity(0.5))
+                        .foregroundColor(OffRecordColor.textSecondary)
                 }
             }
 
@@ -81,7 +81,7 @@ struct ShareableInsightCardView: View {
                 Spacer()
                 Text("OffRecord AI Journal")
                     .font(.system(size: 11, weight: .medium, design: .rounded))
-                    .foregroundColor(.white.opacity(0.25))
+                    .foregroundColor(OffRecordColor.textTertiary)
             }
         }
         .padding(24)
@@ -90,8 +90,8 @@ struct ShareableInsightCardView: View {
                 .fill(
                     LinearGradient(
                         colors: [
-                            Color(red: 0.08, green: 0.08, blue: 0.12),
-                            Color(red: 0.12, green: 0.10, blue: 0.16)
+                            OffRecordColor.surfaceWarm,
+                            OffRecordColor.surfaceLavender
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -106,12 +106,12 @@ struct ShareableInsightCardView: View {
 
     private var categoryColor: Color {
         switch insight.category {
-        case .emotion: return .pink
-        case .pattern: return .purple
-        case .people: return .orange
-        case .language: return .cyan
-        case .growth: return .green
-        case .time: return .indigo
+        case .emotion: return OffRecordColor.brandBlush
+        case .pattern: return OffRecordColor.brandLavenderDark
+        case .people: return OffRecordColor.brandPeach
+        case .language: return OffRecordColor.brandAqua
+        case .growth: return OffRecordColor.brandMint
+        case .time: return OffRecordColor.brandSky
         }
     }
 }
@@ -153,13 +153,13 @@ private struct ShareableCardForExport: View {
             // Headline
             Text(insight.headline)
                 .font(.system(size: 26, weight: .bold))
-                .foregroundColor(.white)
+                .foregroundColor(OffRecordColor.textHeading)
                 .lineSpacing(6)
 
             // Subtext
             Text(insight.subtext)
                 .font(.system(size: 16, weight: .regular))
-                .foregroundColor(.white.opacity(0.6))
+                .foregroundColor(OffRecordColor.textSecondary)
                 .lineSpacing(3)
 
             // Data point
@@ -170,7 +170,7 @@ private struct ShareableCardForExport: View {
                         .frame(width: 6, height: 6)
                     Text(dataPoint)
                         .font(.system(size: 13, weight: .medium, design: .monospaced))
-                        .foregroundColor(.white.opacity(0.5))
+                        .foregroundColor(OffRecordColor.textSecondary)
                 }
             }
 
@@ -181,15 +181,15 @@ private struct ShareableCardForExport: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("OffRecord AI Journal")
                         .font(.system(size: 14, weight: .semibold, design: .rounded))
-                        .foregroundColor(.white.opacity(0.4))
+                        .foregroundColor(OffRecordColor.textSecondary)
                     Text("AI Voice Diary")
                         .font(.system(size: 10, weight: .regular))
-                        .foregroundColor(.white.opacity(0.2))
+                        .foregroundColor(OffRecordColor.textTertiary)
                 }
                 Spacer()
                 Text("offrecord.example.com")
                     .font(.system(size: 10, weight: .medium, design: .monospaced))
-                    .foregroundColor(.white.opacity(0.2))
+                    .foregroundColor(OffRecordColor.textTertiary)
             }
         }
         .padding(32)
@@ -198,8 +198,8 @@ private struct ShareableCardForExport: View {
                 .fill(
                     LinearGradient(
                         colors: [
-                            Color(red: 0.06, green: 0.06, blue: 0.10),
-                            Color(red: 0.10, green: 0.08, blue: 0.14)
+                            OffRecordColor.surfaceWarm,
+                            OffRecordColor.surfaceLavender
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -214,12 +214,12 @@ private struct ShareableCardForExport: View {
 
     private var categoryColor: Color {
         switch insight.category {
-        case .emotion: return .pink
-        case .pattern: return .purple
-        case .people: return .orange
-        case .language: return .cyan
-        case .growth: return .green
-        case .time: return .indigo
+        case .emotion: return OffRecordColor.brandBlush
+        case .pattern: return OffRecordColor.brandLavenderDark
+        case .people: return OffRecordColor.brandPeach
+        case .language: return OffRecordColor.brandAqua
+        case .growth: return OffRecordColor.brandMint
+        case .time: return OffRecordColor.brandSky
         }
     }
 }
@@ -247,14 +247,14 @@ struct WeeklyInsightsSection: View {
             // Section header
             HStack {
                 Image(systemName: "sparkles")
-                    .foregroundColor(.purple)
+                    .foregroundColor(OffRecordColor.brandLavenderDark)
                 Text("Your Week, Decoded")
                     .font(.headline)
                 Spacer()
                 if insights.count > 1 {
                     Text("\(currentIndex + 1)/\(insights.count)")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(OffRecordColor.textSecondary)
                 }
             }
 
@@ -329,5 +329,5 @@ struct WeeklyInsightsSection: View {
         }
         .padding()
     }
-    .background(Color(.systemGroupedBackground))
+    .background(OffRecordColor.backgroundPrimary)
 }

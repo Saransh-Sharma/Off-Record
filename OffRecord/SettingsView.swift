@@ -65,6 +65,8 @@ struct SettingsView: View {
             backupSection
             aboutSection
         }
+        .scrollContentBackground(.hidden)
+        .background(OffRecordColor.appBackgroundGradient)
         .onAppear { calculateStorage() }
         .navigationTitle("Settings")
         .alert("Notifications Disabled", isPresented: $showPermissionDeniedAlert) {
@@ -114,7 +116,7 @@ struct SettingsView: View {
 
             if years.isEmpty {
                 Text("No entries to export yet.")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(OffRecordColor.textSecondary)
             } else {
                 Picker("Period", selection: $selectedExportPeriod) {
                     ForEach(ExportPeriod.allCases) { period in
@@ -233,13 +235,13 @@ struct SettingsView: View {
             if lockManager.isEnabled {
                 Text("Your journal locks when you leave the app. OffRecord never sees or stores your \(lockManager.biometryTypeName).")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(OffRecordColor.textSecondary)
             }
 
             if !lockManager.biometricsAvailable {
                 Text("If \(lockManager.biometryTypeName) is unavailable, iOS will use your device passcode.")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(OffRecordColor.textSecondary)
             }
         }
     }
@@ -316,18 +318,18 @@ struct SettingsView: View {
                 HStack(spacing: 12) {
                     ZStack {
                         Circle()
-                            .fill(iCloudSyncEnabled && PersistenceController.isCloudAvailable ? Color.blue.opacity(0.15) : Color.gray.opacity(0.15))
+                            .fill(iCloudSyncEnabled && PersistenceController.isCloudAvailable ? OffRecordColor.surfaceBlue : OffRecordColor.surfaceWarm)
                             .frame(width: 36, height: 36)
                         Image(systemName: iCloudSyncEnabled && PersistenceController.isCloudAvailable ? "icloud.fill" : "icloud.slash")
                             .font(.body)
-                            .foregroundColor(iCloudSyncEnabled && PersistenceController.isCloudAvailable ? .blue : .gray)
+                            .foregroundColor(iCloudSyncEnabled && PersistenceController.isCloudAvailable ? OffRecordColor.brandSky : OffRecordColor.textTertiary)
                     }
                     VStack(alignment: .leading, spacing: 2) {
                         Text("iCloud Sync")
                             .font(.subheadline.weight(.semibold))
                         Text(syncStatusText)
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(OffRecordColor.textSecondary)
                     }
                 }
             }
@@ -340,30 +342,30 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 8) {
                         Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(.green)
+                            .foregroundColor(OffRecordColor.brandSageDark)
                             .font(.caption)
                         Text("Entries sync automatically via your personal iCloud")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(OffRecordColor.textSecondary)
                     }
                     HStack(spacing: 8) {
                         Image(systemName: "lock.fill")
-                            .foregroundColor(.green)
+                            .foregroundColor(OffRecordColor.brandSageDark)
                             .font(.caption)
                         Text("Encrypted through your Apple ID")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(OffRecordColor.textSecondary)
                     }
                 }
                 .padding(.vertical, 4)
             } else if iCloudSyncEnabled && !PersistenceController.isCloudAvailable {
                 HStack(spacing: 8) {
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundColor(.orange)
+                        .foregroundColor(OffRecordColor.textPeach)
                         .font(.caption)
                     Text("iCloud unavailable")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(OffRecordColor.textSecondary)
                 }
                 .padding(.vertical, 4)
             }
@@ -394,18 +396,18 @@ struct SettingsView: View {
             HStack(spacing: 12) {
                 ZStack {
                     Circle()
-                        .fill(Color.green.opacity(0.15))
+                        .fill(OffRecordColor.surfaceSage)
                         .frame(width: 44, height: 44)
                     Image(systemName: "lock.shield.fill")
                         .font(.title3)
-                        .foregroundColor(.green)
+                        .foregroundColor(OffRecordColor.brandSageDark)
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Privacy First")
                         .font(.subheadline.weight(.semibold))
                     Text("Your data is encrypted and private")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(OffRecordColor.textSecondary)
                 }
             }
             .padding(.vertical, 4)
@@ -444,18 +446,18 @@ struct SettingsView: View {
                 HStack(spacing: 12) {
                     ZStack {
                         Circle()
-                            .fill(Color.orange.opacity(0.15))
+                            .fill(OffRecordColor.surfacePeach)
                             .frame(width: 36, height: 36)
                         Image(systemName: "square.and.arrow.up")
                             .font(.subheadline)
-                            .foregroundColor(.orange)
+                            .foregroundColor(OffRecordColor.textPeach)
                     }
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Export Data")
                             .font(.subheadline)
                         Text("JSON, Text, Markdown, CSV")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(OffRecordColor.textSecondary)
                     }
                 }
             }
@@ -466,18 +468,18 @@ struct SettingsView: View {
                 HStack(spacing: 12) {
                     ZStack {
                         Circle()
-                            .fill(Color.blue.opacity(0.15))
+                            .fill(OffRecordColor.surfaceBlue)
                             .frame(width: 36, height: 36)
                         Image(systemName: "square.and.arrow.down")
                             .font(.subheadline)
-                            .foregroundColor(.blue)
+                            .foregroundColor(OffRecordColor.textSky)
                     }
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Import Backup")
                             .font(.subheadline)
                         Text("Restore from JSON backup")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(OffRecordColor.textSecondary)
                     }
                 }
             }
@@ -498,9 +500,9 @@ struct SettingsView: View {
                     ProgressView()
                 }
             } else {
-                StorageRow(label: "Audio Recordings", bytes: audioStorageBytes, icon: "waveform", color: .blue)
-                StorageRow(label: "Photos", bytes: photoStorageBytes, icon: "photo", color: .pink)
-                StorageRow(label: "Database", bytes: databaseStorageBytes, icon: "cylinder", color: .orange)
+                StorageRow(label: "Audio Recordings", bytes: audioStorageBytes, icon: "waveform", color: OffRecordColor.textAqua)
+                StorageRow(label: "Photos", bytes: photoStorageBytes, icon: "photo", color: OffRecordColor.textBlush)
+                StorageRow(label: "Database", bytes: databaseStorageBytes, icon: "cylinder", color: OffRecordColor.textPeach)
 
                 HStack {
                     Text("Total")
@@ -508,7 +510,7 @@ struct SettingsView: View {
                     Spacer()
                     Text(formatBytes(audioStorageBytes + photoStorageBytes + databaseStorageBytes))
                         .fontWeight(.semibold)
-                        .foregroundColor(.primary)
+                        .foregroundColor(OffRecordColor.textPrimary)
                 }
             }
         } header: {
@@ -589,14 +591,14 @@ struct SettingsView: View {
                 Text("Version")
                 Spacer()
                 Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(OffRecordColor.textSecondary)
             }
 
             HStack {
                 Text("Total Entries")
                 Spacer()
                 Text("\(totalEntriesCount)")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(OffRecordColor.textSecondary)
             }
         }
     }
@@ -731,7 +733,7 @@ struct ThemeButton: View {
                     
                     Image(systemName: theme.icon)
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.white)
+                        .foregroundColor(theme.swatchForegroundColor)
                 }
                 .overlay {
                     if isSelected {
@@ -743,7 +745,7 @@ struct ThemeButton: View {
                 
                 Text(theme.rawValue)
                     .font(.caption2)
-                    .foregroundColor(isSelected ? theme.accentColor : .secondary)
+                    .foregroundColor(isSelected ? theme.readableAccentColor : OffRecordColor.textSecondary)
             }
         }
         .buttonStyle(.plain)
@@ -771,7 +773,7 @@ struct StorageRow: View {
             Text(label)
             Spacer()
             Text(formattedSize)
-                .foregroundColor(.secondary)
+                .foregroundColor(OffRecordColor.textSecondary)
         }
     }
 
@@ -793,7 +795,7 @@ struct PrivacyInfoRow: View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: icon)
                 .font(.subheadline)
-                .foregroundColor(.green)
+                .foregroundColor(OffRecordColor.brandSageDark)
                 .frame(width: 20)
 
             VStack(alignment: .leading, spacing: 2) {
@@ -801,7 +803,7 @@ struct PrivacyInfoRow: View {
                     .font(.subheadline.weight(.medium))
                 Text(description)
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(OffRecordColor.textSecondary)
             }
         }
     }
