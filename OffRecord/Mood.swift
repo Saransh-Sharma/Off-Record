@@ -43,15 +43,15 @@ enum Mood: String, CaseIterable, Identifiable {
 
     var color: Color {
         switch self {
-        case .none: return .secondary
-        case .happy: return .yellow
-        case .calm: return .mint
-        case .grateful: return .pink
-        case .excited: return .orange
-        case .tired: return .purple
-        case .anxious: return .indigo
-        case .sad: return .blue
-        case .angry: return .red
+        case .none: return OffRecordColor.textTertiary
+        case .happy: return OffRecordColor.moodGreat
+        case .calm: return OffRecordColor.moodCalm
+        case .grateful: return OffRecordColor.moodGood
+        case .excited: return OffRecordColor.moodOkay
+        case .tired: return OffRecordColor.moodTired
+        case .anxious: return OffRecordColor.moodAnxious
+        case .sad: return OffRecordColor.moodSad
+        case .angry: return OffRecordColor.moodAngry
         }
     }
 

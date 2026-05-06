@@ -494,35 +494,35 @@ enum OnboardingStep: Int, CaseIterable, Identifiable {
     var backgroundColor: Color {
         switch self {
         case .welcome:
-            return Color(red: 0.84, green: 0.28, blue: 0.36)
+            return OffRecordColor.brandPlum
         case .goal:
-            return Color(red: 0.16, green: 0.50, blue: 0.57)
+            return OffRecordColor.textAqua
         case .painPoints:
-            return Color(red: 0.78, green: 0.42, blue: 0.18)
+            return OffRecordColor.textPeach
         case .privacyProof:
-            return Color(red: 0.20, green: 0.36, blue: 0.64)
+            return OffRecordColor.textSky
         case .faceID:
-            return Color(red: 0.13, green: 0.55, blue: 0.42)
+            return OffRecordColor.textMint
         case .relatable:
-            return Color(red: 0.48, green: 0.31, blue: 0.72)
+            return OffRecordColor.brandLavenderDark
         case .solution:
-            return Color(red: 0.10, green: 0.45, blue: 0.52)
+            return OffRecordColor.textAqua
         case .preferences:
-            return Color(red: 0.58, green: 0.34, blue: 0.58)
+            return OffRecordColor.textBlush
         case .microphone:
-            return Color(red: 0.72, green: 0.27, blue: 0.42)
+            return OffRecordColor.textCoral
         case .speech:
-            return Color(red: 0.25, green: 0.43, blue: 0.76)
+            return OffRecordColor.textSky
         case .processing:
-            return Color(red: 0.13, green: 0.16, blue: 0.24)
+            return OffRecordColor.textBrand
         case .firstEntry:
-            return Color(red: 0.10, green: 0.42, blue: 0.48)
+            return OffRecordColor.textAqua
         case .valueReveal:
-            return Color(red: 0.38, green: 0.42, blue: 0.20)
+            return OffRecordColor.textMint
         case .habit:
-            return Color(red: 0.66, green: 0.38, blue: 0.16)
+            return OffRecordColor.textPeach
         case .finish:
-            return Color(red: 0.12, green: 0.28, blue: 0.48)
+            return OffRecordColor.brandPlum
         }
     }
 }
@@ -786,7 +786,7 @@ private struct WelcomeStep: View {
 
             Text("Speak freely. OffRecord turns your voice into insights using local AI on your device, even without internet.")
                 .font(.title3.weight(.semibold))
-                .foregroundStyle(.white.opacity(0.76))
+                .foregroundStyle(.white.opacity(0.86))
                 .multilineTextAlignment(.center)
                 .lineSpacing(4)
 
@@ -794,14 +794,14 @@ private struct WelcomeStep: View {
                 "Your name (optional)",
                 text: $nameDraft,
                 prompt: Text("Your name (optional)")
-                    .foregroundStyle(Color.black.opacity(0.46))
+                    .foregroundStyle(OffRecordColor.textSecondary)
             )
                 .textContentType(.givenName)
                 .textInputAutocapitalization(.words)
                 .autocorrectionDisabled()
                 .font(.headline)
-                .foregroundColor(.black)
-                .tint(Color(red: 0.84, green: 0.28, blue: 0.36))
+                .foregroundColor(OffRecordColor.textPrimary)
+                .tint(OffRecordColor.textCoral)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 14)
                 .background(.white)
@@ -895,11 +895,11 @@ private struct FaceIDStep: View {
             VStack(spacing: 16) {
                 ZStack {
                     Circle()
-                        .fill(Color.green.opacity(0.18))
+                        .fill(OffRecordColor.backgroundSageTint.opacity(0.28))
                         .frame(width: 132, height: 132)
                     Image(systemName: isEnabled ? "checkmark.shield.fill" : "faceid")
                         .font(.system(size: 54, weight: .semibold))
-                        .foregroundStyle(.green)
+                        .foregroundStyle(OffRecordColor.textInverse)
                 }
 
                 VStack(alignment: .leading, spacing: 12) {
@@ -911,7 +911,7 @@ private struct FaceIDStep: View {
                 if !isAvailable {
                     Text("Biometrics are unavailable on this device, so iOS will use your passcode.")
                         .font(.footnote.weight(.medium))
-                        .foregroundStyle(.white.opacity(0.72))
+                        .foregroundStyle(.white.opacity(0.86))
                         .padding()
                         .background(.white.opacity(0.10))
                         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -1078,7 +1078,7 @@ private struct ProcessingStep: View {
             VStack(spacing: 10) {
                 Text("No network call. No account lookup. Just local AI preparing your first reflection.")
                     .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.white.opacity(0.72))
+                    .foregroundStyle(.white.opacity(0.86))
                     .multilineTextAlignment(.center)
             }
             Spacer(minLength: 80)
@@ -1155,11 +1155,11 @@ private struct FirstEntryStep: View {
             VStack(spacing: 14) {
                 ZStack {
                     Circle()
-                        .fill(isRecording ? Color.red : Color.white)
+                        .fill(isRecording ? OffRecordColor.textCoral : Color.white)
                         .frame(width: 104, height: 104)
                     Image(systemName: isRecording ? "stop.fill" : "mic.fill")
                         .font(.system(size: 38, weight: .bold))
-                        .foregroundStyle(isRecording ? .white : Color(red: 0.10, green: 0.42, blue: 0.48))
+                        .foregroundStyle(isRecording ? OffRecordColor.textInverse : OffRecordColor.textAqua)
                 }
 
                 if isRecording {
@@ -1168,7 +1168,7 @@ private struct FirstEntryStep: View {
                     WaveformMeter(level: level)
                     Text("Tap to stop")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.76))
+                        .foregroundStyle(.white.opacity(0.86))
                 } else if isTranscribing {
                     ProgressView("Transcribing on this device...")
                         .tint(.white)
@@ -1176,13 +1176,13 @@ private struct FirstEntryStep: View {
                 } else if entryCreated {
                     Label("First entry saved", systemImage: "checkmark.circle.fill")
                         .font(.headline)
-                        .foregroundStyle(.green)
+                        .foregroundStyle(OffRecordColor.textInverse)
                 } else {
                     Text("Tap to record privately")
                         .font(.headline)
                     Text("Your recording is stored locally.")
                         .font(.caption.weight(.medium))
-                        .foregroundStyle(.white.opacity(0.64))
+                        .foregroundStyle(.white.opacity(0.86))
                 }
             }
             .frame(maxWidth: .infinity)
@@ -1200,7 +1200,7 @@ private struct FirstEntryStep: View {
                 .font(.headline)
             TextField("Write your first entry...", text: $draft, axis: .vertical)
                 .focused($isTextEditorFocused)
-                .foregroundColor(.black)
+                .foregroundColor(OffRecordColor.textPrimary)
                 .lineLimit(6...10)
                 .frame(minHeight: 160)
                 .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -1335,7 +1335,7 @@ private struct FinishStep: View {
             VStack(spacing: 12) {
                 Text("Record, reflect, and let Friday notice patterns entirely on this device. No internet connection required for the core experience.")
                     .font(.title3.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.74))
+                    .foregroundStyle(.white.opacity(0.86))
                     .multilineTextAlignment(.center)
                     .lineSpacing(4)
             }
@@ -1372,7 +1372,7 @@ private struct OnboardingProgressHeader: View {
 
                 Text(step.progressText)
                     .font(.system(.caption, design: .rounded, weight: .black))
-                    .foregroundStyle(.white.opacity(0.74))
+                    .foregroundStyle(.white.opacity(0.86))
                     .frame(width: sideWidth, alignment: .trailing)
             }
 
@@ -1419,7 +1419,7 @@ private struct OnboardingBottomBar: View {
                     }
                 }
                 .font(.headline)
-                .foregroundStyle(Color(red: 0.05, green: 0.08, blue: 0.10))
+                .foregroundStyle(OffRecordColor.textPrimary)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 17)
                 .background(isPrimaryDisabled ? Color.white.opacity(0.42) : Color.white)
@@ -1431,14 +1431,14 @@ private struct OnboardingBottomBar: View {
             if let secondaryTitle {
                 Button(secondaryTitle, action: onSecondary)
                     .font(.subheadline.weight(.bold))
-                    .foregroundStyle(.white.opacity(0.72))
+                    .foregroundStyle(.white.opacity(0.86))
                     .buttonStyle(.plain)
             }
         }
         .padding(.top, 16)
         .background(
             LinearGradient(
-                colors: [.clear, Color(red: 0.04, green: 0.05, blue: 0.08).opacity(0.92)],
+                colors: [.clear, OffRecordColor.textPrimary.opacity(0.92)],
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -1465,7 +1465,7 @@ private struct OnboardingQuestion<Content: View>: View {
         VStack(alignment: .center, spacing: 24) {
             Text(subtitle)
                 .font(.system(.subheadline, design: .rounded, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.76))
+                .foregroundStyle(.white.opacity(0.86))
                 .multilineTextAlignment(.center)
                 .lineSpacing(3)
 
@@ -1574,7 +1574,7 @@ private struct PrivacyComparisonRow: View {
 
             Text(offRecord)
                 .font(.caption.weight(.black))
-                .foregroundStyle(.black)
+                .foregroundStyle(OffRecordColor.textPrimary)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 7)
                 .background(Color.white)
@@ -1582,7 +1582,7 @@ private struct PrivacyComparisonRow: View {
 
             Text(other)
                 .font(.caption.weight(.bold))
-                .foregroundStyle(.white.opacity(0.70))
+                .foregroundStyle(.white.opacity(0.86))
                 .padding(.horizontal, 10)
                 .padding(.vertical, 7)
                 .background(.white.opacity(0.10))
@@ -1609,7 +1609,7 @@ private struct SolutionRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(pain.title)
                     .font(.caption.weight(.bold))
-                    .foregroundStyle(.white.opacity(0.52))
+                    .foregroundStyle(.white.opacity(0.86))
                 Text(pain.solutionTitle)
                     .font(.headline)
                     .foregroundStyle(.white)
@@ -1634,7 +1634,7 @@ private struct BenefitRow: View {
                 .frame(width: 22)
             Text(text)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.white.opacity(0.78))
+                .foregroundStyle(.white.opacity(0.86))
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -1679,7 +1679,7 @@ private struct LocalAIBadge: View {
             Text("No internet required")
         }
         .font(.caption.weight(.black))
-        .foregroundStyle(.black)
+        .foregroundStyle(OffRecordColor.textPrimary)
         .lineLimit(1)
         .minimumScaleFactor(0.78)
         .padding(.horizontal, 12)
@@ -1833,7 +1833,7 @@ private struct TopicGraphCard: View {
 
             Text("As you journal, OffRecord connects recurring people, places, moods, and themes locally. This graph never leaves your device.")
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.white.opacity(0.70))
+                .foregroundStyle(.white.opacity(0.86))
         }
         .padding(18)
         .background(.white.opacity(0.10))
@@ -1868,7 +1868,7 @@ private struct TopicNode: View {
 
                 Text(title)
                     .font(.caption.weight(.black))
-                    .foregroundStyle(index == 0 ? .black : .white)
+                    .foregroundStyle(index == 0 ? OffRecordColor.textPrimary : OffRecordColor.textInverse)
                     .lineLimit(1)
                     .minimumScaleFactor(0.72)
                     .padding(.horizontal, 12)
@@ -1890,17 +1890,17 @@ struct PrivacyBadge: View {
         HStack(spacing: 6) {
             Image(systemName: "lock.shield.fill")
                 .font(compact ? .caption : .subheadline)
-                .foregroundColor(.green)
+                .foregroundColor(OffRecordColor.brandSageDark)
 
             if !compact {
                 Text("100% Private")
                     .font(.caption.weight(.medium))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(OffRecordColor.textSage)
             }
         }
         .padding(.horizontal, compact ? 8 : 12)
         .padding(.vertical, compact ? 4 : 6)
-        .background(Color.green.opacity(0.1))
+        .background(OffRecordColor.backgroundSageTint)
         .clipShape(Capsule())
     }
 }
@@ -1911,15 +1911,15 @@ struct OfflineIndicator: View {
     var body: some View {
         HStack(spacing: 4) {
             Circle()
-                .fill(Color.green)
+                .fill(OffRecordColor.brandSageDark)
                 .frame(width: 6, height: 6)
             Text("Offline")
                 .font(.caption2.weight(.medium))
-                .foregroundColor(.secondary)
+                .foregroundColor(OffRecordColor.textSage)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
-        .background(Color(.tertiarySystemBackground))
+        .background(OffRecordColor.backgroundSageTint)
         .clipShape(Capsule())
     }
 }

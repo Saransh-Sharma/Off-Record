@@ -11,6 +11,9 @@
 import SwiftUI
 import WidgetKit
 import CoreData
+import os.log
+
+private let appLogger = Logger(subsystem: "com.singularity.offrecord", category: "App")
 
 /// Main app entry point.
 /// Manages app lifecycle, authentication state, and theme.
@@ -27,6 +30,7 @@ struct OffRecordApp: App {
 
     init() {
         ScreenshotDataSeeder.seedIfNeeded(context: persistenceController.container.viewContext)
+        UITestDataSeeder.seedIfNeeded(context: persistenceController.container.viewContext)
     }
 
     var body: some Scene {
@@ -90,32 +94,35 @@ struct OffRecordApp: App {
 
     private func runAudioCleanup() {
         #if os(iOS)
-        DispatchQueue.global(qos: .background).async {
-            let context = persistenceController.container.viewContext
-            var fileNames: [String] = []
+        let context = persistenceController.container.newBackgroundContext()
+        context.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
 
-            context.performAndWait {
+        context.perform {
+            do {
                 let fetchRequest: NSFetchRequest<DiaryEntry> = DiaryEntry.fetchRequest()
                 fetchRequest.propertiesToFetch = ["audioFileName"]
                 fetchRequest.returnsObjectsAsFaults = false
 
-                if let results = try? context.fetch(fetchRequest) {
-                    fileNames = results.compactMap { entry in
-                        entry.value(forKey: "audioFileName") as? String
-                    }.filter { !$0.isEmpty }
+                let results = try context.fetch(fetchRequest)
+                let fileNames = results.compactMap { entry in
+                    entry.value(forKey: "audioFileName") as? String
+                }.filter { !$0.isEmpty }
+
+                let fileManager = FileManager.default
+                guard let base = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+                    appLogger.warning("Audio cleanup could not resolve Application Support directory; falling back to empty keep list.")
+                    AudioRecorder.cleanupOrphanedRecordings(keepURLs: [])
+                    return
                 }
-            }
 
-            let fileManager = FileManager.default
-            guard let base = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+                let recordingsDirectory = base.appendingPathComponent("Recordings", isDirectory: true)
+                let keepURLs = Set(fileNames.map { recordingsDirectory.appendingPathComponent($0) })
+
+                AudioRecorder.cleanupOrphanedRecordings(keepURLs: keepURLs)
+            } catch {
+                appLogger.error("Audio cleanup failed to fetch recording references: \(error.localizedDescription, privacy: .public)")
                 AudioRecorder.cleanupOrphanedRecordings(keepURLs: [])
-                return
             }
-
-            let recordingsDirectory = base.appendingPathComponent("Recordings", isDirectory: true)
-            let keepURLs: Set<URL> = Set(fileNames.map { recordingsDirectory.appendingPathComponent($0) })
-
-            AudioRecorder.cleanupOrphanedRecordings(keepURLs: keepURLs)
         }
         #endif
     }

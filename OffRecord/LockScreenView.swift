@@ -7,20 +7,21 @@ struct LockScreenView: View {
 
     var body: some View {
         ZStack {
-            Color(.systemBackground)
+            OffRecordColor.appBackgroundGradient
                 .ignoresSafeArea()
 
             VStack(spacing: 32) {
                 Image(systemName: "lock.shield.fill")
                     .font(.system(size: horizontalSizeClass == .regular ? 80 : 64))
-                    .foregroundColor(.accentColor)
+                    .foregroundColor(OffRecordColor.brandSageDark)
 
                 Text("OffRecord AI Journal is Locked")
                     .font(.title2.bold())
+                    .foregroundColor(OffRecordColor.textHeading)
 
                 Text("Only you can unlock and see your entries.")
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(OffRecordColor.textSecondary)
                     .multilineTextAlignment(.center)
 
                 Button(action: unlock) {
@@ -31,21 +32,19 @@ struct LockScreenView: View {
                     .font(.headline)
                     .padding()
                     .frame(maxWidth: 320)
-                    .foregroundColor(.accentColor)
-                    .offRecordGlassControl(
-                        tint: .accentColor,
-                        in: RoundedRectangle(cornerRadius: 12, style: .continuous),
-                        fallbackFill: Color.accentColor.opacity(0.15)
-                    )
+                    .foregroundColor(OffRecordColor.textInverse)
+                    .background(OffRecordColor.brandSageDark, in: Capsule())
                 }
 
                 if authFailed {
                     Text("Authentication failed. Please try again.")
                         .font(.caption)
-                        .foregroundColor(.red)
+                        .foregroundColor(OffRecordColor.textCoral)
                 }
             }
             .frame(maxWidth: 500)
+            .padding(OffRecordSpacing.xxl)
+            .offRecordContentCard(cornerRadius: OffRecordRadius.xl, fill: OffRecordColor.surfaceWarm)
             .padding()
         }
         .onAppear {
