@@ -192,7 +192,7 @@ struct ConcentricPageTransitionView<Content: View>: View {
             if let secondaryTitle {
                 Button(secondaryTitle, action: onSecondaryAction)
                     .font(.system(.subheadline, design: .rounded, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.82))
+                    .foregroundStyle(OffRecordColor.textInverse.opacity(0.90))
                     .buttonStyle(.plain)
                     .disabled(isAnimating)
                     .opacity(isAnimating ? 0.55 : 1)
@@ -214,7 +214,7 @@ struct ConcentricPageTransitionView<Content: View>: View {
                     .frame(width: 2 * radius, height: 2 * radius)
                 Image(systemName: ctaIcon ?? "chevron.forward")
                     .font(.system(size: 20, weight: .black, design: .rounded))
-                    .foregroundStyle(backgroundColor)
+                    .foregroundStyle(OffRecordColor.textInverse)
             }
             .frame(width: 2 * radius, height: 2 * radius)
             .contentShape(Circle())

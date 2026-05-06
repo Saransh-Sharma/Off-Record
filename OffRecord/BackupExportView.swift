@@ -58,26 +58,26 @@ struct BackupExportView: View {
                         HStack(spacing: 12) {
                             ZStack {
                                 Circle()
-                                    .fill(selectedFormat == format ? Color.accentColor.opacity(0.15) : Color(.tertiarySystemFill))
+                                    .fill(selectedFormat == format ? OffRecordColor.surfaceBlue : OffRecordColor.surfaceWarm)
                                     .frame(width: 40, height: 40)
                                 Image(systemName: format.icon)
-                                    .foregroundColor(selectedFormat == format ? .accentColor : .secondary)
+                                    .foregroundColor(selectedFormat == format ? OffRecordColor.brandSky : OffRecordColor.textSecondary)
                             }
                             
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(format.rawValue)
                                     .font(.subheadline)
-                                    .foregroundColor(.primary)
+                                    .foregroundColor(OffRecordColor.textPrimary)
                                 Text(format.description)
                                     .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(OffRecordColor.textSecondary)
                             }
                             
                             Spacer()
                             
                             if selectedFormat == format {
                                 Image(systemName: "checkmark.circle.fill")
-                                    .foregroundColor(.accentColor)
+                                    .foregroundColor(OffRecordColor.brandPlum)
                             }
                         }
                     }
@@ -117,7 +117,7 @@ struct BackupExportView: View {
                     if !encryptionPassword.isEmpty && !confirmPassword.isEmpty && encryptionPassword != confirmPassword {
                         Text("Passwords do not match")
                             .font(.caption)
-                            .foregroundColor(.red)
+                            .foregroundColor(OffRecordColor.textCoral)
                     }
                 } header: {
                     Text("Encryption Password")
@@ -131,32 +131,32 @@ struct BackupExportView: View {
                 if selectedFormat == .json || selectedFormat == .encryptedBackup {
                     HStack(spacing: 8) {
                         Image(systemName: "arrow.triangle.2.circlepath")
-                            .foregroundColor(.green)
+                            .foregroundColor(OffRecordColor.brandSageDark)
                             .font(.caption)
                         Text("Can be imported back into OffRecord AI Journal")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(OffRecordColor.textSecondary)
                     }
                 }
 
                 if selectedFormat == .encryptedBackup {
                     HStack(spacing: 8) {
                         Image(systemName: "lock.shield.fill")
-                            .foregroundColor(.green)
+                            .foregroundColor(OffRecordColor.brandSageDark)
                             .font(.caption)
                         Text("AES-256 encrypted with your password")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(OffRecordColor.textSecondary)
                     }
                 }
                 
                 HStack(spacing: 8) {
                     Image(systemName: "lock.fill")
-                        .foregroundColor(.blue)
+                        .foregroundColor(OffRecordColor.textSky)
                         .font(.caption)
                     Text("File saved to your device only")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(OffRecordColor.textSecondary)
                 }
             } header: {
                 Text("Info")
@@ -178,12 +178,14 @@ struct BackupExportView: View {
                         Spacer()
                     }
                     .padding(.vertical, 10)
-                    .foregroundColor(.accentColor)
-                    .offRecordGlassControl(tint: .accentColor, in: Capsule(), fallbackFill: Color.accentColor.opacity(0.12))
+                    .foregroundColor(OffRecordColor.textInverse)
+                    .background(OffRecordColor.brandPlum, in: Capsule())
                 }
                 .disabled(isExporting || filteredEntryCount == 0 || (selectedFormat == .encryptedBackup && (encryptionPassword.isEmpty || encryptionPassword != confirmPassword)))
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(OffRecordColor.appBackgroundGradient)
         .navigationTitle("Export Data")
         .navigationBarTitleDisplayMode(.inline)
         .alert("Export Error", isPresented: $showError) {
@@ -284,11 +286,11 @@ struct ImportBackupView: View {
                 VStack(spacing: 16) {
                     ZStack {
                         Circle()
-                            .fill(Color.blue.opacity(0.1))
+                            .fill(OffRecordColor.surfaceBlue)
                             .frame(width: 80, height: 80)
                         Image(systemName: "doc.badge.plus")
                             .font(.system(size: 32))
-                            .foregroundColor(.blue)
+                            .foregroundColor(OffRecordColor.textSky)
                     }
                     
                     Text("Import JSON Backup")
@@ -296,7 +298,7 @@ struct ImportBackupView: View {
                     
                     Text("Select a JSON backup file exported from OffRecord AI Journal to restore your entries.")
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(OffRecordColor.textSecondary)
                         .multilineTextAlignment(.center)
                 }
                 .frame(maxWidth: .infinity)
@@ -306,29 +308,29 @@ struct ImportBackupView: View {
             Section {
                 HStack(spacing: 8) {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(.green)
+                        .foregroundColor(OffRecordColor.brandSageDark)
                         .font(.caption)
                     Text("Duplicate entries are automatically skipped")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(OffRecordColor.textSecondary)
                 }
                 
                 HStack(spacing: 8) {
                     Image(systemName: "arrow.triangle.merge")
-                        .foregroundColor(.blue)
+                        .foregroundColor(OffRecordColor.textSky)
                         .font(.caption)
                     Text("Existing entries are preserved")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(OffRecordColor.textSecondary)
                 }
                 
                 HStack(spacing: 8) {
                     Image(systemName: "icloud.and.arrow.up")
-                        .foregroundColor(.purple)
+                        .foregroundColor(OffRecordColor.brandLavenderDark)
                         .font(.caption)
                     Text("Imported entries sync to iCloud")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(OffRecordColor.textSecondary)
                 }
             } header: {
                 Text("How it works")
@@ -350,12 +352,14 @@ struct ImportBackupView: View {
                         Spacer()
                     }
                     .padding(.vertical, 10)
-                    .foregroundColor(.accentColor)
-                    .offRecordGlassControl(tint: .accentColor, in: Capsule(), fallbackFill: Color.accentColor.opacity(0.12))
+                    .foregroundColor(OffRecordColor.textInverse)
+                    .background(OffRecordColor.brandPlum, in: Capsule())
                 }
                 .disabled(isImporting)
             }
         }
+        .scrollContentBackground(.hidden)
+        .background(OffRecordColor.appBackgroundGradient)
         .navigationTitle("Import Backup")
         .navigationBarTitleDisplayMode(.inline)
         .fileImporter(
@@ -387,8 +391,8 @@ struct ImportBackupView: View {
                                 .fontWeight(.semibold)
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 10)
-                                .foregroundColor(.accentColor)
-                                .offRecordGlassControl(tint: .accentColor, in: Capsule(), fallbackFill: Color.accentColor.opacity(0.12))
+                                .foregroundColor(OffRecordColor.textInverse)
+                                .background(OffRecordColor.brandPlum, in: Capsule())
                         }
                         .disabled(importPassword.isEmpty)
                     }
