@@ -8,6 +8,9 @@
 import SwiftUI
 import CoreData
 import AVFoundation
+#if canImport(UIKit)
+import UIKit
+#endif
 
 struct OnboardingView: View {
     @Binding var hasCompletedOnboarding: Bool
@@ -51,17 +54,15 @@ struct OnboardingView: View {
                 onPrimaryAction: primaryAction,
                 onSecondaryAction: secondaryAction
             )
-
-            VStack {
-                OnboardingProgressHeader(
-                    step: step,
-                    canGoBack: step.canGoBack,
-                    onBack: goBack
-                )
-                .padding(.horizontal, isIPad ? 44 : 20)
-                .padding(.top, 14)
-                Spacer()
-            }
+        }
+        .overlay(alignment: .top) {
+            OnboardingProgressHeader(
+                step: step,
+                canGoBack: step.canGoBack,
+                onBack: goBack
+            )
+            .padding(.horizontal, isIPad ? 44 : 20)
+            .padding(.top, 14)
         }
         .foregroundStyle(.white)
         .onAppear {
@@ -95,6 +96,7 @@ struct OnboardingView: View {
         } message: {
             Text("You can enable reminders later in Settings. OffRecord still works fully offline.")
         }
+        .ignoresSafeArea(.keyboard)
     }
 
     private var stepIndex: Binding<Int> {
@@ -111,7 +113,11 @@ struct OnboardingView: View {
         OnboardingStep.allCases.map { step in
             (
                 view: AnyView(
-                    ConcentricOnboardingPage(isIPad: isIPad) {
+                    ConcentricOnboardingPage(
+                        isIPad: isIPad,
+                        isKeyboardAdaptive: step == .welcome,
+                        scrollTargetID: step == .welcome ? OnboardingScrollTarget.welcomeNameField : nil,
+                    ) {
                         currentStepContent(for: step)
                     }
                 ),
@@ -573,6 +579,10 @@ private enum FirstEntryMode {
     case textFallback
 }
 
+private enum OnboardingScrollTarget {
+    static let welcomeNameField = "onboarding.welcome.nameField.anchor"
+}
+
 enum OnboardingGoal: String, CaseIterable, Codable, Identifiable {
     case moodPatterns
     case clearerThoughts
@@ -742,31 +752,81 @@ enum MoodChoice: String, CaseIterable, Codable, Identifiable {
 
 private struct ConcentricOnboardingPage<Content: View>: View {
     let isIPad: Bool
+    let isKeyboardAdaptive: Bool
+    let scrollTargetID: String?
     let content: Content
+    @State private var isTextInputFocused = false
 
-    init(isIPad: Bool, @ViewBuilder content: () -> Content) {
+    init(
+        isIPad: Bool,
+        isKeyboardAdaptive: Bool = false,
+        scrollTargetID: String? = nil,
+        @ViewBuilder content: () -> Content
+    ) {
         self.isIPad = isIPad
+        self.isKeyboardAdaptive = isKeyboardAdaptive
+        self.scrollTargetID = scrollTargetID
         self.content = content()
     }
 
     var body: some View {
         GeometryReader { proxy in
-            ScrollView(showsIndicators: false) {
-                VStack {
-                    Spacer(minLength: 0)
+            ScrollViewReader { scrollProxy in
+                ScrollView(showsIndicators: false) {
+                    VStack {
+                        Spacer(minLength: 0)
 
-                    content
-                        .frame(maxWidth: isIPad ? 620 : .infinity)
+                        content
+                            .frame(maxWidth: isIPad ? 620 : .infinity)
 
-                    Spacer(minLength: 0)
+                        Spacer(minLength: 0)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(minHeight: minContentHeight(for: proxy.size.height))
+                    .padding(.horizontal, isIPad ? 44 : 24)
+                    .padding(.top, contentTopPadding)
+                    .padding(.bottom, contentBottomPadding)
                 }
-                .frame(maxWidth: .infinity)
-                .frame(minHeight: max(proxy.size.height - 280, 520))
-                .padding(.horizontal, isIPad ? 44 : 24)
-                .padding(.top, 220)
-                .padding(.bottom, 150)
+                .animation(.easeInOut(duration: 0.25), value: isTextInputFocused)
+                .onReceive(NotificationCenter.default.publisher(for: UITextField.textDidBeginEditingNotification)) { _ in
+                    guard isKeyboardAdaptive else { return }
+                    isTextInputFocused = true
+                }
+                .onReceive(NotificationCenter.default.publisher(for: UITextField.textDidEndEditingNotification)) { _ in
+                    guard isKeyboardAdaptive else { return }
+                    isTextInputFocused = false
+                }
+                .onChange(of: isTextInputFocused) { _, isFocused in
+                    guard isKeyboardAdaptive, isFocused, let scrollTargetID else { return }
+                    DispatchQueue.main.async {
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            scrollProxy.scrollTo(scrollTargetID, anchor: .center)
+                        }
+                    }
+                }
             }
         }
+    }
+
+    private var contentTopPadding: CGFloat {
+        isFocusActive ? (isIPad ? 132 : 112) : 220
+    }
+
+    private var contentBottomPadding: CGFloat {
+        let baseBottomPadding: CGFloat = 150
+        guard isFocusActive else { return baseBottomPadding }
+        return baseBottomPadding + (isIPad ? 260 : 320)
+    }
+
+    private func minContentHeight(for availableHeight: CGFloat) -> CGFloat {
+        if isFocusActive {
+            return max(availableHeight - 120, 420)
+        }
+        return max(availableHeight - 280, 520)
+    }
+
+    private var isFocusActive: Bool {
+        isKeyboardAdaptive && isTextInputFocused
     }
 }
 
@@ -790,23 +850,95 @@ private struct WelcomeStep: View {
                 .multilineTextAlignment(.center)
                 .lineSpacing(4)
 
-            TextField(
-                "Your name (optional)",
-                text: $nameDraft,
-                prompt: Text("Your name (optional)")
-                    .foregroundStyle(OffRecordColor.textSecondary)
-            )
-                .textContentType(.givenName)
-                .textInputAutocapitalization(.words)
-                .autocorrectionDisabled()
-                .font(.headline)
-                .foregroundColor(OffRecordColor.textPrimary)
-                .tint(OffRecordColor.textCoral)
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
-                .background(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            OnboardingNameField(text: $nameDraft)
+                .frame(maxWidth: .infinity)
+                .frame(height: 56)
+                .id(OnboardingScrollTarget.welcomeNameField)
         }
+    }
+}
+
+private struct OnboardingNameField: UIViewRepresentable {
+    @Binding var text: String
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(text: $text)
+    }
+
+    func makeUIView(context: Context) -> UITextField {
+        let textField = InsetTextField(frame: .zero)
+        textField.delegate = context.coordinator
+        textField.text = text
+        textField.placeholder = "Your name (optional)"
+        textField.textColor = UIColor(OffRecordColor.textPrimary)
+        textField.tintColor = UIColor(OffRecordColor.textCoral)
+        textField.font = UIFont.preferredFont(forTextStyle: .headline)
+        textField.textContentType = .givenName
+        textField.autocapitalizationType = .words
+        textField.autocorrectionType = .no
+        textField.returnKeyType = .done
+        textField.clearButtonMode = .whileEditing
+        textField.adjustsFontForContentSizeCategory = true
+        textField.borderStyle = .none
+        textField.backgroundColor = .white
+        textField.layer.cornerRadius = 14
+        textField.layer.masksToBounds = true
+        textField.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        textField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        textField.accessibilityIdentifier = "onboarding.welcome.nameField"
+        textField.addTarget(context.coordinator, action: #selector(Coordinator.textDidChange(_:)), for: .editingChanged)
+        return textField
+    }
+
+    func updateUIView(_ uiView: UITextField, context: Context) {
+        if uiView.text != text {
+            uiView.text = text
+        }
+    }
+
+    func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextField, context: Context) -> CGSize? {
+        CGSize(width: proposal.width ?? 0, height: 56)
+    }
+
+    final class Coordinator: NSObject, UITextFieldDelegate {
+        @Binding private var text: String
+
+        init(text: Binding<String>) {
+            self._text = text
+        }
+
+        @objc func textDidChange(_ textField: UITextField) {
+            text = textField.text ?? ""
+        }
+
+        func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+            textField.resignFirstResponder()
+            return true
+        }
+    }
+}
+
+private final class InsetTextField: UITextField {
+    private let contentInsets = UIEdgeInsets(top: 14, left: 16, bottom: 14, right: 16)
+
+    override var intrinsicContentSize: CGSize {
+        CGSize(width: UIView.noIntrinsicMetric, height: 56)
+    }
+
+    override func textRect(forBounds bounds: CGRect) -> CGRect {
+        bounds.inset(by: contentInsets)
+    }
+
+    override func editingRect(forBounds bounds: CGRect) -> CGRect {
+        bounds.inset(by: contentInsets)
+    }
+
+    override func placeholderRect(forBounds bounds: CGRect) -> CGRect {
+        bounds.inset(by: contentInsets)
+    }
+
+    override func clearButtonRect(forBounds bounds: CGRect) -> CGRect {
+        super.clearButtonRect(forBounds: bounds).offsetBy(dx: -contentInsets.right / 2, dy: 0)
     }
 }
 
@@ -999,7 +1131,7 @@ private struct PreferencesStep: View {
                             } label: {
                                 Text(item.title)
                                     .font(.subheadline.weight(.bold))
-                                    .foregroundStyle(response.moodBaseline == item ? Color.black : Color.white)
+                                    .foregroundStyle(response.moodBaseline == item ? OffRecordColor.textBrand : OffRecordColor.textInverse)
                                     .frame(maxWidth: .infinity, minHeight: 46)
                                     .padding(.horizontal, 10)
                                     .background(response.moodBaseline == item ? Color.white : Color.white.opacity(0.12))
@@ -1132,7 +1264,7 @@ private struct FirstEntryStep: View {
                                 }
                                 .font(.subheadline.weight(.semibold))
                                 .padding(12)
-                                .foregroundStyle(selectedMood == mood ? .black : .white)
+                                .foregroundStyle(selectedMood == mood ? mood.readableStyle.foreground : OffRecordColor.textInverse)
                                 .background(selectedMood == mood ? mood.color : .white.opacity(0.10))
                                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                             }
@@ -1657,7 +1789,7 @@ private struct PreferencePicker<Item: Identifiable & Equatable, Label: View>: Vi
                     } label: {
                             label(item)
                                 .font(.subheadline.weight(.bold))
-                                .foregroundStyle(selection == item ? Color.black : Color.white)
+                                .foregroundStyle(selection == item ? OffRecordColor.textBrand : OffRecordColor.textInverse)
                                 .frame(maxWidth: .infinity, minHeight: 46)
                                 .padding(.horizontal, 10)
                                 .background(selection == item ? Color.white : Color.white.opacity(0.12))
@@ -1890,7 +2022,7 @@ struct PrivacyBadge: View {
         HStack(spacing: 6) {
             Image(systemName: "lock.shield.fill")
                 .font(compact ? .caption : .subheadline)
-                .foregroundColor(OffRecordColor.brandSageDark)
+                .foregroundColor(OffRecordColor.textSage)
 
             if !compact {
                 Text("100% Private")
@@ -1901,6 +2033,7 @@ struct PrivacyBadge: View {
         .padding(.horizontal, compact ? 8 : 12)
         .padding(.vertical, compact ? 4 : 6)
         .background(OffRecordColor.backgroundSageTint)
+        .overlay(Capsule().stroke(OffRecordColor.borderSage, lineWidth: 1))
         .clipShape(Capsule())
     }
 }
@@ -1914,12 +2047,13 @@ struct OfflineIndicator: View {
                 .fill(OffRecordColor.brandSageDark)
                 .frame(width: 6, height: 6)
             Text("Offline")
-                .font(.caption2.weight(.medium))
+                .font(.caption.weight(.medium))
                 .foregroundColor(OffRecordColor.textSage)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
         .background(OffRecordColor.backgroundSageTint)
+        .overlay(Capsule().stroke(OffRecordColor.borderSage, lineWidth: 1))
         .clipShape(Capsule())
     }
 }

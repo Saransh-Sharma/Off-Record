@@ -322,7 +322,7 @@ struct SettingsView: View {
                             .frame(width: 36, height: 36)
                         Image(systemName: iCloudSyncEnabled && PersistenceController.isCloudAvailable ? "icloud.fill" : "icloud.slash")
                             .font(.body)
-                            .foregroundColor(iCloudSyncEnabled && PersistenceController.isCloudAvailable ? OffRecordColor.brandSky : OffRecordColor.textTertiary)
+                            .foregroundColor(iCloudSyncEnabled && PersistenceController.isCloudAvailable ? OffRecordColor.textSky : OffRecordColor.textTertiary)
                     }
                     VStack(alignment: .leading, spacing: 2) {
                         Text("iCloud Sync")
@@ -342,7 +342,7 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 8) {
                         Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(OffRecordColor.brandSageDark)
+                            .foregroundColor(OffRecordColor.textSage)
                             .font(.caption)
                         Text("Entries sync automatically via your personal iCloud")
                             .font(.caption)
@@ -350,7 +350,7 @@ struct SettingsView: View {
                     }
                     HStack(spacing: 8) {
                         Image(systemName: "lock.fill")
-                            .foregroundColor(OffRecordColor.brandSageDark)
+                            .foregroundColor(OffRecordColor.textSage)
                             .font(.caption)
                         Text("Encrypted through your Apple ID")
                             .font(.caption)
@@ -400,7 +400,7 @@ struct SettingsView: View {
                         .frame(width: 44, height: 44)
                     Image(systemName: "lock.shield.fill")
                         .font(.title3)
-                        .foregroundColor(OffRecordColor.brandSageDark)
+                        .foregroundColor(OffRecordColor.textSage)
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Privacy First")
@@ -744,7 +744,7 @@ struct ThemeButton: View {
                 }
                 
                 Text(theme.rawValue)
-                    .font(.caption2)
+                    .font(.caption)
                     .foregroundColor(isSelected ? theme.readableAccentColor : OffRecordColor.textSecondary)
             }
         }
@@ -795,7 +795,7 @@ struct PrivacyInfoRow: View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: icon)
                 .font(.subheadline)
-                .foregroundColor(OffRecordColor.brandSageDark)
+                .foregroundColor(OffRecordColor.textSage)
                 .frame(width: 20)
 
             VStack(alignment: .leading, spacing: 2) {
