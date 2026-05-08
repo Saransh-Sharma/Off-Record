@@ -1,5 +1,55 @@
 import SwiftUI
 
+private enum DaypartHeroStyling {
+    static let surfaceStroke = OffRecordColor.borderWarm.opacity(0.72)
+    static let chromeStroke = Color.white.opacity(0.24)
+    static let chromeWarmStroke = OffRecordColor.borderWarm.opacity(0.82)
+    static let chromeSageStroke = OffRecordColor.borderSage.opacity(0.86)
+
+    static func chromeGradient(tint: Color, warmth: Color = OffRecordColor.surfaceWarm) -> LinearGradient {
+        LinearGradient(
+            colors: [
+                warmth.opacity(0.94),
+                tint.opacity(0.78)
+            ],
+            startPoint: .topLeading,
+            endPoint: .bottomTrailing
+        )
+    }
+
+    static let atmosphereOverlay = LinearGradient(
+        stops: [
+            .init(color: OffRecordColor.brandPlum.opacity(0.08), location: 0.00),
+            .init(color: OffRecordColor.brandSageDark.opacity(0.05), location: 0.42),
+            .init(color: OffRecordColor.brandPeach.opacity(0.08), location: 1.00)
+        ],
+        startPoint: .topLeading,
+        endPoint: .bottomTrailing
+    )
+
+    static let readabilityOverlay = LinearGradient(
+        stops: [
+            .init(color: OffRecordColor.surfaceWarm.opacity(0.84), location: 0.00),
+            .init(color: OffRecordColor.backgroundBlushTint.opacity(0.72), location: 0.26),
+            .init(color: OffRecordColor.backgroundLavenderTint.opacity(0.36), location: 0.56),
+            .init(color: OffRecordColor.surfaceWarm.opacity(0.08), location: 0.82),
+            .init(color: .clear, location: 1.00)
+        ],
+        startPoint: .bottom,
+        endPoint: .top
+    )
+
+    static let vignetteOverlay = RadialGradient(
+        colors: [
+            OffRecordColor.brandPeach.opacity(0.12),
+            Color.clear
+        ],
+        center: .bottomLeading,
+        startRadius: 16,
+        endRadius: 280
+    )
+}
+
 struct LargeDaypartHeroCard: View {
     let hero: SelectedDaypartHero
     let isIPad: Bool
@@ -72,7 +122,6 @@ struct LargeDaypartHeroCard: View {
                     DaypartHeroActionRow(
                         isRecording: isRecording,
                         isProcessing: isProcessing,
-                        usesStackedLayout: !isIPad,
                         onPrimaryAction: isRecording ? onStop : onPrimary,
                         onWriteAction: onWrite,
                         onSkip: onSkip
@@ -166,7 +215,6 @@ struct WelcomeDaypartHeroCard: View {
                     DaypartHeroActionRow(
                         isRecording: isRecording,
                         isProcessing: isProcessing,
-                        usesStackedLayout: !isIPad,
                         onPrimaryAction: isRecording ? onStop : onPrimary,
                         onWriteAction: onWrite,
                         onSkip: onSkip
@@ -182,13 +230,14 @@ struct WelcomeDaypartHeroCard: View {
 struct CompactDaypartHeroCard: View {
     let hero: SelectedDaypartHero
     let isIPad: Bool
+    let onRecord: () -> Void
     let onAddNote: () -> Void
     let onSkip: () -> Void
 
     var body: some View {
         DaypartHeroSurface(
             hero: hero,
-            height: isIPad ? 184 : 168,
+            height: isIPad ? 204 : 196,
             cornerRadius: isIPad ? 28 : 24,
             accessibilityIdentifier: "daypartHero.compact"
         ) {
@@ -213,21 +262,77 @@ struct CompactDaypartHeroCard: View {
                         .lineLimit(2)
                         .fixedSize(horizontal: false, vertical: true)
 
-                    HStack(alignment: .center, spacing: 16) {
-                        Button(action: onAddNote) {
-                            Label("Write a note", systemImage: "square.and.pencil")
-                                .font(.system(size: 17, weight: .semibold, design: .rounded))
-                        }
-                        .buttonStyle(.plain)
-                        .foregroundColor(OffRecordColor.textBrand)
-                        .accessibilityIdentifier("daypartHero.compactCTA")
-                    }
-                    .frame(minHeight: 44, alignment: .leading)
+                    CompactDaypartHeroActionRow(
+                        onRecordAction: onRecord,
+                        onWriteAction: onAddNote
+                    )
                 }
                 .padding(.horizontal, isIPad ? 22 : 18)
                 .padding(.bottom, isIPad ? 20 : 18)
             }
         }
+    }
+}
+
+private struct CompactDaypartHeroActionRow: View {
+    let onRecordAction: () -> Void
+    let onWriteAction: () -> Void
+
+    var body: some View {
+        ViewThatFits(in: .horizontal) {
+            horizontalLayout
+            stackedLayout
+        }
+        .frame(minHeight: 44, alignment: .leading)
+    }
+
+    private var horizontalLayout: some View {
+        HStack(alignment: .center, spacing: 14) {
+            recordButton
+            writeButton
+        }
+    }
+
+    private var stackedLayout: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            recordButton
+            writeButton
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var recordButton: some View {
+        Button(action: onRecordAction) {
+            Label("Start recording", systemImage: "mic.fill")
+                .font(.system(size: 16, weight: .bold, design: .rounded))
+                .padding(.horizontal, 14)
+                .padding(.vertical, 9)
+                .fixedSize(horizontal: true, vertical: false)
+                .background {
+                    Capsule(style: .continuous)
+                        .fill(DaypartHeroStyling.chromeGradient(tint: OffRecordColor.backgroundLavenderTint))
+                }
+                .overlay {
+                    Capsule(style: .continuous)
+                        .stroke(DaypartHeroStyling.chromeWarmStroke, lineWidth: 1)
+                }
+        }
+        .buttonStyle(.plain)
+        .foregroundColor(OffRecordColor.textBrand)
+        .accessibilityIdentifier("daypartHero.compactRecordCTA")
+    }
+
+    private var writeButton: some View {
+        Button(action: onWriteAction) {
+            Label("Write", systemImage: "square.and.pencil")
+                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                .padding(.horizontal, 12)
+                .padding(.vertical, 9)
+                .fixedSize(horizontal: true, vertical: false)
+        }
+        .buttonStyle(.plain)
+        .foregroundColor(OffRecordColor.textPrimary.opacity(0.76))
+        .accessibilityIdentifier("daypartHero.compactCTA")
     }
 }
 
@@ -286,18 +391,17 @@ struct HeroRecordingMeter: View {
     }
 
     private var meterBackground: some View {
-        ZStack {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(.ultraThinMaterial)
-
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(OffRecordColor.surfaceWarm.opacity(0.62))
-        }
+        RoundedRectangle(cornerRadius: 20, style: .continuous)
+            .fill(
+                DaypartHeroStyling.chromeGradient(
+                    tint: isProcessing ? OffRecordColor.backgroundPeachTint : OffRecordColor.backgroundLavenderTint
+                )
+            )
     }
 
     private var meterBorder: some View {
         RoundedRectangle(cornerRadius: 20, style: .continuous)
-            .stroke(Color.white.opacity(0.52), lineWidth: 1)
+            .stroke(DaypartHeroStyling.chromeWarmStroke, lineWidth: 1)
     }
 
     private func levelBar(at index: Int) -> some View {
@@ -324,18 +428,14 @@ struct HeroRecordingMeter: View {
 private struct DaypartHeroActionRow: View {
     let isRecording: Bool
     let isProcessing: Bool
-    let usesStackedLayout: Bool
     let onPrimaryAction: () -> Void
     let onWriteAction: () -> Void
     let onSkip: () -> Void
 
     var body: some View {
-        Group {
-            if usesStackedLayout {
-                stackedLayout
-            } else {
-                horizontalLayout
-            }
+        ViewThatFits(in: .horizontal) {
+            horizontalLayout
+            stackedLayout
         }
         .frame(minHeight: 44, alignment: .leading)
     }
@@ -354,26 +454,23 @@ private struct DaypartHeroActionRow: View {
                 writeButton
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 
     private var primaryButton: some View {
         Button(action: onPrimaryAction) {
-            Label(primaryTitle, systemImage: isRecording ? "stop.fill" : "waveform")
+            Label(primaryTitle, systemImage: primarySymbolName)
                 .font(.system(size: 17, weight: .bold, design: .rounded))
                 .padding(.horizontal, 14)
                 .padding(.vertical, 9)
                 .fixedSize(horizontal: true, vertical: false)
                 .background {
-                    ZStack {
-                        Capsule(style: .continuous)
-                            .fill(.ultraThinMaterial)
-                        Capsule(style: .continuous)
-                            .fill(OffRecordColor.surfaceWarm.opacity(0.74))
-                    }
+                    Capsule(style: .continuous)
+                        .fill(DaypartHeroStyling.chromeGradient(tint: primaryButtonTint))
                 }
                 .overlay {
                     Capsule(style: .continuous)
-                        .stroke(Color.white.opacity(0.50), lineWidth: 1)
+                        .stroke(DaypartHeroStyling.chromeWarmStroke, lineWidth: 1)
                 }
         }
         .buttonStyle(.plain)
@@ -402,6 +499,23 @@ private struct DaypartHeroActionRow: View {
         }
         return isRecording ? "Stop recording" : "Start recording"
     }
+
+    private var primarySymbolName: String {
+        if isRecording {
+            return "stop.fill"
+        }
+        return isProcessing ? "waveform" : "mic.fill"
+    }
+
+    private var primaryButtonTint: Color {
+        if isRecording {
+            return OffRecordColor.backgroundBlushTint
+        }
+        if isProcessing {
+            return OffRecordColor.backgroundPeachTint
+        }
+        return OffRecordColor.backgroundLavenderTint
+    }
 }
 
 private struct DaypartHeroSurface<Content: View>: View {
@@ -429,15 +543,14 @@ private struct DaypartHeroSurface<Content: View>: View {
         ZStack(alignment: .bottomLeading) {
             DaypartHeroBackground(asset: hero.asset, dayPart: hero.dayPart)
 
-            LinearGradient(
-                stops: [
-                    .init(color: OffRecordColor.backgroundPrimary.opacity(0.92), location: 0.00),
-                    .init(color: OffRecordColor.backgroundPrimary.opacity(0.60), location: 0.48),
-                    .init(color: OffRecordColor.backgroundPrimary.opacity(0.10), location: 1.00)
-                ],
-                startPoint: .bottom,
-                endPoint: .top
-            )
+            DaypartHeroStyling.atmosphereOverlay
+                .blendMode(.multiply)
+                .allowsHitTesting(false)
+
+            ZStack {
+                DaypartHeroStyling.readabilityOverlay
+                DaypartHeroStyling.vignetteOverlay
+            }
             .allowsHitTesting(false)
 
             content
@@ -447,7 +560,7 @@ private struct DaypartHeroSurface<Content: View>: View {
         .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
         .overlay {
             RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                .stroke(Color.white.opacity(0.54), lineWidth: 1)
+                .stroke(DaypartHeroStyling.surfaceStroke, lineWidth: 1)
         }
         .shadow(color: OffRecordShadow.cardColor.opacity(0.72), radius: 30, x: 0, y: 18)
         .accessibilityElement(children: .contain)
@@ -513,16 +626,12 @@ private struct DaypartHeroPill: View {
             .padding(.horizontal, compact ? 12 : 14)
             .frame(minHeight: compact ? 30 : 34)
             .background {
-                ZStack {
-                    Capsule(style: .continuous)
-                        .fill(.ultraThinMaterial)
-                    Capsule(style: .continuous)
-                        .fill(dayPart.tint.opacity(0.32))
-                }
+                Capsule(style: .continuous)
+                    .fill(DaypartHeroStyling.chromeGradient(tint: dayPart.tint))
             }
             .overlay {
                 Capsule(style: .continuous)
-                    .stroke(Color.white.opacity(0.50), lineWidth: 1)
+                    .stroke(DaypartHeroStyling.chromeStroke, lineWidth: 1)
             }
     }
 }
@@ -537,16 +646,12 @@ private struct HeroPrivacyBadge: View {
             .padding(.horizontal, 12)
             .frame(minHeight: 32)
             .background {
-                ZStack {
-                    Capsule(style: .continuous)
-                        .fill(.ultraThinMaterial)
-                    Capsule(style: .continuous)
-                        .fill(OffRecordColor.surfaceWarm.opacity(0.52))
-                }
+                Capsule(style: .continuous)
+                    .fill(DaypartHeroStyling.chromeGradient(tint: OffRecordColor.backgroundSageTint))
             }
             .overlay {
                 Capsule(style: .continuous)
-                    .stroke(Color.white.opacity(0.48), lineWidth: 1)
+                    .stroke(DaypartHeroStyling.chromeSageStroke, lineWidth: 1)
             }
     }
 }

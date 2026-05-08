@@ -11,7 +11,15 @@ import Foundation
 struct UITestDataSeeder {
     static func seedIfNeeded(context: NSManagedObjectContext) {
         let arguments = ProcessInfo.processInfo.arguments
-        guard arguments.contains("-HeroNudgeUITest") else { return }
+        guard arguments.contains("-HeroNudgeUITest") || arguments.contains("-OnboardingUITest") else { return }
+
+        if arguments.contains("-OnboardingUITest") {
+            UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
+            UserDefaults.standard.removeObject(forKey: "authorName")
+            UserDefaults.standard.removeObject(forKey: "offrecord_onboarding_response")
+            DaypartHeroStore().reset()
+            return
+        }
 
         UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
         UserDefaults.standard.set("Saransh", forKey: "authorName")

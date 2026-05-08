@@ -42,6 +42,42 @@ final class OffRecordUITests: XCTestCase {
     }
 
     @MainActor
+    func testOnboardingNameFieldStaysVisibleWhenKeyboardAppears() throws {
+        let app = launchOnboardingApp()
+        let nameField = app.textFields["onboarding.welcome.nameField"]
+
+        XCTAssertTrue(nameField.waitForExistence(timeout: 8))
+        XCTAssertTrue(nameField.isHittable)
+
+        nameField.tap()
+
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 4))
+        sleep(1)
+        XCTAssertTrue(app.keyboards.firstMatch.exists)
+        XCTAssertTrue(nameField.isHittable)
+
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
+        attachment.name = "OnboardingWelcomeKeyboardVisible"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+
+        nameField.typeText("Saransh")
+        XCTAssertEqual(nameField.value as? String, "Saransh")
+    }
+
+    @MainActor
+    func testOnboardingNameFieldAcceptsTypingAfterTap() throws {
+        let app = launchOnboardingApp()
+        let nameField = app.textFields["onboarding.welcome.nameField"]
+
+        XCTAssertTrue(nameField.waitForExistence(timeout: 8))
+        nameField.tap()
+        nameField.typeText("Saransh")
+
+        XCTAssertEqual(nameField.value as? String, "Saransh")
+    }
+
+    @MainActor
     func testDaypartHeroShowsForEmptyToday() throws {
         let app = launchHeroNudgeApp(arguments: ["-HeroNudgeEmptyToday"])
 
@@ -58,6 +94,14 @@ final class OffRecordUITests: XCTestCase {
         XCTAssertTrue(app.otherElements["daypartHero.compact"].waitForExistence(timeout: 8))
         XCTAssertTrue(app.descendants(matching: .any)["daypartHero.imageSurface"].firstMatch.waitForExistence(timeout: 4))
         XCTAssertFalse(app.descendants(matching: .any)["daypartHero.thumbnail"].exists)
+
+        let recordCTA = app.descendants(matching: .any)["daypartHero.compactRecordCTA"].firstMatch
+        let writeCTA = app.descendants(matching: .any)["daypartHero.compactCTA"].firstMatch
+
+        XCTAssertTrue(recordCTA.waitForExistence(timeout: 4))
+        XCTAssertEqual(recordCTA.label, "Start recording")
+        XCTAssertTrue(writeCTA.exists)
+        XCTAssertEqual(writeCTA.label, "Write")
     }
 
     @MainActor
@@ -66,6 +110,20 @@ final class OffRecordUITests: XCTestCase {
 
         XCTAssertTrue(app.otherElements["daypartHero.welcome"].waitForExistence(timeout: 8))
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] %@", "Welcome to your private diary")).firstMatch.exists)
+    }
+
+    @MainActor
+    func testDaypartHeroShowsRecordingAndWriteCTAs() throws {
+        let app = launchHeroNudgeApp(arguments: ["-HeroNudgeEmptyToday"])
+        XCTAssertTrue(app.otherElements["daypartHero.large"].waitForExistence(timeout: 8))
+
+        let primaryCTA = app.descendants(matching: .any)["daypartHero.primaryCTA"].firstMatch
+        let writeCTA = app.descendants(matching: .any)["daypartHero.writeCTA"].firstMatch
+
+        XCTAssertTrue(primaryCTA.waitForExistence(timeout: 4))
+        XCTAssertEqual(primaryCTA.label, "Start recording")
+        XCTAssertTrue(writeCTA.exists)
+        XCTAssertEqual(writeCTA.label, "Write")
     }
 
     @MainActor
@@ -89,6 +147,36 @@ final class OffRecordUITests: XCTestCase {
 
         let recordingMeter = app.descendants(matching: .any)["daypartHero.recordingMeter"].firstMatch
         XCTAssertTrue(recordingMeter.waitForExistence(timeout: 8))
+    }
+
+    @MainActor
+    func testCompactHeroRecordCTAEntersRecordingMode() throws {
+        let app = launchHeroNudgeApp(arguments: ["-HeroNudgeHasToday"])
+        XCTAssertTrue(app.otherElements["daypartHero.compact"].waitForExistence(timeout: 8))
+
+        addUIInterruptionMonitor(withDescription: "Microphone Permission") { alert in
+            let allowButton = alert.buttons["Allow"]
+            if allowButton.exists {
+                allowButton.tap()
+                return true
+            }
+            return false
+        }
+
+        let recordCTA = app.descendants(matching: .any)["daypartHero.compactRecordCTA"].firstMatch
+        XCTAssertTrue(recordCTA.waitForExistence(timeout: 4))
+        recordCTA.tap()
+        app.tap()
+
+        let recordingMeter = app.descendants(matching: .any)["daypartHero.recordingMeter"].firstMatch
+        XCTAssertTrue(recordingMeter.waitForExistence(timeout: 8))
+    }
+
+    private func launchOnboardingApp() -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchArguments = ["-UITesting", "-OnboardingUITest"]
+        app.launch()
+        return app
     }
 
     private func launchHeroNudgeApp(arguments: [String]) -> XCUIApplication {
