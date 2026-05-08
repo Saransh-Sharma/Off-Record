@@ -9,7 +9,7 @@ import SwiftUI
 
 extension Color {
     static var offRecordReadableTintedForeground: Color {
-        OffRecordColor.textBrand
+        OffRecordReadableTintStyle.brand.foreground
     }
 }
 
@@ -38,14 +38,34 @@ extension View {
     func offRecordGlassControl<S: Shape>(
         tint: Color? = nil,
         in shape: S,
-        fallbackFill: Color = OffRecordColor.surfaceWarm
+        fallbackFill: Color = OffRecordColor.surfaceWarm,
+        border: Color? = nil
     ) -> some View {
         if #available(iOS 26.0, *) {
-            glassEffect(.regular.tint(tint).interactive(), in: shape)
+            background(fallbackFill.opacity(0.92), in: shape)
+                .glassEffect(.regular.tint(tint).interactive(), in: shape)
+                .overlay(
+                    shape.stroke((border ?? tint ?? OffRecordColor.borderSoft).opacity(border == nil ? 0.35 : 1), lineWidth: 1)
+                )
         } else {
             background(fallbackFill, in: shape)
-                .overlay(shape.stroke((tint ?? OffRecordColor.borderSoft).opacity(0.35), lineWidth: 1))
+                .overlay(
+                    shape.stroke((border ?? tint ?? OffRecordColor.borderSoft).opacity(border == nil ? 0.35 : 1), lineWidth: 1)
+                )
         }
+    }
+
+    func offRecordReadableGlassControl<S: Shape>(
+        _ style: OffRecordReadableTintStyle,
+        in shape: S
+    ) -> some View {
+        foregroundStyle(style.foreground)
+            .offRecordGlassControl(
+                tint: style.tint,
+                in: shape,
+                fallbackFill: style.fill,
+                border: style.border
+            )
     }
 
     @ViewBuilder
@@ -55,7 +75,10 @@ extension View {
     ) -> some View {
         let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
         if #available(iOS 26.0, *) {
-            glassEffect(.regular, in: shape)
+            background(fallbackFill.opacity(0.96), in: shape)
+                .glassEffect(.regular, in: shape)
+                .overlay(shape.stroke(OffRecordColor.borderSoft, lineWidth: 1))
+                .shadow(color: OffRecordShadow.floatingColor, radius: 24, x: 0, y: 10)
         } else {
             background(fallbackFill, in: shape)
                 .overlay(shape.stroke(OffRecordColor.borderSoft, lineWidth: 1))

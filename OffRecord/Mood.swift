@@ -58,4 +58,27 @@ enum Mood: String, CaseIterable, Identifiable {
     static var selectableMoods: [Mood] {
         allCases.filter { $0 != .none }
     }
+
+    var readableStyle: OffRecordReadableTintStyle {
+        switch self {
+        case .none:
+            return .neutral
+        case .happy:
+            return .growth
+        case .calm:
+            return .growth
+        case .grateful:
+            return .privacy
+        case .excited:
+            return .highlight
+        case .tired:
+            return .journal
+        case .anxious:
+            return .friday
+        case .sad:
+            return .blush
+        case .angry:
+            return .warning
+        }
+    }
 }

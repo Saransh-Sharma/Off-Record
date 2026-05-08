@@ -157,6 +157,83 @@ enum OffRecordShadow {
     static let tabColor = Color.black.opacity(0.10)
 }
 
+struct OffRecordReadableTintStyle {
+    let tint: Color?
+    let fill: Color
+    let foreground: Color
+    let border: Color
+
+    static let neutral = OffRecordReadableTintStyle(
+        tint: nil,
+        fill: OffRecordColor.surfaceWarm,
+        foreground: OffRecordColor.textBrand,
+        border: OffRecordColor.borderSoft
+    )
+
+    static let brand = OffRecordReadableTintStyle(
+        tint: OffRecordColor.brandPlum,
+        fill: OffRecordColor.surfaceLavender,
+        foreground: OffRecordColor.textBrand,
+        border: OffRecordColor.borderSoft
+    )
+
+    static let privacy = OffRecordReadableTintStyle(
+        tint: OffRecordColor.brandSageDark,
+        fill: OffRecordColor.backgroundSageTint,
+        foreground: OffRecordColor.textSage,
+        border: OffRecordColor.borderSage
+    )
+
+    static let friday = OffRecordReadableTintStyle(
+        tint: OffRecordColor.brandLavenderDark,
+        fill: OffRecordColor.backgroundLavenderTint,
+        foreground: OffRecordColor.textLavender,
+        border: OffRecordColor.borderSoft
+    )
+
+    static let journal = OffRecordReadableTintStyle(
+        tint: OffRecordColor.brandPeach,
+        fill: OffRecordColor.backgroundPeachTint,
+        foreground: OffRecordColor.textPeach,
+        border: OffRecordColor.borderWarm
+    )
+
+    static let blush = OffRecordReadableTintStyle(
+        tint: OffRecordColor.brandBlush,
+        fill: OffRecordColor.backgroundBlushTint,
+        foreground: OffRecordColor.textBlush,
+        border: OffRecordColor.borderSoft
+    )
+
+    static let growth = OffRecordReadableTintStyle(
+        tint: OffRecordColor.brandAqua,
+        fill: OffRecordColor.surfaceMint,
+        foreground: OffRecordColor.textAqua,
+        border: OffRecordColor.borderSage
+    )
+
+    static let export = OffRecordReadableTintStyle(
+        tint: OffRecordColor.brandSky,
+        fill: OffRecordColor.backgroundSkyTint,
+        foreground: OffRecordColor.textSky,
+        border: OffRecordColor.borderSoft
+    )
+
+    static let highlight = OffRecordReadableTintStyle(
+        tint: OffRecordColor.brandYellow,
+        fill: OffRecordColor.surfacePeach,
+        foreground: OffRecordColor.textYellow,
+        border: OffRecordColor.borderWarm
+    )
+
+    static let warning = OffRecordReadableTintStyle(
+        tint: OffRecordColor.brandCoral,
+        fill: OffRecordColor.backgroundBlushTint,
+        foreground: OffRecordColor.textCoral,
+        border: OffRecordColor.borderWarm
+    )
+}
+
 struct OffRecordCardModifier: ViewModifier {
     var cornerRadius: CGFloat = OffRecordRadius.xl
     var fill: Color = OffRecordColor.surfacePrimary
@@ -210,6 +287,19 @@ extension View {
 
     func offRecordScreenBackground() -> some View {
         background(OffRecordColor.appBackgroundGradient.ignoresSafeArea())
+    }
+
+    func offRecordReadablePill(
+        _ style: OffRecordReadableTintStyle,
+        horizontalPadding: CGFloat = 12,
+        verticalPadding: CGFloat = 8
+    ) -> some View {
+        font(OffRecordTypography.labelMedium)
+            .foregroundStyle(style.foreground)
+            .padding(.horizontal, horizontalPadding)
+            .padding(.vertical, verticalPadding)
+            .background(style.fill, in: Capsule())
+            .overlay(Capsule().stroke(style.border, lineWidth: 1))
     }
 }
 
