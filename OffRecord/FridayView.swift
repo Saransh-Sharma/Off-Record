@@ -210,13 +210,14 @@ struct FridayView: View {
                     } label: {
                         Text(section.rawValue)
                             .font(.subheadline.weight(selectedSection == section ? .bold : .regular))
-                            .foregroundColor(selectedSection == section ? OffRecordColor.textBrand : OffRecordColor.textPrimary)
+                            .foregroundColor(selectedSection == section ? OffRecordReadableTintStyle.friday.foreground : OffRecordColor.textPrimary)
                             .padding(.horizontal, 16)
                             .padding(.vertical, 8)
                             .offRecordGlassControl(
-                                tint: selectedSection == section ? OffRecordColor.brandLavenderDark : nil,
+                                tint: selectedSection == section ? OffRecordReadableTintStyle.friday.tint : nil,
                                 in: Capsule(),
-                                fallbackFill: selectedSection == section ? OffRecordColor.surfaceLavender : OffRecordColor.surfaceWarm
+                                fallbackFill: selectedSection == section ? OffRecordReadableTintStyle.friday.fill : OffRecordReadableTintStyle.neutral.fill,
+                                border: selectedSection == section ? OffRecordReadableTintStyle.friday.border : OffRecordReadableTintStyle.neutral.border
                             )
                     }
                 }
@@ -311,10 +312,10 @@ struct FridayView: View {
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 5)
                                 .background(OffRecordColor.backgroundLavenderTint)
-                                .foregroundColor(OffRecordColor.textBrand)
+                                .foregroundColor(OffRecordColor.textLavender)
                                 .overlay(
                                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                                        .stroke(OffRecordColor.brandLavenderDark.opacity(0.24), lineWidth: 1)
+                                        .stroke(OffRecordReadableTintStyle.friday.border, lineWidth: 1)
                                 )
                                 .cornerRadius(12)
                         }
@@ -352,7 +353,7 @@ struct FridayView: View {
                     Text("Share Your Personality Card")
                         .font(.system(size: 15, weight: .bold))
                     Text("A snapshot of the patterns Friday has noticed")
-                        .font(.system(size: 11, weight: .regular))
+                        .font(.caption)
                         .foregroundColor(OffRecordColor.textSecondary)
                 }
                 Spacer()
@@ -442,7 +443,7 @@ struct FridayView: View {
                             }
                             .frame(height: 16)
                             Text("\(Int(count))")
-                                .font(.caption2)
+                                .font(.caption)
                                 .foregroundColor(OffRecordColor.textSecondary)
                         }
                     }
@@ -465,6 +466,7 @@ struct FridayView: View {
                             ForEach(Array(assistant.emotionalSignature.positiveTriggersTopics.sorted { $0.value > $1.value }.prefix(8)), id: \.key) { topic, _ in
                                 Text(topic.capitalized)
                                     .font(.caption)
+                                    .foregroundColor(OffRecordColor.textSage)
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 4)
                                     .background(OffRecordColor.backgroundSageTint)
@@ -483,6 +485,7 @@ struct FridayView: View {
                             ForEach(Array(assistant.emotionalSignature.negativeTriggersTopics.sorted { $0.value > $1.value }.prefix(8)), id: \.key) { topic, _ in
                                 Text(topic.capitalized)
                                     .font(.caption)
+                                    .foregroundColor(OffRecordColor.textPeach)
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 4)
                                     .background(OffRecordColor.backgroundPeachTint)
@@ -810,14 +813,19 @@ struct FridayView: View {
     private var privacyBadge: some View {
         HStack(spacing: 8) {
             Image(systemName: "lock.shield.fill")
-                .foregroundColor(OffRecordColor.brandSageDark)
+                .foregroundColor(OffRecordReadableTintStyle.privacy.foreground)
             Text("Friday runs on-device. Your journal never leaves your device.")
                 .font(.caption)
-                .foregroundColor(OffRecordColor.textSage)
+                .foregroundColor(OffRecordReadableTintStyle.privacy.foreground)
         }
         .padding()
         .frame(maxWidth: .infinity)
-        .offRecordGlassControl(tint: OffRecordColor.brandSageDark, in: RoundedRectangle(cornerRadius: 12, style: .continuous), fallbackFill: OffRecordColor.backgroundSageTint)
+        .offRecordGlassControl(
+            tint: OffRecordReadableTintStyle.privacy.tint,
+            in: RoundedRectangle(cornerRadius: 12, style: .continuous),
+            fallbackFill: OffRecordReadableTintStyle.privacy.fill,
+            border: OffRecordReadableTintStyle.privacy.border
+        )
     }
 
     // MARK: - Helpers

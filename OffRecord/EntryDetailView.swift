@@ -100,7 +100,7 @@ struct EntryDetailView: View {
                 HStack(spacing: 16) {
                     Button(action: toggleStar) {
                         Image(systemName: entry.isStarred ? "star.fill" : "star")
-                            .foregroundColor(entry.isStarred ? OffRecordColor.brandYellow : OffRecordColor.textSecondary)
+                            .foregroundColor(entry.isStarred ? OffRecordColor.textYellow : OffRecordColor.textSecondary)
                     }
 
                     Button(action: { isEditing.toggle() }) {
@@ -154,10 +154,15 @@ struct EntryDetailView: View {
                     if selectedMood == .none {
                         Label("Add mood", systemImage: "plus.circle")
                             .font(.caption)
-                            .foregroundColor(.offRecordReadableTintedForeground)
+                            .foregroundColor(OffRecordReadableTintStyle.journal.foreground)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
-                            .offRecordGlassControl(tint: OffRecordColor.brandPeach, in: Capsule(), fallbackFill: OffRecordColor.surfacePeach)
+                            .offRecordGlassControl(
+                                tint: OffRecordReadableTintStyle.journal.tint,
+                                in: Capsule(),
+                                fallbackFill: OffRecordReadableTintStyle.journal.fill,
+                                border: OffRecordReadableTintStyle.journal.border
+                            )
                     } else {
                         HStack(spacing: 6) {
                             Image(systemName: selectedMood.icon)
@@ -165,10 +170,15 @@ struct EntryDetailView: View {
                             Text(selectedMood.displayName)
                                 .font(.caption)
                         }
-                        .foregroundColor(.offRecordReadableTintedForeground)
+                        .foregroundColor(selectedMood.readableStyle.foreground)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
-                        .offRecordGlassControl(tint: selectedMood.color, in: Capsule(), fallbackFill: selectedMood.color.opacity(0.15))
+                        .offRecordGlassControl(
+                            tint: selectedMood.readableStyle.tint,
+                            in: Capsule(),
+                            fallbackFill: selectedMood.readableStyle.fill,
+                            border: selectedMood.readableStyle.border
+                        )
                     }
                 }
                 .buttonStyle(.plain)
@@ -191,13 +201,13 @@ struct EntryDetailView: View {
                 // Audio playback or "on other device" note
                 if audioOnOtherDevice {
                     // Audio exists but on another device
-                    HStack(spacing: 4) {
-                        Image(systemName: "icloud")
-                            .font(.caption)
-                        Text("Audio on original device")
-                            .font(.caption2)
-                    }
-                    .foregroundColor(OffRecordColor.textSecondary)
+                        HStack(spacing: 4) {
+                            Image(systemName: "icloud")
+                                .font(.caption)
+                            Text("Audio on original device")
+                                .font(.caption)
+                        }
+                        .foregroundColor(OffRecordColor.textSecondary)
                 }
             }
         }
@@ -232,15 +242,20 @@ struct EntryDetailView: View {
                         Text("No text yet")
                             .font(.subheadline)
                             .foregroundColor(OffRecordColor.textSecondary)
-                        Button("Add text") {
-                            isEditing = true
-                        }
-                        .font(.subheadline.weight(.medium))
-                        .foregroundColor(.offRecordReadableTintedForeground)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .offRecordGlassControl(tint: OffRecordColor.brandPlum, in: Capsule(), fallbackFill: OffRecordColor.surfaceLavender)
+                    Button("Add text") {
+                        isEditing = true
                     }
+                    .font(.subheadline.weight(.medium))
+                    .foregroundColor(OffRecordReadableTintStyle.brand.foreground)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .offRecordGlassControl(
+                        tint: OffRecordReadableTintStyle.brand.tint,
+                        in: Capsule(),
+                        fallbackFill: OffRecordReadableTintStyle.brand.fill,
+                        border: OffRecordReadableTintStyle.brand.border
+                    )
+                }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 60)
                 }
@@ -279,7 +294,7 @@ struct EntryDetailView: View {
             }) {
                 HStack {
                     Image(systemName: "brain.head.profile")
-                        .foregroundColor(OffRecordColor.brandLavenderDark)
+                        .foregroundColor(OffRecordColor.textLavender)
                     Text("AI Insights")
                         .font(.subheadline.weight(.medium))
                         .foregroundColor(OffRecordColor.textHeading)
@@ -325,7 +340,7 @@ struct EntryDetailView: View {
                             .frame(height: 8)
                             
                             Text(analysis.sentiment > 0.2 ? "Positive" : (analysis.sentiment < -0.2 ? "Negative" : "Neutral"))
-                                .font(.caption2)
+                                .font(.caption)
                                 .foregroundColor(OffRecordColor.textSecondary)
                         }
                     }
@@ -356,11 +371,11 @@ struct EntryDetailView: View {
                             FlowLayout(spacing: 6) {
                                 ForEach(analysis.topics.prefix(5), id: \.self) { topic in
                                     Text(topic)
-                                        .font(.caption2)
-                                        .foregroundColor(OffRecordColor.textBrand)
+                                        .font(.caption)
+                                        .foregroundColor(OffRecordColor.textLavender)
                                         .padding(.horizontal, 8)
                                         .padding(.vertical, 4)
-                                        .background(OffRecordColor.surfaceMint)
+                                        .background(OffRecordColor.backgroundLavenderTint)
                                         .clipShape(Capsule())
                                 }
                             }
@@ -399,7 +414,7 @@ struct EntryDetailView: View {
                 HStack(alignment: .top, spacing: 10) {
                     Image(systemName: "sparkles")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(OffRecordColor.brandLavenderDark)
+                        .foregroundStyle(OffRecordColor.textLavender)
                         .padding(.top, 2)
 
                     VStack(alignment: .leading, spacing: 4) {
@@ -501,15 +516,20 @@ struct EntryDetailView: View {
                     Text(photoAttachments.isEmpty ? "Add Photos" : "Add More")
                         .font(.caption.weight(.medium))
                 }
-                .foregroundColor(.offRecordReadableTintedForeground)
+                .foregroundColor(OffRecordReadableTintStyle.journal.foreground)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
-                .offRecordGlassControl(tint: OffRecordColor.brandPeach, in: Capsule(), fallbackFill: OffRecordColor.surfacePeach)
+                .offRecordGlassControl(
+                    tint: OffRecordReadableTintStyle.journal.tint,
+                    in: Capsule(),
+                    fallbackFill: OffRecordReadableTintStyle.journal.fill,
+                    border: OffRecordReadableTintStyle.journal.border
+                )
             }
 
             if !photoAttachments.isEmpty {
                 Text("Photos sync with iCloud")
-                    .font(.caption2)
+                    .font(.caption)
                     .foregroundColor(OffRecordColor.textSecondary)
             }
         }
