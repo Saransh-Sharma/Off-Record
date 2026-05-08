@@ -87,7 +87,7 @@ struct StatsView: View {
                     .frame(width: 80, height: 80)
                 Image(systemName: "chart.bar.xaxis")
                     .font(.system(size: 32))
-                    .foregroundColor(OffRecordColor.brandLavenderDark)
+                    .foregroundColor(OffRecordColor.textLavender)
             }
 
             Text("Insights will appear here")
@@ -185,17 +185,17 @@ struct StatsView: View {
                     let hasEntry = hasEntryOn(date)
                     VStack(spacing: 6) {
                         Circle()
-                            .fill(hasEntry ? OffRecordColor.brandAqua : OffRecordColor.textTertiary.opacity(0.2))
+                            .fill(hasEntry ? OffRecordColor.surfaceMint : OffRecordColor.textTertiary.opacity(0.16))
                             .frame(width: isIPad ? 44 : 32, height: isIPad ? 44 : 32)
                             .overlay {
                                 if hasEntry {
                                     Image(systemName: "checkmark")
                                         .font(.caption.weight(.bold))
-                                        .foregroundColor(.white)
+                                        .foregroundColor(OffRecordColor.textAqua)
                                 }
                             }
                         Text(dayAbbreviation(date))
-                            .font(.caption2)
+                            .font(.caption)
                             .foregroundColor(OffRecordColor.textSecondary)
                     }
                 }
@@ -232,7 +232,7 @@ struct StatsView: View {
                                 .font(.subheadline.weight(.medium))
                                 .foregroundColor(OffRecordColor.textPrimary)
                             Text(item.mood.displayName)
-                                .font(.caption2)
+                                .font(.caption)
                                 .foregroundColor(OffRecordColor.textSecondary)
                         }
                         .frame(maxWidth: .infinity)
@@ -312,7 +312,7 @@ struct StatsView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
                         Image(systemName: "sparkles")
-                            .foregroundColor(OffRecordColor.brandLavenderDark)
+                            .foregroundColor(OffRecordColor.textLavender)
                         Text("AI Insights")
                             .font(.headline)
                             .foregroundColor(OffRecordColor.textHeading)
@@ -400,7 +400,7 @@ struct StatsView: View {
                         .font(.title2.bold())
                         .foregroundColor(OffRecordColor.textAqua)
                     Text("\(remaining) days left")
-                        .font(.caption2)
+                        .font(.caption)
                         .foregroundColor(OffRecordColor.textSecondary)
                 }
             }
@@ -455,11 +455,16 @@ struct StatsView: View {
                 .font(.headline)
                 .padding(.horizontal, 32)
                 .padding(.vertical, 12)
-                .foregroundColor(.offRecordReadableTintedForeground)
-                .offRecordGlassControl(tint: OffRecordColor.brandPeach, in: Capsule(), fallbackFill: OffRecordColor.surfacePeach)
+                .foregroundColor(OffRecordReadableTintStyle.journal.foreground)
+                .offRecordGlassControl(
+                    tint: OffRecordReadableTintStyle.journal.tint,
+                    in: Capsule(),
+                    fallbackFill: OffRecordReadableTintStyle.journal.fill,
+                    border: OffRecordReadableTintStyle.journal.border
+                )
             }
             .padding(32)
-            .offRecordGlassBar(cornerRadius: 24, fallbackFill: Color(.systemBackground))
+            .offRecordGlassBar(cornerRadius: 24, fallbackFill: OffRecordColor.surfaceWarm)
             .shadow(radius: 20)
             .padding(40)
             .transition(.scale.combined(with: .opacity))

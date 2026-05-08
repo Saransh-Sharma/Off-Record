@@ -105,7 +105,7 @@ struct TimelineView: View {
                         toggleVoiceSearch()
                     } label: {
                         Image(systemName: isListening ? "mic.fill" : "mic")
-                            .foregroundColor(isListening ? OffRecordColor.brandCoral : OffRecordColor.brandPlum)
+                            .foregroundColor(isListening ? OffRecordColor.textCoral : OffRecordColor.textBrand)
                     }
                     .accessibilityLabel("Voice search")
                     
@@ -130,7 +130,7 @@ struct TimelineView: View {
                     HapticManager.shared.selectionChanged()
                 }) {
                     Image(systemName: showStarredOnly ? "star.fill" : "star")
-                        .foregroundColor(showStarredOnly ? OffRecordColor.brandYellow : OffRecordColor.brandPlum)
+                        .foregroundColor(showStarredOnly ? OffRecordColor.textYellow : OffRecordColor.textBrand)
                 }
                 .accessibilityLabel("Show starred only")
             }
@@ -197,8 +197,13 @@ struct TimelineView: View {
                                 }
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 6)
-                                .foregroundColor(OffRecordColor.textBrand)
-                                .offRecordGlassControl(tint: OffRecordColor.brandSageDark, in: Capsule(), fallbackFill: OffRecordColor.backgroundSageTint)
+                                .foregroundColor(OffRecordReadableTintStyle.privacy.foreground)
+                                .offRecordGlassControl(
+                                    tint: OffRecordReadableTintStyle.privacy.tint,
+                                    in: Capsule(),
+                                    fallbackFill: OffRecordReadableTintStyle.privacy.fill,
+                                    border: OffRecordReadableTintStyle.privacy.border
+                                )
                             }
                             .buttonStyle(.plain)
                         }
@@ -239,11 +244,12 @@ struct TimelineView: View {
                             .font(.caption)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
-                            .foregroundColor(selectedMoodFilter == mood ? OffRecordColor.textBrand : OffRecordColor.textSecondary)
+                            .foregroundColor(selectedMoodFilter == mood ? mood.readableStyle.foreground : OffRecordColor.textSecondary)
                             .offRecordGlassControl(
-                                tint: selectedMoodFilter == mood ? mood.color : nil,
+                                tint: selectedMoodFilter == mood ? mood.readableStyle.tint : nil,
                                 in: Capsule(),
-                                fallbackFill: selectedMoodFilter == mood ? mood.color.opacity(0.22) : OffRecordColor.surfaceWarm
+                                fallbackFill: selectedMoodFilter == mood ? mood.readableStyle.fill : OffRecordReadableTintStyle.neutral.fill,
+                                border: selectedMoodFilter == mood ? mood.readableStyle.border : OffRecordReadableTintStyle.neutral.border
                             )
                         }
                         .buttonStyle(.plain)
@@ -283,25 +289,25 @@ struct TimelineView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 if showStarredOnly {
-                    FilterChip(label: "Starred", icon: "star.fill", color: OffRecordColor.brandYellow) {
+                    FilterChip(label: "Starred", icon: "star.fill", style: .highlight) {
                         showStarredOnly = false
                     }
                 }
                 
                 if let mood = selectedMoodFilter {
-                    FilterChip(label: mood.rawValue, icon: mood.icon, color: mood.color) {
+                    FilterChip(label: mood.rawValue, icon: mood.icon, style: mood.readableStyle) {
                         selectedMoodFilter = nil
                     }
                 }
                 
                 if let start = startDate {
-                    FilterChip(label: "From \(formatShortDate(start))", icon: "calendar", color: OffRecordColor.brandSky) {
+                    FilterChip(label: "From \(formatShortDate(start))", icon: "calendar", style: .export) {
                         startDate = nil
                     }
                 }
                 
                 if let end = endDate {
-                    FilterChip(label: "To \(formatShortDate(end))", icon: "calendar", color: OffRecordColor.brandSky) {
+                    FilterChip(label: "To \(formatShortDate(end))", icon: "calendar", style: .export) {
                         endDate = nil
                     }
                 }
@@ -512,13 +518,13 @@ struct EntryRowView: View {
 
                     if wordCount > 0 {
                         Text("\(wordCount) words")
-                            .font(.caption2)
+                            .font(.caption)
                             .foregroundColor(OffRecordColor.textSecondary)
                     }
 
                     if hasPhotos {
                         Image(systemName: "photo")
-                            .font(.caption2)
+                            .font(.caption)
                             .foregroundColor(OffRecordColor.textSecondary)
                     }
                 }
@@ -535,7 +541,7 @@ struct EntryRowView: View {
             Spacer()
             if entry.isStarred {
                 Image(systemName: "star.fill")
-                    .foregroundColor(OffRecordColor.brandYellow)
+                    .foregroundColor(OffRecordColor.textYellow)
                     .font(.caption)
             }
         }
@@ -586,7 +592,7 @@ struct EntryRowView: View {
 struct FilterChip: View {
     let label: String
     let icon: String
-    let color: Color
+    let style: OffRecordReadableTintStyle
     let onRemove: () -> Void
     
     var body: some View {
@@ -607,8 +613,13 @@ struct FilterChip: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .foregroundColor(OffRecordColor.textBrand)
-        .offRecordGlassControl(tint: color, in: Capsule(), fallbackFill: color.opacity(0.15))
+        .foregroundColor(style.foreground)
+        .offRecordGlassControl(
+            tint: style.tint,
+            in: Capsule(),
+            fallbackFill: style.fill,
+            border: style.border
+        )
     }
 }
 
@@ -639,11 +650,12 @@ struct DateRangeButton: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .foregroundColor(date != nil ? OffRecordColor.textBrand : OffRecordColor.textSecondary)
+            .foregroundColor(date != nil ? OffRecordReadableTintStyle.export.foreground : OffRecordColor.textSecondary)
             .offRecordGlassControl(
-                tint: date != nil ? OffRecordColor.brandSageDark : nil,
+                tint: date != nil ? OffRecordReadableTintStyle.export.tint : nil,
                 in: Capsule(),
-                fallbackFill: date != nil ? OffRecordColor.backgroundSageTint : OffRecordColor.surfaceWarm
+                fallbackFill: date != nil ? OffRecordReadableTintStyle.export.fill : OffRecordReadableTintStyle.neutral.fill,
+                border: date != nil ? OffRecordReadableTintStyle.export.border : OffRecordReadableTintStyle.neutral.border
             )
         }
         .buttonStyle(.plain)

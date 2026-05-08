@@ -213,7 +213,7 @@ struct TodayView: View {
                     StatBadge(
                         icon: "flame.fill",
                         value: "\(streakCount) day streak",
-                        color: OffRecordColor.brandPeach
+                        style: .journal
                     )
                 }
 
@@ -221,7 +221,7 @@ struct TodayView: View {
                     StatBadge(
                         icon: "calendar",
                         value: "\(daysRecordedThisYear) this year",
-                        color: OffRecordColor.brandSageDark
+                        style: .privacy
                     )
                 }
 
@@ -284,6 +284,7 @@ struct TodayView: View {
                     CompactDaypartHeroCard(
                         hero: hero,
                         isIPad: isIPad,
+                        onRecord: { startHeroRecording(hero) },
                         onAddNote: { startTypedNote(from: hero) },
                         onSkip: { skipHero(hero) }
                     )
@@ -510,7 +511,7 @@ struct TodayView: View {
                 .foregroundColor(sideActionIconColor)
         }
         .frame(width: sideActionButtonSize, height: sideActionButtonSize)
-        .offRecordGlassControl(tint: OffRecordColor.brandPlum, in: Circle(), fallbackFill: OffRecordColor.surfaceWarm)
+        .offRecordReadableGlassControl(.brand, in: Circle())
     }
 
     private var recordButton: some View {
@@ -562,10 +563,7 @@ struct TodayView: View {
     }
 
     private var sideActionIconColor: Color {
-        if #available(iOS 26.0, *) {
-            return .white
-        }
-        return OffRecordColor.brandPlum
+        OffRecordReadableTintStyle.brand.foreground
     }
 
     private var buttonColor: Color {
@@ -968,7 +966,7 @@ struct TodayView: View {
 struct StatBadge: View {
     let icon: String
     let value: String
-    let color: Color
+    let style: OffRecordReadableTintStyle
 
     var body: some View {
         HStack(spacing: 6) {
@@ -977,10 +975,15 @@ struct StatBadge: View {
             Text(value)
                 .font(.caption)
         }
-        .foregroundColor(OffRecordColor.textBrand)
+        .foregroundColor(style.foreground)
         .padding(.horizontal, 12)
         .padding(.vertical, 8)
-        .offRecordGlassControl(tint: color, in: Capsule(), fallbackFill: color.opacity(0.12))
+        .offRecordGlassControl(
+            tint: style.tint,
+            in: Capsule(),
+            fallbackFill: style.fill,
+            border: style.border
+        )
     }
 }
 
@@ -1027,19 +1030,20 @@ struct PromptChip: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(prompt.title)
                     .font(.caption.weight(.semibold))
+                    .foregroundColor(isSelected ? OffRecordReadableTintStyle.friday.foreground : OffRecordColor.textPrimary)
                 Text(prompt.detail)
-                    .font(.caption2)
+                    .font(.caption)
                     .foregroundColor(OffRecordColor.textSecondary)
                     .lineLimit(2)
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
             .frame(maxWidth: 280, alignment: .leading)
-            .foregroundColor(OffRecordColor.textPrimary)
             .offRecordGlassControl(
-                tint: isSelected ? OffRecordColor.brandLavenderDark : nil,
+                tint: isSelected ? OffRecordReadableTintStyle.friday.tint : OffRecordReadableTintStyle.neutral.tint,
                 in: RoundedRectangle(cornerRadius: 12, style: .continuous),
-                fallbackFill: isSelected ? OffRecordColor.surfaceLavender : OffRecordColor.surfaceWarm
+                fallbackFill: isSelected ? OffRecordReadableTintStyle.friday.fill : OffRecordReadableTintStyle.neutral.fill,
+                border: isSelected ? OffRecordReadableTintStyle.friday.border : OffRecordReadableTintStyle.neutral.border
             )
         }
         .buttonStyle(.plain)
