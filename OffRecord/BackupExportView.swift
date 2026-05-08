@@ -61,7 +61,7 @@ struct BackupExportView: View {
                                     .fill(selectedFormat == format ? OffRecordColor.surfaceBlue : OffRecordColor.surfaceWarm)
                                     .frame(width: 40, height: 40)
                                 Image(systemName: format.icon)
-                                    .foregroundColor(selectedFormat == format ? OffRecordColor.brandSky : OffRecordColor.textSecondary)
+                                    .foregroundColor(selectedFormat == format ? OffRecordColor.textSky : OffRecordColor.textSecondary)
                             }
                             
                             VStack(alignment: .leading, spacing: 2) {
@@ -77,7 +77,7 @@ struct BackupExportView: View {
                             
                             if selectedFormat == format {
                                 Image(systemName: "checkmark.circle.fill")
-                                    .foregroundColor(OffRecordColor.brandPlum)
+                                    .foregroundColor(OffRecordColor.textBrand)
                             }
                         }
                     }
@@ -131,7 +131,7 @@ struct BackupExportView: View {
                 if selectedFormat == .json || selectedFormat == .encryptedBackup {
                     HStack(spacing: 8) {
                         Image(systemName: "arrow.triangle.2.circlepath")
-                            .foregroundColor(OffRecordColor.brandSageDark)
+                            .foregroundColor(OffRecordColor.textSage)
                             .font(.caption)
                         Text("Can be imported back into OffRecord AI Journal")
                             .font(.caption)
@@ -142,7 +142,7 @@ struct BackupExportView: View {
                 if selectedFormat == .encryptedBackup {
                     HStack(spacing: 8) {
                         Image(systemName: "lock.shield.fill")
-                            .foregroundColor(OffRecordColor.brandSageDark)
+                            .foregroundColor(OffRecordColor.textSage)
                             .font(.caption)
                         Text("AES-256 encrypted with your password")
                             .font(.caption)
@@ -308,7 +308,7 @@ struct ImportBackupView: View {
             Section {
                 HStack(spacing: 8) {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(OffRecordColor.brandSageDark)
+                        .foregroundColor(OffRecordColor.textSage)
                         .font(.caption)
                     Text("Duplicate entries are automatically skipped")
                         .font(.caption)
@@ -326,7 +326,7 @@ struct ImportBackupView: View {
                 
                 HStack(spacing: 8) {
                     Image(systemName: "icloud.and.arrow.up")
-                        .foregroundColor(OffRecordColor.brandLavenderDark)
+                        .foregroundColor(OffRecordColor.textLavender)
                         .font(.caption)
                     Text("Imported entries sync to iCloud")
                         .font(.caption)

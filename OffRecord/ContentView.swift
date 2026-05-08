@@ -133,6 +133,16 @@ enum OffRecordTab: String, CaseIterable, Identifiable {
         case .settings: return OffRecordColor.brandPlum
         }
     }
+
+    var readableStyle: OffRecordReadableTintStyle {
+        switch self {
+        case .today: return .journal
+        case .timeline: return .privacy
+        case .insights: return .growth
+        case .friday: return .friday
+        case .settings: return .brand
+        }
+    }
 }
 
 private struct OffRecordFloatingTabBar: View {
@@ -147,6 +157,7 @@ private struct OffRecordFloatingTabBar: View {
                     }
                     HapticManager.shared.selectionChanged()
                 } label: {
+                    let style = tab.readableStyle
                     VStack(spacing: 4) {
                         Image(systemName: tab.systemImage)
                             .font(.system(size: 16, weight: .semibold))
@@ -155,14 +166,14 @@ private struct OffRecordFloatingTabBar: View {
                             .lineLimit(1)
                             .minimumScaleFactor(0.78)
                     }
-                    .foregroundStyle(selectedTab == tab ? OffRecordColor.textBrand : OffRecordColor.textSecondary)
+                    .foregroundStyle(selectedTab == tab ? style.foreground : OffRecordColor.textSecondary)
                     .frame(maxWidth: .infinity)
                     .frame(height: 54)
                     .background {
                         if selectedTab == tab {
                             Capsule()
-                                .fill(tab.tint.opacity(0.18))
-                                .overlay(Capsule().stroke(tab.tint.opacity(0.32), lineWidth: 1))
+                                .fill(style.fill)
+                                .overlay(Capsule().stroke(style.border, lineWidth: 1))
                         }
                     }
                 }

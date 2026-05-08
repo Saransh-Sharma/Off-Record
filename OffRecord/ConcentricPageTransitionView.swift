@@ -84,6 +84,7 @@ struct ConcentricPageTransitionView<Content: View>: View {
                             x: isAnimating ? outgoingOffset(in: proxy.size) : 0,
                             y: isAnimating ? 40 : 0
                         )
+                        .allowsHitTesting(!isAnimating)
                         .animation(isAnimating ? fullAnimation : .none, value: isAnimating)
                 }
 
@@ -94,6 +95,7 @@ struct ConcentricPageTransitionView<Content: View>: View {
                             x: isAnimating ? 0 : incomingOffset(in: proxy.size),
                             y: isAnimating ? 0 : 40
                         )
+                        .allowsHitTesting(false)
                         .animation(isAnimating ? fullAnimation : .none, value: isAnimating)
                 }
 
@@ -108,12 +110,10 @@ struct ConcentricPageTransitionView<Content: View>: View {
                 .onAnimationCompleted(for: progress) {
                     animationCompleted()
                 }
-
-                VStack {
-                    Spacer()
-                    bottomControls
-                        .padding(.bottom, 52)
-                }
+            }
+            .overlay(alignment: .bottom) {
+                bottomControls
+                    .padding(.bottom, 52)
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
         }
