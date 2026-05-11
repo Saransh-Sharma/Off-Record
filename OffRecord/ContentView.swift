@@ -46,11 +46,11 @@ struct ContentView: View {
                     NavigationStack { SettingsView() }
                 }
             }
-            .safeAreaPadding(.bottom, 86)
+            .safeAreaPadding(.bottom, OffRecordCompactTabBarLayout.reservedContentBottomInset)
 
             OffRecordFloatingTabBar(selectedTab: $selectedTab)
-                .padding(.horizontal, 14)
-                .padding(.bottom, 10)
+                .padding(.horizontal, OffRecordCompactTabBarLayout.horizontalPadding)
+                .padding(.bottom, OffRecordCompactTabBarLayout.bottomPadding)
         }
         .offRecordScreenBackground()
     }
@@ -103,6 +103,12 @@ struct ContentView: View {
             }
         }
     }
+}
+
+enum OffRecordCompactTabBarLayout {
+    static let horizontalPadding: CGFloat = 14
+    static let bottomPadding: CGFloat = 2
+    static let reservedContentBottomInset: CGFloat = 96
 }
 
 enum OffRecordTab: String, CaseIterable, Identifiable {

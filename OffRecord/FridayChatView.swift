@@ -447,6 +447,7 @@ struct FridayResponseGenerator {
 // MARK: - Friday Chat View
 
 struct FridayChatView: View {
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @ObservedObject private var themeManager = ThemeManager.shared
     @AppStorage("authorName") private var authorName: String = ""
     @State private var messages: [FridayChatMessage] = []
@@ -489,9 +490,14 @@ struct FridayChatView: View {
 
             // Suggested questions chips
             questionChips
+                .safeAreaPadding(.bottom, chipRailBottomClearance)
         }
         .navigationTitle("Talk to Friday")
         .background(OffRecordColor.appBackgroundGradient.ignoresSafeArea())
+    }
+
+    private var chipRailBottomClearance: CGFloat {
+        horizontalSizeClass == .compact ? OffRecordCompactTabBarLayout.reservedContentBottomInset : 0
     }
 
     // MARK: - Welcome Card
