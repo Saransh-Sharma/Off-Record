@@ -32,25 +32,28 @@ struct ContentView: View {
 
     private var compactTabs: some View {
         ZStack(alignment: .bottom) {
-            Group {
-                switch selectedTab {
-                case .today:
-                    NavigationStack { TodayView() }
-                case .timeline:
-                    NavigationStack { TimelineView() }
-                case .insights:
-                    NavigationStack { StatsView() }
-                case .friday:
-                    NavigationStack { FridayView() }
-                case .settings:
-                    NavigationStack { SettingsView() }
-                }
+            switch selectedTab {
+            case .today:
+                NavigationStack { TodayView(compactTabSelection: $selectedTab) }
+            case .timeline:
+                NavigationStack { TimelineView() }
+                    .safeAreaPadding(.bottom, OffRecordCompactTabBarLayout.reservedContentBottomInset)
+            case .insights:
+                NavigationStack { StatsView() }
+                    .safeAreaPadding(.bottom, OffRecordCompactTabBarLayout.reservedContentBottomInset)
+            case .friday:
+                NavigationStack { FridayView() }
+                    .safeAreaPadding(.bottom, OffRecordCompactTabBarLayout.reservedContentBottomInset)
+            case .settings:
+                NavigationStack { SettingsView() }
+                    .safeAreaPadding(.bottom, OffRecordCompactTabBarLayout.reservedContentBottomInset)
             }
-            .safeAreaPadding(.bottom, OffRecordCompactTabBarLayout.reservedContentBottomInset)
 
-            OffRecordFloatingTabBar(selectedTab: $selectedTab)
-                .padding(.horizontal, OffRecordCompactTabBarLayout.horizontalPadding)
-                .padding(.bottom, OffRecordCompactTabBarLayout.bottomPadding)
+            if selectedTab != .today {
+                OffRecordFloatingTabBar(selectedTab: $selectedTab)
+                    .padding(.horizontal, OffRecordCompactTabBarLayout.horizontalPadding)
+                    .padding(.bottom, OffRecordCompactTabBarLayout.bottomPadding)
+            }
         }
         .offRecordScreenBackground()
     }
@@ -106,9 +109,10 @@ struct ContentView: View {
 }
 
 enum OffRecordCompactTabBarLayout {
-    static let horizontalPadding: CGFloat = 14
-    static let bottomPadding: CGFloat = 2
-    static let reservedContentBottomInset: CGFloat = 96
+    static let horizontalPadding: CGFloat = 16
+    static let bottomPadding: CGFloat = 12
+    static let reservedContentBottomInset: CGFloat = 108
+    static let todayDockScrollContentBottomPadding: CGFloat = 244
 }
 
 enum OffRecordTab: String, CaseIterable, Identifiable {
@@ -151,7 +155,7 @@ enum OffRecordTab: String, CaseIterable, Identifiable {
     }
 }
 
-private struct OffRecordFloatingTabBar: View {
+struct OffRecordFloatingTabBar: View {
     @Binding var selectedTab: OffRecordTab
 
     var body: some View {
@@ -172,14 +176,14 @@ private struct OffRecordFloatingTabBar: View {
                             .lineLimit(1)
                             .minimumScaleFactor(0.78)
                     }
-                    .foregroundStyle(selectedTab == tab ? style.foreground : OffRecordColor.textSecondary)
+                    .foregroundStyle(selectedTab == tab ? selectedForeground(for: tab, style: style) : OffRecordColor.textPrimary.opacity(0.82))
                     .frame(maxWidth: .infinity)
-                    .frame(height: 54)
+                    .frame(height: 56)
                     .background {
                         if selectedTab == tab {
                             Capsule()
-                                .fill(style.fill)
-                                .overlay(Capsule().stroke(style.border, lineWidth: 1))
+                                .fill(selectedFill(for: tab, style: style))
+                                .overlay(Capsule().stroke(selectedBorder(for: tab, style: style), lineWidth: 1))
                         }
                     }
                 }
@@ -189,13 +193,26 @@ private struct OffRecordFloatingTabBar: View {
                 .accessibilityAddTraits(selectedTab == tab ? .isSelected : [])
             }
         }
-        .padding(8)
+        .padding(.horizontal, 8)
+        .padding(.vertical, 10)
         .background(
             Capsule()
-                .fill(OffRecordColor.surfacePrimary.opacity(0.96))
+                .fill(OffRecordColor.surfacePrimary)
                 .overlay(Capsule().stroke(OffRecordColor.borderSoft, lineWidth: 1))
                 .shadow(color: OffRecordShadow.tabColor, radius: 30, x: 0, y: 8)
         )
+    }
+
+    private func selectedForeground(for tab: OffRecordTab, style: OffRecordReadableTintStyle) -> Color {
+        tab == .today ? OffRecordColor.textWarm : style.foreground
+    }
+
+    private func selectedFill(for tab: OffRecordTab, style: OffRecordReadableTintStyle) -> Color {
+        tab == .today ? OffRecordColor.backgroundPeachTint : style.fill
+    }
+
+    private func selectedBorder(for tab: OffRecordTab, style: OffRecordReadableTintStyle) -> Color {
+        tab == .today ? OffRecordColor.borderSoft : style.border
     }
 }
 

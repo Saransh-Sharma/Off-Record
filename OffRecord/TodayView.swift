@@ -33,6 +33,7 @@ struct TodayView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @AppStorage("authorName") private var authorName: String = ""
     @ObservedObject private var proactiveReflection = ProactiveReflectionController.shared
+    private let compactTabSelection: Binding<OffRecordTab>?
 
     @StateObject private var recorder = AudioRecorder()
     @State private var recordingState: RecordingState = .idle
@@ -57,7 +58,8 @@ struct TodayView: View {
 
     private var isIPad: Bool { horizontalSizeClass == .regular }
 
-    init() {
+    init(compactTabSelection: Binding<OffRecordTab>? = nil) {
+        self.compactTabSelection = compactTabSelection
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: Date())
         let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? startOfDay
@@ -116,7 +118,7 @@ struct TodayView: View {
     }
 
     var body: some View {
-        ZStack {
+        ZStack(alignment: .bottom) {
             OffRecordColor.appBackgroundGradient
                 .ignoresSafeArea()
 
@@ -136,15 +138,21 @@ struct TodayView: View {
                     }
                     .padding(.horizontal, OffRecordSpacing.screenX)
                     .padding(.top, OffRecordSpacing.screenY)
-                    .padding(.bottom, OffRecordSpacing.xl)
+                    .padding(.bottom, compactTabSelection == nil ? OffRecordSpacing.xl : OffRecordCompactTabBarLayout.todayDockScrollContentBottomPadding)
                     .frame(maxWidth: isIPad ? 700 : .infinity)
                     .frame(maxWidth: .infinity)
                 }
 
-                Spacer(minLength: 0)
+                if compactTabSelection == nil {
+                    Spacer(minLength: 0)
 
-                // Recording controls at bottom
-                recordingSection
+                    // Recording controls at bottom
+                    recordingSection
+                }
+            }
+
+            if let compactTabSelection {
+                compactBottomDock(selectedTab: compactTabSelection)
             }
         }
         .alert("Recording Error", isPresented: Binding(
@@ -406,6 +414,159 @@ struct TodayView: View {
     }
 
     // MARK: - Recording Section
+
+    private func compactBottomDock(selectedTab: Binding<OffRecordTab>) -> some View {
+        VStack(spacing: 12) {
+            compactRecordingFeedback
+
+            ZStack(alignment: .bottom) {
+                compactActionShelf
+                    .offset(y: -54)
+                    .zIndex(1)
+
+                OffRecordFloatingTabBar(selectedTab: selectedTab)
+                    .zIndex(2)
+
+                compactRecordButton
+                    .offset(y: -92)
+                    .zIndex(3)
+            }
+        }
+        .padding(.horizontal, OffRecordCompactTabBarLayout.horizontalPadding)
+        .padding(.bottom, OffRecordCompactTabBarLayout.bottomPadding)
+        .animation(.spring(response: 0.4, dampingFraction: 0.86), value: recordingState)
+    }
+
+    @ViewBuilder
+    private var compactRecordingFeedback: some View {
+        if recordingState == .processing && !isHeroRecordingActive {
+            HStack(spacing: 10) {
+                ProgressView()
+                    .scaleEffect(0.9)
+                Text("Transcribing your thoughts...")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundColor(OffRecordColor.textSecondary)
+            }
+            .padding(.vertical, 12)
+            .padding(.horizontal, 20)
+            .background(OffRecordColor.surfacePrimary.opacity(0.94), in: Capsule())
+            .overlay(Capsule().stroke(OffRecordColor.borderSoft, lineWidth: 1))
+            .shadow(color: OffRecordShadow.floatingColor, radius: 18, x: 0, y: 8)
+            .transition(.scale.combined(with: .opacity))
+        } else if recordingState == .recording && !isHeroRecordingActive {
+            HeroRecordingMeter(
+                currentTime: recorder.currentTime,
+                level: Double(recorder.level),
+                isProcessing: false,
+                barCount: 20
+            )
+            .frame(maxWidth: 320)
+            .padding(.horizontal, 28)
+            .transition(.scale.combined(with: .opacity))
+        }
+    }
+
+    private var compactActionShelf: some View {
+        HStack {
+            compactPhotoButton
+
+            Spacer(minLength: 92)
+
+            compactNoteButton
+        }
+        .padding(.horizontal, 36)
+        .frame(maxWidth: 340)
+        .frame(height: 92)
+        .background(
+            RoundedRectangle(cornerRadius: OffRecordRadius.xxl, style: .continuous)
+                .fill(OffRecordColor.surfacePrimary.opacity(0.94))
+                .overlay(
+                    RoundedRectangle(cornerRadius: OffRecordRadius.xxl, style: .continuous)
+                        .stroke(OffRecordColor.borderSoft, lineWidth: 1)
+                )
+                .shadow(color: Color.black.opacity(0.08), radius: 24, x: 0, y: 8)
+        )
+        .padding(.horizontal, 24)
+    }
+
+    private var compactPhotoButton: some View {
+        PhotosPicker(
+            selection: $selectedPhotos,
+            maxSelectionCount: 5,
+            matching: .images
+        ) {
+            compactSideActionButton(systemImage: "photo.badge.plus")
+        }
+        .onChange(of: selectedPhotos) { _, newItems in
+            handlePhotoPickerSelection(newItems)
+        }
+        .buttonStyle(.plain)
+        .disabled(recordingState != .idle)
+        .opacity(recordingState == .idle ? 1 : 0.45)
+        .accessibilityLabel("Add photos")
+        .accessibilityIdentifier("todayDock.photo")
+    }
+
+    private var compactNoteButton: some View {
+        Button(action: startTypedNote) {
+            compactSideActionButton(systemImage: "square.and.pencil")
+        }
+        .buttonStyle(.plain)
+        .disabled(recordingState != .idle)
+        .opacity(recordingState == .idle ? 1 : 0.45)
+        .accessibilityLabel("Write note")
+        .accessibilityIdentifier("todayDock.write")
+    }
+
+    private func compactSideActionButton(systemImage: String) -> some View {
+        ZStack {
+            Circle()
+                .fill(OffRecordColor.backgroundSageTint)
+
+            Image(systemName: systemImage)
+                .font(.system(size: 22, weight: .semibold))
+                .foregroundColor(OffRecordColor.brandSageDark)
+        }
+        .frame(width: 60, height: 60)
+        .contentShape(Circle())
+    }
+
+    private var compactRecordButton: some View {
+        Button {
+            if recordingState != .processing {
+                toggleRecording()
+            }
+        } label: {
+            ZStack {
+                Circle()
+                    .fill(OffRecordColor.brandPlum)
+                    .frame(width: 92, height: 92)
+
+                Circle()
+                    .stroke(OffRecordColor.surfacePrimary, lineWidth: 4)
+                    .frame(width: 92, height: 92)
+
+                if recordingState == .recording {
+                    RoundedRectangle(cornerRadius: 7, style: .continuous)
+                        .fill(OffRecordColor.textInverse)
+                        .frame(width: 30, height: 30)
+                } else if recordingState == .processing {
+                    ProgressView()
+                        .tint(OffRecordColor.textInverse)
+                } else {
+                    Image(systemName: "mic.fill")
+                        .font(.system(size: 38, weight: .semibold))
+                        .foregroundColor(OffRecordColor.textInverse)
+                }
+            }
+            .frame(width: 92, height: 92)
+            .shadow(color: Color.black.opacity(0.12), radius: 18, x: 0, y: 8)
+            .contentShape(Circle())
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel(recordingState == .recording ? "Stop recording" : "Start recording")
+        .accessibilityIdentifier("todayDock.record")
+    }
 
     private var recordingSection: some View {
         VStack(spacing: 16) {
