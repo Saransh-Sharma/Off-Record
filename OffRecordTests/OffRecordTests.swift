@@ -139,6 +139,25 @@ struct SemanticMemoryTests {
         #expect(answer.summary.contains("not have enough journal evidence"))
     }
 
+    @Test func fridayRefusesWeakMeaningOnlyEvidence() async {
+        let evidence = EvidenceReference(
+            id: "weak",
+            entryID: UUID(),
+            date: Date(),
+            mood: nil,
+            snippet: "A loosely related memory.",
+            chunkText: "A loosely related memory.",
+            score: 0.004,
+            matchReason: .meaning
+        )
+
+        let answer = await EvidenceFridayEngine.answer(question: "What stresses me out?", evidence: [evidence])
+
+        #expect(answer.evidence.isEmpty)
+        #expect(answer.confidence == 0)
+        #expect(answer.limitations?.localizedCaseInsensitiveContains("retrieved journal evidence") == true)
+    }
+
     @Test func fridayObservationsCarryEvidenceIDs() async {
         let evidence = EvidenceReference(
             id: "e1",
@@ -155,6 +174,95 @@ struct SemanticMemoryTests {
 
         #expect(!answer.evidence.isEmpty)
         #expect(answer.observations.allSatisfy { !$0.evidenceIDs.isEmpty })
+    }
+
+    @Test func semanticStoreInvalidatesSchemaMismatch() throws {
+        let text = "Dinner with Maya in Bangalore helped me feel grounded."
+        let chunk = makeChunk(
+            id: "schema",
+            entryID: UUID(),
+            text: text,
+            vector: VectorMath.normalized([1, 0, 0]),
+            entities: ["Maya", "Bangalore"],
+            topics: ["dinner", "bangalore"]
+        )
+
+        let snapshot = try SemanticMemoryTestSupport.loadSnapshotAfterSchemaMismatch(
+            url: temporaryIndexURL(),
+            chunk: chunk,
+            text: text
+        )
+
+        #expect(snapshot == nil)
+    }
+
+    @Test func semanticStoreInvalidatesProviderMetadataMismatch() throws {
+        let text = "Work pressure eased after the planning conversation."
+        let chunk = makeChunk(
+            id: "provider",
+            entryID: UUID(),
+            text: text,
+            vector: VectorMath.normalized([0, 1, 0]),
+            entities: [],
+            topics: ["work", "pressure"]
+        )
+
+        let snapshot = try SemanticMemoryTestSupport.loadSnapshotAfterProviderMetadataMismatch(
+            url: temporaryIndexURL(),
+            chunk: chunk,
+            text: text
+        )
+
+        #expect(snapshot == nil)
+    }
+
+    @Test func semanticIndexLifecycleUpsertsDeletesAndRemovesOrphans() async throws {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let workID = UUID()
+        let cafeID = UUID()
+        let initialRecords = [
+            IndexableEntry(
+                id: workID,
+                date: now,
+                mood: "tense",
+                text: "The quarterly review brought work stress and pressure.",
+                isStarred: false
+            ),
+            IndexableEntry(
+                id: cafeID,
+                date: now.addingTimeInterval(-86_400),
+                mood: "calm",
+                text: "The Bangalore cafe made the afternoon feel lighter.",
+                isStarred: false
+            )
+        ]
+        let updatedRecord = IndexableEntry(
+            id: workID,
+            date: now,
+            mood: "reflective",
+            text: "Maya helped me reframe the work pressure after the sprint review.",
+            isStarred: true
+        )
+
+        let result = try await SemanticMemoryTestSupport.exerciseLifecycle(
+            url: temporaryIndexURL(),
+            initialRecords: initialRecords,
+            updatedRecord: updatedRecord,
+            deletedEntryID: cafeID
+        )
+
+        #expect(result.initialChunkCount == 2)
+        #expect(result.updatedChunkCount == 2)
+        #expect(result.deletedChunkCount == 1)
+        #expect(result.updatedSearchMatchedNewText)
+        #expect(!result.deletedSearchHasRemovedEntry)
+    }
+
+    private func temporaryIndexURL() -> URL {
+        let directory = FileManager.default.temporaryDirectory
+            .appendingPathComponent("OffRecordSemanticMemoryTests", isDirectory: true)
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        return directory.appendingPathComponent("semantic-memory.sqlite")
     }
 }
 
@@ -359,6 +467,25 @@ struct ProactiveReflectionTests {
         #expect(!insights.isEmpty)
         #expect((insights.first?.evidence.filter { $0.role == .source }.count ?? 0) == 3)
         #expect((insights.first?.evidence.filter { $0.role == .baseline }.count ?? 0) >= 2)
+    }
+
+    @Test func repeatedThemeInsightRequiresMultipleRecentSources() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let recent = [
+            makeReflectionEntry(daysAgo: 0, sentiment: 0.1, text: "Garden seedlings needed more water and patient attention.", now: now),
+            makeReflectionEntry(daysAgo: 1, sentiment: 0.1, text: "The garden soil and seedlings looked stronger today.", now: now),
+            makeReflectionEntry(daysAgo: 2, sentiment: 0.1, text: "I checked the garden planters before work.", now: now),
+            makeReflectionEntry(daysAgo: 3, sentiment: 0.1, text: "A quiet walk helped me reset.", now: now)
+        ]
+        let baseline = (4...12).map { day in
+            makeReflectionEntry(daysAgo: day, sentiment: 0, text: "Meeting deadline office roadmap manager sprint.", now: now)
+        }
+
+        let insights = ProactiveReflectionAnalyzer.detectRepeatedTheme(in: recent + baseline, now: now)
+
+        #expect(insights.first?.title == "A theme is taking shape")
+        #expect((insights.first?.evidence.filter { $0.role == .source }.count ?? 0) >= 3)
+        #expect(insights.first?.message.localizedCaseInsensitiveContains("garden") == true)
     }
 
     @Test func promptRankingOrderIsDecisionThenHighAnomalyThenWeekly() {

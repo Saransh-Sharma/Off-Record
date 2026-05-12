@@ -47,6 +47,19 @@ final class SemanticMemoryUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts.matching(labelContaining: "Bangalore cafe").firstMatch.waitForExistence(timeout: 4))
     }
 
+    func testDeletingSemanticIndexShowsUnavailableSettingsCopy() throws {
+        let app = launchSemanticMemoryApp()
+        waitForSemanticIndexReady(app)
+        openSemanticMemorySettings(app)
+
+        deleteSemanticIndex(app)
+
+        let status = app.staticTexts["semanticMemory.statusMessage"]
+        XCTAssertTrue(status.waitForExistence(timeout: 4))
+        XCTAssertTrue(status.label.localizedCaseInsensitiveContains("deleted"))
+        XCTAssertTrue(status.label.localizedCaseInsensitiveContains("rebuild"))
+    }
+
     func testRebuildAfterDeleteRestoresSearch() throws {
         let app = launchSemanticMemoryApp()
         waitForSemanticIndexReady(app)
