@@ -2,8 +2,8 @@
 
 [![Download on the App Store](https://img.shields.io/badge/Download_Free-App%20Store-0D96F6?style=for-the-badge&logo=apple&logoColor=white)](https://apps.apple.com/app/id6766499684)
 [![Platform](https://img.shields.io/badge/Platform-iOS%2017%2B%20%7C%20iPadOS%2017%2B-lightgrey?style=for-the-badge&logo=apple)](https://apps.apple.com/app/id6766499684)
-[![Privacy](https://img.shields.io/badge/Privacy-Data%20Not%20Collected-brightgreen?style=for-the-badge&logo=apple)](https://offrecord.example.com/privacy.html)
-[![Website](https://img.shields.io/badge/Website-offrecord.example.com-blue?style=for-the-badge)](https://offrecord.example.com)
+[![Privacy](https://img.shields.io/badge/Privacy-Data%20Not%20Collected-brightgreen?style=for-the-badge&logo=apple)](https://saransh-sharma.github.io/Off-Record/privacy.html)
+[![Website](https://img.shields.io/badge/Website-saransh--sharma.github.io%2FOff--Record-blue?style=for-the-badge)](https://saransh-sharma.github.io/Off-Record/)
 
 OffRecord AI Journal is a **free voice journal app** for iOS that turns your spoken thoughts into a searchable, AI-powered diary — entirely on your device. No accounts, no cloud servers, no data collection. It is the **private journal app** built for people who value both convenience and privacy.
 
@@ -11,7 +11,7 @@ Speak naturally, and OffRecord AI Journal transcribes everything offline using A
 
 **Your thoughts never leave your device. Ever.**
 
-[Download OffRecord AI Journal Free](https://apps.apple.com/app/id6766499684) | [Visit Website](https://offrecord.example.com) | [Read the Blog](https://offrecord.example.com/blog)
+[Download OffRecord AI Journal Free](https://apps.apple.com/app/id6766499684) | [Visit Website](https://saransh-sharma.github.io/Off-Record/) | [See Features](https://saransh-sharma.github.io/Off-Record/features.html) | [Privacy](https://saransh-sharma.github.io/Off-Record/privacy.html) | [Support](https://saransh-sharma.github.io/Off-Record/support.html)
 
 ---
 
@@ -155,28 +155,6 @@ No. Zero data collection. No analytics SDKs, no crash reporting services, no tel
 
 ### What devices are supported?
 OffRecord AI Journal runs on any iPhone or iPad with iOS 17 or later.
-
----
-
-## Links
-
-- **Website:** [offrecord.example.com](https://offrecord.example.com)
-- **App Store:** [Download OffRecord AI Journal Free](https://apps.apple.com/app/id6766499684)
-- **Blog:** [offrecord.example.com/blog](https://offrecord.example.com/blog)
-- **Semantic Memory + Friday:** [SEMANTIC_MEMORY_FRIDAY.md](SEMANTIC_MEMORY_FRIDAY.md)
-- **Privacy Policy:** [offrecord.example.com/privacy](https://offrecord.example.com/privacy.html)
-- **Support:** [offrecord.example.com/support](https://offrecord.example.com/support.html)
-
----
-
-## Why I Built This
-
-I have written a diary every day for the past 15 years. The problem was always the same — by the time I sat down to type, half the details were gone. Voice changes that. You speak at 150 words a minute without filtering yourself.
-
-But every voice diary app I tried wanted to upload my recordings to their servers. That was a deal-breaker. So I built OffRecord AI Journal — a **voice journal app** where everything runs on-device, and the AI that knows you best is the one that never shares you with anyone.
-
----
-
 
 ---
 

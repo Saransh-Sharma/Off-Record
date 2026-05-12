@@ -126,8 +126,8 @@ struct EntryDetailView: View {
                 text = newValue ?? ""
             }
         }
-        .sheet(isPresented: $showMoodPicker) {
-            MoodPickerSheet(selectedMood: $selectedMood, onSave: saveMood)
+        .fullScreenCover(isPresented: $showMoodPicker) {
+            MoodDialSheet(selectedMood: $selectedMood, onSave: saveMood)
         }
     }
 
@@ -182,6 +182,7 @@ struct EntryDetailView: View {
                     }
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("entryDetail.moodButton")
             }
 
             // Stats row
@@ -738,73 +739,6 @@ struct EntryDetailView: View {
             try viewContext.save()
         } catch {
             // ignore
-        }
-    }
-}
-
-// MARK: - Mood Picker Sheet
-
-struct MoodPickerSheet: View {
-    @Binding var selectedMood: Mood
-    var onSave: () -> Void
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationView {
-            List {
-                Section {
-                    Button(action: {
-                        selectedMood = .none
-                        onSave()
-                        dismiss()
-                    }) {
-                        HStack(spacing: 12) {
-                            Image(systemName: "circle.dashed")
-                                .font(.title3)
-                                .foregroundColor(OffRecordColor.textSecondary)
-                                .frame(width: 28)
-                            Text("No mood")
-                                .foregroundColor(OffRecordColor.textPrimary)
-                            Spacer()
-                            if selectedMood == .none {
-                                Image(systemName: "checkmark")
-                                    .foregroundColor(OffRecordColor.brandPlum)
-                            }
-                        }
-                    }
-                }
-
-                Section(header: Text("Select a mood")) {
-                    ForEach(Mood.selectableMoods) { mood in
-                        Button(action: {
-                            selectedMood = mood
-                            onSave()
-                            dismiss()
-                        }) {
-                            HStack(spacing: 12) {
-                                Image(systemName: mood.icon)
-                                    .font(.title3)
-                                    .foregroundColor(mood.color)
-                                    .frame(width: 28)
-                                Text(mood.displayName)
-                                    .foregroundColor(OffRecordColor.textPrimary)
-                                Spacer()
-                                if selectedMood == mood {
-                                    Image(systemName: "checkmark")
-                                        .foregroundColor(OffRecordColor.brandPlum)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            .navigationTitle("How are you feeling?")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
         }
     }
 }
