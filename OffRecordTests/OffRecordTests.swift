@@ -8,7 +8,498 @@
 import Testing
 import Foundation
 import CryptoKit
+import UserNotifications
 @testable import OffRecord
+
+// MARK: - Semantic Memory Tests
+
+struct SemanticMemoryTests {
+
+    @Test func shortEntryStaysSingleChunk() {
+        let chunks = MemoryChunker.chunks(for: "I felt calm after walking home from work.")
+
+        #expect(chunks.count == 1)
+        #expect(chunks[0].text == "I felt calm after walking home from work.")
+        #expect(chunks[0].characterStart == 0)
+    }
+
+    @Test func longEntryChunksOnSentenceBoundaries() {
+        let sentence = "Work felt tense, but the evening walk helped me settle."
+        let text = Array(repeating: sentence, count: 30).joined(separator: " ")
+        let chunks = MemoryChunker.chunks(for: text, targetWords: 40, overlapWords: 8)
+
+        #expect(chunks.count > 1)
+        #expect(chunks.allSatisfy { !$0.text.isEmpty })
+        #expect(chunks.allSatisfy { $0.characterEnd > $0.characterStart })
+    }
+
+    @Test func textHashIsStable() {
+        let first = TextSignals.hash("same journal text")
+        let second = TextSignals.hash("same journal text")
+        let third = TextSignals.hash("different journal text")
+
+        #expect(first == second)
+        #expect(first != third)
+    }
+
+    @Test func vectorNormalizationProducesUnitMagnitude() {
+        let vector = VectorMath.normalized([3, 4])
+        let magnitude = sqrt(vector.reduce(Float(0)) { $0 + $1 * $1 })
+
+        #expect(abs(magnitude - 1) < 0.0001)
+    }
+
+    @Test func cosineSimilarityUsesDotProductForNormalizedVectors() {
+        let lhs = VectorMath.normalized([1, 0, 0])
+        let rhs = VectorMath.normalized([1, 0, 0])
+        let unrelated = VectorMath.normalized([0, 1, 0])
+
+        #expect(VectorMath.cosine(lhs, rhs) > 0.99)
+        #expect(VectorMath.cosine(lhs, unrelated) < 0.01)
+    }
+
+    @Test func hybridSearchPreservesExactNameRanking() {
+        let entryID = UUID()
+        let exact = makeChunk(
+            id: "exact",
+            entryID: entryID,
+            text: "Dinner with Maya helped me feel less alone.",
+            vector: VectorMath.normalized([0.1, 0.1, 0.8]),
+            entities: ["Maya"],
+            topics: ["dinner", "maya"]
+        )
+        let semanticOnly = makeChunk(
+            id: "semantic",
+            entryID: UUID(),
+            text: "A quiet walk made the day feel lighter.",
+            vector: VectorMath.normalized([0.1, 0.1, 0.8]),
+            entities: [],
+            topics: ["walk"]
+        )
+
+        let results = HybridMemorySearchService.search(
+            query: "Maya",
+            chunks: [semanticOnly, exact],
+            queryVector: VectorMath.normalized([0.1, 0.1, 0.8]),
+            lexicalHits: [
+                LexicalHit(chunkID: "exact", reason: .exact)
+            ],
+            limit: 2
+        )
+
+        #expect(results.first?.chunk.id == "exact")
+        #expect(results.first?.reason == .exact || results.first?.reason == .entity)
+    }
+
+    private func makeChunk(
+        id: String,
+        entryID: UUID,
+        text: String,
+        vector: [Float],
+        entities: [String],
+        topics: [String]
+    ) -> MemoryChunk {
+        MemoryChunk(
+            id: id,
+            entryID: entryID,
+            chunkIndex: 0,
+            date: Date(),
+            mood: nil,
+            textHash: TextSignals.hash(text),
+            entryTextHash: TextSignals.hash(text),
+            characterStart: 0,
+            characterEnd: text.count,
+            entities: entities,
+            topics: topics,
+            embeddingModelID: "test",
+            embeddingRevision: 1,
+            embeddingDimension: vector.count,
+            language: "en",
+            vector: vector,
+            isStarred: false
+        )
+    }
+
+    @Test func typedSearchResultRepresentsBuildingState() {
+        let result = SemanticMemorySearchResult.building(progress: 0.42, message: "Indexing")
+
+        if case .building(let progress, let message) = result {
+            #expect(progress == 0.42)
+            #expect(message == "Indexing")
+        } else {
+            Issue.record("Expected building state")
+        }
+    }
+
+    @Test func fridayRefusesWithoutEvidence() async {
+        let answer = await EvidenceFridayEngine.answer(question: "What stresses me out?", evidence: [])
+
+        #expect(answer.evidence.isEmpty)
+        #expect(answer.confidence == 0)
+        #expect(answer.summary.contains("not have enough journal evidence"))
+    }
+
+    @Test func fridayObservationsCarryEvidenceIDs() async {
+        let evidence = EvidenceReference(
+            id: "e1",
+            entryID: UUID(),
+            date: Date(),
+            mood: "reflective",
+            snippet: "Work pressure was heavy after the meeting.",
+            chunkText: "Work pressure was heavy after the meeting.",
+            score: 0.03,
+            matchReason: .exact
+        )
+
+        let answer = await EvidenceFridayEngine.answer(question: "work pressure", evidence: [evidence])
+
+        #expect(!answer.evidence.isEmpty)
+        #expect(answer.observations.allSatisfy { !$0.evidenceIDs.isEmpty })
+    }
+}
+
+// MARK: - Proactive Reflection Tests
+
+struct ProactiveReflectionTests {
+
+    @Test func anomalyDetectionWaitsForEnoughHistory() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let entries = (0..<5).map {
+            makeReflectionEntry(daysAgo: $0, sentiment: -0.7, text: "A heavy day at work.", now: now)
+        }
+
+        let insights = ProactiveReflectionAnalyzer.detectAnomalies(in: entries, now: now)
+
+        #expect(insights.isEmpty)
+    }
+
+    @Test func anomalyDetectionFlagsClearOutlier() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        var entries = (1...11).map { day in
+            makeReflectionEntry(
+                daysAgo: day,
+                sentiment: day.isMultiple(of: 2) ? 0.10 : 0.18,
+                text: "A steady ordinary day with a walk.",
+                now: now
+            )
+        }
+        entries.append(makeReflectionEntry(daysAgo: 0, sentiment: -0.75, text: "I felt crushed and tense today.", now: now))
+
+        let insights = ProactiveReflectionAnalyzer.detectAnomalies(in: entries, now: now)
+
+        #expect(!insights.isEmpty)
+        #expect(insights.allSatisfy { !$0.evidence.isEmpty })
+    }
+
+    @Test func comparativeSentimentAnomalyIncludesSourceAndBaselineEvidence() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        var entries = (1...12).map { day in
+            makeReflectionEntry(
+                daysAgo: day,
+                sentiment: 0.18,
+                text: "A steady ordinary day with enough room to breathe.",
+                now: now
+            )
+        }
+        entries.append(makeReflectionEntry(daysAgo: 0, sentiment: -0.75, text: "I felt crushed and tense today.", now: now))
+
+        let insight = ProactiveReflectionAnalyzer.detectAnomalies(in: entries, now: now).first { $0.title.contains("heavier") }
+
+        #expect(insight?.evidence.contains { $0.role == .source } == true)
+        #expect((insight?.evidence.filter { $0.role == .baseline }.count ?? 0) >= 2)
+    }
+
+    @Test func comparativeWordCountAnomalyIncludesBaselineEvidence() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        var entries = (1...12).map { day in
+            makeReflectionEntry(
+                daysAgo: day,
+                sentiment: 0.1,
+                text: "Short steady note.",
+                now: now
+            )
+        }
+        let longText = Array(repeating: "I needed more space to name the day clearly.", count: 30).joined(separator: " ")
+        entries.append(makeReflectionEntry(daysAgo: 0, sentiment: 0.1, text: longText, now: now))
+
+        let insight = ProactiveReflectionAnalyzer.detectAnomalies(in: entries, now: now).first { $0.title.contains("more to say") }
+
+        #expect(insight?.evidence.contains { $0.role == .source } == true)
+        #expect((insight?.evidence.filter { $0.role == .baseline }.count ?? 0) >= 2)
+    }
+
+    @Test func decisionExtractionCapturesDecisionsAndRegretsOnly() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let entry = makeReflectionEntry(
+            daysAgo: 0,
+            sentiment: -0.2,
+            text: "I decided to decline the rushed timeline. I regret saying yes last month. I should go to sleep earlier.",
+            now: now
+        )
+
+        let decisions = ProactiveReflectionAnalyzer.extractDecisionMoments(from: [entry], now: now)
+
+        #expect(decisions.count == 2)
+        #expect(decisions.contains { $0.kind == .decision && $0.phrase.localizedCaseInsensitiveContains("decided") })
+        #expect(decisions.contains { $0.kind == .regret && $0.phrase.localizedCaseInsensitiveContains("regret") })
+        #expect(!decisions.contains { $0.phrase.localizedCaseInsensitiveContains("sleep earlier") })
+    }
+
+    @Test func extractedDecisionsPreserveFollowUpStateAcrossRefresh() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let entryID = UUID()
+        let entry = makeReflectionEntry(
+            id: entryID,
+            daysAgo: 3,
+            sentiment: -0.2,
+            text: "I regret accepting the rushed project timeline.",
+            now: now
+        )
+        let first = ProactiveReflectionAnalyzer.extractDecisionMoments(from: [entry], now: now)
+        let existing = DecisionFollowUpState(
+            id: first[0].followUp.id,
+            decisionID: first[0].id,
+            sourceEntryID: entryID,
+            phraseHash: first[0].phraseHash,
+            state: .reflected,
+            firstSeenAt: now.addingTimeInterval(-100),
+            lastPromptedAt: now.addingTimeInterval(-50),
+            resolvedAt: now
+        )
+
+        let second = ProactiveReflectionAnalyzer.extractDecisionMoments(from: [entry], existingFollowUps: [existing], now: now)
+
+        #expect(second.first?.followUp.state == .reflected)
+        #expect(second.first?.followUp.resolvedAt == now)
+    }
+
+    @Test func weeklyRecapComparesCorrectWindows() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let entries = [
+            makeReflectionEntry(daysAgo: 1, sentiment: 0.2, text: "I chose a calmer work rhythm.", now: now),
+            makeReflectionEntry(daysAgo: 3, sentiment: 0.1, text: "Dinner helped me reset after deadlines.", now: now),
+            makeReflectionEntry(daysAgo: 8, sentiment: -0.2, text: "Last week work felt tense.", now: now),
+            makeReflectionEntry(daysAgo: 10, sentiment: -0.3, text: "Last week I was worried about deadlines.", now: now)
+        ]
+        let decisions = ProactiveReflectionAnalyzer.extractDecisionMoments(from: entries, now: now)
+
+        let recap = ProactiveReflectionAnalyzer.makeWeeklyRecap(from: entries, decisions: decisions, now: now)
+
+        #expect(recap?.currentWeekEntryCount == 2)
+        #expect(recap?.previousWeekEntryCount == 2)
+        #expect(recap?.decisionCount == 1)
+    }
+
+    @Test func contextPromptPrefersDueDecisionOverWeeklyPrompt() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let entries = [
+            makeReflectionEntry(daysAgo: 3, sentiment: -0.2, text: "I regret accepting the rushed project timeline.", now: now),
+            makeReflectionEntry(daysAgo: 1, sentiment: 0.2, text: "A quiet evening helped me reset.", now: now)
+        ]
+
+        let result = ProactiveReflectionAnalyzer.analyze(entries: entries, now: now)
+
+        #expect(result.selectedPrompt?.priority == .high)
+        #expect(result.selectedPrompt?.title.localizedCaseInsensitiveContains("regret") == true)
+    }
+
+    @Test func promptRankingIgnoresReflectedDecisions() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let entry = makeReflectionEntry(daysAgo: 3, sentiment: -0.2, text: "I regret accepting the rushed project timeline.", now: now)
+        let initial = ProactiveReflectionAnalyzer.extractDecisionMoments(from: [entry], now: now)
+        let reflected = DecisionFollowUpState(
+            id: initial[0].followUp.id,
+            decisionID: initial[0].id,
+            sourceEntryID: entry.id,
+            phraseHash: initial[0].phraseHash,
+            state: .reflected,
+            firstSeenAt: now,
+            lastPromptedAt: now,
+            resolvedAt: now
+        )
+        let decisions = ProactiveReflectionAnalyzer.extractDecisionMoments(from: [entry], existingFollowUps: [reflected], now: now)
+
+        let selected = ProactiveReflectionAnalyzer.selectPrompt(
+            insights: [],
+            decisions: decisions,
+            weeklyRecap: nil,
+            entries: [entry],
+            now: now
+        )
+
+        #expect(selected == nil)
+    }
+
+    @Test func cadenceAnomalyWaitsForEnoughHistoryAndFlagsClearChange() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let shortHistory = (0..<6).map { makeReflectionEntry(daysAgo: $0, sentiment: 0, text: "Short note.", now: now) }
+        #expect(ProactiveReflectionAnalyzer.detectCadenceAnomaly(in: shortHistory, now: now).isEmpty)
+
+        let daysAgo = [0, 10, 20, 30, 31, 32, 33, 34, 35, 36, 37, 38]
+        let entries = daysAgo.map { makeReflectionEntry(daysAgo: $0, sentiment: 0, text: "Cadence sample note.", now: now) }
+        let insights = ProactiveReflectionAnalyzer.detectCadenceAnomaly(in: entries, now: now)
+
+        #expect(!insights.isEmpty)
+        #expect(insights.first?.evidence.contains { $0.role == .baseline } == true)
+    }
+
+    @Test func topicShiftAnomalyFlagsLowOverlapRecentTopicsWithEvidence() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let recent = [
+            makeReflectionEntry(daysAgo: 0, sentiment: 0, text: "Garden soil seedlings tomatoes compost balcony.", now: now),
+            makeReflectionEntry(daysAgo: 1, sentiment: 0, text: "Seeds planter basil watering sunlight patio.", now: now),
+            makeReflectionEntry(daysAgo: 2, sentiment: 0, text: "Harvest herbs pots garden gloves outdoors.", now: now)
+        ]
+        let baseline = (3...12).map { day in
+            makeReflectionEntry(daysAgo: day, sentiment: 0, text: "Project deadline meeting sprint roadmap manager office.", now: now)
+        }
+
+        let insights = ProactiveReflectionAnalyzer.detectTopicShift(in: recent + baseline, now: now)
+
+        #expect(!insights.isEmpty)
+        #expect((insights.first?.evidence.filter { $0.role == .source }.count ?? 0) == 3)
+        #expect((insights.first?.evidence.filter { $0.role == .baseline }.count ?? 0) >= 2)
+    }
+
+    @Test func promptRankingOrderIsDecisionThenHighAnomalyThenWeekly() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let entry = makeReflectionEntry(daysAgo: 3, sentiment: -0.2, text: "I regret accepting the rushed project timeline.", now: now)
+        let decisions = ProactiveReflectionAnalyzer.extractDecisionMoments(from: [entry], now: now)
+        let highAnomaly = ReflectionInsight(
+            id: "high",
+            category: .pattern,
+            priority: .high,
+            title: "High anomaly",
+            message: "Pattern.",
+            prompt: "Check the pattern.",
+            evidence: [ProactiveReflectionAnalyzer.evidence(from: entry)],
+            createdAt: now,
+            expiresAt: nil
+        )
+        let recap = WeeklyReflectionRecap(
+            id: "week",
+            summary: "Weekly recap.",
+            suggestedPrompt: "Weekly prompt?",
+            currentWeekEntryCount: 2,
+            previousWeekEntryCount: 2,
+            currentWordCount: 10,
+            previousWordCount: 10,
+            topTopics: [],
+            decisionCount: 0,
+            evidence: [ProactiveReflectionAnalyzer.evidence(from: entry)],
+            generatedAt: now
+        )
+
+        let decisionSelected = ProactiveReflectionAnalyzer.selectPrompt(insights: [highAnomaly], decisions: decisions, weeklyRecap: recap, entries: [entry], now: now)
+        let anomalySelected = ProactiveReflectionAnalyzer.selectPrompt(insights: [highAnomaly], decisions: [], weeklyRecap: recap, entries: [entry], now: now)
+        let weeklySelected = ProactiveReflectionAnalyzer.selectPrompt(insights: [], decisions: [], weeklyRecap: recap, entries: [entry], now: now)
+
+        #expect(decisionSelected?.decisionID == decisions.first?.id)
+        #expect(anomalySelected?.id == "high")
+        #expect(weeklySelected?.title.localizedCaseInsensitiveContains("week") == true)
+    }
+
+    @Test func smartReminderBodyIsPrivacySafeAndFallsBack() {
+        let fallback = ProactiveReflectionController.privacySafeReminderBody(for: nil)
+        #expect(fallback == "Take a minute to speak about your day.")
+
+        let sensitivePrompt = ReflectionInsight(
+            id: "test",
+            category: .decision,
+            priority: .high,
+            title: "Maya and work",
+            message: "Specific private content",
+            prompt: "What happened with Maya?",
+            evidence: [],
+            createdAt: Date(),
+            expiresAt: nil
+        )
+
+        let body = ProactiveReflectionController.privacySafeReminderBody(for: sensitivePrompt)
+        #expect(!body.localizedCaseInsensitiveContains("maya"))
+        #expect(!body.localizedCaseInsensitiveContains("work"))
+        #expect(body.localizedCaseInsensitiveContains("decision"))
+    }
+
+    @Test func smartReminderRequestUsesSingleNextNotification() {
+        let manager = ReminderManager.shared
+        manager.isEnabled = false
+        manager.usesFridaySmartPrompts = true
+        manager.reminderHour = 20
+        manager.reminderMinute = 30
+
+        let request = manager.makeReminderRequest(now: Date(timeIntervalSince1970: 1_800_000_000))
+        let trigger = request.trigger as? UNCalendarNotificationTrigger
+
+        #expect(trigger?.repeats == false)
+        #expect(request.content.body == ProactiveReflectionController.shared.privacySafeReminderBody())
+    }
+
+    @Test func persistedPayloadDoesNotContainRawJournalSnippets() throws {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let entry = makeReflectionEntry(daysAgo: 0, sentiment: 0, text: "Maya private raw journal phrase", now: now)
+        let insight = ReflectionInsight(
+            id: "pattern",
+            category: .pattern,
+            priority: .medium,
+            title: "Pattern",
+            message: "Evidence-backed pattern.",
+            prompt: "What changed?",
+            evidence: [ProactiveReflectionAnalyzer.evidence(from: entry)],
+            createdAt: now,
+            expiresAt: nil
+        )
+        let payload = ProactiveReflectionController.Payload(
+            version: 2,
+            insights: [insight],
+            decisionMoments: [],
+            followUpStates: [],
+            weeklyRecap: nil,
+            selectedPrompt: insight,
+            lastInputSignature: "signature"
+        )
+
+        let encoded = try JSONEncoder().encode(payload)
+        let json = String(decoding: encoded, as: UTF8.self)
+
+        #expect(!json.contains("Maya private raw journal phrase"))
+        #expect(!json.contains("snippet"))
+        #expect(json.contains(entry.id.uuidString))
+    }
+
+    @Test func expiredInsightsUseInjectedNow() {
+        let createdAt = Date(timeIntervalSince1970: 1_800_000_000)
+        let insight = ReflectionInsight(
+            id: "expiring",
+            category: .pattern,
+            priority: .medium,
+            title: "Pattern",
+            message: "Message",
+            prompt: "Prompt",
+            evidence: [],
+            createdAt: createdAt,
+            expiresAt: createdAt.addingTimeInterval(60)
+        )
+
+        #expect(!insight.isExpired(now: createdAt.addingTimeInterval(30)))
+        #expect(insight.isExpired(now: createdAt.addingTimeInterval(90)))
+    }
+
+    @Test func v1PayloadDecodeFailsSafelyWithoutThrowingCrash() throws {
+        struct V1Payload: Codable {
+            var insights: [ReflectionInsight]
+        }
+        let data = try JSONEncoder().encode(V1Payload(insights: []))
+        let decoded = try? JSONDecoder().decode(ProactiveReflectionController.Payload.self, from: data)
+
+        #expect(decoded == nil)
+    }
+
+    private func makeReflectionEntry(id: UUID = UUID(), daysAgo: Int, sentiment: Double, text: String, now: Date) -> ReflectionEntrySnapshot {
+        let date = Calendar.current.date(byAdding: .day, value: -daysAgo, to: now) ?? now
+        return ReflectionEntrySnapshot(id: id, date: date, mood: nil, text: text, sentiment: sentiment)
+    }
+}
 
 // MARK: - Mood Tests
 
