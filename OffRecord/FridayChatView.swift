@@ -8,6 +8,7 @@
 //
 
 import SwiftUI
+import CoreData
 
 // MARK: - Question Types
 
@@ -24,6 +25,21 @@ enum FridayQuestion: String, CaseIterable, Identifiable {
     case bestJournalTime = "What time should I journal?"
 
     var id: String { rawValue }
+
+    var accessibilityID: String {
+        switch self {
+        case .moodPattern: return "moodPattern"
+        case .talkAboutMost: return "talkAboutMost"
+        case .happiestWhen: return "happiestWhen"
+        case .dominantTopics: return "dominantTopics"
+        case .moodOverTime: return "moodOverTime"
+        case .communicationStyle: return "communicationStyle"
+        case .stressTriggers: return "stressTriggers"
+        case .positiveOrNegative: return "positiveOrNegative"
+        case .personality: return "personality"
+        case .bestJournalTime: return "bestJournalTime"
+        }
+    }
 
     var icon: String {
         switch self {
@@ -48,6 +64,19 @@ struct FridayChatMessage: Identifiable {
     let text: String
     let isUser: Bool
     let timestamp = Date()
+    let evidence: [EvidenceReference]
+    let observations: [EvidenceObservation]
+    let confidence: Double?
+    let limitations: String?
+
+    init(text: String, isUser: Bool, evidence: [EvidenceReference] = [], observations: [EvidenceObservation] = [], confidence: Double? = nil, limitations: String? = nil) {
+        self.text = text
+        self.isUser = isUser
+        self.evidence = evidence
+        self.observations = observations
+        self.confidence = confidence
+        self.limitations = limitations
+    }
 }
 
 // MARK: - Response Generator
@@ -449,9 +478,18 @@ struct FridayResponseGenerator {
 struct FridayChatView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @ObservedObject private var themeManager = ThemeManager.shared
+    @ObservedObject private var semanticMemory = SemanticMemoryIndexController.shared
     @AppStorage("authorName") private var authorName: String = ""
+
+    @FetchRequest(
+        sortDescriptors: [NSSortDescriptor(keyPath: \DiaryEntry.date, ascending: false)],
+        animation: .default)
+    private var entries: FetchedResults<DiaryEntry>
+
     @State private var messages: [FridayChatMessage] = []
     @State private var askedQuestions: Set<FridayQuestion> = []
+    @State private var inputText: String = ""
+    @State private var isAnswering = false
     @Namespace private var bottomAnchor
 
     var body: some View {
@@ -478,7 +516,7 @@ struct FridayChatView: View {
                     .padding(.horizontal)
                     .padding(.bottom, 8)
                 }
-                .onChange(of: messages.count) { _ in
+                .onChange(of: messages.count) {
                     withAnimation(.easeOut(duration: 0.3)) {
                         proxy.scrollTo("bottom", anchor: .bottom)
                     }
@@ -488,12 +526,17 @@ struct FridayChatView: View {
             Divider()
                 .background(themeManager.secondaryTextColor.opacity(0.3))
 
+            composer
+
             // Suggested questions chips
             questionChips
                 .safeAreaPadding(.bottom, chipRailBottomClearance)
         }
         .navigationTitle("Talk to Friday")
         .background(OffRecordColor.appBackgroundGradient.ignoresSafeArea())
+        .onAppear {
+            semanticMemory.ensureIndexed(entries: Array(entries))
+        }
     }
 
     private var chipRailBottomClearance: CGFloat {
@@ -543,12 +586,103 @@ struct FridayChatView: View {
                                   ? OffRecordColor.brandLavenderDark
                                   : OffRecordColor.surfaceWarm)
                     )
+                    .accessibilityIdentifier(message.isUser ? "friday.userMessage" : "friday.answerMessage")
+
+                if !message.isUser {
+                    if let limitations = message.limitations {
+                        Text(limitations)
+                            .font(.caption)
+                            .foregroundColor(OffRecordColor.textSecondary)
+                            .padding(.horizontal, 4)
+                            .accessibilityIdentifier("friday.limitations")
+                    }
+
+                    if !message.evidence.isEmpty {
+                        evidenceRail(message.evidence)
+                    }
+                }
             }
 
             if !message.isUser {
                 Spacer(minLength: 40)
             }
         }
+    }
+
+    private func evidenceRail(_ evidence: [EvidenceReference]) -> some View {
+        VStack(alignment: .leading, spacing: 8) {
+            Text("Evidence from your journal")
+                .font(.caption.weight(.semibold))
+                .foregroundColor(OffRecordColor.textLavender)
+                .accessibilityIdentifier("friday.evidenceHeader")
+
+            ForEach(Array(evidence.prefix(3))) { item in
+                if let entry = entry(for: item.entryID) {
+                    NavigationLink {
+                        EntryDetailView(entry: entry)
+                    } label: {
+                        EvidenceChip(evidence: item)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityElement(children: .contain)
+                    .accessibilityIdentifier("friday.evidenceChip")
+                } else {
+                    EvidenceChip(evidence: item)
+                }
+            }
+        }
+        .padding(.top, 4)
+        .frame(maxWidth: 320, alignment: .leading)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("friday.evidenceRail")
+    }
+
+    private var composer: some View {
+        VStack(spacing: 8) {
+            if semanticMemory.isBuilding {
+                HStack(spacing: 8) {
+                    ProgressView(value: semanticMemory.progress)
+                    Text(semanticMemory.statusMessage)
+                        .font(.caption)
+                        .foregroundColor(OffRecordColor.textSecondary)
+                        .lineLimit(2)
+                }
+                .padding(.horizontal)
+                .padding(.top, 8)
+            }
+
+            HStack(alignment: .bottom, spacing: 10) {
+                TextField("Ask Friday about your journal...", text: $inputText, axis: .vertical)
+                    .textFieldStyle(.plain)
+                    .lineLimit(1...4)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 11)
+                    .background(
+                        RoundedRectangle(cornerRadius: 18, style: .continuous)
+                            .fill(OffRecordColor.surfacePrimary)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 18, style: .continuous)
+                                    .stroke(OffRecordColor.borderSoft, lineWidth: 1)
+                            )
+                    )
+                    .disabled(isAnswering)
+                    .accessibilityIdentifier("friday.askField")
+
+                Button {
+                    askFreeformQuestion()
+                } label: {
+                    Image(systemName: isAnswering ? "hourglass" : "arrow.up.circle.fill")
+                        .font(.system(size: 30, weight: .semibold))
+                        .foregroundColor(canSendFreeform ? OffRecordColor.brandLavenderDark : OffRecordColor.textTertiary)
+                }
+                .disabled(!canSendFreeform)
+                .accessibilityLabel("Ask Friday")
+                .accessibilityIdentifier("friday.askButton")
+            }
+            .padding(.horizontal)
+            .padding(.top, 10)
+        }
+        .offRecordGlassBar(cornerRadius: 0, fallbackFill: OffRecordColor.surfaceWarm)
     }
 
     // MARK: - Question Chips
@@ -589,10 +723,12 @@ struct FridayChatView: View {
                             )
                         }
                         .buttonStyle(.plain)
+                        .accessibilityIdentifier("friday.questionChip.\(question.accessibilityID)")
                     }
                 }
                 .padding(.horizontal)
             }
+            .accessibilityIdentifier("friday.questionChips")
             .padding(.vertical, 10)
         }
         .offRecordGlassBar(cornerRadius: 0, fallbackFill: OffRecordColor.surfaceWarm)
@@ -612,19 +748,102 @@ struct FridayChatView: View {
     }
 
     private func askQuestion(_ question: FridayQuestion) {
-        // Add user message
-        let userMessage = FridayChatMessage(text: question.rawValue, isUser: true)
-        messages.append(userMessage)
+        askEvidenceQuestion(question.rawValue, profileSummary: FridayResponseGenerator.generateResponse(for: question))
         askedQuestions.insert(question)
+    }
 
-        // Generate response with a small delay for natural feel
-        DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) {
-            let responseText = FridayResponseGenerator.generateResponse(for: question)
-            let fridayMessage = FridayChatMessage(text: responseText, isUser: false)
+    private var canSendFreeform: Bool {
+        !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isAnswering
+    }
+
+    private func askFreeformQuestion() {
+        let question = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !question.isEmpty else { return }
+        inputText = ""
+        askEvidenceQuestion(question, profileSummary: nil)
+    }
+
+    private func askEvidenceQuestion(_ question: String, profileSummary: String?) {
+        guard !isAnswering else { return }
+        // Add user message
+        let userMessage = FridayChatMessage(text: question, isUser: true)
+        messages.append(userMessage)
+        isAnswering = true
+
+        Task {
+            let answer = await EvidenceFridayEngine.answer(question: question, entries: Array(entries), profileSummary: profileSummary)
+            let text = ([answer.summary] + answer.observations.map(\.text)).joined(separator: " ")
+            let fridayMessage = FridayChatMessage(
+                text: text,
+                isUser: false,
+                evidence: answer.evidence,
+                observations: answer.observations,
+                confidence: answer.confidence,
+                limitations: answer.limitations
+            )
             withAnimation(.easeIn(duration: 0.2)) {
                 messages.append(fridayMessage)
+                isAnswering = false
             }
         }
+    }
+
+    private func entry(for id: UUID) -> DiaryEntry? {
+        entries.first { $0.id == id }
+    }
+}
+
+private struct EvidenceChip: View {
+    let evidence: EvidenceReference
+
+    var body: some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: evidence.matchReason == .exact ? "text.magnifyingglass" : "quote.bubble.fill")
+                .font(.caption)
+                .foregroundColor(OffRecordColor.brandLavenderDark)
+                .frame(width: 18)
+
+            VStack(alignment: .leading, spacing: 4) {
+                HStack(spacing: 6) {
+                    Text(formattedDate)
+                        .font(.caption.weight(.semibold))
+                        .foregroundColor(OffRecordColor.textPrimary)
+                    if let mood = evidence.mood, !mood.isEmpty {
+                        Text(mood.capitalized)
+                            .font(.caption2.weight(.medium))
+                            .foregroundColor(OffRecordColor.textSecondary)
+                            .accessibilityIdentifier("friday.evidenceChip.mood")
+                    }
+                }
+                Text(evidence.snippet)
+                    .font(.caption)
+                    .foregroundColor(OffRecordColor.textSecondary)
+                    .lineLimit(3)
+                    .accessibilityIdentifier("friday.evidenceChip.snippet")
+                Text(evidence.matchReason.rawValue)
+                    .font(.caption2.weight(.semibold))
+                    .foregroundColor(OffRecordColor.textLavender)
+                    .accessibilityIdentifier("friday.evidenceChip.reason")
+            }
+        }
+        .padding(10)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(OffRecordColor.surfaceLavender.opacity(0.7))
+                .overlay(
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .stroke(OffRecordColor.borderSoft, lineWidth: 1)
+                )
+        )
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("friday.evidenceChip")
+    }
+
+    private var formattedDate: String {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .medium
+        formatter.timeStyle = .none
+        return formatter.string(from: evidence.date)
     }
 }
 

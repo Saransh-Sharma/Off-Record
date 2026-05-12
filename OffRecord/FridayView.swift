@@ -17,6 +17,10 @@ struct FridayView: View {
     @State private var animateMascot = false
     @State private var showFridayShareSheet = false
     @State private var fridayShareImage: UIImage?
+    @State private var noteEntry: DiaryEntry?
+    @State private var isShowingPromptNote = false
+    @State private var promptNoteContext: String?
+    @State private var shouldDeleteEmptyNoteDraft = false
 
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \DiaryEntry.date, ascending: false)],
@@ -70,6 +74,16 @@ struct FridayView: View {
         .navigationTitle("Friday")
         .background(OffRecordColor.appBackgroundGradient.ignoresSafeArea())
         .onAppear { animateMascot = true }
+        .navigationDestination(isPresented: $isShowingPromptNote) {
+            if let noteEntry {
+                EntryDetailView(
+                    entry: noteEntry,
+                    startEditing: true,
+                    deleteEmptyDraftOnDisappear: shouldDeleteEmptyNoteDraft,
+                    promptContext: promptNoteContext
+                )
+            }
+        }
     }
 
     // MARK: - Friday Header
@@ -148,6 +162,7 @@ struct FridayView: View {
                 fallbackFill: OffRecordColor.surfaceLavender
             )
         }
+        .accessibilityIdentifier("friday.talk")
     }
 
     // MARK: - Orb Color (reflects emotional state)
@@ -230,8 +245,10 @@ struct FridayView: View {
 
     private var overviewSection: some View {
         VStack(spacing: 16) {
-            // Friday Predictions — "Friday noticed..."
-            FridayPredictionsSection(entries: Array(entries))
+            // Proactive Reflection Loop — "Friday noticed"
+            ProactiveReflectionSection(entries: Array(entries)) { insight in
+                startPromptNote(from: insight)
+            }
 
             // Shareable Personality Card
             FridayProfileCardSection()
@@ -894,6 +911,55 @@ struct FridayView: View {
             return String(format: "%.1fk", Double(n) / 1000)
         }
         return "\(n)"
+    }
+
+    private func startPromptNote(from insight: ReflectionInsight) {
+        let hadEntry = todayEntry != nil
+        let entry = getOrCreateTodayEntry()
+        noteEntry = entry
+        promptNoteContext = insight.prompt
+        shouldDeleteEmptyNoteDraft = !hadEntry && entryHasNoContent(entry)
+        isShowingPromptNote = true
+        HapticManager.shared.selectionChanged()
+    }
+
+    private var todayEntry: DiaryEntry? {
+        let calendar = Calendar.current
+        return entries.first { entry in
+            guard let date = entry.date else { return false }
+            return calendar.isDateInToday(date)
+        }
+    }
+
+    private func getOrCreateTodayEntry() -> DiaryEntry {
+        if let existing = todayEntry {
+            return existing
+        }
+
+        let now = Date()
+        let entry = DiaryEntry(context: viewContext)
+        entry.id = UUID()
+        entry.date = now
+        entry.createdAt = now
+        entry.text = ""
+        entry.isStarred = false
+        entry.updatedAt = now
+
+        do {
+            try viewContext.save()
+        } catch {
+            viewContext.rollback()
+        }
+
+        return entry
+    }
+
+    private func entryHasNoContent(_ entry: DiaryEntry) -> Bool {
+        let text = entry.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let duration = entry.value(forKey: "duration") as? Double ?? 0
+        let photoCount = entry.photos?.count ?? 0
+        let hasAudio = (entry.value(forKey: "audioFileName") as? String)?.isEmpty == false
+        return text.isEmpty && !hasAudio && duration <= 0 && photoCount == 0
     }
 }
 
