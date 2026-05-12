@@ -677,6 +677,20 @@ private final class LocalSemanticIndexStore {
             )
         }
 
+        if !chunks.isEmpty {
+            let metadataModelID = try metadataValue("embeddingModelID") ?? ""
+            let metadataRevision = Int(try metadataValue("embeddingRevision") ?? "0") ?? 0
+            let metadataDimension = Int(try metadataValue("embeddingDimension") ?? "0") ?? 0
+            let providerMetadataMatchesChunks = chunks.allSatisfy { chunk in
+                chunk.embeddingModelID == metadataModelID
+                && chunk.embeddingRevision == metadataRevision
+                && chunk.embeddingDimension == metadataDimension
+                && chunk.vector.count == chunk.embeddingDimension
+                && !chunk.vector.isEmpty
+            }
+            guard providerMetadataMatchesChunks else { return nil }
+        }
+
         let snapshot = MemoryIndexSnapshot(
             schemaVersion: schema,
             chunkingVersion: chunking,
@@ -979,19 +993,36 @@ private final class LocalSemanticIndexStore {
             .map { "\"\($0.replacingOccurrences(of: "\"", with: "\"\""))\"" }
             .joined(separator: " OR ")
     }
+
+    #if DEBUG
+    func overwriteMetadataForTesting(key: String, value: String) throws {
+        try setMetadata(key, value)
+    }
+    #endif
 }
 
 // MARK: - Index Actor
 
 private actor SemanticMemoryIndexActor {
     private var chunks: [MemoryChunk] = []
-    private let preferredProvider: any EmbeddingProvider = NLContextualEmbeddingProvider()
-    private let fallbackProvider = UnavailableEmbeddingProvider()
+    private let preferredProvider: any EmbeddingProvider
+    private let fallbackProvider: any EmbeddingProvider
     private let store: LocalSemanticIndexStore
 
-    init() {
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let url = base.appendingPathComponent("OffRecordIndex", isDirectory: true).appendingPathComponent("semantic-memory.sqlite")
+    init(
+        storeURL: URL? = nil,
+        preferredProvider: any EmbeddingProvider = NLContextualEmbeddingProvider(),
+        fallbackProvider: any EmbeddingProvider = UnavailableEmbeddingProvider()
+    ) {
+        let url: URL
+        if let storeURL {
+            url = storeURL
+        } else {
+            let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+            url = base.appendingPathComponent("OffRecordIndex", isDirectory: true).appendingPathComponent("semantic-memory.sqlite")
+        }
+        self.preferredProvider = preferredProvider
+        self.fallbackProvider = fallbackProvider
         self.store = try! LocalSemanticIndexStore(url: url)
     }
 
@@ -1148,7 +1179,8 @@ private actor SemanticMemoryIndexActor {
 
     private func providerForCurrentIndex() -> any EmbeddingProvider {
         guard let first = chunks.first else { return fallbackProvider }
-        return first.embeddingModelID == fallbackProvider.metadata.modelID ? fallbackProvider : preferredProvider
+        let fallbackMetadata = UnavailableEmbeddingProvider().metadata
+        return first.embeddingModelID == fallbackMetadata.modelID ? fallbackProvider : preferredProvider
     }
 
     private func chunksForEntry(_ record: IndexableEntry, provider: any EmbeddingProvider) async throws -> ([MemoryChunk], [String: String]) {
@@ -1205,6 +1237,87 @@ private actor SemanticMemoryIndexActor {
         ProcessInfo.processInfo.isLowPowerModeEnabled || ProcessInfo.processInfo.thermalState == .serious || ProcessInfo.processInfo.thermalState == .critical
     }
 }
+
+#if DEBUG
+struct SemanticMemoryLifecycleTestResult: Sendable {
+    let initialChunkCount: Int
+    let updatedChunkCount: Int
+    let deletedChunkCount: Int
+    let updatedSearchMatchedNewText: Bool
+    let deletedSearchHasRemovedEntry: Bool
+}
+
+enum SemanticMemoryTestSupport {
+    static func loadSnapshotAfterProviderMetadataMismatch(
+        url: URL,
+        chunk: MemoryChunk,
+        text: String
+    ) throws -> MemoryIndexSnapshot? {
+        let store = try LocalSemanticIndexStore(url: url)
+        try store.replaceAll(chunks: [chunk], textByChunkID: [chunk.id: text])
+        try store.overwriteMetadataForTesting(key: "embeddingModelID", value: "offrecord.old-provider")
+        return try store.loadChunks()
+    }
+
+    static func loadSnapshotAfterSchemaMismatch(
+        url: URL,
+        chunk: MemoryChunk,
+        text: String
+    ) throws -> MemoryIndexSnapshot? {
+        let store = try LocalSemanticIndexStore(url: url)
+        try store.replaceAll(chunks: [chunk], textByChunkID: [chunk.id: text])
+        try store.overwriteMetadataForTesting(key: "schemaVersion", value: "\(MemoryIndexSnapshot.currentSchemaVersion - 1)")
+        return try store.loadChunks()
+    }
+
+    static func exerciseLifecycle(
+        url: URL,
+        initialRecords: [IndexableEntry],
+        updatedRecord: IndexableEntry,
+        deletedEntryID: UUID
+    ) async throws -> SemanticMemoryLifecycleTestResult {
+        let provider = UnavailableEmbeddingProvider()
+        let actor = SemanticMemoryIndexActor(
+            storeURL: url,
+            preferredProvider: provider,
+            fallbackProvider: provider
+        )
+
+        let initial = try await actor.rebuildAll(records: initialRecords) { _ in }
+        let updated = try await actor.upsertEntry(updatedRecord)
+        let updatedRecords = initialRecords.map { $0.id == updatedRecord.id ? updatedRecord : $0 }
+        let updatedSearch = await actor.search(query: updatedRecord.text, records: updatedRecords, limit: 6)
+
+        let deleted = try await actor.deleteEntry(id: deletedEntryID)
+        let remainingRecords = updatedRecords.filter { $0.id != deletedEntryID }
+        let deletedSearch = await actor.search(query: "Bangalore cafe", records: remainingRecords, limit: 6)
+
+        let updatedMatchedNewText: Bool
+        if case .ready(let evidence) = updatedSearch {
+            updatedMatchedNewText = evidence.contains {
+                $0.entryID == updatedRecord.id && $0.chunkText.localizedCaseInsensitiveContains(updatedRecord.text)
+            }
+        } else {
+            updatedMatchedNewText = false
+        }
+
+        let deletedHasRemovedEntry: Bool
+        if case .ready(let evidence) = deletedSearch {
+            deletedHasRemovedEntry = evidence.contains { $0.entryID == deletedEntryID }
+        } else {
+            deletedHasRemovedEntry = false
+        }
+
+        return SemanticMemoryLifecycleTestResult(
+            initialChunkCount: initial.chunks.count,
+            updatedChunkCount: updated.chunks.count,
+            deletedChunkCount: deleted.chunks.count,
+            updatedSearchMatchedNewText: updatedMatchedNewText,
+            deletedSearchHasRemovedEntry: deletedHasRemovedEntry
+        )
+    }
+}
+#endif
 
 // MARK: - Index Controller
 

@@ -245,6 +245,7 @@ enum ProactiveReflectionAnalyzer {
         insights.append(contentsOf: detectTrajectoryAnomaly(in: sortedEntries, now: now))
         insights.append(contentsOf: detectCadenceAnomaly(in: sortedEntries, now: now))
         insights.append(contentsOf: detectTopicShift(in: sortedEntries, now: now))
+        insights.append(contentsOf: detectRepeatedTheme(in: sortedEntries, now: now))
         return insights
     }
 
@@ -302,6 +303,43 @@ enum ProactiveReflectionAnalyzer {
                 message: "Friday noticed your recent entries are circling different themes than the earlier baseline.",
                 prompt: "What changed around this newer thread?",
                 evidence: evidenceSet(source: recent, baseline: baseline.prefix(3)),
+                createdAt: now,
+                expiresAt: Calendar.current.date(byAdding: .day, value: 7, to: now)
+            )
+        ]
+    }
+
+    static func detectRepeatedTheme(in entries: [ReflectionEntrySnapshot], now: Date = Date()) -> [ReflectionInsight] {
+        let sortedEntries = entries.sorted { $0.date > $1.date }
+        guard sortedEntries.count >= minimumAnomalyEntries else { return [] }
+        let recent = Array(sortedEntries.prefix(5))
+        guard recent.count >= 4 else { return [] }
+
+        var entriesByTheme: [String: [ReflectionEntrySnapshot]] = [:]
+        for entry in recent {
+            let themes = Set(themeKeywords(in: entry.text))
+            for theme in themes {
+                entriesByTheme[theme, default: []].append(entry)
+            }
+        }
+
+        guard let theme = entriesByTheme
+            .filter({ $0.value.count >= 3 })
+            .sorted(by: {
+                if $0.value.count != $1.value.count { return $0.value.count > $1.value.count }
+                return $0.key < $1.key
+            })
+            .first else { return [] }
+
+        return [
+            ReflectionInsight(
+                id: stableID("repeated-theme-\(theme.key)-\(theme.value.map(\.id.uuidString).joined())"),
+                category: .pattern,
+                priority: .medium,
+                title: "A theme is taking shape",
+                message: "Friday noticed \(theme.key.capitalized) coming up across several recent entries.",
+                prompt: "What is this thread asking you to notice?",
+                evidence: theme.value.prefix(4).map { evidence(from: $0, role: .source) },
                 createdAt: now,
                 expiresAt: Calendar.current.date(byAdding: .day, value: 7, to: now)
             )
@@ -670,6 +708,14 @@ enum ProactiveReflectionAnalyzer {
             .map(String.init)
             .filter { $0.count > 4 && !ReflectionStopWords.words.contains($0) }
         return Array(NSOrderedSet(array: words).compactMap { $0 as? String }.prefix(limit))
+    }
+
+    private static func themeKeywords(in text: String) -> [String] {
+        let topics = topicKeywords(in: text, limit: 12)
+        let entities = TextSignals.extractEntities(from: text)
+            .map { $0.lowercased() }
+            .filter { $0.count > 2 && !ReflectionStopWords.words.contains($0) }
+        return Array(NSOrderedSet(array: topics + entities).compactMap { $0 as? String })
     }
 
     private static func topTopics(in entries: [ReflectionEntrySnapshot], limit: Int) -> [String] {
@@ -1117,6 +1163,22 @@ private struct ReflectionInsightDetailView: View {
                         Text(evidence.date, style: .date)
                             .font(OffRecordTypography.labelSmall)
                             .foregroundColor(OffRecordColor.textSecondary)
+                        HStack(spacing: 6) {
+                            Text(roleLabel(for: evidence.role))
+                                .font(OffRecordTypography.labelSmall)
+                                .foregroundColor(OffRecordColor.textLavender)
+                                .padding(.horizontal, 7)
+                                .padding(.vertical, 3)
+                                .background(Capsule().fill(OffRecordColor.backgroundLavenderTint))
+                            if let mood = evidence.mood, !mood.isEmpty {
+                                Text(mood.capitalized)
+                                    .font(OffRecordTypography.labelSmall)
+                                    .foregroundColor(OffRecordColor.textSage)
+                                    .padding(.horizontal, 7)
+                                    .padding(.vertical, 3)
+                                    .background(Capsule().fill(OffRecordColor.backgroundSageTint))
+                            }
+                        }
                         Text(snippet(for: evidence))
                             .font(OffRecordTypography.bodySmall)
                             .foregroundColor(OffRecordColor.textPrimary)
@@ -1130,6 +1192,14 @@ private struct ReflectionInsightDetailView: View {
                     )
                 }
             }
+        }
+    }
+
+    private func roleLabel(for role: ReflectionEvidence.Role) -> String {
+        switch role {
+        case .source: return "Source"
+        case .baseline: return "Baseline"
+        case .trajectory: return "Trend"
         }
     }
 
