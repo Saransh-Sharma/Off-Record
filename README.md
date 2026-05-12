@@ -7,7 +7,7 @@
 
 OffRecord AI Journal is a **free voice journal app** for iOS that turns your spoken thoughts into a searchable, AI-powered diary — entirely on your device. No accounts, no cloud servers, no data collection. It is the **private journal app** built for people who value both convenience and privacy.
 
-Speak naturally, and OffRecord AI Journal transcribes everything offline using Apple's on-device Speech framework. Over time, **Friday** learns your personality, emotional patterns, and the people and topics in your life. Think of it as an **AI diary app** with a private assistant that actually understands you, without ever sending a byte of your data anywhere.
+Speak naturally, and OffRecord AI Journal transcribes everything offline using Apple's on-device Speech framework. Over time, **Friday** learns your personality, emotional patterns, and the people and topics in your life. Semantic Memory helps you find entries by meaning, and Evidence-Based Friday answers with citations from your own journal when there is enough support. Think of it as an **AI diary app** with a private assistant that actually understands you, without ever sending a byte of your data anywhere.
 
 **Your thoughts never leave your device. Ever.**
 
@@ -39,7 +39,10 @@ Speak naturally, and OffRecord AI Journal transcribes everything offline using A
 Record your thoughts and OffRecord AI Journal transcribes them instantly using Apple's on-device Speech framework. No internet required. This is **voice journaling** the way it should work — fast, private, and always available.
 
 ### Friday AI — Your Personal AI Journal Companion
-The **Friday journal** feature learns your personality, communication style, emotional patterns, and life themes. Everything runs on your iPhone's Neural Engine. No server-side AI, no API calls — a truly **on-device AI journal**.
+The **Friday journal** feature learns your personality, communication style, emotional patterns, and life themes. Free-form Friday questions retrieve evidence from your entries first, then answer with visible citations when the journal supports a claim. Processing stays local on your iPhone or iPad. No server-side AI for journal data, no developer API calls — a truly **on-device AI journal**.
+
+### Semantic Memory Search
+Search your Timeline by meaning, not only exact words. Queries like "stress after work" or "people I miss" can surface related entries even when those exact words are not present, while exact names, places, moods, dates, and starred entries still rank highly.
 
 ### Knowledge Graph
 Automatically tracks the people, places, and topics you mention across entries. See how your world connects over time with an interactive relationship map.
@@ -85,9 +88,10 @@ OffRecord AI Journal carries Apple's **"Data Not Collected"** privacy nutrition 
 | **Works offline** | Fully functional | Partial or none |
 | **Third-party SDKs** | None | Multiple |
 | **Ad tracking** | None | Common |
-| **AI processing** | On-device Neural Engine | Server-side APIs |
+| **AI processing** | On-device Apple frameworks | Server-side APIs |
+| **Semantic memory** | Local-only derived index | Often cloud search or server embeddings |
 
-All AI features — voice transcription, sentiment analysis, Friday, knowledge graph — run entirely on your iPhone or iPad using Apple's NaturalLanguage and Speech frameworks. Nothing is ever transmitted off your device.
+All AI features — voice transcription, sentiment analysis, semantic search, Friday, knowledge graph — run entirely on your iPhone or iPad using Apple's NaturalLanguage and Speech frameworks. Semantic Memory stores a rebuildable local index on your device; it is not sent to developer servers or third-party APIs.
 
 ---
 
@@ -114,7 +118,7 @@ OffRecord AI Journal is the only **free journal app** with full AI capabilities 
 
 - **Language:** Swift, SwiftUI
 - **Data:** Core Data + CloudKit (optional iCloud sync)
-- **AI/ML:** Apple NaturalLanguage, Apple Speech, on-device NLP via Neural Engine
+- **AI/ML:** Apple NaturalLanguage, NLContextualEmbedding, Apple Speech, on-device NLP via Neural Engine
 - **Minimum:** iOS 17.0+
 - **Devices:** iPhone, iPad (Universal)
 
@@ -126,7 +130,7 @@ OffRecord AI Journal is the only **free journal app** with full AI capabilities 
 Yes. OffRecord AI Journal is completely free with no subscriptions, no in-app purchases, and no ads.
 
 ### Does OffRecord AI Journal work without an internet connection?
-Yes. Every feature — including voice transcription and AI analysis — works fully offline. OffRecord AI Journal is an **on-device AI journal** that never needs a server.
+Yes. Every feature — including voice transcription, AI analysis, semantic search, and Friday answers — works without developer servers. Apple embedding model assets may need to be available on the device before semantic indexing can run; if assets are unavailable, OffRecord shows an understandable fallback state.
 
 ### Where is my journal data stored?
 All data is stored locally on your device in Core Data. If you enable iCloud Sync, entries and photo attachments sync through your personal iCloud account. Audio recordings stay on device. OffRecord AI Journal never has access to your data.
@@ -135,7 +139,16 @@ All data is stored locally on your device in Core Data. If you enable iCloud Syn
 Yes. You can export to PDF, JSON, Markdown, CSV, or create an AES-256 encrypted backup file.
 
 ### What is Friday?
-Friday is an on-device AI assistant that learns your personality traits, communication style, emotional patterns, and life themes from your journal entries. It is unique to OffRecord AI Journal and runs entirely on your iPhone's Neural Engine.
+Friday is an on-device AI assistant that learns your personality traits, communication style, emotional patterns, and life themes from your journal entries. Evidence-Based Friday retrieves relevant entries before answering free-form questions, cites the source entries it used, and hedges or refuses when the journal does not contain enough evidence.
+
+### How does Semantic Memory Search work?
+OffRecord chunks your entries, creates local on-device embeddings, and combines semantic retrieval with lexical search. The derived index is stored locally, can be deleted or rebuilt from Settings, and does not replace or modify your journal entries.
+
+### Are Friday citations real journal evidence?
+Yes. Evidence chips point back to retrieved `EvidenceReference` sources from your own entries. Friday should not make substantive claims without supporting evidence; when evidence is weak, missing, contradictory, unavailable, or still indexing, it should say so instead of guessing.
+
+### Are embeddings or the semantic index synced to iCloud?
+No. Your journal entries can optionally sync through your personal iCloud account, but the derived Semantic Memory index is local-only and rebuilds separately on each device. Apple embedding asset downloads may fetch model files only; your journal text stays on device.
 
 ### Does OffRecord AI Journal collect any analytics or telemetry?
 No. Zero data collection. No analytics SDKs, no crash reporting services, no telemetry of any kind. Check Apple's privacy label for confirmation.
@@ -150,6 +163,7 @@ OffRecord AI Journal runs on any iPhone or iPad with iOS 17 or later.
 - **Website:** [offrecord.example.com](https://offrecord.example.com)
 - **App Store:** [Download OffRecord AI Journal Free](https://apps.apple.com/app/id6766499684)
 - **Blog:** [offrecord.example.com/blog](https://offrecord.example.com/blog)
+- **Semantic Memory + Friday:** [SEMANTIC_MEMORY_FRIDAY.md](SEMANTIC_MEMORY_FRIDAY.md)
 - **Privacy Policy:** [offrecord.example.com/privacy](https://offrecord.example.com/privacy.html)
 - **Support:** [offrecord.example.com/support](https://offrecord.example.com/support.html)
 

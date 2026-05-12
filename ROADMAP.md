@@ -21,41 +21,45 @@ This roadmap outlines the planned evolution of OffRecord AI Journal. Contributio
 - Weekly Insight Cards
 - Improved NLP keyword extraction
 
-### v1.2 — Talk to Friday *(current)*
+### v1.2 — Talk to Friday
 - Talk to Friday: conversational chat with your Friday
 - Shareable Personality Cards (Instagram Stories + Twitter/X formats)
 - Smarter App Store review prompts
 
+### v1.3 — Semantic Memory Search + Evidence-Based Friday *(current)*
+- Timeline semantic search using local Apple NaturalLanguage embeddings and lexical matching
+- Hybrid ranking for meaning matches, exact people/places/topics, recency, starred entries, mood filters, and date filters
+- Evidence-Based Friday answers that retrieve journal evidence first and cite source entries
+- Deterministic Friday fallback that hedges or refuses when evidence is missing, weak, contradictory, unavailable, or still indexing
+- Local-only semantic index sidecar with Settings controls for rebuild and delete
+- Background index lifecycle for first build, incremental entry updates, deletes, and CloudKit reconciliation
+- Optional iOS 26 Foundation Models phrasing layer where available; retrieved evidence remains the source of truth
+- Automated and manual QA coverage for chunking, ranking, typed states, index lifecycle, and Friday citation behavior
+
 ## Planned
 
-### v1.3 — Semantic Search & Proactive Insights
-- NLEmbedding for 512-dimensional sentence embeddings
-- Semantic search via cosine similarity
+### v1.4 — Semantic Intelligence Polish, Apple Watch, macOS & Multi-Language
 - K-means clustering for thematic discovery
 - Z-score anomaly detection for unusual entries
-- Graph-based semantic indexing (text chunks + knowledge graph entities unified)
-- Foundation for on-device RAG pipeline (inspired by [MiniRAG](https://github.com/HKUDS/MiniRAG) architecture)
 - Causal chains: connect entities temporally to emotional outcomes ("your mood drops after mentions of [person] in [context]")
 - Decision-language extraction: detect and store patterns like "I decided to...", "I regret...", "I chose..."
-
-### v1.4 — Apple Watch, macOS & Multi-Language
 - Native macOS target — same SwiftUI codebase, sidebar navigation, Friday accessible from the desktop
 - Apple Watch companion app (WatchKit) for voice mood check-ins
 - WatchConnectivity for iPhone-Watch sync
 - Watch Complications for quick access
 - Multi-language UI via String Catalogs
 
-### v2.0 — Foundation Models *(iOS 26, iPhone 15 Pro+)*
-- Apple Foundation Models integration (on-device 3B LLM)
-- LanguageModelSession for multi-turn conversations
-- Tool calling for autonomous Core Data queries
-- @Generable for type-safe structured outputs
+### v2.0 — Optional Foundation Models Enhancements *(iOS 26, Apple Intelligence-capable devices)*
+- Deeper Apple Foundation Models integration where `SystemLanguageModel.default.availability` allows it
+- LanguageModelSession for richer multi-turn wording after evidence retrieval
+- Tool calling experiments that query local app data through explicit, evidence-preserving tools
+- @Generable for type-safe structured outputs that map observations to retrieved evidence IDs
 - Multi-tier personality conditioning for Friday conversations (demographic + behavioral + psychometric prompts, informed by recent persona-modeling research)
 - "How would I react?" — Friday predicts your response to situations based on past patterns and personality
 - Friday replies in your voice using Apple Personal Voice API (AVSpeechSynthesizer)
 - Autobiographical memory consolidation: monthly distillation of journal entries into semantic self-knowledge ("I tend to...", "I always...")
 - SpeechAnalyzer replaces SFSpeechRecognizer
-- Zero network calls — entire pipeline on-device
+- Zero network calls for journal text, embeddings, Friday prompts, or retrieved evidence
 
 ### v2.5 — LoRA Fine-Tuning
 - Personal LoRA adapter training on Mac (macOS app becomes the training environment)
@@ -99,4 +103,4 @@ The goal of v3.0 is a private assistant with deep understanding of your journali
 
 ---
 
-For technical details, see [ARCHITECTURE.md](ARCHITECTURE.md) and the [Technology page](https://offrecord.example.com/technology.html).
+For technical details, see [ARCHITECTURE.md](ARCHITECTURE.md), [SEMANTIC_MEMORY_FRIDAY.md](SEMANTIC_MEMORY_FRIDAY.md), and the [Technology page](https://offrecord.example.com/technology.html).
