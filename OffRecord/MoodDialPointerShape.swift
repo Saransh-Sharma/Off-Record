@@ -2,8 +2,8 @@ import SwiftUI
 
 struct MoodDialPointerShape: Shape {
     func path(in rect: CGRect) -> Path {
-        let baseWidth: CGFloat = 48
-        let baseHeight: CGFloat = 108
+        let baseWidth: CGFloat = 50
+        let baseHeight: CGFloat = 136
         let scale = min(rect.width / baseWidth, rect.height / baseHeight)
         let origin = CGPoint(
             x: rect.midX - baseWidth * scale / 2,
@@ -16,36 +16,36 @@ struct MoodDialPointerShape: Shape {
 
         var path = Path()
 
-        path.move(to: point(24, 108))
+        path.move(to: point(25, 136))
         path.addCurve(
-            to: point(8.2, 66),
-            control1: point(17.4, 106.1),
-            control2: point(8.8, 90.2)
+            to: point(8.9, 82),
+            control1: point(18.1, 133.4),
+            control2: point(9.4, 111.2)
         )
         path.addCurve(
-            to: point(9.8, 25),
-            control1: point(6.4, 50.2),
-            control2: point(6.8, 36.6)
+            to: point(10.8, 29),
+            control1: point(6.9, 60.5),
+            control2: point(7.3, 42)
         )
         path.addCurve(
-            to: point(24, 1.8),
-            control1: point(13.2, 9.2),
-            control2: point(17.5, 1.8)
+            to: point(25, 2),
+            control1: point(14.8, 10.4),
+            control2: point(18.8, 2)
         )
         path.addCurve(
-            to: point(38.2, 25),
-            control1: point(30.5, 1.8),
-            control2: point(34.8, 9.2)
+            to: point(39.2, 29),
+            control1: point(31.2, 2),
+            control2: point(35.2, 10.4)
         )
         path.addCurve(
-            to: point(39.8, 66),
-            control1: point(41.2, 36.6),
-            control2: point(41.6, 50.2)
+            to: point(41.1, 82),
+            control1: point(42.7, 42),
+            control2: point(43.1, 60.5)
         )
         path.addCurve(
-            to: point(24, 108),
-            control1: point(39.2, 90.2),
-            control2: point(30.6, 106.1)
+            to: point(25, 136),
+            control1: point(40.6, 111.2),
+            control2: point(31.9, 133.4)
         )
         path.closeSubpath()
         return path

@@ -8,10 +8,10 @@ struct MoodDialPointer: View {
 
             Circle()
                 .fill(OffRecordColor.backgroundPrimary)
-                .frame(width: 9, height: 9)
-                .offset(x: 19.5, y: 77.5)
+                .frame(width: 9.5, height: 9.5)
+                .offset(x: 20.25, y: 101.25)
         }
-        .frame(width: 48, height: 108)
+        .frame(width: 50, height: 136)
         .accessibilityHidden(true)
     }
 }

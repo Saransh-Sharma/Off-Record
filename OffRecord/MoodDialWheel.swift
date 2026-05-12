@@ -55,7 +55,7 @@ struct MoodDialWheel: View {
             ForEach(Array(Mood.dialMoods.enumerated()), id: \.element.id) { index, mood in
                 let isSelected = mood == selectedMood
                 let sweep = MoodDialMath.segmentSweepDegrees()
-                let gap = 1.8
+                let gap = 0.0
                 let startAngle = MoodDialMath.arcStartDegrees + Double(index) * sweep + gap / 2
                 let endAngle = MoodDialMath.arcStartDegrees + Double(index + 1) * sweep - gap / 2
                 let outerRadius = metrics.outerRadius + (isSelected ? 10 : 0)
@@ -69,10 +69,6 @@ struct MoodDialWheel: View {
 
                 segmentShape
                     .fill(mood.dialSegmentColor.opacity(isSelected ? 1 : 0.78))
-                .overlay(
-                    segmentShape
-                        .stroke(Color(hex: 0xFFF8F0).opacity(isSelected ? 0.72 : 0.58), lineWidth: isSelected ? 2.5 : 2)
-                )
                 .overlay(
                     segmentShape
                         .fill(Color.white.opacity(isSelected ? 0.08 : 0))

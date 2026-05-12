@@ -26,8 +26,8 @@ struct MoodDialWheelMetrics {
     }
 
     var pointerCenterY: CGFloat {
-        let idealCenterY = center.y - innerRadius + 82
-        let lowestCenterY = size.height - safeAreaInsets.bottom - 50
+        let idealCenterY = center.y - innerRadius + 108
+        let lowestCenterY = size.height - safeAreaInsets.bottom - 34
         return min(idealCenterY, lowestCenterY)
     }
 
