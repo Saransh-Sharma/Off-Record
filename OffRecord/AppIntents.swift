@@ -38,6 +38,7 @@ struct AddDiaryEntryIntent: AppIntent {
 
         let existingEntry = try? context.fetch(request).first
 
+        let savedEntry: DiaryEntry
         if let entry = existingEntry {
             // Append to existing entry
             let existingText = entry.text ?? ""
@@ -47,6 +48,7 @@ struct AddDiaryEntryIntent: AppIntent {
                 entry.text = existingText + "\n\n" + (text ?? "")
             }
             entry.updatedAt = Date()
+            savedEntry = entry
         } else {
             // Create new entry
             let entry = DiaryEntry(context: context)
@@ -56,9 +58,16 @@ struct AddDiaryEntryIntent: AppIntent {
             entry.updatedAt = Date()
             entry.text = text ?? ""
             entry.isStarred = false
+            savedEntry = entry
         }
 
+        let semanticRecord = IndexableEntry(entry: savedEntry)
         try context.save()
+        if let semanticRecord {
+            await MainActor.run {
+                SemanticMemoryIndexController.shared.upsertRecord(semanticRecord)
+            }
+        }
 
         return .result(dialog: "Added to your diary.")
     }
