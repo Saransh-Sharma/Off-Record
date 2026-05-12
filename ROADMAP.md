@@ -38,16 +38,24 @@ This roadmap outlines the planned evolution of OffRecord AI Journal. Contributio
 
 ## Planned
 
-### v1.4 — Semantic Intelligence Polish, Apple Watch, macOS & Multi-Language
-- K-means clustering for thematic discovery
-- Z-score anomaly detection for unusual entries
-- Causal chains: connect entities temporally to emotional outcomes ("your mood drops after mentions of [person] in [context]")
-- Decision-language extraction: detect and store patterns like "I decided to...", "I regret...", "I chose..."
-- Native macOS target — same SwiftUI codebase, sidebar navigation, Friday accessible from the desktop
+### v1.4 — Friday Proactive Reflection + Semantic Intelligence Polish
+- Proactive Friday cards that surface unusual entries, theme shifts, weekly recaps, and decision/regret follow-ups
+- "Themes taking shape" insight from repeated topics and entities across recent entries, always with source evidence
+- Context-aware Today prompts that appear only when they can help the next reflection
+- Privacy-safe Friday smart reminders that never expose names, places, snippets, or sensitive content on the Lock Screen
+- Decision follow-up loop: detect patterns like "I decided to...", "I regret...", and "I chose...", then let users mark them reflected
+- Evidence-first framing for proactive insights: every card explains why it appeared and links back to supporting entries
+- Optional String Catalog groundwork for new or changed v1.4 copy; no full multi-language claim until at least one locale is complete and QA'd
+
+### v1.5 — Apple Watch Companion
 - Apple Watch companion app (WatchKit) for voice mood check-ins
 - WatchConnectivity for iPhone-Watch sync
 - Watch Complications for quick access
-- Multi-language UI via String Catalogs
+
+### v1.6 — Native macOS
+- Native macOS target using the shared SwiftUI codebase
+- Sidebar navigation and desktop-optimized Timeline, Friday, and Settings surfaces
+- Friday accessible from the desktop, with the same local-only evidence rules
 
 ### v2.0 — Optional Foundation Models Enhancements *(iOS 26, Apple Intelligence-capable devices)*
 - Deeper Apple Foundation Models integration where `SystemLanguageModel.default.availability` allows it

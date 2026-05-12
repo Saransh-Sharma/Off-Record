@@ -2,7 +2,20 @@
 
 All notable changes to OffRecord AI Journal are documented here.
 
-## [1.2.0] — Unreleased
+## [1.3.0] — Unreleased
+
+### Added
+- **Semantic Memory Search**: Timeline search now finds entries by meaning while preserving exact people, places, topics, mood, date, recency, and starred-entry ranking.
+- **Evidence-Based Friday**: Free-form Friday answers retrieve journal evidence first, cite source entries, and refuse unsupported questions instead of guessing.
+- **Semantic Memory Controls**: Settings now shows index status and supports rebuilding or deleting the local-only semantic index.
+
+### Privacy
+- Semantic embeddings, chunk metadata, and lexical index data are local-only derived data. They are rebuildable per device and are not synced through CloudKit.
+
+### QA
+- Added deterministic unit and UI coverage for chunking, hybrid ranking, index lifecycle, typed search states, citations, refusal paths, and evidence deep links.
+
+## [1.2.0] — 2026-05-11
 
 ### Added
 - **Talk to Friday**: Chat with your Friday — ask about mood patterns, personality, journaling habits
