@@ -17,6 +17,7 @@ import Speech
 struct TimelineView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @ObservedObject private var semanticMemory = SemanticMemoryIndexController.shared
 
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \DiaryEntry.date, ascending: false)],
@@ -33,6 +34,11 @@ struct TimelineView: View {
     @State private var endDate: Date? = nil
     @State private var isListening: Bool = false
     @State private var searchSuggestions: [FridayAssistantEngine.SearchSuggestion] = []
+    @State private var semanticResults: [UUID: EvidenceReference] = [:]
+    @State private var semanticSearchQuery: String = ""
+    @State private var semanticSearchTask: Task<Void, Never>?
+    @State private var isSemanticSearching = false
+    @State private var semanticSearchMessage: String?
 
     #if os(iOS)
     @StateObject private var voiceSearch = VoiceSearchManager()
@@ -56,6 +62,8 @@ struct TimelineView: View {
             if hasActiveFilters {
                 activeFiltersBar
             }
+
+            semanticSearchStatusBanner
             
             // Entry list
                 List {
@@ -69,7 +77,8 @@ struct TimelineView: View {
                                     EntryRowView(
                                         entry: entry,
                                         searchText: searchText,
-                                        dateString: entryDateString(entry)
+                                        dateString: entryDateString(entry),
+                                        evidence: entry.id.flatMap { semanticResults[$0] }
                                     )
                                 }
                                 .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
@@ -149,9 +158,25 @@ struct TimelineView: View {
             let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
             if trimmed.count >= 2 {
                 searchSuggestions = assistant.searchSuggestions(for: trimmed)
+                scheduleSemanticSearch(trimmed)
             } else {
                 searchSuggestions = []
+                semanticResults = [:]
+                semanticSearchQuery = ""
+                semanticSearchTask?.cancel()
+                isSemanticSearching = false
+                semanticSearchMessage = nil
             }
+        }
+        .onChange(of: semanticMemory.isBuilding) { _, isBuilding in
+            guard !isBuilding else { return }
+            let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.count >= 2, isSemanticSearching {
+                scheduleSemanticSearch(trimmed)
+            }
+        }
+        .onAppear {
+            semanticMemory.ensureIndexed(entries: Array(entries))
         }
         .searchSuggestions {
             ForEach(searchSuggestions, id: \.text) { suggestion in
@@ -170,6 +195,35 @@ struct TimelineView: View {
                 }
                 .searchCompletion(suggestion.text)
             }
+        }
+    }
+
+    @ViewBuilder
+    private var semanticSearchStatusBanner: some View {
+        let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty, semanticMemory.isBuilding {
+            HStack(spacing: 10) {
+                ProgressView(value: semanticMemory.progress)
+                    .frame(width: 44)
+                Text("Building semantic memory")
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(OffRecordColor.textSecondary)
+                Spacer()
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+            .background(OffRecordColor.surfaceWarm)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("semanticMemory.buildingTitle")
+        } else if !trimmed.isEmpty, let semanticSearchMessage {
+            Text(semanticSearchMessage)
+                .font(.caption)
+                .foregroundColor(OffRecordColor.textSecondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal)
+                .padding(.vertical, 8)
+                .background(OffRecordColor.surfaceWarm)
+                .accessibilityIdentifier("semanticMemory.searchMessage")
         }
     }
     
@@ -331,13 +385,32 @@ struct TimelineView: View {
     
     private var emptySearchState: some View {
         VStack(spacing: 16) {
-            Image(systemName: "magnifyingglass")
+            Image(systemName: semanticMemory.isBuilding ? "brain.head.profile" : "magnifyingglass")
                 .font(.system(size: 40))
                 .foregroundColor(OffRecordColor.textSecondary)
             
-            Text("No entries found")
+            Text(semanticMemory.isBuilding ? "Building semantic memory" : "No entries found")
                 .font(.headline)
                 .foregroundColor(OffRecordColor.textHeading)
+                .accessibilityIdentifier(semanticMemory.isBuilding ? "semanticMemory.buildingTitle" : "timeline.emptyTitle")
+
+            if semanticMemory.isBuilding {
+                ProgressView(value: semanticMemory.progress)
+                    .frame(maxWidth: 220)
+                Text("Friday is indexing your journal locally. Search results will improve as this finishes.")
+                    .font(.caption)
+                    .foregroundColor(OffRecordColor.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+                    .accessibilityIdentifier("semanticMemory.buildingMessage")
+            } else if let semanticSearchMessage {
+                Text(semanticSearchMessage)
+                    .font(.caption)
+                    .foregroundColor(OffRecordColor.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+                    .accessibilityIdentifier("semanticMemory.searchMessage")
+            }
             
             if hasActiveFilters {
                 Button("Clear Filters") {
@@ -380,8 +453,53 @@ struct TimelineView: View {
             startDate = nil
             endDate = nil
             searchText = ""
+            semanticResults = [:]
+            semanticSearchQuery = ""
+            semanticSearchMessage = nil
         }
         HapticManager.shared.buttonTap()
+    }
+
+    private func scheduleSemanticSearch(_ query: String) {
+        semanticSearchTask?.cancel()
+        let entrySnapshot = Array(entries)
+        semanticSearchTask = Task {
+            try? await Task.sleep(nanoseconds: 220_000_000)
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                isSemanticSearching = true
+                semanticSearchQuery = query
+                semanticSearchMessage = "Searching semantic memory..."
+            }
+            let searchResult = await semanticMemory.search(query: query, entries: entrySnapshot, limit: 48)
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                switch searchResult {
+                case .ready(let results):
+                    var bestByEntry: [UUID: EvidenceReference] = [:]
+                    for result in results {
+                        if let existing = bestByEntry[result.entryID] {
+                            if result.score > existing.score {
+                                bestByEntry[result.entryID] = result
+                            }
+                        } else {
+                            bestByEntry[result.entryID] = result
+                        }
+                    }
+                    semanticResults = bestByEntry
+                    semanticSearchMessage = nil
+                    isSemanticSearching = false
+                case .building(_, let message):
+                    semanticResults = [:]
+                    semanticSearchMessage = message
+                    isSemanticSearching = true
+                case .unavailable(let message), .failed(let message):
+                    semanticResults = [:]
+                    semanticSearchMessage = message
+                    isSemanticSearching = false
+                }
+            }
+        }
     }
     
     private func formatShortDate(_ date: Date) -> String {
@@ -423,8 +541,13 @@ struct TimelineView: View {
             // Text search
             let searchTrimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
             if !searchTrimmed.isEmpty {
-                let text = entry.text ?? ""
-                if !text.localizedCaseInsensitiveContains(searchTrimmed) { return false }
+                if semanticSearchQuery == searchTrimmed, !isSemanticSearching {
+                    guard let id = entry.id else { return false }
+                    if semanticResults[id] == nil { return false }
+                } else {
+                    let text = entry.text ?? ""
+                    if !text.localizedCaseInsensitiveContains(searchTrimmed) { return false }
+                }
             }
             
             return true
@@ -471,12 +594,14 @@ struct TimelineView: View {
     }
 
     private func delete(entries: [DiaryEntry], at offsets: IndexSet) {
+        let deletedIDs = offsets.compactMap { entries[$0].id }
         for index in offsets {
             let entry = entries[index]
             viewContext.delete(entry)
         }
         do {
             try viewContext.save()
+            deletedIDs.forEach { SemanticMemoryIndexController.shared.deleteEntry(id: $0) }
             HapticManager.shared.entryDeleted()
         } catch {
             // ignore for now
@@ -490,6 +615,7 @@ struct EntryRowView: View {
     let entry: DiaryEntry
     let searchText: String
     let dateString: String
+    let evidence: EvidenceReference?
 
     private var wordCount: Int {
         guard let text = entry.text, !text.isEmpty else { return 0 }
@@ -530,8 +656,9 @@ struct EntryRowView: View {
                 }
 
                 if let text = entry.text, !text.isEmpty {
-                    highlightedText(text)
+                    highlightedText(evidence?.snippet ?? text)
                         .lineLimit(2)
+                        .accessibilityIdentifier(evidence == nil ? "timeline.entrySnippet" : "timeline.evidenceSnippet")
                 } else {
                     Text("Tap to add text")
                         .foregroundColor(OffRecordColor.textSecondary)
@@ -539,6 +666,17 @@ struct EntryRowView: View {
                 }
             }
             Spacer()
+            if let evidence {
+                VStack(alignment: .trailing, spacing: 4) {
+                    Image(systemName: evidence.matchReason == .exact ? "text.magnifyingglass" : "brain.head.profile")
+                        .foregroundColor(OffRecordColor.brandLavenderDark)
+                    Text(evidence.matchReason.rawValue)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundColor(OffRecordColor.textLavender)
+                        .multilineTextAlignment(.trailing)
+                }
+                .accessibilityIdentifier("timeline.evidenceReason.\(evidence.matchReason.rawValue)")
+            }
             if entry.isStarred {
                 Image(systemName: "star.fill")
                     .foregroundColor(OffRecordColor.textYellow)
@@ -554,6 +692,8 @@ struct EntryRowView: View {
                         .stroke(OffRecordColor.borderSoft, lineWidth: 1)
                 )
         )
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("timeline.entryRow")
     }
 
     @ViewBuilder

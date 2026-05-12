@@ -32,6 +32,7 @@ struct TodayView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @AppStorage("authorName") private var authorName: String = ""
+    @ObservedObject private var proactiveReflection = ProactiveReflectionController.shared
 
     @StateObject private var recorder = AudioRecorder()
     @State private var recordingState: RecordingState = .idle
@@ -174,7 +175,11 @@ struct TodayView: View {
             }
         }
         .onAppear {
+            proactiveReflection.refreshIfNeeded(entries: Array(allEntries))
             refreshHero(recordExposure: true)
+        }
+        .onChange(of: allEntries.count) { _, _ in
+            proactiveReflection.refreshIfNeeded(entries: Array(allEntries))
         }
         .onChange(of: latestEntry?.objectID) { _, _ in
             guard !isHeroRecordingActive else { return }
@@ -319,6 +324,13 @@ struct TodayView: View {
                     )
                 } else {
                     WelcomeCard()
+                }
+
+                ProactiveReflectionPromptCard(
+                    entries: Array(allEntries),
+                    hasEntryToday: effectiveLatestEntry != nil
+                ) { insight in
+                    startTypedNote(promptContext: insight.prompt, heroPromptID: nil)
                 }
             }
         }
@@ -868,6 +880,7 @@ struct TodayView: View {
                             date: entry.date ?? Date(),
                             duration: entry.duration
                         )
+                        SemanticMemoryIndexController.shared.upsertEntry(entry)
                     } catch {
                         logger.error("Failed to update entry with transcription: \(error.localizedDescription)")
                     }

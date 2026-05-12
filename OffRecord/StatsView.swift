@@ -13,6 +13,7 @@ struct StatsView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @ObservedObject private var goalManager = GoalManager.shared
+    @ObservedObject private var proactiveReflection = ProactiveReflectionController.shared
 
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \DiaryEntry.date, ascending: false)],
@@ -31,6 +32,9 @@ struct StatsView: View {
                 } else {
                     // Shareable Weekly Insights
                     WeeklyInsightsSection(entries: Array(entries))
+
+                    // Proactive weekly reflection
+                    ProactiveWeeklyReflectionCard(entries: Array(entries))
 
                     // AI Insights
                     aiInsightsCard
@@ -68,6 +72,7 @@ struct StatsView: View {
             }
         }
         .onAppear {
+            proactiveReflection.refreshIfNeeded(entries: Array(entries))
             if let milestone = goalManager.checkMilestone(currentStreak: currentStreak) {
                 HapticManager.shared.streakMilestone()
                 withAnimation(.spring(response: 0.5)) {
