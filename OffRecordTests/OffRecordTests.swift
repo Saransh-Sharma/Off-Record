@@ -7,8 +7,12 @@
 
 import Testing
 import Foundation
+import SwiftUI
 import CryptoKit
 import UserNotifications
+#if canImport(UIKit)
+import UIKit
+#endif
 @testable import OffRecord
 
 // MARK: - Semantic Memory Tests
@@ -648,6 +652,77 @@ struct MoodTests {
         let selectable = Mood.selectableMoods
         #expect(!selectable.contains(.none))
         #expect(selectable.count == Mood.allCases.count - 1)
+    }
+
+    @Test func dialMoodsUseHandoffOrder() {
+        #expect(Mood.dialMoods == [.angry, .sad, .anxious, .tired, .none, .calm, .grateful, .happy, .excited])
+        #expect(Mood.neutralDialIndex == 4)
+    }
+
+    @Test func dialOpensOnSavedMoodOrNeutralFallback() {
+        #expect(MoodDialPersistence.openingMood(for: .sad) == .sad)
+        #expect(MoodDialPersistence.openingMood(for: .none) == .none)
+    }
+
+    @Test func dialMathSnapsToNearestMood() {
+        for (index, mood) in Mood.dialMoods.enumerated() {
+            let rotation = MoodDialMath.rotationDegrees(for: index)
+            #expect(MoodDialMath.nearestIndex(forRotationDegrees: rotation) == index)
+            #expect(MoodDialMath.mood(forRotationDegrees: rotation) == mood)
+        }
+    }
+
+    @Test func dialMathClampsOutsideBoundaries() {
+        #expect(MoodDialMath.nearestIndex(forRotationDegrees: 999) == 0)
+        #expect(MoodDialMath.nearestIndex(forRotationDegrees: -999) == Mood.dialMoods.count - 1)
+        #expect(MoodDialMath.clampedRotationDegrees(999) == MoodDialMath.rotationDegrees(for: 0))
+        #expect(MoodDialMath.clampedRotationDegrees(-999) == MoodDialMath.rotationDegrees(for: Mood.dialMoods.count - 1))
+    }
+
+    @Test func dialMathAddsEdgeResistanceBeyondBoundaries() {
+        let first = MoodDialMath.rotationDegrees(for: 0)
+        let last = MoodDialMath.rotationDegrees(for: Mood.dialMoods.count - 1)
+        let resistedPastFirst = MoodDialMath.resistedRotationDegrees(first + 100)
+        let resistedPastLast = MoodDialMath.resistedRotationDegrees(last - 100)
+
+        #expect(resistedPastFirst > first)
+        #expect(resistedPastFirst < first + 100)
+        #expect(resistedPastLast < last)
+        #expect(resistedPastLast > last - 100)
+    }
+
+    @Test func dialMetricsUseProportionalPlacement() {
+        let metrics = MoodDialWheelMetrics(
+            size: CGSize(width: 393, height: 852),
+            safeAreaInsets: EdgeInsets(top: 59, leading: 0, bottom: 34, trailing: 0)
+        )
+
+        #expect(metrics.dialTop >= 852 * 0.58)
+        #expect(metrics.dialTop <= 852 * 0.62)
+        #expect(abs(metrics.center.y - (metrics.dialTop + metrics.outerRadius)) < 0.001)
+        #expect(metrics.outerRadius >= 360)
+        #expect(metrics.outerRadius <= 420)
+        #expect(metrics.innerRadius >= 240)
+        #expect(metrics.innerRadius <= 280)
+    }
+
+    @Test func dialAssetNamesResolveForEveryMood() {
+        for mood in Mood.dialMoods {
+            #expect(!mood.largeMoodAssetName.isEmpty)
+            #expect(!mood.miniMoodAssetName.isEmpty)
+            #expect(!mood.moodGlowAssetName.isEmpty)
+            #if canImport(UIKit)
+            #expect(UIImage(named: mood.largeMoodAssetName) != nil, "Missing large asset for \(mood.displayName)")
+            #expect(UIImage(named: mood.miniMoodAssetName) != nil, "Missing mini asset for \(mood.displayName)")
+            #expect(UIImage(named: mood.moodGlowAssetName) != nil, "Missing glow asset for \(mood.displayName)")
+            #endif
+        }
+    }
+
+    @Test func dialDoneOnlySavesWhenDraftChanges() {
+        #expect(!MoodDialPersistence.shouldSave(originalMood: .calm, draftMood: .calm))
+        #expect(MoodDialPersistence.shouldSave(originalMood: .calm, draftMood: .happy))
+        #expect(MoodDialPersistence.shouldSave(originalMood: .none, draftMood: .angry))
     }
 
     @Test func moodInitFromRawValue() {

@@ -172,6 +172,46 @@ final class OffRecordUITests: XCTestCase {
         XCTAssertTrue(recordingMeter.waitForExistence(timeout: 8))
     }
 
+    @MainActor
+    func testMoodDialReplacesListAndCancelDoesNotPersist() throws {
+        let app = launchSeededApp()
+        navigateToTab("Timeline", in: app)
+
+        let firstEntry = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "cherry blossoms")).firstMatch
+        if firstEntry.waitForExistence(timeout: 5) {
+            firstEntry.tap()
+        } else {
+            let fallbackEntry = app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] %@", "cherry blossoms")).firstMatch
+            XCTAssertTrue(fallbackEntry.waitForExistence(timeout: 5))
+            fallbackEntry.tap()
+        }
+
+        let moodButton = app.buttons["entryDetail.moodButton"].firstMatch
+        XCTAssertTrue(moodButton.waitForExistence(timeout: 6))
+        let originalMoodLabel = moodButton.label
+        moodButton.tap()
+
+        XCTAssertTrue(app.otherElements["moodDial.sheet"].waitForExistence(timeout: 4))
+        XCTAssertFalse(app.staticTexts["Select a mood"].exists)
+
+        let sentence = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH[c] %@", "I feel ")).firstMatch
+        XCTAssertTrue(sentence.waitForExistence(timeout: 4))
+        let originalSentence = sentence.label
+
+        let wheel = app.otherElements["moodDial.wheel"].firstMatch
+        XCTAssertTrue(wheel.waitForExistence(timeout: 4))
+        wheel.coordinate(withNormalizedOffset: CGVector(dx: 0.84, dy: 0.78))
+            .press(forDuration: 0.1, thenDragTo: wheel.coordinate(withNormalizedOffset: CGVector(dx: 0.16, dy: 0.78)))
+
+        let sentenceChanged = NSPredicate(format: "label != %@", originalSentence)
+        expectation(for: sentenceChanged, evaluatedWith: sentence)
+        waitForExpectations(timeout: 2)
+
+        app.buttons["moodDial.cancel"].tap()
+        XCTAssertTrue(moodButton.waitForExistence(timeout: 4))
+        XCTAssertEqual(moodButton.label, originalMoodLabel)
+    }
+
     private func launchOnboardingApp() -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = ["-UITesting", "-OnboardingUITest"]
@@ -184,5 +224,37 @@ final class OffRecordUITests: XCTestCase {
         app.launchArguments = ["-UITesting", "-HeroNudgeUITest"] + arguments
         app.launch()
         return app
+    }
+
+    private func launchSeededApp() -> XCUIApplication {
+        let app = XCUIApplication()
+        app.launchArguments = [
+            "-UITesting",
+            "-ScreenshotMode",
+            "-hasCompletedOnboarding",
+            "YES",
+            "-AppleLanguages",
+            "(en)",
+            "-AppleLocale",
+            "en_US"
+        ]
+        app.launch()
+        return app
+    }
+
+    private func navigateToTab(_ name: String, in app: XCUIApplication) {
+        let customButton = app.buttons[name].firstMatch
+        if customButton.waitForExistence(timeout: 4) {
+            customButton.tap()
+            return
+        }
+
+        let tabButton = app.tabBars.buttons[name]
+        if tabButton.waitForExistence(timeout: 4) {
+            tabButton.tap()
+            return
+        }
+
+        XCTFail("Could not find tab: \(name)")
     }
 }
