@@ -5,10 +5,10 @@
 ### Code & Build
 - [ ] All source files compile without errors
 - [ ] No warnings in Release build
-- [ ] Minimum deployment target set (iOS 16.0 recommended)
+- [ ] Minimum deployment target set (iOS 17.0+)
 - [ ] Bundle identifier: `com.singularity.offrecord`
-- [ ] Version: 1.0.0
-- [ ] Build number: 1
+- [ ] Version: 1.3.0
+- [ ] Build number: 14
 - [ ] App Group configured: `group.com.singularity.offrecord`
 - [ ] Archive builds successfully in Release configuration
 

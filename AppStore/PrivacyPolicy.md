@@ -52,6 +52,7 @@ All AI processing in OffRecord AI Journal happens **100% on-device**:
 - **Speech Recognition**: Uses Apple's built-in Speech framework. When online, Apple may process audio for better accuracy (per Apple's privacy policy). When offline, all processing is entirely on-device.
 - **Emotion Detection**: On-device using Apple's NaturalLanguage framework
 - **Friday Engine**: On-device machine learning that builds your personal model
+- **Semantic Memory**: On-device search index and embeddings derived from your journal entries. This index stays local, is not synced to iCloud, and can be rebuilt or deleted from Settings.
 - **OffRecord AI Journal Brain**: Rule-based cognitive AI running locally
 **No AI processing is sent to external servers.**
 
