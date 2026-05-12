@@ -12,6 +12,7 @@ import SwiftUI
 import WidgetKit
 import CoreData
 import os.log
+import UserNotifications
 
 private let appLogger = Logger(subsystem: "com.singularity.offrecord", category: "App")
 
@@ -29,8 +30,10 @@ struct OffRecordApp: App {
     @State private var isShowingSplash = true
 
     init() {
+        UNUserNotificationCenter.current().delegate = OffRecordNotificationDelegate.shared
         ScreenshotDataSeeder.seedIfNeeded(context: persistenceController.container.viewContext)
         UITestDataSeeder.seedIfNeeded(context: persistenceController.container.viewContext)
+        ReminderManager.shared.reconcileScheduleIfNeeded()
     }
 
     var body: some Scene {
@@ -77,6 +80,7 @@ struct OffRecordApp: App {
                 case .active:
                     // Check if launched from Siri shortcut to record
                     checkForSiriRecordingIntent()
+                    ReminderManager.shared.reconcileScheduleIfNeeded()
                 default:
                     break
                 }
@@ -125,6 +129,27 @@ struct OffRecordApp: App {
             }
         }
         #endif
+    }
+}
+
+final class OffRecordNotificationDelegate: NSObject, UNUserNotificationCenterDelegate {
+    static let shared = OffRecordNotificationDelegate()
+
+    private override init() {}
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        willPresent notification: UNNotification
+    ) async -> UNNotificationPresentationOptions {
+        ReminderManager.shared.reconcileScheduleIfNeeded()
+        return [.banner, .sound]
+    }
+
+    func userNotificationCenter(
+        _ center: UNUserNotificationCenter,
+        didReceive response: UNNotificationResponse
+    ) async {
+        ReminderManager.shared.reconcileScheduleIfNeeded()
     }
 }
 

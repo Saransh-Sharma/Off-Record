@@ -267,6 +267,7 @@ struct EntryDetailView: View {
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding()
                     .textSelection(.enabled)
+                    .accessibilityIdentifier("entryDetail.mainText")
             }
         }
         .frame(maxWidth: .infinity)
@@ -653,6 +654,7 @@ struct EntryDetailView: View {
         HapticManager.shared.entryStarred()
         do {
             try viewContext.save()
+            SemanticMemoryIndexController.shared.upsertEntry(entry)
         } catch {
             // ignore
         }
@@ -670,6 +672,7 @@ struct EntryDetailView: View {
             entry.updatedAt = Date()
             do {
                 try viewContext.save()
+                SemanticMemoryIndexController.shared.upsertEntry(entry)
 
                 // Feed into Friday — use reprocess if text was edited
                 if !trimmed.isEmpty {
@@ -705,9 +708,11 @@ struct EntryDetailView: View {
     private func deleteEmptyDraftIfNeeded() {
         guard deleteEmptyDraftOnDisappear, entryHasNoContent else { return }
 
+        let id = entry.id
         viewContext.delete(entry)
         do {
             try viewContext.save()
+            SemanticMemoryIndexController.shared.deleteEntry(id: id)
         } catch {
             viewContext.rollback()
         }

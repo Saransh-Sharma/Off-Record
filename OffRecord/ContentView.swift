@@ -185,6 +185,7 @@ private struct OffRecordFloatingTabBar: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(tab.rawValue)
+                .accessibilityIdentifier("tab.\(tab.rawValue.lowercased())")
                 .accessibilityAddTraits(selectedTab == tab ? .isSelected : [])
             }
         }
