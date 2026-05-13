@@ -1258,7 +1258,11 @@ private struct FirstEntryStep: View {
                                 selectedMood = mood
                             } label: {
                                 HStack {
-                                    Image(systemName: mood.icon)
+                                    MiniMoodIcon(
+                                        mood: mood,
+                                        size: 20,
+                                        opacity: selectedMood == mood ? 0.92 : 0.72
+                                    )
                                     Text(mood.displayName)
                                     Spacer()
                                 }
@@ -1755,15 +1759,33 @@ private struct SolutionRow: View {
 }
 
 private struct BenefitRow: View {
-    let icon: String
+    let icon: String?
+    let mood: Mood?
     let text: String
+
+    init(icon: String, text: String) {
+        self.icon = icon
+        self.mood = nil
+        self.text = text
+    }
+
+    init(mood: Mood, text: String) {
+        self.icon = nil
+        self.mood = mood
+        self.text = text
+    }
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
-            Image(systemName: icon)
-                .font(.subheadline.weight(.bold))
-                .foregroundStyle(.white)
-                .frame(width: 22)
+            if let mood {
+                MiniMoodIcon(mood: mood, size: 18, opacity: 0.88)
+                    .frame(width: 22)
+            } else if let icon {
+                Image(systemName: icon)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 22)
+            }
             Text(text)
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(.white.opacity(0.86))
@@ -1909,7 +1931,7 @@ private struct StarterSnapshotCard: View {
                 .lineSpacing(4)
 
             VStack(alignment: .leading, spacing: 10) {
-                BenefitRow(icon: mood.icon, text: "Starting mood: \(mood.displayName)")
+                BenefitRow(mood: mood, text: "Starting mood: \(mood.displayName)")
                 BenefitRow(icon: "lock.shield.fill", text: "This insight was prepared locally on your device.")
                 BenefitRow(icon: "wifi.slash", text: "No internet connection is required for core journaling.")
             }

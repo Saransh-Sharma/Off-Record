@@ -230,9 +230,11 @@ struct StatsView: View {
                 HStack(spacing: 12) {
                     ForEach(topMoods, id: \.mood) { item in
                         VStack(spacing: 6) {
-                            Image(systemName: item.mood.icon)
-                                .font(.title2)
-                                .foregroundColor(item.mood.color)
+                            MiniMoodIcon(
+                                mood: item.mood,
+                                size: 24,
+                                opacity: 0.88
+                            )
                             Text("\(item.count)")
                                 .font(.subheadline.weight(.medium))
                                 .foregroundColor(OffRecordColor.textPrimary)
@@ -275,8 +277,12 @@ struct StatsView: View {
             AxisMarks(values: [1, 3, 5]) { value in
                 AxisValueLabel {
                     if let v = value.as(Int.self) {
-                        Text(v == 1 ? "😔" : v == 3 ? "😐" : "😊")
-                            .font(.caption)
+                        MiniMoodIcon(
+                            mood: chartAxisMood(for: v),
+                            size: 14,
+                            opacity: 0.78,
+                            accessibilityLabel: "\(chartAxisMood(for: v).displayName) mood"
+                        )
                     }
                 }
             }
@@ -576,6 +582,19 @@ struct StatsView: View {
             }
         }
         return counts.map { ($0.key, $0.value) }.sorted { $0.count > $1.count }
+    }
+
+    private func chartAxisMood(for value: Int) -> Mood {
+        switch value {
+        case 1:
+            return .sad
+        case 3:
+            return .none
+        case 5:
+            return .happy
+        default:
+            return .none
+        }
     }
 
     private var topMoods: [(mood: Mood, count: Int)] {
