@@ -36,30 +36,54 @@ enum AppTheme: String, CaseIterable, Identifiable {
     }
 
     var colorScheme: ColorScheme? {
-        switch self {
-        case .system: return nil
-        case .dark: return .dark
-        default: return .light
-        }
+        .light
     }
 
     /// Primary accent color for buttons and highlights
     var accentColor: Color {
         switch self {
         case .system, .light:
-            return Color(red: 0.4, green: 0.5, blue: 0.6)  // Soft blue-gray
+            return OffRecordColor.brandPlum
         case .sage:
-            return Color(red: 0.45, green: 0.58, blue: 0.5)  // Soft sage green
+            return OffRecordColor.brandSageDark
         case .lavender:
-            return Color(red: 0.6, green: 0.5, blue: 0.7)  // Soft lavender
+            return OffRecordColor.brandLavenderDark
         case .rose:
-            return Color(red: 0.75, green: 0.5, blue: 0.55)  // Soft rose
+            return OffRecordColor.brandBlush
         case .ocean:
-            return Color(red: 0.4, green: 0.6, blue: 0.7)  // Soft ocean blue
+            return OffRecordColor.brandAqua
         case .warm:
-            return Color(red: 0.75, green: 0.55, blue: 0.4)  // Soft terracotta
+            return OffRecordColor.brandPeach
         case .dark:
-            return Color(red: 0.6, green: 0.7, blue: 0.8)  // Soft blue for dark mode
+            return OffRecordColor.brandLavender
+        }
+    }
+
+    /// Text-safe version of the theme accent. Pastel brand colors are fills,
+    /// not foreground colors, per OffRecord Design.md.
+    var readableAccentColor: Color {
+        switch self {
+        case .system, .light, .dark:
+            return OffRecordColor.textBrand
+        case .sage:
+            return OffRecordColor.textSage
+        case .lavender:
+            return OffRecordColor.textLavender
+        case .rose:
+            return OffRecordColor.textBlush
+        case .ocean:
+            return OffRecordColor.textAqua
+        case .warm:
+            return OffRecordColor.textPeach
+        }
+    }
+
+    var swatchForegroundColor: Color {
+        switch self {
+        case .system, .light, .sage, .lavender, .dark:
+            return OffRecordColor.textInverse
+        case .rose, .ocean, .warm:
+            return OffRecordColor.textBrand
         }
     }
 
@@ -94,19 +118,19 @@ final class ThemeManager: ObservableObject {
     // MARK: - Semantic Colors
 
     var backgroundColor: Color {
-        Color(.systemGroupedBackground)
+        OffRecordColor.backgroundPrimary
     }
 
     var textColor: Color {
-        Color(.label)
+        OffRecordColor.textPrimary
     }
 
     var secondaryTextColor: Color {
-        Color(.secondaryLabel)
+        OffRecordColor.textSecondary
     }
 
     var cardBackgroundColor: Color {
-        Color(.secondarySystemGroupedBackground)
+        OffRecordColor.surfacePrimary
     }
 
     /// Theme-aware accent color for UI elements
@@ -114,8 +138,40 @@ final class ThemeManager: ObservableObject {
         selectedTheme.accentColor
     }
 
+    var readableAccentColor: Color {
+        selectedTheme.readableAccentColor
+    }
+
     /// Data visualization color (charts, meters, bars)
     var dataColor: Color {
-        Color.teal
+        OffRecordColor.brandAqua
+    }
+
+    var elevatedCardBackgroundColor: Color {
+        OffRecordColor.surfaceWarm
+    }
+
+    var borderColor: Color {
+        OffRecordColor.borderSoft
+    }
+
+    var privacyColor: Color {
+        OffRecordColor.brandSageDark
+    }
+
+    var fridayColor: Color {
+        OffRecordColor.brandLavenderDark
+    }
+
+    var journalColor: Color {
+        OffRecordColor.brandPeach
+    }
+
+    var exportColor: Color {
+        OffRecordColor.brandSky
+    }
+
+    var warningColor: Color {
+        OffRecordColor.brandCoral
     }
 }

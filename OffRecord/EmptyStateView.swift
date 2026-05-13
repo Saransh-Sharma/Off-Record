@@ -19,18 +19,18 @@ struct EmptyStateView: View {
             // Animated icon
             ZStack {
                 Circle()
-                    .fill(Color.accentColor.opacity(0.1))
+                    .fill(OffRecordColor.backgroundLavenderTint)
                     .frame(width: 120, height: 120)
 
                 Circle()
-                    .fill(Color.accentColor.opacity(0.05))
+                    .fill(OffRecordColor.backgroundPeachTint.opacity(0.7))
                     .frame(width: 160, height: 160)
 
                 Image(systemName: icon)
                     .font(.system(size: 48))
                     .foregroundStyle(
                         LinearGradient(
-                            colors: [.accentColor, .accentColor.opacity(0.7)],
+                            colors: [OffRecordColor.brandLavenderDark, OffRecordColor.brandPeach],
                             startPoint: .topLeading,
                             endPoint: .bottomTrailing
                         )
@@ -40,11 +40,12 @@ struct EmptyStateView: View {
             VStack(spacing: 8) {
                 Text(title)
                     .font(.title2.weight(.semibold))
+                    .foregroundColor(OffRecordColor.textHeading)
                     .multilineTextAlignment(.center)
 
                 Text(subtitle)
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(OffRecordColor.textSecondary)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 400)
                     .padding(.horizontal, 40)
@@ -54,10 +55,10 @@ struct EmptyStateView: View {
                 Button(action: action) {
                     Text(actionTitle)
                         .font(.subheadline.weight(.semibold))
-                        .foregroundColor(.accentColor)
+                        .foregroundColor(OffRecordColor.textInverse)
                         .padding(.horizontal, 24)
                         .padding(.vertical, 12)
-                        .offRecordGlassControl(tint: .accentColor, in: Capsule(), fallbackFill: Color.accentColor.opacity(0.15))
+                        .background(OffRecordColor.brandPlum, in: Capsule())
                 }
             }
         }
@@ -109,33 +110,34 @@ struct WelcomeCard: View {
     var body: some View {
         VStack(spacing: 20) {
             // Privacy badge
-            PrivacyBadge()
+            OffRecordPrivacyBadge(title: "Private", subtitle: "On your device")
 
             FridayMascotView(pose: .wave, size: 82)
 
             VStack(spacing: 12) {
                 Text(Personalization.appendFirstName(to: "Welcome to Your Private Diary", name: authorName))
                     .font(.title2.weight(.bold))
+                    .foregroundColor(OffRecordColor.textHeading)
                     .multilineTextAlignment(.center)
 
                 Text("Speak your thoughts freely. All AI runs on your device — private by design, with optional iCloud sync.")
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(OffRecordColor.textSecondary)
                     .multilineTextAlignment(.center)
                     .lineSpacing(4)
             }
 
             // Features list
             VStack(alignment: .leading, spacing: 16) {
-                FeatureRow(icon: "mic.fill", color: .blue, text: "Tap to record your voice")
-                FeatureRow(icon: "text.quote", color: .purple, text: "Automatically transcribed to text")
-                FeatureRow(icon: "sparkles", color: .orange, text: "Friday notices patterns privately")
-                FeatureRow(icon: "lock.fill", color: .green, text: "100% private, stored locally")
+                FeatureRow(icon: "mic.fill", color: OffRecordColor.textPeach, text: "Tap to record your voice")
+                FeatureRow(icon: "text.quote", color: OffRecordColor.brandLavenderDark, text: "Automatically transcribed to text")
+                FeatureRow(icon: "sparkles", color: OffRecordColor.textAqua, text: "Friday notices patterns privately")
+                FeatureRow(icon: "lock.fill", color: OffRecordColor.brandSageDark, text: "100% private, stored locally")
             }
             .padding(.top, 8)
         }
         .padding(24)
-        .offRecordContentCard(cornerRadius: 20)
+        .offRecordContentCard(cornerRadius: OffRecordRadius.xl, fill: OffRecordColor.surfaceWarm)
     }
 }
 
@@ -153,7 +155,7 @@ struct FeatureRow: View {
 
             Text(text)
                 .font(.subheadline)
-                .foregroundColor(.primary)
+                .foregroundColor(OffRecordColor.textPrimary)
         }
     }
 }

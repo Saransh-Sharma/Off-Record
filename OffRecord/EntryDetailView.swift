@@ -25,6 +25,8 @@ struct EntryDetailView: View {
     @State private var showAIInsights = false
     @State private var aiAnalysis: AIAnalysisResult?
     private let deleteEmptyDraftOnDisappear: Bool
+    private let promptContext: String?
+    private let heroPromptID: String?
 
     // Photo state
     @State private var selectedPhotos: [PhotosPickerItem] = []
@@ -38,10 +40,14 @@ struct EntryDetailView: View {
     init(
         entry: DiaryEntry,
         startEditing: Bool = false,
-        deleteEmptyDraftOnDisappear: Bool = false
+        deleteEmptyDraftOnDisappear: Bool = false,
+        promptContext: String? = nil,
+        heroPromptID: String? = nil
     ) {
         self.entry = entry
         self.deleteEmptyDraftOnDisappear = deleteEmptyDraftOnDisappear
+        self.promptContext = promptContext
+        self.heroPromptID = heroPromptID
         _text = State(initialValue: entry.text ?? "")
         _isEditing = State(initialValue: startEditing)
         let moodString = entry.value(forKey: "mood") as? String ?? ""
@@ -50,7 +56,7 @@ struct EntryDetailView: View {
 
     var body: some View {
         ZStack {
-            Color(.systemGroupedBackground)
+            OffRecordColor.appBackgroundGradient
                 .ignoresSafeArea()
 
             ScrollView {
@@ -94,7 +100,7 @@ struct EntryDetailView: View {
                 HStack(spacing: 16) {
                     Button(action: toggleStar) {
                         Image(systemName: entry.isStarred ? "star.fill" : "star")
-                            .foregroundColor(entry.isStarred ? .yellow : .secondary)
+                            .foregroundColor(entry.isStarred ? OffRecordColor.textYellow : OffRecordColor.textSecondary)
                     }
 
                     Button(action: { isEditing.toggle() }) {
@@ -120,8 +126,8 @@ struct EntryDetailView: View {
                 text = newValue ?? ""
             }
         }
-        .sheet(isPresented: $showMoodPicker) {
-            MoodPickerSheet(selectedMood: $selectedMood, onSave: saveMood)
+        .fullScreenCover(isPresented: $showMoodPicker) {
+            MoodDialSheet(selectedMood: $selectedMood, onSave: saveMood)
         }
     }
 
@@ -134,10 +140,11 @@ struct EntryDetailView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(formattedFullDate)
                         .font(.subheadline.weight(.medium))
+                        .foregroundColor(OffRecordColor.textPrimary)
                     if let updatedAt = entry.updatedAt {
                         Text("Updated \(formattedTime(updatedAt))")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(OffRecordColor.textSecondary)
                     }
                 }
                 Spacer()
@@ -147,36 +154,46 @@ struct EntryDetailView: View {
                     if selectedMood == .none {
                         Label("Add mood", systemImage: "plus.circle")
                             .font(.caption)
-                            .foregroundColor(.accentColor)
+                            .foregroundColor(OffRecordReadableTintStyle.journal.foreground)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
-                            .offRecordGlassControl(tint: .accentColor, in: Capsule(), fallbackFill: Color.accentColor.opacity(0.1))
+                            .offRecordGlassControl(
+                                tint: OffRecordReadableTintStyle.journal.tint,
+                                in: Capsule(),
+                                fallbackFill: OffRecordReadableTintStyle.journal.fill,
+                                border: OffRecordReadableTintStyle.journal.border
+                            )
                     } else {
                         HStack(spacing: 6) {
-                            Image(systemName: selectedMood.icon)
-                                .font(.caption)
+                            MiniMoodIcon(mood: selectedMood, size: 16, opacity: 0.92)
                             Text(selectedMood.displayName)
                                 .font(.caption)
                         }
-                        .foregroundColor(selectedMood.color)
+                        .foregroundColor(selectedMood.readableStyle.foreground)
                         .padding(.horizontal, 10)
                         .padding(.vertical, 6)
-                        .offRecordGlassControl(tint: selectedMood.color, in: Capsule(), fallbackFill: selectedMood.color.opacity(0.15))
+                        .offRecordGlassControl(
+                            tint: selectedMood.readableStyle.tint,
+                            in: Capsule(),
+                            fallbackFill: selectedMood.readableStyle.fill,
+                            border: selectedMood.readableStyle.border
+                        )
                     }
                 }
                 .buttonStyle(.plain)
+                .accessibilityIdentifier("entryDetail.moodButton")
             }
 
             // Stats row
             HStack(spacing: 20) {
                 Label("\(wordCount) words", systemImage: "text.word.spacing")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(OffRecordColor.textSecondary)
 
                 if let duration = entry.value(forKey: "duration") as? Double, duration > 0 {
                     Label(formattedDuration(duration), systemImage: "waveform")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(OffRecordColor.textSecondary)
                 }
 
                 Spacer()
@@ -184,13 +201,13 @@ struct EntryDetailView: View {
                 // Audio playback or "on other device" note
                 if audioOnOtherDevice {
                     // Audio exists but on another device
-                    HStack(spacing: 4) {
-                        Image(systemName: "icloud")
-                            .font(.caption)
-                        Text("Audio on original device")
-                            .font(.caption2)
-                    }
-                    .foregroundColor(.secondary)
+                        HStack(spacing: 4) {
+                            Image(systemName: "icloud")
+                                .font(.caption)
+                            Text("Audio on original device")
+                                .font(.caption)
+                        }
+                        .foregroundColor(OffRecordColor.textSecondary)
                 }
             }
         }
@@ -213,7 +230,7 @@ struct EntryDetailView: View {
                             .scaleEffect(1.2)
                         Text("Transcribing your recording...")
                             .font(.subheadline)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(OffRecordColor.textSecondary)
                     }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 60)
@@ -221,28 +238,36 @@ struct EntryDetailView: View {
                     VStack(spacing: 12) {
                         Image(systemName: "text.cursor")
                             .font(.system(size: 32))
-                            .foregroundColor(.secondary.opacity(0.5))
+                            .foregroundColor(OffRecordColor.textTertiary)
                         Text("No text yet")
                             .font(.subheadline)
-                            .foregroundColor(.secondary)
-                        Button("Add text") {
-                            isEditing = true
-                        }
-                        .font(.subheadline.weight(.medium))
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 8)
-                        .offRecordGlassControl(tint: .accentColor, in: Capsule(), fallbackFill: Color.accentColor.opacity(0.1))
+                            .foregroundColor(OffRecordColor.textSecondary)
+                    Button("Add text") {
+                        isEditing = true
                     }
+                    .font(.subheadline.weight(.medium))
+                    .foregroundColor(OffRecordReadableTintStyle.brand.foreground)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 8)
+                    .offRecordGlassControl(
+                        tint: OffRecordReadableTintStyle.brand.tint,
+                        in: Capsule(),
+                        fallbackFill: OffRecordReadableTintStyle.brand.fill,
+                        border: OffRecordReadableTintStyle.brand.border
+                    )
+                }
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 60)
                 }
             } else {
                 Text(text)
                     .font(.body)
+                    .foregroundColor(OffRecordColor.textPrimary)
                     .lineSpacing(6)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding()
                     .textSelection(.enabled)
+                    .accessibilityIdentifier("entryDetail.mainText")
             }
         }
         .frame(maxWidth: .infinity)
@@ -270,17 +295,18 @@ struct EntryDetailView: View {
             }) {
                 HStack {
                     Image(systemName: "brain.head.profile")
-                        .foregroundColor(.teal)
+                        .foregroundColor(OffRecordColor.textLavender)
                     Text("AI Insights")
                         .font(.subheadline.weight(.medium))
+                        .foregroundColor(OffRecordColor.textHeading)
                     Spacer()
                     Image(systemName: showAIInsights ? "chevron.up" : "chevron.down")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(OffRecordColor.textSecondary)
                 }
                 .padding()
                 .offRecordGlassControl(
-                    tint: showAIInsights ? .teal : nil,
+                    tint: showAIInsights ? OffRecordColor.brandLavenderDark : nil,
                     in: RoundedRectangle(cornerRadius: 12, style: .continuous)
                 )
             }
@@ -291,32 +317,35 @@ struct EntryDetailView: View {
                     // Emotion & Sentiment
                     HStack(spacing: 16) {
                         VStack(spacing: 4) {
-                            Text(analysis.dominantEmotion.emoji)
-                                .font(.title)
+                            MiniMoodIcon(
+                                mood: analysis.dominantEmotion.representativeMood,
+                                size: 24,
+                                opacity: 0.92
+                            )
                             Text(analysis.dominantEmotion.rawValue.capitalized)
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(OffRecordColor.textSecondary)
                         }
                         .frame(width: 70)
                         
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Sentiment")
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(OffRecordColor.textSecondary)
                             GeometryReader { geo in
                                 ZStack(alignment: .leading) {
                                     RoundedRectangle(cornerRadius: 4)
-                                        .fill(Color.gray.opacity(0.2))
+                                        .fill(OffRecordColor.borderSoft)
                                     RoundedRectangle(cornerRadius: 4)
-                                        .fill(analysis.sentiment > 0 ? Color.green : Color.orange)
+                                        .fill(analysis.sentiment > 0 ? OffRecordColor.brandMint : OffRecordColor.brandPeach)
                                         .frame(width: geo.size.width * CGFloat(abs(analysis.sentiment)))
                                 }
                             }
                             .frame(height: 8)
                             
                             Text(analysis.sentiment > 0.2 ? "Positive" : (analysis.sentiment < -0.2 ? "Negative" : "Neutral"))
-                                .font(.caption2)
-                                .foregroundColor(.secondary)
+                                .font(.caption)
+                                .foregroundColor(OffRecordColor.textSecondary)
                         }
                     }
                     
@@ -325,13 +354,14 @@ struct EntryDetailView: View {
                     // Intent
                     HStack {
                         Image(systemName: "quote.bubble")
-                            .foregroundColor(.blue)
+                            .foregroundColor(OffRecordColor.textSky)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Intent")
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(OffRecordColor.textSecondary)
                             Text(analysis.intent.description)
                                 .font(.subheadline)
+                                .foregroundColor(OffRecordColor.textPrimary)
                         }
                     }
                     
@@ -340,15 +370,16 @@ struct EntryDetailView: View {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Topics")
                                 .font(.caption)
-                                .foregroundColor(.secondary)
+                                .foregroundColor(OffRecordColor.textSecondary)
                             
                             FlowLayout(spacing: 6) {
                                 ForEach(analysis.topics.prefix(5), id: \.self) { topic in
                                     Text(topic)
-                                        .font(.caption2)
+                                        .font(.caption)
+                                        .foregroundColor(OffRecordColor.textLavender)
                                         .padding(.horizontal, 8)
                                         .padding(.vertical, 4)
-                                        .background(Color.teal.opacity(0.1))
+                                        .background(OffRecordColor.backgroundLavenderTint)
                                         .clipShape(Capsule())
                                 }
                             }
@@ -357,17 +388,21 @@ struct EntryDetailView: View {
                     
                     // AI Response
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("💭 Reflection")
-                            .font(.caption)
-                            .foregroundColor(.secondary)
+                        HStack(spacing: 4) {
+                            Image(systemName: "bubble.left.and.text.bubble.right")
+                                .font(.caption)
+                            Text("Reflection")
+                                .font(.caption)
+                        }
+                        .foregroundColor(OffRecordColor.textSecondary)
                         Text(analysis.suggestedResponse)
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(OffRecordColor.textPrimary)
                             .italic()
                     }
                     .padding()
                     .frame(maxWidth: .infinity, alignment: .leading)
-                    .background(Color.teal.opacity(0.05))
+                    .background(OffRecordColor.surfaceLavender)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                 }
                 .padding()
@@ -383,8 +418,34 @@ struct EntryDetailView: View {
 
     private var editingView: some View {
         VStack(spacing: 0) {
+            if let promptContext, !promptContext.isEmpty {
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: "sparkles")
+                        .font(.subheadline.weight(.semibold))
+                        .foregroundStyle(OffRecordColor.textLavender)
+                        .padding(.top, 2)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Writing prompt")
+                            .font(OffRecordTypography.labelSmall)
+                            .foregroundStyle(OffRecordColor.textPeach)
+                        Text(promptContext)
+                            .font(.subheadline)
+                            .foregroundStyle(OffRecordColor.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+                .padding(14)
+                .offRecordContentCard(cornerRadius: 14, fill: OffRecordColor.surfaceLavender)
+                .padding(.horizontal)
+                .padding(.top, 8)
+            }
+
             TextEditor(text: $text)
                 .font(.body)
+                .foregroundColor(OffRecordColor.textPrimary)
                 .lineSpacing(6)
                 .focused($isTextFocused)
                 .scrollContentBackground(.hidden)
@@ -399,7 +460,7 @@ struct EntryDetailView: View {
                 HStack {
                     Text("\(wordCount) words · \(characterCount) chars")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(OffRecordColor.textSecondary)
 
                     Spacer()
 
@@ -411,7 +472,7 @@ struct EntryDetailView: View {
                 }
                 .padding(.horizontal)
                 .padding(.vertical, 8)
-                .offRecordGlassBar(cornerRadius: 0, fallbackFill: Color(.secondarySystemGroupedBackground))
+                .offRecordGlassBar(cornerRadius: 0, fallbackFill: OffRecordColor.surfaceWarm)
             }
         }
         .onAppear {
@@ -441,7 +502,7 @@ struct EntryDetailView: View {
                                 } label: {
                                     Image(systemName: "xmark.circle.fill")
                                         .font(.system(size: 20))
-                                        .foregroundStyle(.white, .red)
+                                        .foregroundStyle(OffRecordColor.textInverse, OffRecordColor.brandCoral)
                                 }
                                 .offset(x: 6, y: -6)
                             }
@@ -463,16 +524,21 @@ struct EntryDetailView: View {
                     Text(photoAttachments.isEmpty ? "Add Photos" : "Add More")
                         .font(.caption.weight(.medium))
                 }
-                .foregroundColor(.accentColor)
+                .foregroundColor(OffRecordReadableTintStyle.journal.foreground)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 6)
-                .offRecordGlassControl(tint: .accentColor, in: Capsule(), fallbackFill: Color.accentColor.opacity(0.1))
+                .offRecordGlassControl(
+                    tint: OffRecordReadableTintStyle.journal.tint,
+                    in: Capsule(),
+                    fallbackFill: OffRecordReadableTintStyle.journal.fill,
+                    border: OffRecordReadableTintStyle.journal.border
+                )
             }
 
             if !photoAttachments.isEmpty {
                 Text("Photos sync with iCloud")
-                    .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .font(.caption)
+                    .foregroundColor(OffRecordColor.textSecondary)
             }
         }
     }
@@ -595,6 +661,7 @@ struct EntryDetailView: View {
         HapticManager.shared.entryStarred()
         do {
             try viewContext.save()
+            SemanticMemoryIndexController.shared.upsertEntry(entry)
         } catch {
             // ignore
         }
@@ -612,9 +679,15 @@ struct EntryDetailView: View {
             entry.updatedAt = Date()
             do {
                 try viewContext.save()
+                SemanticMemoryIndexController.shared.upsertEntry(entry)
 
                 // Feed into Friday — use reprocess if text was edited
                 if !trimmed.isEmpty {
+                    DaypartHeroStore().recordPromptResponse(
+                        promptID: heroPromptID,
+                        wordCount: wordCount
+                    )
+
                     if !oldText.isEmpty && trimmed != oldText {
                         // Text was edited — re-process to update entity names
                         FridayAssistantEngine.shared.reprocessEditedEntry(
@@ -642,9 +715,11 @@ struct EntryDetailView: View {
     private func deleteEmptyDraftIfNeeded() {
         guard deleteEmptyDraftOnDisappear, entryHasNoContent else { return }
 
+        let id = entry.id
         viewContext.delete(entry)
         do {
             try viewContext.save()
+            SemanticMemoryIndexController.shared.deleteEntry(id: id)
         } catch {
             viewContext.rollback()
         }
@@ -670,73 +745,6 @@ struct EntryDetailView: View {
             try viewContext.save()
         } catch {
             // ignore
-        }
-    }
-}
-
-// MARK: - Mood Picker Sheet
-
-struct MoodPickerSheet: View {
-    @Binding var selectedMood: Mood
-    var onSave: () -> Void
-    @Environment(\.dismiss) private var dismiss
-
-    var body: some View {
-        NavigationView {
-            List {
-                Section {
-                    Button(action: {
-                        selectedMood = .none
-                        onSave()
-                        dismiss()
-                    }) {
-                        HStack(spacing: 12) {
-                            Image(systemName: "circle.dashed")
-                                .font(.title3)
-                                .foregroundColor(.secondary)
-                                .frame(width: 28)
-                            Text("No mood")
-                                .foregroundColor(.primary)
-                            Spacer()
-                            if selectedMood == .none {
-                                Image(systemName: "checkmark")
-                                    .foregroundColor(.accentColor)
-                            }
-                        }
-                    }
-                }
-
-                Section(header: Text("Select a mood")) {
-                    ForEach(Mood.selectableMoods) { mood in
-                        Button(action: {
-                            selectedMood = mood
-                            onSave()
-                            dismiss()
-                        }) {
-                            HStack(spacing: 12) {
-                                Image(systemName: mood.icon)
-                                    .font(.title3)
-                                    .foregroundColor(mood.color)
-                                    .frame(width: 28)
-                                Text(mood.displayName)
-                                    .foregroundColor(.primary)
-                                Spacer()
-                                if selectedMood == mood {
-                                    Image(systemName: "checkmark")
-                                        .foregroundColor(.accentColor)
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            .navigationTitle("How are you feeling?")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") { dismiss() }
-                }
-            }
         }
     }
 }

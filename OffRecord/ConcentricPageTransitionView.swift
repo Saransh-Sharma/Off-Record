@@ -84,6 +84,7 @@ struct ConcentricPageTransitionView<Content: View>: View {
                             x: isAnimating ? outgoingOffset(in: proxy.size) : 0,
                             y: isAnimating ? 40 : 0
                         )
+                        .allowsHitTesting(!isAnimating)
                         .animation(isAnimating ? fullAnimation : .none, value: isAnimating)
                 }
 
@@ -94,6 +95,7 @@ struct ConcentricPageTransitionView<Content: View>: View {
                             x: isAnimating ? 0 : incomingOffset(in: proxy.size),
                             y: isAnimating ? 0 : 40
                         )
+                        .allowsHitTesting(false)
                         .animation(isAnimating ? fullAnimation : .none, value: isAnimating)
                 }
 
@@ -108,12 +110,10 @@ struct ConcentricPageTransitionView<Content: View>: View {
                 .onAnimationCompleted(for: progress) {
                     animationCompleted()
                 }
-
-                VStack {
-                    Spacer()
-                    bottomControls
-                        .padding(.bottom, 52)
-                }
+            }
+            .overlay(alignment: .bottom) {
+                bottomControls
+                    .padding(.bottom, 52)
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
         }
@@ -192,7 +192,7 @@ struct ConcentricPageTransitionView<Content: View>: View {
             if let secondaryTitle {
                 Button(secondaryTitle, action: onSecondaryAction)
                     .font(.system(.subheadline, design: .rounded, weight: .bold))
-                    .foregroundStyle(.white.opacity(0.82))
+                    .foregroundStyle(OffRecordColor.textInverse.opacity(0.90))
                     .buttonStyle(.plain)
                     .disabled(isAnimating)
                     .opacity(isAnimating ? 0.55 : 1)
@@ -214,7 +214,7 @@ struct ConcentricPageTransitionView<Content: View>: View {
                     .frame(width: 2 * radius, height: 2 * radius)
                 Image(systemName: ctaIcon ?? "chevron.forward")
                     .font(.system(size: 20, weight: .black, design: .rounded))
-                    .foregroundStyle(backgroundColor)
+                    .foregroundStyle(OffRecordColor.textInverse)
             }
             .frame(width: 2 * radius, height: 2 * radius)
             .contentShape(Circle())

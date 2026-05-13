@@ -17,6 +17,7 @@ import Speech
 struct TimelineView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @ObservedObject private var semanticMemory = SemanticMemoryIndexController.shared
 
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \DiaryEntry.date, ascending: false)],
@@ -33,6 +34,11 @@ struct TimelineView: View {
     @State private var endDate: Date? = nil
     @State private var isListening: Bool = false
     @State private var searchSuggestions: [FridayAssistantEngine.SearchSuggestion] = []
+    @State private var semanticResults: [UUID: EvidenceReference] = [:]
+    @State private var semanticSearchQuery: String = ""
+    @State private var semanticSearchTask: Task<Void, Never>?
+    @State private var isSemanticSearching = false
+    @State private var semanticSearchMessage: String?
 
     #if os(iOS)
     @StateObject private var voiceSearch = VoiceSearchManager()
@@ -56,12 +62,14 @@ struct TimelineView: View {
             if hasActiveFilters {
                 activeFiltersBar
             }
+
+            semanticSearchStatusBanner
             
             // Entry list
-            List {
+                List {
                 ForEach(sectionKeys, id: \.self) { key in
                     if let sectionEntries = groupedEntries[key] {
-                        Section(header: Text(sectionTitle(for: key))) {
+                        Section(header: Text(sectionTitle(for: key)).foregroundColor(OffRecordColor.textBrand)) {
                             ForEach(sectionEntries) { entry in
                                 NavigationLink {
                                     EntryDetailView(entry: entry)
@@ -69,9 +77,13 @@ struct TimelineView: View {
                                     EntryRowView(
                                         entry: entry,
                                         searchText: searchText,
-                                        dateString: entryDateString(entry)
+                                        dateString: entryDateString(entry),
+                                        evidence: entry.id.flatMap { semanticResults[$0] }
                                     )
                                 }
+                                .listRowInsets(EdgeInsets(top: 6, leading: 16, bottom: 6, trailing: 16))
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
                             }
                             .onDelete { indexSet in
                                 delete(entries: sectionEntries, at: indexSet)
@@ -86,8 +98,9 @@ struct TimelineView: View {
                 }
             }
             .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
         }
-        .searchable(text: $searchText, prompt: "Search entries")
+        .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search entries")
         .refreshable {
             HapticManager.shared.pullToRefresh()
             try? await Task.sleep(nanoseconds: 300_000_000)
@@ -101,7 +114,7 @@ struct TimelineView: View {
                         toggleVoiceSearch()
                     } label: {
                         Image(systemName: isListening ? "mic.fill" : "mic")
-                            .foregroundColor(isListening ? .red : .accentColor)
+                            .foregroundColor(isListening ? OffRecordColor.textCoral : OffRecordColor.textBrand)
                     }
                     .accessibilityLabel("Voice search")
                     
@@ -126,13 +139,14 @@ struct TimelineView: View {
                     HapticManager.shared.selectionChanged()
                 }) {
                     Image(systemName: showStarredOnly ? "star.fill" : "star")
-                        .foregroundColor(showStarredOnly ? .yellow : .accentColor)
+                        .foregroundColor(showStarredOnly ? OffRecordColor.textYellow : OffRecordColor.textBrand)
                 }
                 .accessibilityLabel("Show starred only")
             }
         }
-        .background(Color(.systemGroupedBackground))
+        .background(OffRecordColor.appBackgroundGradient)
         .navigationTitle("Timeline")
+        .toolbarBackground(.hidden, for: .navigationBar)
         #if os(iOS)
         .onChange(of: voiceSearch.transcribedText) { _, newValue in
             if !newValue.isEmpty {
@@ -145,9 +159,25 @@ struct TimelineView: View {
             let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
             if trimmed.count >= 2 {
                 searchSuggestions = assistant.searchSuggestions(for: trimmed)
+                scheduleSemanticSearch(trimmed)
             } else {
                 searchSuggestions = []
+                semanticResults = [:]
+                semanticSearchQuery = ""
+                semanticSearchTask?.cancel()
+                isSemanticSearching = false
+                semanticSearchMessage = nil
             }
+        }
+        .onChange(of: semanticMemory.isBuilding) { _, isBuilding in
+            guard !isBuilding else { return }
+            let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.count >= 2, isSemanticSearching {
+                scheduleSemanticSearch(trimmed)
+            }
+        }
+        .onAppear {
+            semanticMemory.ensureIndexed(entries: Array(entries))
         }
         .searchSuggestions {
             ForEach(searchSuggestions, id: \.text) { suggestion in
@@ -166,6 +196,35 @@ struct TimelineView: View {
                 }
                 .searchCompletion(suggestion.text)
             }
+        }
+    }
+
+    @ViewBuilder
+    private var semanticSearchStatusBanner: some View {
+        let trimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !trimmed.isEmpty, semanticMemory.isBuilding {
+            HStack(spacing: 10) {
+                ProgressView(value: semanticMemory.progress)
+                    .frame(width: 44)
+                Text("Building semantic memory")
+                    .font(.caption.weight(.semibold))
+                    .foregroundColor(OffRecordColor.textSecondary)
+                Spacer()
+            }
+            .padding(.horizontal)
+            .padding(.vertical, 8)
+            .background(OffRecordColor.surfaceWarm)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("semanticMemory.buildingTitle")
+        } else if !trimmed.isEmpty, let semanticSearchMessage {
+            Text(semanticSearchMessage)
+                .font(.caption)
+                .foregroundColor(OffRecordColor.textSecondary)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal)
+                .padding(.vertical, 8)
+                .background(OffRecordColor.surfaceWarm)
+                .accessibilityIdentifier("semanticMemory.searchMessage")
         }
     }
     
@@ -193,8 +252,13 @@ struct TimelineView: View {
                                 }
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 6)
-                                .foregroundColor(.accentColor)
-                                .offRecordGlassControl(tint: .accentColor, in: Capsule(), fallbackFill: Color.accentColor.opacity(0.1))
+                                .foregroundColor(OffRecordReadableTintStyle.privacy.foreground)
+                                .offRecordGlassControl(
+                                    tint: OffRecordReadableTintStyle.privacy.tint,
+                                    in: Capsule(),
+                                    fallbackFill: OffRecordReadableTintStyle.privacy.fill,
+                                    border: OffRecordReadableTintStyle.privacy.border
+                                )
                             }
                             .buttonStyle(.plain)
                         }
@@ -215,7 +279,7 @@ struct TimelineView: View {
                 HStack(spacing: 8) {
                     Text("Mood:")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(OffRecordColor.textSecondary)
                     
                     ForEach(Mood.allCases.filter { $0 != .none }, id: \.self) { mood in
                         Button {
@@ -229,17 +293,22 @@ struct TimelineView: View {
                             HapticManager.shared.selectionChanged()
                         } label: {
                             HStack(spacing: 4) {
-                                Image(systemName: mood.icon)
+                                MiniMoodIcon(
+                                    mood: mood,
+                                    size: 14,
+                                    opacity: selectedMoodFilter == mood ? 0.92 : 0.72
+                                )
                                 Text(mood.rawValue)
                             }
                             .font(.caption)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
-                            .foregroundColor(selectedMoodFilter == mood ? mood.color : .secondary)
+                            .foregroundColor(selectedMoodFilter == mood ? mood.readableStyle.foreground : OffRecordColor.textSecondary)
                             .offRecordGlassControl(
-                                tint: selectedMoodFilter == mood ? mood.color : nil,
+                                tint: selectedMoodFilter == mood ? mood.readableStyle.tint : nil,
                                 in: Capsule(),
-                                fallbackFill: selectedMoodFilter == mood ? mood.color.opacity(0.2) : Color(.tertiarySystemFill)
+                                fallbackFill: selectedMoodFilter == mood ? mood.readableStyle.fill : OffRecordReadableTintStyle.neutral.fill,
+                                border: selectedMoodFilter == mood ? mood.readableStyle.border : OffRecordReadableTintStyle.neutral.border
                             )
                         }
                         .buttonStyle(.plain)
@@ -264,13 +333,13 @@ struct TimelineView: View {
                         HapticManager.shared.buttonTap()
                     }
                     .font(.caption)
-                    .foregroundColor(.red)
+                    .foregroundColor(OffRecordColor.textCoral)
                 }
             }
             .padding(.horizontal)
         }
         .padding(.vertical, 12)
-        .offRecordGlassBar(cornerRadius: 0, fallbackFill: Color(.secondarySystemGroupedBackground))
+        .offRecordGlassBar(cornerRadius: 0, fallbackFill: OffRecordColor.surfaceWarm)
     }
     
     // MARK: - Active Filters Bar
@@ -279,25 +348,25 @@ struct TimelineView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 if showStarredOnly {
-                    FilterChip(label: "Starred", icon: "star.fill", color: .yellow) {
+                    FilterChip(label: "Starred", icon: "star.fill", style: .highlight) {
                         showStarredOnly = false
                     }
                 }
                 
                 if let mood = selectedMoodFilter {
-                    FilterChip(label: mood.rawValue, icon: mood.icon, color: mood.color) {
+                    FilterChip(label: mood.rawValue, mood: mood, style: mood.readableStyle) {
                         selectedMoodFilter = nil
                     }
                 }
                 
                 if let start = startDate {
-                    FilterChip(label: "From \(formatShortDate(start))", icon: "calendar", color: .blue) {
+                    FilterChip(label: "From \(formatShortDate(start))", icon: "calendar", style: .export) {
                         startDate = nil
                     }
                 }
                 
                 if let end = endDate {
-                    FilterChip(label: "To \(formatShortDate(end))", icon: "calendar", color: .blue) {
+                    FilterChip(label: "To \(formatShortDate(end))", icon: "calendar", style: .export) {
                         endDate = nil
                     }
                 }
@@ -307,7 +376,7 @@ struct TimelineView: View {
                         clearAllFilters()
                     }
                     .font(.caption.weight(.medium))
-                    .foregroundColor(.red)
+                    .foregroundColor(OffRecordColor.textCoral)
                     .padding(.leading, 8)
                 }
             }
@@ -321,20 +390,39 @@ struct TimelineView: View {
     
     private var emptySearchState: some View {
         VStack(spacing: 16) {
-            Image(systemName: "magnifyingglass")
+            Image(systemName: semanticMemory.isBuilding ? "brain.head.profile" : "magnifyingglass")
                 .font(.system(size: 40))
-                .foregroundColor(.secondary.opacity(0.5))
+                .foregroundColor(OffRecordColor.textSecondary)
             
-            Text("No entries found")
+            Text(semanticMemory.isBuilding ? "Building semantic memory" : "No entries found")
                 .font(.headline)
-                .foregroundColor(.secondary)
+                .foregroundColor(OffRecordColor.textHeading)
+                .accessibilityIdentifier(semanticMemory.isBuilding ? "semanticMemory.buildingTitle" : "timeline.emptyTitle")
+
+            if semanticMemory.isBuilding {
+                ProgressView(value: semanticMemory.progress)
+                    .frame(maxWidth: 220)
+                Text("Friday is indexing your journal locally. Search results will improve as this finishes.")
+                    .font(.caption)
+                    .foregroundColor(OffRecordColor.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+                    .accessibilityIdentifier("semanticMemory.buildingMessage")
+            } else if let semanticSearchMessage {
+                Text(semanticSearchMessage)
+                    .font(.caption)
+                    .foregroundColor(OffRecordColor.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .padding(.horizontal)
+                    .accessibilityIdentifier("semanticMemory.searchMessage")
+            }
             
             if hasActiveFilters {
                 Button("Clear Filters") {
                     clearAllFilters()
                 }
                 .font(.subheadline)
-                .foregroundColor(.accentColor)
+                .foregroundColor(OffRecordColor.brandPlum)
             }
         }
         .frame(maxWidth: .infinity)
@@ -370,8 +458,53 @@ struct TimelineView: View {
             startDate = nil
             endDate = nil
             searchText = ""
+            semanticResults = [:]
+            semanticSearchQuery = ""
+            semanticSearchMessage = nil
         }
         HapticManager.shared.buttonTap()
+    }
+
+    private func scheduleSemanticSearch(_ query: String) {
+        semanticSearchTask?.cancel()
+        let entrySnapshot = Array(entries)
+        semanticSearchTask = Task {
+            try? await Task.sleep(nanoseconds: 220_000_000)
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                isSemanticSearching = true
+                semanticSearchQuery = query
+                semanticSearchMessage = "Searching semantic memory..."
+            }
+            let searchResult = await semanticMemory.search(query: query, entries: entrySnapshot, limit: 48)
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                switch searchResult {
+                case .ready(let results):
+                    var bestByEntry: [UUID: EvidenceReference] = [:]
+                    for result in results {
+                        if let existing = bestByEntry[result.entryID] {
+                            if result.score > existing.score {
+                                bestByEntry[result.entryID] = result
+                            }
+                        } else {
+                            bestByEntry[result.entryID] = result
+                        }
+                    }
+                    semanticResults = bestByEntry
+                    semanticSearchMessage = nil
+                    isSemanticSearching = false
+                case .building(_, let message):
+                    semanticResults = [:]
+                    semanticSearchMessage = message
+                    isSemanticSearching = true
+                case .unavailable(let message), .failed(let message):
+                    semanticResults = [:]
+                    semanticSearchMessage = message
+                    isSemanticSearching = false
+                }
+            }
+        }
     }
     
     private func formatShortDate(_ date: Date) -> String {
@@ -413,8 +546,13 @@ struct TimelineView: View {
             // Text search
             let searchTrimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
             if !searchTrimmed.isEmpty {
-                let text = entry.text ?? ""
-                if !text.localizedCaseInsensitiveContains(searchTrimmed) { return false }
+                if semanticSearchQuery == searchTrimmed, !isSemanticSearching {
+                    guard let id = entry.id else { return false }
+                    if semanticResults[id] == nil { return false }
+                } else {
+                    let text = entry.text ?? ""
+                    if !text.localizedCaseInsensitiveContains(searchTrimmed) { return false }
+                }
             }
             
             return true
@@ -461,12 +599,14 @@ struct TimelineView: View {
     }
 
     private func delete(entries: [DiaryEntry], at offsets: IndexSet) {
+        let deletedIDs = offsets.compactMap { entries[$0].id }
         for index in offsets {
             let entry = entries[index]
             viewContext.delete(entry)
         }
         do {
             try viewContext.save()
+            deletedIDs.forEach { SemanticMemoryIndexController.shared.deleteEntry(id: $0) }
             HapticManager.shared.entryDeleted()
         } catch {
             // ignore for now
@@ -480,6 +620,7 @@ struct EntryRowView: View {
     let entry: DiaryEntry
     let searchText: String
     let dateString: String
+    let evidence: EvidenceReference?
 
     private var wordCount: Int {
         guard let text = entry.text, !text.isEmpty else { return 0 }
@@ -496,46 +637,71 @@ struct EntryRowView: View {
                 HStack(spacing: 6) {
                     Text(dateString)
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(OffRecordColor.textPeach)
 
                     if let moodString = entry.value(forKey: "mood") as? String,
                        let mood = Mood(rawValue: moodString),
                        mood != .none {
-                        Image(systemName: mood.icon)
-                            .font(.caption)
-                            .foregroundColor(mood.color)
+                        MiniMoodIcon(
+                            mood: mood,
+                            size: 16,
+                            opacity: 0.82,
+                            accessibilityLabel: "\(mood.displayName) mood"
+                        )
                     }
 
                     if wordCount > 0 {
                         Text("\(wordCount) words")
-                            .font(.caption2)
-                            .foregroundColor(.secondary.opacity(0.7))
+                            .font(.caption)
+                            .foregroundColor(OffRecordColor.textSecondary)
                     }
 
                     if hasPhotos {
                         Image(systemName: "photo")
-                            .font(.caption2)
-                            .foregroundColor(.secondary.opacity(0.7))
+                            .font(.caption)
+                            .foregroundColor(OffRecordColor.textSecondary)
                     }
                 }
 
                 if let text = entry.text, !text.isEmpty {
-                    highlightedText(text)
+                    highlightedText(evidence?.snippet ?? text)
                         .lineLimit(2)
+                        .accessibilityIdentifier(evidence == nil ? "timeline.entrySnippet" : "timeline.evidenceSnippet")
                 } else {
                     Text("Tap to add text")
-                        .foregroundColor(.secondary)
+                        .foregroundColor(OffRecordColor.textSecondary)
                         .italic()
                 }
             }
             Spacer()
+            if let evidence {
+                VStack(alignment: .trailing, spacing: 4) {
+                    Image(systemName: evidence.matchReason == .exact ? "text.magnifyingglass" : "brain.head.profile")
+                        .foregroundColor(OffRecordColor.brandLavenderDark)
+                    Text(evidence.matchReason.rawValue)
+                        .font(.caption2.weight(.semibold))
+                        .foregroundColor(OffRecordColor.textLavender)
+                        .multilineTextAlignment(.trailing)
+                }
+                .accessibilityIdentifier("timeline.evidenceReason.\(evidence.matchReason.rawValue)")
+            }
             if entry.isStarred {
                 Image(systemName: "star.fill")
-                    .foregroundColor(.yellow)
+                    .foregroundColor(OffRecordColor.textYellow)
                     .font(.caption)
             }
         }
-        .padding(.vertical, 2)
+        .padding(14)
+        .background(
+            RoundedRectangle(cornerRadius: OffRecordRadius.md, style: .continuous)
+                .fill(OffRecordColor.surfaceWarm)
+                .overlay(
+                    RoundedRectangle(cornerRadius: OffRecordRadius.md, style: .continuous)
+                        .stroke(OffRecordColor.borderSoft, lineWidth: 1)
+                )
+        )
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("timeline.entryRow")
     }
 
     @ViewBuilder
@@ -543,9 +709,11 @@ struct EntryRowView: View {
         if searchText.isEmpty {
             Text(text)
                 .font(.subheadline)
+                .foregroundColor(OffRecordColor.textPrimary)
         } else {
             Text(attributedString(for: text))
                 .font(.subheadline)
+                .foregroundColor(OffRecordColor.textPrimary)
         }
     }
 
@@ -557,8 +725,8 @@ struct EntryRowView: View {
         var searchStart = textLower.startIndex
         while let range = textLower.range(of: searchLower, range: searchStart..<textLower.endIndex) {
             if let attrRange = Range(range, in: attributedString) {
-                attributedString[attrRange].backgroundColor = .yellow.opacity(0.3)
-                attributedString[attrRange].foregroundColor = .primary
+                attributedString[attrRange].backgroundColor = OffRecordColor.brandYellow.opacity(0.32)
+                attributedString[attrRange].foregroundColor = OffRecordColor.textPrimary
             }
             searchStart = range.upperBound
         }
@@ -571,14 +739,33 @@ struct EntryRowView: View {
 
 struct FilterChip: View {
     let label: String
-    let icon: String
-    let color: Color
+    let icon: String?
+    let mood: Mood?
+    let style: OffRecordReadableTintStyle
     let onRemove: () -> Void
+
+    init(
+        label: String,
+        icon: String? = nil,
+        mood: Mood? = nil,
+        style: OffRecordReadableTintStyle,
+        onRemove: @escaping () -> Void
+    ) {
+        self.label = label
+        self.icon = icon
+        self.mood = mood
+        self.style = style
+        self.onRemove = onRemove
+    }
     
     var body: some View {
         HStack(spacing: 4) {
-            Image(systemName: icon)
-                .font(.caption2)
+            if let mood {
+                MiniMoodIcon(mood: mood, size: 14, opacity: 0.92)
+            } else if let icon {
+                Image(systemName: icon)
+                    .font(.caption2)
+            }
             Text(label)
                 .font(.caption)
             Button {
@@ -593,8 +780,13 @@ struct FilterChip: View {
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
-        .foregroundColor(color)
-        .offRecordGlassControl(tint: color, in: Capsule(), fallbackFill: color.opacity(0.15))
+        .foregroundColor(style.foreground)
+        .offRecordGlassControl(
+            tint: style.tint,
+            in: Capsule(),
+            fallbackFill: style.fill,
+            border: style.border
+        )
     }
 }
 
@@ -625,11 +817,12 @@ struct DateRangeButton: View {
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
-            .foregroundColor(date != nil ? .accentColor : .secondary)
+            .foregroundColor(date != nil ? OffRecordReadableTintStyle.export.foreground : OffRecordColor.textSecondary)
             .offRecordGlassControl(
-                tint: date != nil ? .accentColor : nil,
+                tint: date != nil ? OffRecordReadableTintStyle.export.tint : nil,
                 in: Capsule(),
-                fallbackFill: date != nil ? Color.accentColor.opacity(0.1) : Color(.tertiarySystemFill)
+                fallbackFill: date != nil ? OffRecordReadableTintStyle.export.fill : OffRecordReadableTintStyle.neutral.fill,
+                border: date != nil ? OffRecordReadableTintStyle.export.border : OffRecordReadableTintStyle.neutral.border
             )
         }
         .buttonStyle(.plain)

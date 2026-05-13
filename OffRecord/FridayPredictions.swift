@@ -106,7 +106,7 @@ struct FridayPredictionEngine {
                 message: "Your mornings are brighter than your evenings.",
                 detail: "Entries before noon average \(sentimentWord(morning)). After 6pm? \(sentimentWord(evening)). Something shifts during the day.",
                 icon: "sunset.fill",
-                tint: .orange,
+                tint: OffRecordColor.brandPeach,
                 category: .mood
             )
         } else {
@@ -114,7 +114,7 @@ struct FridayPredictionEngine {
                 message: "You come alive in the evenings.",
                 detail: "Your evening entries are more positive than mornings. You're not a morning person — and your journal proves it.",
                 icon: "moon.stars.fill",
-                tint: .indigo,
+                tint: OffRecordColor.brandLavenderDark,
                 category: .mood
             )
         }
@@ -138,7 +138,7 @@ struct FridayPredictionEngine {
                 message: "Weekends are tougher for you.",
                 detail: "Your mood tends to dip on weekends. Structure might help — even a short journal entry.",
                 icon: "calendar.badge.exclamationmark",
-                tint: .orange,
+                tint: OffRecordColor.brandPeach,
                 category: .mood
             )
         } else if diff < 0 && !isWeekend {
@@ -146,7 +146,7 @@ struct FridayPredictionEngine {
                 message: "Weekdays weigh on you more.",
                 detail: "Your entries are more positive on weekends. Hang in there — the weekend's coming.",
                 icon: "briefcase.fill",
-                tint: .blue,
+                tint: OffRecordColor.brandSky,
                 category: .mood
             )
         }
@@ -176,7 +176,7 @@ struct FridayPredictionEngine {
                         message: "You haven't mentioned \(person.label) in \(daysSinceLastSeen) days.",
                         detail: "They used to come up often (\(person.mentions) times total). Missing them?",
                         icon: "person.fill.questionmark",
-                        tint: .orange,
+                        tint: OffRecordColor.brandPeach,
                         category: .people
                     )
                 }
@@ -213,7 +213,7 @@ struct FridayPredictionEngine {
             message: "Your focus shifted this week.",
             detail: "Last week: \"\(lastTop.key)\". This week: \"\(thisTop.key)\". Intentional or accidental?",
             icon: "arrow.triangle.swap",
-            tint: .purple,
+            tint: OffRecordColor.brandLavender,
             category: .pattern
         )
     }
@@ -238,7 +238,7 @@ struct FridayPredictionEngine {
                 message: "Your mood has been dipping for \(last5.count) entries straight.",
                 detail: "Small dips happen. But if this doesn't feel right, talk to someone you trust.",
                 icon: "arrow.down.right",
-                tint: .orange,
+                tint: OffRecordColor.brandCoral,
                 category: .mood
             )
         }
@@ -248,7 +248,7 @@ struct FridayPredictionEngine {
                 message: "Your mood has been climbing for \(last5.count) entries.",
                 detail: "Something's going right. Your journal captured the shift.",
                 icon: "arrow.up.right",
-                tint: .green,
+                tint: OffRecordColor.brandSage,
                 category: .growth
             )
         }
@@ -267,7 +267,7 @@ struct FridayPredictionEngine {
                 message: "This is your longest streak ever. \(current) days.",
                 detail: "You've never been this consistent. Don't stop now.",
                 icon: "flame.fill",
-                tint: .orange,
+                tint: OffRecordColor.brandPeach,
                 category: .nudge
             )
         }
@@ -278,7 +278,7 @@ struct FridayPredictionEngine {
                 message: "\(current) days in a row. Your record is \(longest).",
                 detail: "\(remaining) more days to beat it.",
                 icon: "flame.fill",
-                tint: .orange,
+                tint: OffRecordColor.brandPeach,
                 category: .nudge
             )
         }
@@ -310,7 +310,7 @@ struct FridayPredictionEngine {
                 message: "You wrote \(Int(ratio))x more this week than last.",
                 detail: "When you have a lot to say, it usually means something's brewing.",
                 icon: "text.alignleft",
-                tint: .teal,
+                tint: OffRecordColor.brandAqua,
                 category: .pattern
             )
         } else if ratio < 0.4 && lastWords > 100 {
@@ -318,7 +318,7 @@ struct FridayPredictionEngine {
                 message: "You've gone quiet this week.",
                 detail: "Last week: \(lastWords) words. This week: \(thisWords). Even one sentence counts.",
                 icon: "text.alignleft",
-                tint: .blue,
+                tint: OffRecordColor.brandSky,
                 category: .nudge
             )
         }
@@ -339,7 +339,7 @@ struct FridayPredictionEngine {
                 message: "You're in a growth phase.",
                 detail: "Your entries show high self-awareness and a growth mindset. You're actively evolving.",
                 icon: "chart.line.uptrend.xyaxis",
-                tint: .green,
+                tint: OffRecordColor.brandSage,
                 category: .growth
             )
         }
@@ -349,7 +349,7 @@ struct FridayPredictionEngine {
                 message: "You've been focused on what's ahead.",
                 detail: "\(Int(future * 100))% of your thinking is future-oriented. Planning mode activated.",
                 icon: "scope",
-                tint: .teal,
+                tint: OffRecordColor.brandAqua,
                 category: .growth
             )
         }
@@ -371,7 +371,7 @@ struct FridayPredictionEngine {
                 message: "Your mood dips when \"\(topNeg.key)\" comes up.",
                 detail: "It appeared in your recent entries again. Friday noticed the pattern.",
                 icon: "exclamationmark.triangle",
-                tint: .orange,
+                tint: OffRecordColor.brandCoral,
                 category: .mood
             )
         }
@@ -392,7 +392,7 @@ struct FridayPredictionEngine {
             message: "You've been circling around \"\(topPersistent.key)\" a lot.",
             detail: "It's been on your mind for \(topPersistent.value) entries. Processing, or stuck?",
             icon: "arrow.triangle.2.circlepath",
-            tint: .purple,
+            tint: OffRecordColor.brandLavender,
             category: .pattern
         )
     }
@@ -459,20 +459,19 @@ struct FridayPredictionsSection: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(prediction.message)
                     .font(.subheadline.weight(.semibold))
-                    .foregroundColor(.primary)
+                    .foregroundColor(OffRecordColor.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
 
                 if let detail = prediction.detail {
                     Text(detail)
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(OffRecordColor.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
         }
         .padding(14)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(.secondarySystemGroupedBackground))
-        .cornerRadius(14)
+        .offRecordContentCard(cornerRadius: OffRecordRadius.md, fill: OffRecordColor.surfaceLavender)
     }
 }

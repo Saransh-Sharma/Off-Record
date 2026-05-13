@@ -16,11 +16,17 @@ FridayAssistantEngine (personality modeling)
 Persistence (Core Data + optional CloudKit)
     ↓
 UI (SwiftUI, WidgetKit, AppIntents)
+    ↓
+Semantic Memory Index (local-only vectors + FTS)
+    ↓
+Timeline Search + Evidence-Based Friday
+    ↓
+UI evidence chips, search reasons, and entry deep links
 ```
 
 ## Module Overview
 
-All source files are in `OffRecord/OffRecord/`.
+All source files are in `OffRecord/`.
 
 ### Core Pipeline
 
@@ -31,6 +37,8 @@ All source files are in `OffRecord/OffRecord/`.
 | **LocalAIEngine** | `LocalAIEngine.swift` | NLP analysis using NaturalLanguage framework. Sentiment analysis, topic extraction, intent recognition. Maintains a UserProfile for learned patterns. |
 | **InsightsEngine** | `InsightsEngine.swift` | Generates insight cards from journal data. Sentiment trends, topic frequency, journaling patterns. |
 | **FridayAssistantEngine** | `FridayAssistantEngine.swift` | Core personality model with four sub-models (see below). Processes NLTagger output per entry. Serializes to JSON in Core Data (~12 KB). |
+| **Semantic Memory** | `SemanticMemory.swift` | Local-only chunking, embeddings, hybrid search, index lifecycle, and evidence references. |
+| **Foundation Models Friday** | `FoundationModelsFridayResponder.swift` | Optional iOS 26 phrasing layer that validates observations against retrieved evidence. |
 | **Persistence** | `Persistence.swift` | Core Data with NSPersistentCloudKitContainer. Stores entries, synced photo attachments, audio metadata, and AI state. App Group for WidgetKit data sharing. |
 
 ### Friday Sub-Models
@@ -48,12 +56,12 @@ Friday engine (`FridayAssistantEngine.swift`) maintains four interconnected mode
 |---|---|---|
 | **ContentView** | `ContentView.swift` | Main TabView container. Adapts to sidebar on iPadOS 18+. |
 | **TodayView** | `TodayView.swift` | Daily journaling interface with recording |
-| **TimelineView** | `TimelineView.swift` | Historical entry browsing |
+| **TimelineView** | `TimelineView.swift` | Historical entry browsing and hybrid semantic search results |
 | **FridayView** | `FridayView.swift` | Friday personality display and insights |
-| **FridayChatView** | `FridayChatView.swift` | "Talk to Friday" conversational interface |
+| **FridayChatView** | `FridayChatView.swift` | "Talk to Friday" conversational interface, free-form questions, and evidence chips |
 | **EntryDetailView** | `EntryDetailView.swift` | Entry viewing and editing |
 | **InsightsView** | `StatsView.swift` | Mood trends, streaks, analytics |
-| **SettingsView** | `SettingsView.swift` | Preferences and configuration |
+| **SettingsView** | `SettingsView.swift` | Preferences, configuration, and Semantic Memory rebuild/delete controls |
 | **OnboardingView** | `OnboardingView.swift` | First-launch setup flow |
 | **BackupExportView** | `BackupExportView.swift` | Export and import data |
 
@@ -78,7 +86,9 @@ Friday engine (`FridayAssistantEngine.swift`) maintains four interconnected mode
 | Framework | Purpose |
 |---|---|
 | Speech | On-device speech recognition |
-| NaturalLanguage | NLP (sentiment, NER, POS tagging) |
+| NaturalLanguage | NLP (sentiment, NER, POS tagging, contextual embeddings) |
+| Accelerate | Vector normalization and similarity math |
+| SQLite3 / FTS5 | Durable local lexical sidecar for hybrid search |
 | CoreData | Local persistence |
 | CloudKit | Optional iCloud sync |
 | CryptoKit | AES-256-GCM encryption |
@@ -86,13 +96,19 @@ Friday engine (`FridayAssistantEngine.swift`) maintains four interconnected mode
 | WidgetKit | Home & Lock Screen widgets |
 | AppIntents | Siri Shortcuts |
 | AVFoundation | Audio recording & playback |
+| FoundationModels | Optional iOS 26 Apple Intelligence responder for richer Friday phrasing after evidence retrieval |
 
 ## Key Constraints
 
 - **Zero external dependencies** — No third-party SDKs, analytics, crash reporting, or ad networks
 - **On-device only** — All audio, transcription, and AI processing stays on the device
 - **No network calls** for user data — Optional iCloud sync is user-initiated and Apple-encrypted
+- **Local semantic sidecar** — Embeddings, vector blobs, and lexical index rows are derived locally, rebuildable, and not CloudKit-synced
+- **Evidence-first Friday** — Substantive Friday claims must cite retrieved `EvidenceReference` values or hedge/refuse
+- **Optional Foundation Models** — Availability-gated phrasing only; retrieved journal evidence remains the source of truth
 - **Privacy label** — Apple "Data Not Collected"
+
+For the canonical feature design, see [SEMANTIC_MEMORY_FRIDAY.md](SEMANTIC_MEMORY_FRIDAY.md).
 
 ## Building
 

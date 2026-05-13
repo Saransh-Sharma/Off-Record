@@ -116,6 +116,9 @@ struct PersistenceController {
         ) { _ in
             // Refresh the view context when remote changes arrive
             viewContext.refreshAllObjects()
+            Task { @MainActor in
+                SemanticMemoryIndexController.shared.markNeedsReconcile()
+            }
         }
     }
 

@@ -8,6 +8,9 @@
 import SwiftUI
 import CoreData
 import AVFoundation
+#if canImport(UIKit)
+import UIKit
+#endif
 
 struct OnboardingView: View {
     @Binding var hasCompletedOnboarding: Bool
@@ -51,17 +54,15 @@ struct OnboardingView: View {
                 onPrimaryAction: primaryAction,
                 onSecondaryAction: secondaryAction
             )
-
-            VStack {
-                OnboardingProgressHeader(
-                    step: step,
-                    canGoBack: step.canGoBack,
-                    onBack: goBack
-                )
-                .padding(.horizontal, isIPad ? 44 : 20)
-                .padding(.top, 14)
-                Spacer()
-            }
+        }
+        .overlay(alignment: .top) {
+            OnboardingProgressHeader(
+                step: step,
+                canGoBack: step.canGoBack,
+                onBack: goBack
+            )
+            .padding(.horizontal, isIPad ? 44 : 20)
+            .padding(.top, 14)
         }
         .foregroundStyle(.white)
         .onAppear {
@@ -95,6 +96,7 @@ struct OnboardingView: View {
         } message: {
             Text("You can enable reminders later in Settings. OffRecord still works fully offline.")
         }
+        .ignoresSafeArea(.keyboard)
     }
 
     private var stepIndex: Binding<Int> {
@@ -111,7 +113,11 @@ struct OnboardingView: View {
         OnboardingStep.allCases.map { step in
             (
                 view: AnyView(
-                    ConcentricOnboardingPage(isIPad: isIPad) {
+                    ConcentricOnboardingPage(
+                        isIPad: isIPad,
+                        isKeyboardAdaptive: step == .welcome,
+                        scrollTargetID: step == .welcome ? OnboardingScrollTarget.welcomeNameField : nil,
+                    ) {
                         currentStepContent(for: step)
                     }
                 ),
@@ -494,35 +500,35 @@ enum OnboardingStep: Int, CaseIterable, Identifiable {
     var backgroundColor: Color {
         switch self {
         case .welcome:
-            return Color(red: 0.84, green: 0.28, blue: 0.36)
+            return OffRecordColor.brandPlum
         case .goal:
-            return Color(red: 0.16, green: 0.50, blue: 0.57)
+            return OffRecordColor.textAqua
         case .painPoints:
-            return Color(red: 0.78, green: 0.42, blue: 0.18)
+            return OffRecordColor.textPeach
         case .privacyProof:
-            return Color(red: 0.20, green: 0.36, blue: 0.64)
+            return OffRecordColor.textSky
         case .faceID:
-            return Color(red: 0.13, green: 0.55, blue: 0.42)
+            return OffRecordColor.textMint
         case .relatable:
-            return Color(red: 0.48, green: 0.31, blue: 0.72)
+            return OffRecordColor.brandLavenderDark
         case .solution:
-            return Color(red: 0.10, green: 0.45, blue: 0.52)
+            return OffRecordColor.textAqua
         case .preferences:
-            return Color(red: 0.58, green: 0.34, blue: 0.58)
+            return OffRecordColor.textBlush
         case .microphone:
-            return Color(red: 0.72, green: 0.27, blue: 0.42)
+            return OffRecordColor.textCoral
         case .speech:
-            return Color(red: 0.25, green: 0.43, blue: 0.76)
+            return OffRecordColor.textSky
         case .processing:
-            return Color(red: 0.13, green: 0.16, blue: 0.24)
+            return OffRecordColor.textBrand
         case .firstEntry:
-            return Color(red: 0.10, green: 0.42, blue: 0.48)
+            return OffRecordColor.textAqua
         case .valueReveal:
-            return Color(red: 0.38, green: 0.42, blue: 0.20)
+            return OffRecordColor.textMint
         case .habit:
-            return Color(red: 0.66, green: 0.38, blue: 0.16)
+            return OffRecordColor.textPeach
         case .finish:
-            return Color(red: 0.12, green: 0.28, blue: 0.48)
+            return OffRecordColor.brandPlum
         }
     }
 }
@@ -571,6 +577,10 @@ enum PermissionChoice: String, Codable, Equatable {
 private enum FirstEntryMode {
     case voice
     case textFallback
+}
+
+private enum OnboardingScrollTarget {
+    static let welcomeNameField = "onboarding.welcome.nameField.anchor"
 }
 
 enum OnboardingGoal: String, CaseIterable, Codable, Identifiable {
@@ -742,31 +752,81 @@ enum MoodChoice: String, CaseIterable, Codable, Identifiable {
 
 private struct ConcentricOnboardingPage<Content: View>: View {
     let isIPad: Bool
+    let isKeyboardAdaptive: Bool
+    let scrollTargetID: String?
     let content: Content
+    @State private var isTextInputFocused = false
 
-    init(isIPad: Bool, @ViewBuilder content: () -> Content) {
+    init(
+        isIPad: Bool,
+        isKeyboardAdaptive: Bool = false,
+        scrollTargetID: String? = nil,
+        @ViewBuilder content: () -> Content
+    ) {
         self.isIPad = isIPad
+        self.isKeyboardAdaptive = isKeyboardAdaptive
+        self.scrollTargetID = scrollTargetID
         self.content = content()
     }
 
     var body: some View {
         GeometryReader { proxy in
-            ScrollView(showsIndicators: false) {
-                VStack {
-                    Spacer(minLength: 0)
+            ScrollViewReader { scrollProxy in
+                ScrollView(showsIndicators: false) {
+                    VStack {
+                        Spacer(minLength: 0)
 
-                    content
-                        .frame(maxWidth: isIPad ? 620 : .infinity)
+                        content
+                            .frame(maxWidth: isIPad ? 620 : .infinity)
 
-                    Spacer(minLength: 0)
+                        Spacer(minLength: 0)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .frame(minHeight: minContentHeight(for: proxy.size.height))
+                    .padding(.horizontal, isIPad ? 44 : 24)
+                    .padding(.top, contentTopPadding)
+                    .padding(.bottom, contentBottomPadding)
                 }
-                .frame(maxWidth: .infinity)
-                .frame(minHeight: max(proxy.size.height - 280, 520))
-                .padding(.horizontal, isIPad ? 44 : 24)
-                .padding(.top, 220)
-                .padding(.bottom, 150)
+                .animation(.easeInOut(duration: 0.25), value: isTextInputFocused)
+                .onReceive(NotificationCenter.default.publisher(for: UITextField.textDidBeginEditingNotification)) { _ in
+                    guard isKeyboardAdaptive else { return }
+                    isTextInputFocused = true
+                }
+                .onReceive(NotificationCenter.default.publisher(for: UITextField.textDidEndEditingNotification)) { _ in
+                    guard isKeyboardAdaptive else { return }
+                    isTextInputFocused = false
+                }
+                .onChange(of: isTextInputFocused) { _, isFocused in
+                    guard isKeyboardAdaptive, isFocused, let scrollTargetID else { return }
+                    DispatchQueue.main.async {
+                        withAnimation(.easeInOut(duration: 0.25)) {
+                            scrollProxy.scrollTo(scrollTargetID, anchor: .center)
+                        }
+                    }
+                }
             }
         }
+    }
+
+    private var contentTopPadding: CGFloat {
+        isFocusActive ? (isIPad ? 132 : 112) : 220
+    }
+
+    private var contentBottomPadding: CGFloat {
+        let baseBottomPadding: CGFloat = 150
+        guard isFocusActive else { return baseBottomPadding }
+        return baseBottomPadding + (isIPad ? 260 : 320)
+    }
+
+    private func minContentHeight(for availableHeight: CGFloat) -> CGFloat {
+        if isFocusActive {
+            return max(availableHeight - 120, 420)
+        }
+        return max(availableHeight - 280, 520)
+    }
+
+    private var isFocusActive: Bool {
+        isKeyboardAdaptive && isTextInputFocused
     }
 }
 
@@ -786,27 +846,99 @@ private struct WelcomeStep: View {
 
             Text("Speak freely. OffRecord turns your voice into insights using local AI on your device, even without internet.")
                 .font(.title3.weight(.semibold))
-                .foregroundStyle(.white.opacity(0.76))
+                .foregroundStyle(.white.opacity(0.86))
                 .multilineTextAlignment(.center)
                 .lineSpacing(4)
 
-            TextField(
-                "Your name (optional)",
-                text: $nameDraft,
-                prompt: Text("Your name (optional)")
-                    .foregroundStyle(Color.black.opacity(0.46))
-            )
-                .textContentType(.givenName)
-                .textInputAutocapitalization(.words)
-                .autocorrectionDisabled()
-                .font(.headline)
-                .foregroundColor(.black)
-                .tint(Color(red: 0.84, green: 0.28, blue: 0.36))
-                .padding(.horizontal, 16)
-                .padding(.vertical, 14)
-                .background(.white)
-                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+            OnboardingNameField(text: $nameDraft)
+                .frame(maxWidth: .infinity)
+                .frame(height: 56)
+                .id(OnboardingScrollTarget.welcomeNameField)
         }
+    }
+}
+
+private struct OnboardingNameField: UIViewRepresentable {
+    @Binding var text: String
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(text: $text)
+    }
+
+    func makeUIView(context: Context) -> UITextField {
+        let textField = InsetTextField(frame: .zero)
+        textField.delegate = context.coordinator
+        textField.text = text
+        textField.placeholder = "Your name (optional)"
+        textField.textColor = UIColor(OffRecordColor.textPrimary)
+        textField.tintColor = UIColor(OffRecordColor.textCoral)
+        textField.font = UIFont.preferredFont(forTextStyle: .headline)
+        textField.textContentType = .givenName
+        textField.autocapitalizationType = .words
+        textField.autocorrectionType = .no
+        textField.returnKeyType = .done
+        textField.clearButtonMode = .whileEditing
+        textField.adjustsFontForContentSizeCategory = true
+        textField.borderStyle = .none
+        textField.backgroundColor = .white
+        textField.layer.cornerRadius = 14
+        textField.layer.masksToBounds = true
+        textField.setContentHuggingPriority(.defaultLow, for: .horizontal)
+        textField.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        textField.accessibilityIdentifier = "onboarding.welcome.nameField"
+        textField.addTarget(context.coordinator, action: #selector(Coordinator.textDidChange(_:)), for: .editingChanged)
+        return textField
+    }
+
+    func updateUIView(_ uiView: UITextField, context: Context) {
+        if uiView.text != text {
+            uiView.text = text
+        }
+    }
+
+    func sizeThatFits(_ proposal: ProposedViewSize, uiView: UITextField, context: Context) -> CGSize? {
+        CGSize(width: proposal.width ?? 0, height: 56)
+    }
+
+    final class Coordinator: NSObject, UITextFieldDelegate {
+        @Binding private var text: String
+
+        init(text: Binding<String>) {
+            self._text = text
+        }
+
+        @objc func textDidChange(_ textField: UITextField) {
+            text = textField.text ?? ""
+        }
+
+        func textFieldShouldReturn(_ textField: UITextField) -> Bool {
+            textField.resignFirstResponder()
+            return true
+        }
+    }
+}
+
+private final class InsetTextField: UITextField {
+    private let contentInsets = UIEdgeInsets(top: 14, left: 16, bottom: 14, right: 16)
+
+    override var intrinsicContentSize: CGSize {
+        CGSize(width: UIView.noIntrinsicMetric, height: 56)
+    }
+
+    override func textRect(forBounds bounds: CGRect) -> CGRect {
+        bounds.inset(by: contentInsets)
+    }
+
+    override func editingRect(forBounds bounds: CGRect) -> CGRect {
+        bounds.inset(by: contentInsets)
+    }
+
+    override func placeholderRect(forBounds bounds: CGRect) -> CGRect {
+        bounds.inset(by: contentInsets)
+    }
+
+    override func clearButtonRect(forBounds bounds: CGRect) -> CGRect {
+        super.clearButtonRect(forBounds: bounds).offsetBy(dx: -contentInsets.right / 2, dy: 0)
     }
 }
 
@@ -895,11 +1027,11 @@ private struct FaceIDStep: View {
             VStack(spacing: 16) {
                 ZStack {
                     Circle()
-                        .fill(Color.green.opacity(0.18))
+                        .fill(OffRecordColor.backgroundSageTint.opacity(0.28))
                         .frame(width: 132, height: 132)
                     Image(systemName: isEnabled ? "checkmark.shield.fill" : "faceid")
                         .font(.system(size: 54, weight: .semibold))
-                        .foregroundStyle(.green)
+                        .foregroundStyle(OffRecordColor.textInverse)
                 }
 
                 VStack(alignment: .leading, spacing: 12) {
@@ -911,7 +1043,7 @@ private struct FaceIDStep: View {
                 if !isAvailable {
                     Text("Biometrics are unavailable on this device, so iOS will use your passcode.")
                         .font(.footnote.weight(.medium))
-                        .foregroundStyle(.white.opacity(0.72))
+                        .foregroundStyle(.white.opacity(0.86))
                         .padding()
                         .background(.white.opacity(0.10))
                         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -999,7 +1131,7 @@ private struct PreferencesStep: View {
                             } label: {
                                 Text(item.title)
                                     .font(.subheadline.weight(.bold))
-                                    .foregroundStyle(response.moodBaseline == item ? Color.black : Color.white)
+                                    .foregroundStyle(response.moodBaseline == item ? OffRecordColor.textBrand : OffRecordColor.textInverse)
                                     .frame(maxWidth: .infinity, minHeight: 46)
                                     .padding(.horizontal, 10)
                                     .background(response.moodBaseline == item ? Color.white : Color.white.opacity(0.12))
@@ -1078,7 +1210,7 @@ private struct ProcessingStep: View {
             VStack(spacing: 10) {
                 Text("No network call. No account lookup. Just local AI preparing your first reflection.")
                     .font(.subheadline.weight(.medium))
-                    .foregroundStyle(.white.opacity(0.72))
+                    .foregroundStyle(.white.opacity(0.86))
                     .multilineTextAlignment(.center)
             }
             Spacer(minLength: 80)
@@ -1126,13 +1258,17 @@ private struct FirstEntryStep: View {
                                 selectedMood = mood
                             } label: {
                                 HStack {
-                                    Image(systemName: mood.icon)
+                                    MiniMoodIcon(
+                                        mood: mood,
+                                        size: 20,
+                                        opacity: selectedMood == mood ? 0.92 : 0.72
+                                    )
                                     Text(mood.displayName)
                                     Spacer()
                                 }
                                 .font(.subheadline.weight(.semibold))
                                 .padding(12)
-                                .foregroundStyle(selectedMood == mood ? .black : .white)
+                                .foregroundStyle(selectedMood == mood ? mood.readableStyle.foreground : OffRecordColor.textInverse)
                                 .background(selectedMood == mood ? mood.color : .white.opacity(0.10))
                                 .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                             }
@@ -1155,11 +1291,11 @@ private struct FirstEntryStep: View {
             VStack(spacing: 14) {
                 ZStack {
                     Circle()
-                        .fill(isRecording ? Color.red : Color.white)
+                        .fill(isRecording ? OffRecordColor.textCoral : Color.white)
                         .frame(width: 104, height: 104)
                     Image(systemName: isRecording ? "stop.fill" : "mic.fill")
                         .font(.system(size: 38, weight: .bold))
-                        .foregroundStyle(isRecording ? .white : Color(red: 0.10, green: 0.42, blue: 0.48))
+                        .foregroundStyle(isRecording ? OffRecordColor.textInverse : OffRecordColor.textAqua)
                 }
 
                 if isRecording {
@@ -1168,7 +1304,7 @@ private struct FirstEntryStep: View {
                     WaveformMeter(level: level)
                     Text("Tap to stop")
                         .font(.subheadline.weight(.semibold))
-                        .foregroundStyle(.white.opacity(0.76))
+                        .foregroundStyle(.white.opacity(0.86))
                 } else if isTranscribing {
                     ProgressView("Transcribing on this device...")
                         .tint(.white)
@@ -1176,13 +1312,13 @@ private struct FirstEntryStep: View {
                 } else if entryCreated {
                     Label("First entry saved", systemImage: "checkmark.circle.fill")
                         .font(.headline)
-                        .foregroundStyle(.green)
+                        .foregroundStyle(OffRecordColor.textInverse)
                 } else {
                     Text("Tap to record privately")
                         .font(.headline)
                     Text("Your recording is stored locally.")
                         .font(.caption.weight(.medium))
-                        .foregroundStyle(.white.opacity(0.64))
+                        .foregroundStyle(.white.opacity(0.86))
                 }
             }
             .frame(maxWidth: .infinity)
@@ -1200,7 +1336,7 @@ private struct FirstEntryStep: View {
                 .font(.headline)
             TextField("Write your first entry...", text: $draft, axis: .vertical)
                 .focused($isTextEditorFocused)
-                .foregroundColor(.black)
+                .foregroundColor(OffRecordColor.textPrimary)
                 .lineLimit(6...10)
                 .frame(minHeight: 160)
                 .frame(maxWidth: .infinity, alignment: .topLeading)
@@ -1335,7 +1471,7 @@ private struct FinishStep: View {
             VStack(spacing: 12) {
                 Text("Record, reflect, and let Friday notice patterns entirely on this device. No internet connection required for the core experience.")
                     .font(.title3.weight(.semibold))
-                    .foregroundStyle(.white.opacity(0.74))
+                    .foregroundStyle(.white.opacity(0.86))
                     .multilineTextAlignment(.center)
                     .lineSpacing(4)
             }
@@ -1372,7 +1508,7 @@ private struct OnboardingProgressHeader: View {
 
                 Text(step.progressText)
                     .font(.system(.caption, design: .rounded, weight: .black))
-                    .foregroundStyle(.white.opacity(0.74))
+                    .foregroundStyle(.white.opacity(0.86))
                     .frame(width: sideWidth, alignment: .trailing)
             }
 
@@ -1419,7 +1555,7 @@ private struct OnboardingBottomBar: View {
                     }
                 }
                 .font(.headline)
-                .foregroundStyle(Color(red: 0.05, green: 0.08, blue: 0.10))
+                .foregroundStyle(OffRecordColor.textPrimary)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 17)
                 .background(isPrimaryDisabled ? Color.white.opacity(0.42) : Color.white)
@@ -1431,14 +1567,14 @@ private struct OnboardingBottomBar: View {
             if let secondaryTitle {
                 Button(secondaryTitle, action: onSecondary)
                     .font(.subheadline.weight(.bold))
-                    .foregroundStyle(.white.opacity(0.72))
+                    .foregroundStyle(.white.opacity(0.86))
                     .buttonStyle(.plain)
             }
         }
         .padding(.top, 16)
         .background(
             LinearGradient(
-                colors: [.clear, Color(red: 0.04, green: 0.05, blue: 0.08).opacity(0.92)],
+                colors: [.clear, OffRecordColor.textPrimary.opacity(0.92)],
                 startPoint: .top,
                 endPoint: .bottom
             )
@@ -1465,7 +1601,7 @@ private struct OnboardingQuestion<Content: View>: View {
         VStack(alignment: .center, spacing: 24) {
             Text(subtitle)
                 .font(.system(.subheadline, design: .rounded, weight: .semibold))
-                .foregroundStyle(.white.opacity(0.76))
+                .foregroundStyle(.white.opacity(0.86))
                 .multilineTextAlignment(.center)
                 .lineSpacing(3)
 
@@ -1574,7 +1710,7 @@ private struct PrivacyComparisonRow: View {
 
             Text(offRecord)
                 .font(.caption.weight(.black))
-                .foregroundStyle(.black)
+                .foregroundStyle(OffRecordColor.textPrimary)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 7)
                 .background(Color.white)
@@ -1582,7 +1718,7 @@ private struct PrivacyComparisonRow: View {
 
             Text(other)
                 .font(.caption.weight(.bold))
-                .foregroundStyle(.white.opacity(0.70))
+                .foregroundStyle(.white.opacity(0.86))
                 .padding(.horizontal, 10)
                 .padding(.vertical, 7)
                 .background(.white.opacity(0.10))
@@ -1609,7 +1745,7 @@ private struct SolutionRow: View {
             VStack(alignment: .leading, spacing: 4) {
                 Text(pain.title)
                     .font(.caption.weight(.bold))
-                    .foregroundStyle(.white.opacity(0.52))
+                    .foregroundStyle(.white.opacity(0.86))
                 Text(pain.solutionTitle)
                     .font(.headline)
                     .foregroundStyle(.white)
@@ -1623,18 +1759,36 @@ private struct SolutionRow: View {
 }
 
 private struct BenefitRow: View {
-    let icon: String
+    let icon: String?
+    let mood: Mood?
     let text: String
+
+    init(icon: String, text: String) {
+        self.icon = icon
+        self.mood = nil
+        self.text = text
+    }
+
+    init(mood: Mood, text: String) {
+        self.icon = nil
+        self.mood = mood
+        self.text = text
+    }
 
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
-            Image(systemName: icon)
-                .font(.subheadline.weight(.bold))
-                .foregroundStyle(.white)
-                .frame(width: 22)
+            if let mood {
+                MiniMoodIcon(mood: mood, size: 18, opacity: 0.88)
+                    .frame(width: 22)
+            } else if let icon {
+                Image(systemName: icon)
+                    .font(.subheadline.weight(.bold))
+                    .foregroundStyle(.white)
+                    .frame(width: 22)
+            }
             Text(text)
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.white.opacity(0.78))
+                .foregroundStyle(.white.opacity(0.86))
                 .fixedSize(horizontal: false, vertical: true)
         }
     }
@@ -1657,7 +1811,7 @@ private struct PreferencePicker<Item: Identifiable & Equatable, Label: View>: Vi
                     } label: {
                             label(item)
                                 .font(.subheadline.weight(.bold))
-                                .foregroundStyle(selection == item ? Color.black : Color.white)
+                                .foregroundStyle(selection == item ? OffRecordColor.textBrand : OffRecordColor.textInverse)
                                 .frame(maxWidth: .infinity, minHeight: 46)
                                 .padding(.horizontal, 10)
                                 .background(selection == item ? Color.white : Color.white.opacity(0.12))
@@ -1679,7 +1833,7 @@ private struct LocalAIBadge: View {
             Text("No internet required")
         }
         .font(.caption.weight(.black))
-        .foregroundStyle(.black)
+        .foregroundStyle(OffRecordColor.textPrimary)
         .lineLimit(1)
         .minimumScaleFactor(0.78)
         .padding(.horizontal, 12)
@@ -1777,7 +1931,7 @@ private struct StarterSnapshotCard: View {
                 .lineSpacing(4)
 
             VStack(alignment: .leading, spacing: 10) {
-                BenefitRow(icon: mood.icon, text: "Starting mood: \(mood.displayName)")
+                BenefitRow(mood: mood, text: "Starting mood: \(mood.displayName)")
                 BenefitRow(icon: "lock.shield.fill", text: "This insight was prepared locally on your device.")
                 BenefitRow(icon: "wifi.slash", text: "No internet connection is required for core journaling.")
             }
@@ -1833,7 +1987,7 @@ private struct TopicGraphCard: View {
 
             Text("As you journal, OffRecord connects recurring people, places, moods, and themes locally. This graph never leaves your device.")
                 .font(.subheadline.weight(.semibold))
-                .foregroundStyle(.white.opacity(0.70))
+                .foregroundStyle(.white.opacity(0.86))
         }
         .padding(18)
         .background(.white.opacity(0.10))
@@ -1868,7 +2022,7 @@ private struct TopicNode: View {
 
                 Text(title)
                     .font(.caption.weight(.black))
-                    .foregroundStyle(index == 0 ? .black : .white)
+                    .foregroundStyle(index == 0 ? OffRecordColor.textPrimary : OffRecordColor.textInverse)
                     .lineLimit(1)
                     .minimumScaleFactor(0.72)
                     .padding(.horizontal, 12)
@@ -1890,17 +2044,18 @@ struct PrivacyBadge: View {
         HStack(spacing: 6) {
             Image(systemName: "lock.shield.fill")
                 .font(compact ? .caption : .subheadline)
-                .foregroundColor(.green)
+                .foregroundColor(OffRecordColor.textSage)
 
             if !compact {
                 Text("100% Private")
                     .font(.caption.weight(.medium))
-                    .foregroundColor(.secondary)
+                    .foregroundColor(OffRecordColor.textSage)
             }
         }
         .padding(.horizontal, compact ? 8 : 12)
         .padding(.vertical, compact ? 4 : 6)
-        .background(Color.green.opacity(0.1))
+        .background(OffRecordColor.backgroundSageTint)
+        .overlay(Capsule().stroke(OffRecordColor.borderSage, lineWidth: 1))
         .clipShape(Capsule())
     }
 }
@@ -1911,15 +2066,16 @@ struct OfflineIndicator: View {
     var body: some View {
         HStack(spacing: 4) {
             Circle()
-                .fill(Color.green)
+                .fill(OffRecordColor.brandSageDark)
                 .frame(width: 6, height: 6)
             Text("Offline")
-                .font(.caption2.weight(.medium))
-                .foregroundColor(.secondary)
+                .font(.caption.weight(.medium))
+                .foregroundColor(OffRecordColor.textSage)
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 4)
-        .background(Color(.tertiarySystemBackground))
+        .background(OffRecordColor.backgroundSageTint)
+        .overlay(Capsule().stroke(OffRecordColor.borderSage, lineWidth: 1))
         .clipShape(Capsule())
     }
 }

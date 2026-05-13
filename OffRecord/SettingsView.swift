@@ -11,6 +11,8 @@ struct SettingsView: View {
     @ObservedObject private var lockManager = AppLockManager.shared
     @ObservedObject private var themeManager = ThemeManager.shared
     @ObservedObject private var goalManager = GoalManager.shared
+    @ObservedObject private var semanticMemory = SemanticMemoryIndexController.shared
+    @ObservedObject private var proactiveReflection = ProactiveReflectionController.shared
 
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \DiaryEntry.date, ascending: true)],
@@ -19,6 +21,7 @@ struct SettingsView: View {
 
     @State private var showPermissionDeniedAlert = false
     @State private var showCloudSyncRestartAlert = false
+    @State private var showDeleteSemanticIndexConfirm = false
 
     // Export states
     @State private var showExportSheet = false
@@ -58,6 +61,7 @@ struct SettingsView: View {
             journalingGoalSection
             securitySection
             localAIPrivacySection
+            semanticMemorySection
             dailyReminderSection
             storageSection
             iCloudSection
@@ -65,7 +69,12 @@ struct SettingsView: View {
             backupSection
             aboutSection
         }
-        .onAppear { calculateStorage() }
+        .scrollContentBackground(.hidden)
+        .background(OffRecordColor.appBackgroundGradient)
+        .onAppear {
+            calculateStorage()
+            proactiveReflection.refreshIfNeeded(entries: Array(entries))
+        }
         .navigationTitle("Settings")
         .alert("Notifications Disabled", isPresented: $showPermissionDeniedAlert) {
             #if os(iOS)
@@ -92,6 +101,14 @@ struct SettingsView: View {
         } message: {
             Text("Restart OffRecord AI Journal for the iCloud sync change to take effect.")
         }
+        .alert("Delete Semantic Memory Index?", isPresented: $showDeleteSemanticIndexConfirm) {
+            Button("Delete Local Index", role: .destructive) {
+                semanticMemory.deleteIndex()
+            }
+            Button("Cancel", role: .cancel) { }
+        } message: {
+            Text("This removes only derived local search data. Your journal entries, photos, audio, exports, widgets, and iCloud sync are not affected.")
+        }
         .sheet(item: Binding(
             get: { exportURL.map { IdentifiableURL(url: $0) } },
             set: { if $0 == nil { exportURL = nil } }
@@ -114,7 +131,7 @@ struct SettingsView: View {
 
             if years.isEmpty {
                 Text("No entries to export yet.")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(OffRecordColor.textSecondary)
             } else {
                 Picker("Period", selection: $selectedExportPeriod) {
                     ForEach(ExportPeriod.allCases) { period in
@@ -233,13 +250,13 @@ struct SettingsView: View {
             if lockManager.isEnabled {
                 Text("Your journal locks when you leave the app. OffRecord never sees or stores your \(lockManager.biometryTypeName).")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(OffRecordColor.textSecondary)
             }
 
             if !lockManager.biometricsAvailable {
                 Text("If \(lockManager.biometryTypeName) is unavailable, iOS will use your device passcode.")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(OffRecordColor.textSecondary)
             }
         }
     }
@@ -273,6 +290,86 @@ struct SettingsView: View {
     }
 
     @ViewBuilder
+    private var semanticMemorySection: some View {
+        Section {
+            VStack(alignment: .leading, spacing: 12) {
+                HStack(spacing: 12) {
+                    ZStack {
+                        Circle()
+                            .fill(OffRecordColor.surfaceLavender)
+                            .frame(width: 38, height: 38)
+                        Image(systemName: "brain.head.profile")
+                            .font(.subheadline)
+                            .foregroundColor(OffRecordColor.textLavender)
+                    }
+
+                    VStack(alignment: .leading, spacing: 3) {
+                        Text("Semantic Memory")
+                            .font(.subheadline.weight(.semibold))
+                        Text(semanticMemory.statusMessage)
+                            .font(.caption)
+                            .foregroundColor(OffRecordColor.textSecondary)
+                            .lineLimit(2)
+                            .accessibilityIdentifier("semanticMemory.statusMessage")
+                    }
+
+                    Spacer()
+
+                    if semanticMemory.isBuilding {
+                        ProgressView()
+                    }
+                }
+
+                if semanticMemory.isBuilding {
+                    ProgressView(value: semanticMemory.progress)
+                        .accessibilityIdentifier("semanticMemory.progress")
+                }
+
+                HStack {
+                    Text("Indexed chunks")
+                    Spacer()
+                    Text("\(semanticMemory.chunkCount)")
+                        .foregroundColor(OffRecordColor.textSecondary)
+                        .accessibilityIdentifier("semanticMemory.chunkCount")
+                }
+
+                if semanticMemory.usesFallbackEmbeddings {
+                    HStack(alignment: .top, spacing: 6) {
+                        Image(systemName: "exclamationmark.triangle.fill")
+                        Text("Apple embedding assets were unavailable, so OffRecord is using a local lexical fallback until rebuild succeeds.")
+                    }
+                    .font(.caption)
+                    .foregroundColor(OffRecordColor.textPeach)
+                    .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("semanticMemory.fallbackWarning")
+                }
+
+                Button {
+                    semanticMemory.rebuildIndex(entries: Array(entries))
+                } label: {
+                    Label("Rebuild Semantic Memory", systemImage: "arrow.clockwise")
+                }
+                .accessibilityIdentifier("semanticMemory.rebuild")
+                .disabled(semanticMemory.isBuilding)
+
+                Button(role: .destructive) {
+                    showDeleteSemanticIndexConfirm = true
+                } label: {
+                    Label("Delete Local Semantic Index", systemImage: "trash")
+                }
+                .accessibilityIdentifier("semanticMemory.delete")
+                .disabled(semanticMemory.isBuilding && semanticMemory.chunkCount == 0)
+            }
+            .padding(.vertical, 4)
+        } header: {
+            Text("Semantic Memory")
+                .accessibilityIdentifier("semanticMemory.section")
+        } footer: {
+            Text("Embeddings are derived locally from your journal entries and are not synced to iCloud. If Apple model assets are requested, only model files are downloaded; journal text stays on device.")
+        }
+    }
+
+    @ViewBuilder
     private var dailyReminderSection: some View {
         Section {
             Toggle("Remind me to record", isOn: Binding(
@@ -302,6 +399,15 @@ struct SettingsView: View {
                     displayedComponents: .hourAndMinute
                 )
             }
+
+            Toggle("Use Friday smart prompts", isOn: $reminderManager.usesFridaySmartPrompts)
+                .accessibilityIdentifier("proactiveReflection.smartReminderToggle")
+
+            if reminderManager.usesFridaySmartPrompts {
+                Text("Reminder text stays privacy-safe and never includes names, topics, moods, regrets, or journal snippets.")
+                    .font(.caption)
+                    .foregroundColor(OffRecordColor.textSecondary)
+            }
         } header: {
             Text("Daily Reminder")
         } footer: {
@@ -316,18 +422,18 @@ struct SettingsView: View {
                 HStack(spacing: 12) {
                     ZStack {
                         Circle()
-                            .fill(iCloudSyncEnabled && PersistenceController.isCloudAvailable ? Color.blue.opacity(0.15) : Color.gray.opacity(0.15))
+                            .fill(iCloudSyncEnabled && PersistenceController.isCloudAvailable ? OffRecordColor.surfaceBlue : OffRecordColor.surfaceWarm)
                             .frame(width: 36, height: 36)
                         Image(systemName: iCloudSyncEnabled && PersistenceController.isCloudAvailable ? "icloud.fill" : "icloud.slash")
                             .font(.body)
-                            .foregroundColor(iCloudSyncEnabled && PersistenceController.isCloudAvailable ? .blue : .gray)
+                            .foregroundColor(iCloudSyncEnabled && PersistenceController.isCloudAvailable ? OffRecordColor.textSky : OffRecordColor.textTertiary)
                     }
                     VStack(alignment: .leading, spacing: 2) {
                         Text("iCloud Sync")
                             .font(.subheadline.weight(.semibold))
                         Text(syncStatusText)
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(OffRecordColor.textSecondary)
                     }
                 }
             }
@@ -340,30 +446,30 @@ struct SettingsView: View {
                 VStack(alignment: .leading, spacing: 8) {
                     HStack(spacing: 8) {
                         Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(.green)
+                            .foregroundColor(OffRecordColor.textSage)
                             .font(.caption)
                         Text("Entries sync automatically via your personal iCloud")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(OffRecordColor.textSecondary)
                     }
                     HStack(spacing: 8) {
                         Image(systemName: "lock.fill")
-                            .foregroundColor(.green)
+                            .foregroundColor(OffRecordColor.textSage)
                             .font(.caption)
                         Text("Encrypted through your Apple ID")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(OffRecordColor.textSecondary)
                     }
                 }
                 .padding(.vertical, 4)
             } else if iCloudSyncEnabled && !PersistenceController.isCloudAvailable {
                 HStack(spacing: 8) {
                     Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundColor(.orange)
+                        .foregroundColor(OffRecordColor.textPeach)
                         .font(.caption)
                     Text("iCloud unavailable")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(OffRecordColor.textSecondary)
                 }
                 .padding(.vertical, 4)
             }
@@ -394,18 +500,18 @@ struct SettingsView: View {
             HStack(spacing: 12) {
                 ZStack {
                     Circle()
-                        .fill(Color.green.opacity(0.15))
+                        .fill(OffRecordColor.surfaceSage)
                         .frame(width: 44, height: 44)
                     Image(systemName: "lock.shield.fill")
                         .font(.title3)
-                        .foregroundColor(.green)
+                        .foregroundColor(OffRecordColor.textSage)
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Privacy First")
                         .font(.subheadline.weight(.semibold))
                     Text("Your data is encrypted and private")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(OffRecordColor.textSecondary)
                 }
             }
             .padding(.vertical, 4)
@@ -444,18 +550,18 @@ struct SettingsView: View {
                 HStack(spacing: 12) {
                     ZStack {
                         Circle()
-                            .fill(Color.orange.opacity(0.15))
+                            .fill(OffRecordColor.surfacePeach)
                             .frame(width: 36, height: 36)
                         Image(systemName: "square.and.arrow.up")
                             .font(.subheadline)
-                            .foregroundColor(.orange)
+                            .foregroundColor(OffRecordColor.textPeach)
                     }
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Export Data")
                             .font(.subheadline)
                         Text("JSON, Text, Markdown, CSV")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(OffRecordColor.textSecondary)
                     }
                 }
             }
@@ -466,18 +572,18 @@ struct SettingsView: View {
                 HStack(spacing: 12) {
                     ZStack {
                         Circle()
-                            .fill(Color.blue.opacity(0.15))
+                            .fill(OffRecordColor.surfaceBlue)
                             .frame(width: 36, height: 36)
                         Image(systemName: "square.and.arrow.down")
                             .font(.subheadline)
-                            .foregroundColor(.blue)
+                            .foregroundColor(OffRecordColor.textSky)
                     }
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Import Backup")
                             .font(.subheadline)
                         Text("Restore from JSON backup")
                             .font(.caption)
-                            .foregroundColor(.secondary)
+                            .foregroundColor(OffRecordColor.textSecondary)
                     }
                 }
             }
@@ -498,9 +604,9 @@ struct SettingsView: View {
                     ProgressView()
                 }
             } else {
-                StorageRow(label: "Audio Recordings", bytes: audioStorageBytes, icon: "waveform", color: .blue)
-                StorageRow(label: "Photos", bytes: photoStorageBytes, icon: "photo", color: .pink)
-                StorageRow(label: "Database", bytes: databaseStorageBytes, icon: "cylinder", color: .orange)
+                StorageRow(label: "Audio Recordings", bytes: audioStorageBytes, icon: "waveform", color: OffRecordColor.textAqua)
+                StorageRow(label: "Photos", bytes: photoStorageBytes, icon: "photo", color: OffRecordColor.textBlush)
+                StorageRow(label: "Database", bytes: databaseStorageBytes, icon: "cylinder", color: OffRecordColor.textPeach)
 
                 HStack {
                     Text("Total")
@@ -508,7 +614,7 @@ struct SettingsView: View {
                     Spacer()
                     Text(formatBytes(audioStorageBytes + photoStorageBytes + databaseStorageBytes))
                         .fontWeight(.semibold)
-                        .foregroundColor(.primary)
+                        .foregroundColor(OffRecordColor.textPrimary)
                 }
             }
         } header: {
@@ -589,14 +695,14 @@ struct SettingsView: View {
                 Text("Version")
                 Spacer()
                 Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(OffRecordColor.textSecondary)
             }
 
             HStack {
                 Text("Total Entries")
                 Spacer()
                 Text("\(totalEntriesCount)")
-                    .foregroundColor(.secondary)
+                    .foregroundColor(OffRecordColor.textSecondary)
             }
         }
     }
@@ -731,7 +837,7 @@ struct ThemeButton: View {
                     
                     Image(systemName: theme.icon)
                         .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(.white)
+                        .foregroundColor(theme.swatchForegroundColor)
                 }
                 .overlay {
                     if isSelected {
@@ -742,8 +848,8 @@ struct ThemeButton: View {
                 }
                 
                 Text(theme.rawValue)
-                    .font(.caption2)
-                    .foregroundColor(isSelected ? theme.accentColor : .secondary)
+                    .font(.caption)
+                    .foregroundColor(isSelected ? theme.readableAccentColor : OffRecordColor.textSecondary)
             }
         }
         .buttonStyle(.plain)
@@ -771,7 +877,7 @@ struct StorageRow: View {
             Text(label)
             Spacer()
             Text(formattedSize)
-                .foregroundColor(.secondary)
+                .foregroundColor(OffRecordColor.textSecondary)
         }
     }
 
@@ -793,7 +899,7 @@ struct PrivacyInfoRow: View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: icon)
                 .font(.subheadline)
-                .foregroundColor(.green)
+                .foregroundColor(OffRecordColor.textSage)
                 .frame(width: 20)
 
             VStack(alignment: .leading, spacing: 2) {
@@ -801,7 +907,7 @@ struct PrivacyInfoRow: View {
                     .font(.subheadline.weight(.medium))
                 Text(description)
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(OffRecordColor.textSecondary)
             }
         }
     }

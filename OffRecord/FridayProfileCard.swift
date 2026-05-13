@@ -194,7 +194,7 @@ struct FridayProfileCardSection: View {
                                 Text("Share")
                             }
                             .font(.caption.weight(.semibold))
-                            .foregroundColor(.teal)
+                            .foregroundColor(OffRecordColor.textAqua)
                         }
                     }
 
@@ -232,8 +232,8 @@ struct FridayProfileCardContent: View {
         VStack(alignment: .leading, spacing: 16) {
             // Style labels
             HStack(spacing: 12) {
-                styleBadge(profile.communicationStyle, color: .teal)
-                styleBadge(profile.thinkingStyle, color: .purple)
+                styleBadge(profile.communicationStyle, color: OffRecordColor.brandAqua)
+                styleBadge(profile.thinkingStyle, color: OffRecordColor.brandLavenderDark)
             }
 
             // Trait bars
@@ -247,15 +247,16 @@ struct FridayProfileCardContent: View {
                     Text("YOUR WORDS")
                         .font(.system(size: 10, weight: .semibold, design: .rounded))
                         .tracking(1.2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(OffRecordColor.textInverse.opacity(0.82))
 
                     HStack(spacing: 8) {
                         ForEach(profile.signatureWords, id: \.self) { word in
                             Text(word)
                                 .font(.system(size: 12, weight: .medium, design: .monospaced))
+                                .foregroundColor(OffRecordColor.textInverse)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
-                                .background(Color.teal.opacity(0.15))
+                                .background(OffRecordColor.brandAqua.opacity(0.15))
                                 .cornerRadius(6)
                         }
                     }
@@ -275,8 +276,8 @@ struct FridayProfileCardContent: View {
                 .fill(
                     LinearGradient(
                         colors: [
-                            Color(red: 0.08, green: 0.08, blue: 0.12),
-                            Color(red: 0.10, green: 0.10, blue: 0.16)
+                            OffRecordColor.brandPlum,
+                            OffRecordColor.darkSurface
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -284,7 +285,7 @@ struct FridayProfileCardContent: View {
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .stroke(Color.teal.opacity(0.2), lineWidth: 1)
+                        .stroke(OffRecordColor.brandAqua.opacity(0.2), lineWidth: 1)
                 )
         )
     }
@@ -304,20 +305,20 @@ struct FridayProfileCardContent: View {
             HStack {
                 Text(trait.label)
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.white.opacity(0.5))
+                    .foregroundColor(OffRecordColor.textInverse.opacity(0.78))
                 Spacer()
                 Text(trait.displayLabel)
                     .font(.system(size: 11, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.8))
+                    .foregroundColor(OffRecordColor.textInverse.opacity(0.8))
             }
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.white.opacity(0.08))
+                        .fill(OffRecordColor.textInverse.opacity(0.08))
                     RoundedRectangle(cornerRadius: 3)
                         .fill(
                             LinearGradient(
-                                colors: [.teal, .purple],
+                                colors: [OffRecordColor.brandAqua, OffRecordColor.brandLavender],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
@@ -329,11 +330,11 @@ struct FridayProfileCardContent: View {
             HStack {
                 Text(trait.lowLabel)
                     .font(.system(size: 8))
-                    .foregroundColor(.white.opacity(0.25))
+                    .foregroundColor(OffRecordColor.textInverse.opacity(0.62))
                 Spacer()
                 Text(trait.highLabel)
                     .font(.system(size: 8))
-                    .foregroundColor(.white.opacity(0.25))
+                    .foregroundColor(OffRecordColor.textInverse.opacity(0.62))
             }
         }
     }
@@ -342,10 +343,10 @@ struct FridayProfileCardContent: View {
         VStack(spacing: 3) {
             Text(value)
                 .font(.system(size: 13, weight: .bold))
-                .foregroundColor(.white.opacity(0.9))
+                .foregroundColor(OffRecordColor.textInverse)
             Text(label)
                 .font(.system(size: 9))
-                .foregroundColor(.white.opacity(0.35))
+                .foregroundColor(OffRecordColor.textInverse.opacity(0.72))
         }
         .frame(maxWidth: .infinity)
     }
@@ -367,12 +368,12 @@ private struct FridayProfileCardExport: View {
                     .textCase(.uppercase)
                     .tracking(1.0)
             }
-            .foregroundColor(.teal.opacity(0.9))
+            .foregroundColor(OffRecordColor.brandAqua)
 
             // Style labels
             HStack(spacing: 10) {
-                exportBadge(profile.communicationStyle, color: .teal)
-                exportBadge(profile.thinkingStyle, color: .purple)
+                exportBadge(profile.communicationStyle, color: OffRecordColor.brandAqua)
+                exportBadge(profile.thinkingStyle, color: OffRecordColor.brandLavenderDark)
             }
 
             // Traits
@@ -386,13 +387,13 @@ private struct FridayProfileCardExport: View {
                     Text("MY WORDS")
                         .font(.system(size: 10, weight: .semibold, design: .rounded))
                         .tracking(1.2)
-                        .foregroundColor(.white.opacity(0.4))
+                        .foregroundColor(OffRecordColor.textInverse.opacity(0.78))
 
                     HStack(spacing: 8) {
                         ForEach(profile.signatureWords, id: \.self) { word in
                             Text(word)
                                 .font(.system(size: 12, weight: .medium, design: .monospaced))
-                                .foregroundColor(.teal.opacity(0.8))
+                                .foregroundColor(OffRecordColor.textInverse)
                         }
                     }
                 }
@@ -413,15 +414,15 @@ private struct FridayProfileCardExport: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("OffRecord AI Journal")
                         .font(.system(size: 14, weight: .semibold, design: .rounded))
-                        .foregroundColor(.white.opacity(0.4))
+                        .foregroundColor(OffRecordColor.textInverse.opacity(0.78))
                     Text("AI Voice Diary")
                         .font(.system(size: 10, weight: .regular))
-                        .foregroundColor(.white.opacity(0.2))
+                        .foregroundColor(OffRecordColor.textInverse.opacity(0.68))
                 }
                 Spacer()
                 Text("offrecord.example.com")
                     .font(.system(size: 10, weight: .medium, design: .monospaced))
-                    .foregroundColor(.white.opacity(0.2))
+                    .foregroundColor(OffRecordColor.textInverse.opacity(0.68))
             }
         }
         .padding(28)
@@ -430,8 +431,8 @@ private struct FridayProfileCardExport: View {
                 .fill(
                     LinearGradient(
                         colors: [
-                            Color(red: 0.06, green: 0.06, blue: 0.10),
-                            Color(red: 0.10, green: 0.08, blue: 0.14)
+                            OffRecordColor.brandPlum,
+                            OffRecordColor.darkSurface
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -439,15 +440,15 @@ private struct FridayProfileCardExport: View {
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .stroke(Color.teal.opacity(0.2), lineWidth: 1)
+                        .stroke(OffRecordColor.brandAqua.opacity(0.2), lineWidth: 1)
                 )
         )
     }
 
     private func exportBadge(_ text: String, color: Color) -> some View {
-        Text(text)
-            .font(.system(size: 12, weight: .semibold, design: .rounded))
-            .foregroundColor(color)
+            Text(text)
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .foregroundColor(OffRecordColor.textInverse)
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
             .background(color.opacity(0.15))
@@ -459,18 +460,18 @@ private struct FridayProfileCardExport: View {
             HStack {
                 Text(trait.label)
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.white.opacity(0.5))
+                    .foregroundColor(OffRecordColor.textInverse.opacity(0.78))
                 Spacer()
                 Text(trait.displayLabel)
                     .font(.system(size: 11, weight: .bold))
-                    .foregroundColor(.white.opacity(0.85))
+                    .foregroundColor(OffRecordColor.textInverse.opacity(0.85))
             }
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.white.opacity(0.08))
+                        .fill(OffRecordColor.textInverse.opacity(0.08))
                     RoundedRectangle(cornerRadius: 3)
-                        .fill(LinearGradient(colors: [.teal, .purple], startPoint: .leading, endPoint: .trailing))
+                        .fill(LinearGradient(colors: [OffRecordColor.brandAqua, OffRecordColor.brandLavender], startPoint: .leading, endPoint: .trailing))
                         .frame(width: geo.size.width * max(0.05, min(1, trait.value)))
                 }
             }
@@ -482,10 +483,10 @@ private struct FridayProfileCardExport: View {
         VStack(spacing: 3) {
             Text(value)
                 .font(.system(size: 14, weight: .bold))
-                .foregroundColor(.white.opacity(0.9))
+                .foregroundColor(OffRecordColor.textInverse)
             Text(label)
                 .font(.system(size: 9))
-                .foregroundColor(.white.opacity(0.3))
+                .foregroundColor(OffRecordColor.textInverse.opacity(0.72))
         }
         .frame(maxWidth: .infinity)
     }
@@ -517,5 +518,5 @@ private struct FridayProfileCardExport: View {
         ))
         .padding()
     }
-    .background(Color(.systemGroupedBackground))
+    .background(OffRecordColor.backgroundPrimary)
 }

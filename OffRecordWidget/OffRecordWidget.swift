@@ -267,10 +267,10 @@ struct SmallWidgetView: View {
             HStack {
                 Image(systemName: "mic.fill")
                     .font(.caption)
-                    .foregroundColor(.accentColor)
+                    .foregroundColor(OffRecordColor.textBrand)
                 Text(formattedDate)
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(OffRecordColor.textSecondary)
                 Spacer()
                 if let moodString = entry.mood, let mood = Mood(rawValue: moodString), mood != .none {
                     Image(systemName: mood.icon)
@@ -283,15 +283,15 @@ struct SmallWidgetView: View {
                 Text(text)
                     .font(.caption)
                     .lineLimit(4)
-                    .foregroundColor(.primary)
+                    .foregroundColor(OffRecordColor.textPrimary)
             } else {
                 VStack(spacing: 4) {
                     Image(systemName: "plus.circle.fill")
                         .font(.title2)
-                        .foregroundColor(.accentColor)
+                        .foregroundColor(OffRecordColor.textBrand)
                     Text("Tap to record")
                         .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(OffRecordColor.textSecondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
@@ -299,7 +299,7 @@ struct SmallWidgetView: View {
             Spacer()
         }
         .padding()
-        .containerBackground(.fill.tertiary, for: .widget)
+        .offRecordWidgetBackground()
     }
 
     private var formattedDate: String {
@@ -319,6 +319,7 @@ struct MediumWidgetView: View {
                 HStack {
                     Text("Today")
                         .font(.headline)
+                        .foregroundColor(OffRecordColor.textPrimary)
                     Spacer()
                     if let moodString = entry.mood, let mood = Mood(rawValue: moodString), mood != .none {
                         HStack(spacing: 4) {
@@ -326,7 +327,7 @@ struct MediumWidgetView: View {
                             Text(mood.displayName)
                         }
                         .font(.caption)
-                        .foregroundColor(mood.color)
+                        .foregroundColor(mood.readableColor)
                     }
                 }
 
@@ -334,11 +335,11 @@ struct MediumWidgetView: View {
                     Text(text)
                         .font(.subheadline)
                         .lineLimit(3)
-                        .foregroundColor(.primary)
+                        .foregroundColor(OffRecordColor.textPrimary)
                 } else {
                     Text("No entry yet")
                         .font(.subheadline)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(OffRecordColor.textSecondary)
                         .italic()
                 }
 
@@ -346,7 +347,7 @@ struct MediumWidgetView: View {
 
                 Text(formattedDate)
                     .font(.caption2)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(OffRecordColor.textSecondary)
             }
 
             Divider()
@@ -355,15 +356,15 @@ struct MediumWidgetView: View {
             VStack(spacing: 8) {
                 Image(systemName: "mic.fill")
                     .font(.title)
-                    .foregroundColor(.accentColor)
+                    .foregroundColor(OffRecordColor.textBrand)
                 Text("Record")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(OffRecordColor.textSecondary)
             }
             .frame(width: 60)
         }
         .padding()
-        .containerBackground(.fill.tertiary, for: .widget)
+        .offRecordWidgetBackground()
     }
 
     private var formattedDate: String {
@@ -444,30 +445,30 @@ struct SmallStreakView: View {
             // Streak count
             Text("\(entry.streak)")
                 .font(.system(size: 32, weight: .bold, design: .rounded))
-                .foregroundColor(.primary)
+                .foregroundColor(OffRecordColor.textPrimary)
             
             Text(entry.streak == 1 ? "day streak" : "day streak")
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(OffRecordColor.textSecondary)
             
             // Today status
             HStack(spacing: 4) {
                 Image(systemName: entry.hasEntryToday ? "checkmark.circle.fill" : "circle")
                     .font(.caption2)
-                    .foregroundColor(entry.hasEntryToday ? .green : .secondary)
+                    .foregroundColor(entry.hasEntryToday ? OffRecordColor.brandSageDark : OffRecordColor.textSecondary)
                 Text(entry.hasEntryToday ? "Done today" : "Record today")
                     .font(.caption2)
-                    .foregroundColor(entry.hasEntryToday ? .green : .secondary)
+                    .foregroundColor(entry.hasEntryToday ? OffRecordColor.brandSageDark : OffRecordColor.textSecondary)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .containerBackground(.fill.tertiary, for: .widget)
+        .offRecordWidgetBackground()
     }
     
     private var streakColor: Color {
-        if entry.streak >= 30 { return .orange }
-        if entry.streak >= 7 { return .yellow }
-        return .red
+        if entry.streak >= 30 { return OffRecordColor.brandPeach }
+        if entry.streak >= 7 { return OffRecordColor.brandYellow }
+        return OffRecordColor.brandCoral
     }
 }
 
@@ -512,7 +513,7 @@ struct SmallMoodView: View {
         VStack(spacing: 12) {
             Text("Today's Mood")
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(OffRecordColor.textSecondary)
             
             if let moodString = entry.todayMood, let mood = Mood(rawValue: moodString), mood != .none {
                 VStack(spacing: 8) {
@@ -526,16 +527,16 @@ struct SmallMoodView: View {
                     }
                     Text(mood.displayName)
                         .font(.subheadline.weight(.medium))
-                        .foregroundColor(mood.color)
+                        .foregroundColor(mood.readableColor)
                 }
             } else {
                 VStack(spacing: 8) {
                     Image(systemName: "face.dashed")
                         .font(.largeTitle)
-                        .foregroundColor(.secondary.opacity(0.5))
+                        .foregroundColor(OffRecordColor.textSecondary)
                     Text("No mood set")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(OffRecordColor.textSecondary)
                 }
             }
             
@@ -543,7 +544,7 @@ struct SmallMoodView: View {
         }
         .padding()
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .containerBackground(.fill.tertiary, for: .widget)
+        .offRecordWidgetBackground()
     }
 }
 
@@ -556,7 +557,7 @@ struct MediumMoodView: View {
             VStack(spacing: 8) {
                 Text("Today")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(OffRecordColor.textSecondary)
                 
                 if let moodString = entry.todayMood, let mood = Mood(rawValue: moodString), mood != .none {
                     ZStack {
@@ -569,14 +570,14 @@ struct MediumMoodView: View {
                     }
                     Text(mood.displayName)
                         .font(.caption.weight(.medium))
-                        .foregroundColor(mood.color)
+                        .foregroundColor(mood.readableColor)
                 } else {
                     Image(systemName: "face.dashed")
                         .font(.title)
-                        .foregroundColor(.secondary.opacity(0.5))
+                        .foregroundColor(OffRecordColor.textSecondary)
                     Text("Not set")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(OffRecordColor.textSecondary)
                 }
             }
             .frame(width: 80)
@@ -587,12 +588,12 @@ struct MediumMoodView: View {
             VStack(alignment: .leading, spacing: 8) {
                 Text("This Week")
                     .font(.caption)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(OffRecordColor.textSecondary)
                 
                 if entry.weekMoods.isEmpty {
                     Text("No moods recorded")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(OffRecordColor.textSecondary)
                         .italic()
                 } else {
                     // Top moods
@@ -605,10 +606,11 @@ struct MediumMoodView: View {
                                     .foregroundColor(mood.color)
                                 Text(mood.displayName)
                                     .font(.caption2)
+                                    .foregroundColor(OffRecordColor.textPrimary)
                                 Spacer()
                                 Text("\(count)")
                                     .font(.caption2.weight(.medium))
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(OffRecordColor.textSecondary)
                             }
                         }
                     }
@@ -618,7 +620,7 @@ struct MediumMoodView: View {
             }
         }
         .padding()
-        .containerBackground(.fill.tertiary, for: .widget)
+        .offRecordWidgetBackground()
     }
 }
 
@@ -629,24 +631,24 @@ struct QuickRecordWidgetView: View {
         VStack(spacing: 12) {
             ZStack {
                 Circle()
-                    .fill(Color.accentColor.opacity(0.2))
+                    .fill(OffRecordColor.backgroundLavenderTint)
                     .frame(width: 60, height: 60)
                 
                 Image(systemName: "mic.fill")
                     .font(.title)
-                    .foregroundColor(.accentColor)
+                    .foregroundColor(OffRecordColor.textBrand)
             }
             
             Text("Tap to Record")
                 .font(.subheadline.weight(.medium))
-                .foregroundColor(.primary)
+                .foregroundColor(OffRecordColor.textPrimary)
             
             Text("Open OffRecord AI Journal")
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(OffRecordColor.textSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .containerBackground(.fill.tertiary, for: .widget)
+        .offRecordWidgetBackground()
     }
 }
 
@@ -759,15 +761,29 @@ enum Mood: String, CaseIterable {
 
     var color: Color {
         switch self {
-        case .none: return .secondary
-        case .happy: return .yellow
-        case .calm: return .mint
-        case .grateful: return .pink
-        case .excited: return .orange
-        case .tired: return .purple
-        case .anxious: return .indigo
-        case .sad: return .blue
-        case .angry: return .red
+        case .none: return OffRecordColor.textSecondary
+        case .happy: return OffRecordColor.moodGreat
+        case .calm: return OffRecordColor.moodCalm
+        case .grateful: return OffRecordColor.moodGood
+        case .excited: return OffRecordColor.moodOkay
+        case .tired: return OffRecordColor.moodTired
+        case .anxious: return OffRecordColor.moodAnxious
+        case .sad: return OffRecordColor.moodSad
+        case .angry: return OffRecordColor.moodAngry
+        }
+    }
+
+    var readableColor: Color {
+        switch self {
+        case .none: return OffRecordColor.textSecondary
+        case .happy: return OffRecordColor.textMint
+        case .calm: return OffRecordColor.textAqua
+        case .grateful: return OffRecordColor.textSage
+        case .excited: return OffRecordColor.textYellow
+        case .tired: return OffRecordColor.textPeach
+        case .anxious: return OffRecordColor.textLavender
+        case .sad: return OffRecordColor.textBlush
+        case .angry: return OffRecordColor.textCoral
         }
     }
 }

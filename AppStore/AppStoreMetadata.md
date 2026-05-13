@@ -7,7 +7,7 @@ OffRecord AI Journal - AI Voice Journal
 Private Journal & Mood Tracker
 
 ## Promotional Text (170 characters max)
-NEW: Ask your Friday questions about your mood patterns and personality. Share personality cards on social media. All AI on your iPhone.
+NEW: Search your journal by meaning and ask Friday evidence-backed questions with citations. Semantic Memory stays local on your iPhone.
 
 ## Description (4000 characters max)
 
@@ -95,6 +95,15 @@ https://offrecord.example.com/support
 
 ## Privacy Policy URL
 https://offrecord.example.com/privacy
+
+## What's New (Version 1.3)
+New in v1.3:
+
+- Semantic Memory Search: Find entries by meaning, not just exact words. Search for ideas like "stress after work" or "people I miss" and OffRecord surfaces related journal memories.
+- Evidence-Based Friday: Ask Friday free-form questions and get answers grounded in your own journal entries, with citation chips that open the source entries.
+- Local Index Controls: Rebuild or delete the Semantic Memory index anytime from Settings. The index is derived, local-only, and rebuildable from your entries.
+- Safer AI Answers: Friday now hedges or refuses when your journal does not contain enough evidence yet.
+- Still private: Journal text, embeddings, Friday prompts, and evidence retrieval stay on your device.
 
 ## What's New (Version 1.2)
 New in v1.2:

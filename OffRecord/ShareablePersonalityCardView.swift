@@ -73,10 +73,10 @@ private struct ShareablePersonalityCardExport: View {
             HStack(spacing: 6) {
                 Image(systemName: "waveform.circle.fill")
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(.teal)
+                    .foregroundColor(OffRecordColor.brandAqua)
                 Text("OffRecord AI Journal")
                     .font(.system(size: 14, weight: .bold, design: .rounded))
-                    .foregroundColor(.white.opacity(0.5))
+                    .foregroundColor(OffRecordColor.textInverse.opacity(0.78))
             }
             .padding(.bottom, 20)
 
@@ -84,18 +84,18 @@ private struct ShareablePersonalityCardExport: View {
             Text("FRIDAY NOTICED")
                 .font(.system(size: 13, weight: .heavy, design: .rounded))
                 .tracking(2.5)
-                .foregroundColor(.teal.opacity(0.9))
+                .foregroundColor(OffRecordColor.brandAqua)
                 .padding(.bottom, 6)
 
             Text(profile.maturityLevel)
                 .font(.system(size: 11, weight: .medium))
-                .foregroundColor(.white.opacity(0.3))
+                .foregroundColor(OffRecordColor.textInverse.opacity(0.72))
                 .padding(.bottom, 20)
 
             // Style badges
             HStack(spacing: 10) {
-                exportBadge(profile.communicationStyle, color: .teal)
-                exportBadge(profile.thinkingStyle, color: .purple)
+                exportBadge(profile.communicationStyle, color: OffRecordColor.brandAqua)
+                exportBadge(profile.thinkingStyle, color: OffRecordColor.brandLavenderDark)
             }
             .padding(.bottom, 20)
 
@@ -110,34 +110,34 @@ private struct ShareablePersonalityCardExport: View {
             // Dominant mood
             HStack(spacing: 8) {
                 Circle()
-                    .fill(Color.teal)
+                    .fill(OffRecordColor.brandAqua)
                     .frame(width: 8, height: 8)
                 Text("Dominant Mood")
                     .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.4))
+                    .foregroundColor(OffRecordColor.textInverse.opacity(0.78))
                     .textCase(.uppercase)
                     .tracking(1.0)
                 Spacer()
                 Text(profile.dominantMood)
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(.white.opacity(0.9))
+                    .foregroundColor(OffRecordColor.textInverse)
             }
             .padding(.bottom, 14)
 
             // Communication style
             HStack(spacing: 8) {
                 Circle()
-                    .fill(Color.purple)
+                    .fill(OffRecordColor.brandLavenderDark)
                     .frame(width: 8, height: 8)
                 Text("Communication")
                     .font(.system(size: 10, weight: .semibold))
-                    .foregroundColor(.white.opacity(0.4))
+                    .foregroundColor(OffRecordColor.textInverse.opacity(0.78))
                     .textCase(.uppercase)
                     .tracking(1.0)
                 Spacer()
                 Text(profile.communicationStyle)
                     .font(.system(size: 14, weight: .bold))
-                    .foregroundColor(.white.opacity(0.9))
+                    .foregroundColor(OffRecordColor.textInverse)
             }
             .padding(.bottom, 20)
 
@@ -147,16 +147,16 @@ private struct ShareablePersonalityCardExport: View {
                     Text("SIGNATURE WORDS")
                         .font(.system(size: 10, weight: .semibold, design: .rounded))
                         .tracking(1.2)
-                        .foregroundColor(.white.opacity(0.35))
+                        .foregroundColor(OffRecordColor.textInverse.opacity(0.76))
 
                     HStack(spacing: 8) {
                         ForEach(Array(profile.signatureWords.prefix(3)), id: \.self) { word in
                             Text(word)
                                 .font(.system(size: 13, weight: .semibold, design: .monospaced))
-                                .foregroundColor(.teal.opacity(0.9))
+                                .foregroundColor(OffRecordColor.brandAqua)
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 5)
-                                .background(Color.teal.opacity(0.12))
+                                .background(OffRecordColor.brandAqua.opacity(0.12))
                                 .cornerRadius(8)
                         }
                     }
@@ -169,7 +169,7 @@ private struct ShareablePersonalityCardExport: View {
             // Entry count
             Text("Built from \(profile.totalEntries) journal entries")
                 .font(.system(size: 11, weight: .medium))
-                .foregroundColor(.white.opacity(0.25))
+                .foregroundColor(OffRecordColor.textInverse.opacity(0.70))
                 .padding(.bottom, 8)
 
             // Bottom branding
@@ -177,15 +177,15 @@ private struct ShareablePersonalityCardExport: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("OffRecord AI Journal")
                         .font(.system(size: 14, weight: .semibold, design: .rounded))
-                        .foregroundColor(.white.opacity(0.35))
+                        .foregroundColor(OffRecordColor.textInverse.opacity(0.76))
                     Text("AI Voice Journal")
                         .font(.system(size: 10, weight: .regular))
-                        .foregroundColor(.white.opacity(0.18))
+                        .foregroundColor(OffRecordColor.textInverse.opacity(0.66))
                 }
                 Spacer()
                 Text("offrecord.example.com")
                     .font(.system(size: 10, weight: .medium, design: .monospaced))
-                    .foregroundColor(.white.opacity(0.18))
+                    .foregroundColor(OffRecordColor.textInverse.opacity(0.66))
             }
         }
         .padding(28)
@@ -194,9 +194,9 @@ private struct ShareablePersonalityCardExport: View {
                 .fill(
                     LinearGradient(
                         colors: [
-                            Color(red: 0.05, green: 0.05, blue: 0.09),
-                            Color(red: 0.08, green: 0.06, blue: 0.13),
-                            Color(red: 0.06, green: 0.06, blue: 0.10)
+                            OffRecordColor.brandPlum,
+                            OffRecordColor.darkSurface,
+                            OffRecordColor.darkSurfaceElevated
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -206,7 +206,7 @@ private struct ShareablePersonalityCardExport: View {
                     RoundedRectangle(cornerRadius: 28, style: .continuous)
                         .stroke(
                             LinearGradient(
-                                colors: [.teal.opacity(0.25), .purple.opacity(0.15)],
+                                colors: [OffRecordColor.brandAqua.opacity(0.25), OffRecordColor.brandLavender.opacity(0.15)],
                                 startPoint: .topLeading,
                                 endPoint: .bottomTrailing
                             ),
@@ -225,20 +225,20 @@ private struct ShareablePersonalityCardExport: View {
                 HStack(spacing: 6) {
                     Image(systemName: "waveform.circle.fill")
                         .font(.system(size: 10, weight: .semibold))
-                        .foregroundColor(.teal)
+                        .foregroundColor(OffRecordColor.brandAqua)
                     Text("OffRecord AI Journal")
                         .font(.system(size: 10, weight: .bold, design: .rounded))
-                        .foregroundColor(.white.opacity(0.4))
+                        .foregroundColor(OffRecordColor.textInverse.opacity(0.76))
                 }
 
                 Text("FRIDAY NOTICED")
                     .font(.system(size: 11, weight: .heavy, design: .rounded))
                     .tracking(2.0)
-                    .foregroundColor(.teal.opacity(0.9))
+                    .foregroundColor(OffRecordColor.brandAqua)
 
                 HStack(spacing: 6) {
-                    exportBadge(profile.communicationStyle, color: .teal, compact: true)
-                    exportBadge(profile.thinkingStyle, color: .purple, compact: true)
+                    exportBadge(profile.communicationStyle, color: OffRecordColor.brandAqua, compact: true)
+                    exportBadge(profile.thinkingStyle, color: OffRecordColor.brandLavenderDark, compact: true)
                 }
 
                 Spacer()
@@ -248,14 +248,14 @@ private struct ShareablePersonalityCardExport: View {
                         ForEach(Array(profile.signatureWords.prefix(3)), id: \.self) { word in
                             Text(word)
                                 .font(.system(size: 9, weight: .medium, design: .monospaced))
-                                .foregroundColor(.teal.opacity(0.8))
+                                .foregroundColor(OffRecordColor.brandAqua)
                         }
                     }
                 }
 
                 Text("Built from \(profile.totalEntries) entries")
                     .font(.system(size: 8, weight: .medium))
-                    .foregroundColor(.white.opacity(0.2))
+                    .foregroundColor(OffRecordColor.textInverse.opacity(0.66))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
 
@@ -270,11 +270,11 @@ private struct ShareablePersonalityCardExport: View {
                 HStack {
                     Text(profile.dominantMood)
                         .font(.system(size: 10, weight: .bold))
-                        .foregroundColor(.white.opacity(0.8))
+                        .foregroundColor(OffRecordColor.textInverse)
                     Spacer()
                     Text("offrecord.example.com")
                         .font(.system(size: 8, weight: .medium, design: .monospaced))
-                        .foregroundColor(.white.opacity(0.18))
+                        .foregroundColor(OffRecordColor.textInverse.opacity(0.66))
                 }
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -285,8 +285,8 @@ private struct ShareablePersonalityCardExport: View {
                 .fill(
                     LinearGradient(
                         colors: [
-                            Color(red: 0.05, green: 0.05, blue: 0.09),
-                            Color(red: 0.08, green: 0.06, blue: 0.13)
+                            OffRecordColor.brandPlum,
+                            OffRecordColor.darkSurface
                         ],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
@@ -296,7 +296,7 @@ private struct ShareablePersonalityCardExport: View {
                     RoundedRectangle(cornerRadius: 16, style: .continuous)
                         .stroke(
                             LinearGradient(
-                                colors: [.teal.opacity(0.2), .purple.opacity(0.15)],
+                                colors: [OffRecordColor.brandAqua.opacity(0.2), OffRecordColor.brandLavender.opacity(0.15)],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             ),
@@ -311,7 +311,7 @@ private struct ShareablePersonalityCardExport: View {
     private func exportBadge(_ text: String, color: Color, compact: Bool = false) -> some View {
         Text(text)
             .font(.system(size: compact ? 9 : 12, weight: .semibold, design: .rounded))
-            .foregroundColor(color)
+            .foregroundColor(OffRecordColor.textInverse)
             .padding(.horizontal, compact ? 8 : 12)
             .padding(.vertical, compact ? 4 : 6)
             .background(color.opacity(0.15))
@@ -323,20 +323,20 @@ private struct ShareablePersonalityCardExport: View {
             HStack {
                 Text(trait.label)
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundColor(.white.opacity(0.45))
+                    .foregroundColor(OffRecordColor.textInverse.opacity(0.78))
                 Spacer()
                 Text(trait.displayLabel)
                     .font(.system(size: 12, weight: .bold))
-                    .foregroundColor(.white.opacity(0.85))
+                    .foregroundColor(OffRecordColor.textInverse.opacity(0.85))
             }
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 3)
-                        .fill(Color.white.opacity(0.06))
+                        .fill(OffRecordColor.textInverse.opacity(0.06))
                     RoundedRectangle(cornerRadius: 3)
                         .fill(
                             LinearGradient(
-                                colors: [.teal, .purple],
+                                colors: [OffRecordColor.brandAqua, OffRecordColor.brandLavender],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
@@ -348,11 +348,11 @@ private struct ShareablePersonalityCardExport: View {
             HStack {
                 Text(trait.lowLabel)
                     .font(.system(size: 8))
-                    .foregroundColor(.white.opacity(0.2))
+                    .foregroundColor(OffRecordColor.textInverse.opacity(0.62))
                 Spacer()
                 Text(trait.highLabel)
                     .font(.system(size: 8))
-                    .foregroundColor(.white.opacity(0.2))
+                    .foregroundColor(OffRecordColor.textInverse.opacity(0.62))
             }
         }
     }
@@ -362,20 +362,20 @@ private struct ShareablePersonalityCardExport: View {
             HStack {
                 Text(trait.label)
                     .font(.system(size: 9, weight: .medium))
-                    .foregroundColor(.white.opacity(0.4))
+                    .foregroundColor(OffRecordColor.textInverse.opacity(0.78))
                 Spacer()
                 Text(trait.displayLabel)
                     .font(.system(size: 9, weight: .bold))
-                    .foregroundColor(.white.opacity(0.8))
+                    .foregroundColor(OffRecordColor.textInverse.opacity(0.8))
             }
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 2)
-                        .fill(Color.white.opacity(0.06))
+                        .fill(OffRecordColor.textInverse.opacity(0.06))
                     RoundedRectangle(cornerRadius: 2)
                         .fill(
                             LinearGradient(
-                                colors: [.teal, .purple],
+                                colors: [OffRecordColor.brandAqua, OffRecordColor.brandLavender],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
@@ -416,7 +416,7 @@ private struct ShareablePersonalityCardExport: View {
     )
     .frame(width: 360, height: 640)
     .padding()
-    .background(Color.black)
+    .background(OffRecordColor.backgroundPrimary)
 }
 
 #Preview("Landscape Format") {
@@ -445,5 +445,5 @@ private struct ShareablePersonalityCardExport: View {
     )
     .frame(width: 400, height: 225)
     .padding()
-    .background(Color.black)
+    .background(OffRecordColor.backgroundPrimary)
 }

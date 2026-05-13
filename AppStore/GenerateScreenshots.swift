@@ -31,12 +31,26 @@ class ScreenshotTests: XCTestCase {
         // Snapshot.setupSnapshot(app)
     }
 
+    private func navigateToTab(_ name: String) {
+        let customButton = app.buttons[name].firstMatch
+        if customButton.waitForExistence(timeout: 3) {
+            customButton.tap()
+            return
+        }
+
+        let tabButton = app.tabBars.buttons[name]
+        if tabButton.waitForExistence(timeout: 3) {
+            tabButton.tap()
+            return
+        }
+
+        XCTFail("Could not find tab: \(name)")
+    }
+
     // MARK: - Screenshot 1: Today View (Voice Recording)
     // Caption: "Voice Journal — Just Talk, We Transcribe"
     func test01_TodayView() throws {
-        let todayTab = app.tabBars.buttons["Today"]
-        XCTAssertTrue(todayTab.waitForExistence(timeout: 5))
-        todayTab.tap()
+        navigateToTab("Today")
         sleep(1)
 
         let screenshot = app.screenshot()
@@ -49,9 +63,7 @@ class ScreenshotTests: XCTestCase {
     // MARK: - Screenshot 2: Friday Overview (with Predictions + Profile Card)
     // Caption: "Your AI Friday Learns Your Patterns"
     func test02_Friday() throws {
-        let fridayTab = app.tabBars.buttons["Friday"]
-        XCTAssertTrue(fridayTab.waitForExistence(timeout: 5))
-        fridayTab.tap()
+        navigateToTab("Friday")
         sleep(1)
 
         let screenshot = app.screenshot()
@@ -64,9 +76,7 @@ class ScreenshotTests: XCTestCase {
     // MARK: - Screenshot 3: Insights (with Weekly Insight Cards)
     // Caption: "Automatic Mood Tracking from Your Words"
     func test03_Insights() throws {
-        let insightsTab = app.tabBars.buttons["Insights"]
-        XCTAssertTrue(insightsTab.waitForExistence(timeout: 5))
-        insightsTab.tap()
+        navigateToTab("Insights")
         sleep(1)
 
         let screenshot = app.screenshot()
@@ -79,9 +89,7 @@ class ScreenshotTests: XCTestCase {
     // MARK: - Screenshot 4: Friday Emotions
     // Caption: "9 Emotions Tracked. Zero Manual Input."
     func test04_FridayEmotions() throws {
-        let fridayTab = app.tabBars.buttons["Friday"]
-        XCTAssertTrue(fridayTab.waitForExistence(timeout: 5))
-        fridayTab.tap()
+        navigateToTab("Friday")
         sleep(1)
 
         // Scroll to emotions section or tap emotions segment
@@ -101,9 +109,7 @@ class ScreenshotTests: XCTestCase {
     // MARK: - Screenshot 5: Timeline
     // Caption: "Search Across All Your Entries Instantly"
     func test05_Timeline() throws {
-        let timelineTab = app.tabBars.buttons["Timeline"]
-        XCTAssertTrue(timelineTab.waitForExistence(timeout: 5))
-        timelineTab.tap()
+        navigateToTab("Timeline")
         sleep(1)
 
         let screenshot = app.screenshot()
@@ -116,9 +122,7 @@ class ScreenshotTests: XCTestCase {
     // MARK: - Screenshot 6: Friday Knowledge Graph / My World
     // Caption: "People, Places & Topics — Your Knowledge Graph"
     func test06_FridayWorld() throws {
-        let fridayTab = app.tabBars.buttons["Friday"]
-        XCTAssertTrue(fridayTab.waitForExistence(timeout: 5))
-        fridayTab.tap()
+        navigateToTab("Friday")
         sleep(1)
 
         let worldButton = app.buttons["My World"]
@@ -137,9 +141,7 @@ class ScreenshotTests: XCTestCase {
     // MARK: - Screenshot 7: Entry Detail with Photos
     // Caption: "8 Themes. Face ID Lock. Encrypted Backups."
     func test07_EntryDetail() throws {
-        let timelineTab = app.tabBars.buttons["Timeline"]
-        XCTAssertTrue(timelineTab.waitForExistence(timeout: 5))
-        timelineTab.tap()
+        navigateToTab("Timeline")
         sleep(1)
 
         // Tap first entry
@@ -159,9 +161,7 @@ class ScreenshotTests: XCTestCase {
     // MARK: - Screenshot 8: Settings / Privacy
     // Caption: "100% On-Device. Your Diary Never Leaves Your Phone."
     func test08_Settings() throws {
-        let settingsTab = app.tabBars.buttons["Settings"]
-        XCTAssertTrue(settingsTab.waitForExistence(timeout: 5))
-        settingsTab.tap()
+        navigateToTab("Settings")
         sleep(1)
 
         let screenshot = app.screenshot()

@@ -320,6 +320,16 @@ final class FridayAssistantEngine: ObservableObject {
         load()
     }
 
+    func resetForUITesting() {
+        guard ProcessInfo.processInfo.arguments.contains("-UITesting") else { return }
+        communicationStyle = CommunicationStyle()
+        emotionalSignature = EmotionalSignature()
+        thoughtPatterns = ThoughtPatterns()
+        knowledgeGraph = PersonalKnowledgeGraph()
+        behavioralPatterns = BehavioralPatterns()
+        summary = FridaySummary()
+    }
+
     // MARK: - Core Processing
 
     /// Process a diary entry to learn from it

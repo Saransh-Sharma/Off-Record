@@ -30,21 +30,20 @@ class ScreenshotTests: XCTestCase {
 
     // MARK: - Navigation Helper
 
-    /// Navigate to a tab by name. Handles both iPhone (bottom tab bar) and iPad (top tab bar / sidebar) layouts.
+    /// Navigate to a tab by name. Handles the custom floating iPhone tab bar plus iPad system tab/sidebar layouts.
     /// Uses .firstMatch to handle iPadOS where tab buttons appear as nested duplicates.
     private func navigateToTab(_ name: String) {
-        // Try iPhone bottom tab bar first
-        let tabButton = app.tabBars.buttons[name]
-        if tabButton.waitForExistence(timeout: 3) {
-            tabButton.tap()
+        // iPhone: custom floating tab bar exposes each tab as an accessibility button.
+        let customButton = app.buttons[name].firstMatch
+        if customButton.waitForExistence(timeout: 3) {
+            customButton.tap()
             return
         }
 
-        // iPad: buttons may exist outside tabBars (top tab bar or sidebar).
-        // Use .firstMatch to avoid "multiple matches" error from nested button elements.
-        let button = app.buttons[name].firstMatch
-        if button.waitForExistence(timeout: 3) {
-            button.tap()
+        // iPad/system fallback: native tab bars expose tab items here.
+        let tabButton = app.tabBars.buttons[name]
+        if tabButton.waitForExistence(timeout: 3) {
+            tabButton.tap()
             return
         }
 

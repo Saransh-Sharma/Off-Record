@@ -10,7 +10,6 @@ import SwiftUI
 
 struct FridayView: View {
     @ObservedObject private var assistant = FridayAssistantEngine.shared
-    @ObservedObject private var themeManager = ThemeManager.shared
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.managedObjectContext) private var viewContext
     @State private var selectedSection: FridaySection = .overview
@@ -18,6 +17,10 @@ struct FridayView: View {
     @State private var animateMascot = false
     @State private var showFridayShareSheet = false
     @State private var fridayShareImage: UIImage?
+    @State private var noteEntry: DiaryEntry?
+    @State private var isShowingPromptNote = false
+    @State private var promptNoteContext: String?
+    @State private var shouldDeleteEmptyNoteDraft = false
 
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \DiaryEntry.date, ascending: false)],
@@ -69,8 +72,18 @@ struct FridayView: View {
             .frame(maxWidth: .infinity)
         }
         .navigationTitle("Friday")
-        .background(themeManager.backgroundColor.ignoresSafeArea())
+        .background(OffRecordColor.appBackgroundGradient.ignoresSafeArea())
         .onAppear { animateMascot = true }
+        .navigationDestination(isPresented: $isShowingPromptNote) {
+            if let noteEntry {
+                EntryDetailView(
+                    entry: noteEntry,
+                    startEditing: true,
+                    deleteEmptyDraftOnDisappear: shouldDeleteEmptyNoteDraft,
+                    promptContext: promptNoteContext
+                )
+            }
+        }
     }
 
     // MARK: - Friday Header
@@ -99,16 +112,16 @@ struct FridayView: View {
             }
 
             Text("Friday")
-                .font(.title2.bold())
-                .foregroundColor(themeManager.textColor)
+                .font(OffRecordTypography.titleMedium)
+                .foregroundColor(OffRecordColor.textHeading)
 
             Text(assistant.summary.maturityLevel.description)
-                .font(.subheadline)
-                .foregroundColor(themeManager.secondaryTextColor)
+                .font(OffRecordTypography.bodyMedium)
+                .foregroundColor(OffRecordColor.textSecondary)
 
             Text("A private AI assistant you can confide in.")
-                .font(.caption)
-                .foregroundColor(themeManager.secondaryTextColor)
+                .font(OffRecordTypography.bodySmall)
+                .foregroundColor(OffRecordColor.textSecondary)
         }
     }
 
@@ -119,47 +132,48 @@ struct FridayView: View {
             HStack(spacing: 12) {
                 ZStack {
                     Circle()
-                        .fill(themeManager.accentColor.opacity(0.16))
+                        .fill(OffRecordColor.backgroundLavenderTint)
                         .frame(width: 32, height: 32)
 
                     Image(systemName: "bubble.left.and.bubble.right.fill")
                         .font(.system(size: 13))
-                        .foregroundStyle(themeManager.accentColor)
+                        .foregroundStyle(OffRecordColor.textLavender)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Talk to Friday")
                         .font(.subheadline.bold())
-                        .foregroundColor(themeManager.textColor)
+                        .foregroundColor(OffRecordColor.textHeading)
                     Text("Ask what she has noticed in your journal")
                         .font(.caption)
-                        .foregroundColor(themeManager.secondaryTextColor)
+                        .foregroundColor(OffRecordColor.textSecondary)
                 }
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
                     .font(.caption)
-                    .foregroundColor(themeManager.secondaryTextColor)
+                    .foregroundColor(OffRecordColor.textSecondary)
             }
             .padding()
             .offRecordGlassControl(
-                tint: themeManager.accentColor,
+                tint: OffRecordColor.brandLavenderDark,
                 in: RoundedRectangle(cornerRadius: 16, style: .continuous),
-                fallbackFill: themeManager.cardBackgroundColor
+                fallbackFill: OffRecordColor.surfaceLavender
             )
         }
+        .accessibilityIdentifier("friday.talk")
     }
 
     // MARK: - Orb Color (reflects emotional state)
 
     private var orbColor: Color {
         let valence = assistant.emotionalSignature.baselineValence
-        if valence > 0.3 { return .green }
-        if valence > 0.1 { return .blue }
-        if valence > -0.1 { return .purple }
-        if valence > -0.3 { return .orange }
-        return .pink
+        if valence > 0.3 { return OffRecordColor.brandMint }
+        if valence > 0.1 { return OffRecordColor.brandAqua }
+        if valence > -0.1 { return OffRecordColor.brandLavender }
+        if valence > -0.3 { return OffRecordColor.brandPeach }
+        return OffRecordColor.brandBlush
     }
 
     // MARK: - Maturity Badge
@@ -169,13 +183,13 @@ struct FridayView: View {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 4)
-                        .fill(themeManager.cardBackgroundColor)
+                        .fill(OffRecordColor.borderSoft)
                         .frame(height: 8)
 
                     RoundedRectangle(cornerRadius: 4)
                         .fill(
                             LinearGradient(
-                                colors: [themeManager.accentColor, .teal, themeManager.accentColor.opacity(0.6)],
+                                colors: [OffRecordColor.brandLavenderDark, OffRecordColor.brandAqua, OffRecordColor.brandLavender.opacity(0.7)],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
@@ -188,11 +202,11 @@ struct FridayView: View {
             HStack {
                 Text("\(assistant.summary.dataPointsCollected) data points")
                     .font(.caption)
-                    .foregroundColor(themeManager.secondaryTextColor)
+                    .foregroundColor(OffRecordColor.textSecondary)
                 Spacer()
                 Text(assistant.summary.maturityLevel.rawValue.capitalized)
                     .font(.caption.bold())
-                    .foregroundColor(themeManager.accentColor)
+                    .foregroundColor(OffRecordColor.textLavender)
             }
         }
         .padding(.horizontal)
@@ -211,13 +225,14 @@ struct FridayView: View {
                     } label: {
                         Text(section.rawValue)
                             .font(.subheadline.weight(selectedSection == section ? .bold : .regular))
-                            .foregroundColor(selectedSection == section ? themeManager.accentColor : themeManager.textColor)
+                            .foregroundColor(selectedSection == section ? OffRecordReadableTintStyle.friday.foreground : OffRecordColor.textPrimary)
                             .padding(.horizontal, 16)
                             .padding(.vertical, 8)
                             .offRecordGlassControl(
-                                tint: selectedSection == section ? themeManager.accentColor : nil,
+                                tint: selectedSection == section ? OffRecordReadableTintStyle.friday.tint : nil,
                                 in: Capsule(),
-                                fallbackFill: selectedSection == section ? themeManager.accentColor.opacity(0.15) : themeManager.cardBackgroundColor
+                                fallbackFill: selectedSection == section ? OffRecordReadableTintStyle.friday.fill : OffRecordReadableTintStyle.neutral.fill,
+                                border: selectedSection == section ? OffRecordReadableTintStyle.friday.border : OffRecordReadableTintStyle.neutral.border
                             )
                     }
                 }
@@ -230,8 +245,10 @@ struct FridayView: View {
 
     private var overviewSection: some View {
         VStack(spacing: 16) {
-            // Friday Predictions — "Friday noticed..."
-            FridayPredictionsSection(entries: Array(entries))
+            // Proactive Reflection Loop — "Friday noticed"
+            ProactiveReflectionSection(entries: Array(entries)) { insight in
+                startPromptNote(from: insight)
+            }
 
             // Shareable Personality Card
             FridayProfileCardSection()
@@ -271,8 +288,7 @@ struct FridayView: View {
                 traitBar(label: "Formality", value: assistant.communicationStyle.formalityLevel, lowLabel: "Casual", highLabel: "Formal")
             }
             .padding()
-            .background(themeManager.cardBackgroundColor)
-            .cornerRadius(16)
+            .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceWarm)
 
             // Thinking Style
             VStack(alignment: .leading, spacing: 12) {
@@ -284,8 +300,7 @@ struct FridayView: View {
                 traitBar(label: "Perspective", value: assistant.thoughtPatterns.selfFocused, lowLabel: "Others", highLabel: "Self")
             }
             .padding()
-            .background(themeManager.cardBackgroundColor)
-            .cornerRadius(16)
+            .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceWarm)
 
             // Growth Indicators
             VStack(alignment: .leading, spacing: 12) {
@@ -296,8 +311,7 @@ struct FridayView: View {
                 traitBar(label: "Gratitude", value: assistant.thoughtPatterns.gratitudeTendency, lowLabel: "Occasional", highLabel: "Frequent")
             }
             .padding()
-            .background(themeManager.cardBackgroundColor)
-            .cornerRadius(16)
+            .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceWarm)
 
             // Signature Words
             if !assistant.communicationStyle.signatureWords.isEmpty {
@@ -314,15 +328,18 @@ struct FridayView: View {
                                 .font(.caption.weight(count > 3 ? .bold : .regular))
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 5)
-                                .background(themeManager.accentColor.opacity(Double(min(count, 10)) / 15.0 + 0.1))
-                                .foregroundColor(.white)
+                                .background(OffRecordColor.backgroundLavenderTint)
+                                .foregroundColor(OffRecordColor.textLavender)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .stroke(OffRecordReadableTintStyle.friday.border, lineWidth: 1)
+                                )
                                 .cornerRadius(12)
                         }
                     }
                 }
                 .padding()
-                .background(themeManager.cardBackgroundColor)
-                .cornerRadius(16)
+                .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceLavender)
             }
 
             // Share a personality card only after Friday has enough context.
@@ -353,20 +370,20 @@ struct FridayView: View {
                     Text("Share Your Personality Card")
                         .font(.system(size: 15, weight: .bold))
                     Text("A snapshot of the patterns Friday has noticed")
-                        .font(.system(size: 11, weight: .regular))
-                        .opacity(0.6)
+                        .font(.caption)
+                        .foregroundColor(OffRecordColor.textSecondary)
                 }
                 Spacer()
                 Image(systemName: "chevron.right")
                     .font(.system(size: 13, weight: .semibold))
-                    .opacity(0.4)
+                    .foregroundColor(OffRecordColor.textSecondary)
             }
-            .foregroundColor(.primary)
+            .foregroundColor(OffRecordColor.textPrimary)
             .padding(16)
             .offRecordGlassControl(
-                tint: .teal,
+                tint: OffRecordColor.brandAqua,
                 in: RoundedRectangle(cornerRadius: 16, style: .continuous),
-                fallbackFill: Color.teal.opacity(0.14)
+                fallbackFill: OffRecordColor.surfaceMint
             )
         }
     }
@@ -390,24 +407,23 @@ struct FridayView: View {
                 sectionHeader("Emotional Baseline", icon: "heart.circle.fill")
 
                 HStack(spacing: 20) {
-                    emotionMeter(label: "Valence", value: (assistant.emotionalSignature.baselineValence + 1) / 2, color: assistant.emotionalSignature.baselineValence > 0 ? .green : .orange)
-                    emotionMeter(label: "Arousal", value: assistant.emotionalSignature.baselineArousal, color: .blue)
-                    emotionMeter(label: "Range", value: assistant.emotionalSignature.emotionalRange, color: .teal)
+                    emotionMeter(label: "Valence", value: (assistant.emotionalSignature.baselineValence + 1) / 2, color: assistant.emotionalSignature.baselineValence > 0 ? OffRecordColor.brandMint : OffRecordColor.brandPeach)
+                    emotionMeter(label: "Arousal", value: assistant.emotionalSignature.baselineArousal, color: OffRecordColor.brandSky)
+                    emotionMeter(label: "Range", value: assistant.emotionalSignature.emotionalRange, color: OffRecordColor.brandAqua)
                 }
 
                 if assistant.emotionalSignature.sentimentTrend != 0 {
                     HStack {
                         Image(systemName: assistant.emotionalSignature.sentimentTrend > 0 ? "arrow.up.right" : "arrow.down.right")
-                            .foregroundColor(assistant.emotionalSignature.sentimentTrend > 0 ? .green : .orange)
+                            .foregroundColor(sentimentTextColor(assistant.emotionalSignature.sentimentTrend))
                         Text("Emotional trajectory is \(assistant.emotionalSignature.sentimentTrend > 0 ? "improving" : "declining")")
                             .font(.caption)
-                            .foregroundColor(themeManager.secondaryTextColor)
+                            .foregroundColor(OffRecordColor.textSecondary)
                     }
                 }
             }
             .padding()
-            .background(themeManager.cardBackgroundColor)
-            .cornerRadius(16)
+            .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceBlush)
 
             // Time-Based Mood
             VStack(alignment: .leading, spacing: 12) {
@@ -421,8 +437,7 @@ struct FridayView: View {
                 }
             }
             .padding()
-            .background(themeManager.cardBackgroundColor)
-            .cornerRadius(16)
+            .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceWarm)
 
             // Mood Frequency
             if !assistant.emotionalSignature.emotionFrequency.isEmpty {
@@ -434,7 +449,11 @@ struct FridayView: View {
 
                     ForEach(sorted.prefix(6), id: \.key) { mood, count in
                         HStack {
-                            Text(moodEmoji(mood))
+                            MiniMoodIcon(
+                                mood: Mood(rawEmotion: mood),
+                                size: 18,
+                                opacity: 0.86
+                            )
                             Text(mood.capitalized)
                                 .font(.caption)
                                 .frame(width: 60, alignment: .leading)
@@ -445,14 +464,13 @@ struct FridayView: View {
                             }
                             .frame(height: 16)
                             Text("\(Int(count))")
-                                .font(.caption2)
-                                .foregroundColor(themeManager.secondaryTextColor)
+                                .font(.caption)
+                                .foregroundColor(OffRecordColor.textSecondary)
                         }
                     }
                 }
                 .padding()
-                .background(themeManager.cardBackgroundColor)
-                .cornerRadius(16)
+                .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceWarm)
             }
 
             // Positive & Negative Triggers
@@ -463,15 +481,16 @@ struct FridayView: View {
                     if !assistant.emotionalSignature.positiveTriggersTopics.isEmpty {
                         Text("Lifts your mood")
                             .font(.caption.bold())
-                            .foregroundColor(.green)
+                            .foregroundColor(OffRecordColor.textSage)
 
                         FlowLayout(spacing: 6) {
                             ForEach(Array(assistant.emotionalSignature.positiveTriggersTopics.sorted { $0.value > $1.value }.prefix(8)), id: \.key) { topic, _ in
                                 Text(topic.capitalized)
                                     .font(.caption)
+                                    .foregroundColor(OffRecordColor.textSage)
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 4)
-                                    .background(Color.green.opacity(0.2))
+                                    .background(OffRecordColor.backgroundSageTint)
                                     .cornerRadius(8)
                             }
                         }
@@ -480,24 +499,24 @@ struct FridayView: View {
                     if !assistant.emotionalSignature.negativeTriggersTopics.isEmpty {
                         Text("Weighs on you")
                             .font(.caption.bold())
-                            .foregroundColor(.orange)
+                            .foregroundColor(OffRecordColor.textPeach)
                             .padding(.top, 4)
 
                         FlowLayout(spacing: 6) {
                             ForEach(Array(assistant.emotionalSignature.negativeTriggersTopics.sorted { $0.value > $1.value }.prefix(8)), id: \.key) { topic, _ in
                                 Text(topic.capitalized)
                                     .font(.caption)
+                                    .foregroundColor(OffRecordColor.textPeach)
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 4)
-                                    .background(Color.orange.opacity(0.2))
+                                    .background(OffRecordColor.backgroundPeachTint)
                                     .cornerRadius(8)
                             }
                         }
                     }
                 }
                 .padding()
-                .background(themeManager.cardBackgroundColor)
-                .cornerRadius(16)
+                .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceWarm)
             }
         }
     }
@@ -525,15 +544,14 @@ struct FridayView: View {
                 VStack(spacing: 12) {
                     Image(systemName: "globe")
                         .font(.system(size: 40))
-                        .foregroundColor(themeManager.accentColor.opacity(0.5))
+                        .foregroundColor(OffRecordColor.textLavender)
                     Text("Your world map will build as you journal")
                         .font(.subheadline)
-                        .foregroundColor(themeManager.secondaryTextColor)
+                        .foregroundColor(OffRecordColor.textSecondary)
                 }
                 .frame(maxWidth: .infinity)
                 .padding(40)
-                .background(themeManager.cardBackgroundColor)
-                .cornerRadius(16)
+                .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceWarm)
             }
         }
     }
@@ -554,13 +572,13 @@ struct FridayView: View {
                         let count = Double(assistant.behavioralPatterns.hourlyActivity[hour] ?? 0)
                         VStack(spacing: 2) {
                             RoundedRectangle(cornerRadius: 2)
-                                .fill(Color.teal.opacity(count / max(1, maxHourly)))
+                                .fill(OffRecordColor.brandAqua.opacity(count / max(1, maxHourly)))
                                 .frame(height: max(4, 60 * (count / max(1, maxHourly))))
 
                             if hour % 6 == 0 {
                                 Text("\(hour)")
                                     .font(.system(size: 8))
-                                    .foregroundColor(themeManager.secondaryTextColor)
+                                    .foregroundColor(OffRecordColor.textSecondary)
                             }
                         }
                     }
@@ -570,12 +588,11 @@ struct FridayView: View {
                 if let peak = assistant.behavioralPatterns.peakHour {
                     Text("Peak writing time: \(formatHour(peak))")
                         .font(.caption)
-                        .foregroundColor(themeManager.secondaryTextColor)
+                        .foregroundColor(OffRecordColor.textSecondary)
                 }
             }
             .padding()
-            .background(themeManager.cardBackgroundColor)
-            .cornerRadius(16)
+            .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceWarm)
 
             // Day of Week
             VStack(alignment: .leading, spacing: 12) {
@@ -589,20 +606,19 @@ struct FridayView: View {
                         let count = Double(assistant.behavioralPatterns.dayOfWeekActivity[day] ?? 0)
                         VStack(spacing: 4) {
                             RoundedRectangle(cornerRadius: 4)
-                                .fill(Color.blue.opacity(count / max(1, maxDaily) * 0.8 + 0.1))
+                                .fill(OffRecordColor.brandSky.opacity(count / max(1, maxDaily) * 0.8 + 0.1))
                                 .frame(height: max(8, 50 * (count / max(1, maxDaily))))
 
                             Text(days[day - 1])
                                 .font(.system(size: 10))
-                                .foregroundColor(themeManager.secondaryTextColor)
+                                .foregroundColor(OffRecordColor.textSecondary)
                         }
                     }
                 }
                 .frame(height: 70)
             }
             .padding()
-            .background(themeManager.cardBackgroundColor)
-            .cornerRadius(16)
+            .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceBlue)
 
             // Writing Stats
             VStack(alignment: .leading, spacing: 12) {
@@ -616,8 +632,7 @@ struct FridayView: View {
                 }
             }
             .padding()
-            .background(themeManager.cardBackgroundColor)
-            .cornerRadius(16)
+            .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceWarm)
 
             // Preferences
             VStack(alignment: .leading, spacing: 12) {
@@ -627,8 +642,7 @@ struct FridayView: View {
                 traitBar(label: "Entry Length", value: 1 - assistant.behavioralPatterns.prefersShortEntries, lowLabel: "Brief", highLabel: "Detailed")
             }
             .padding()
-            .background(themeManager.cardBackgroundColor)
-            .cornerRadius(16)
+            .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceWarm)
         }
     }
 
@@ -638,29 +652,28 @@ struct FridayView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Image(systemName: icon)
-                    .foregroundColor(themeManager.accentColor)
+                    .foregroundColor(OffRecordColor.textLavender)
                 Text(title)
                     .font(.headline)
-                    .foregroundColor(themeManager.textColor)
+                    .foregroundColor(OffRecordColor.textHeading)
             }
             Text(content)
                 .font(.subheadline)
-                .foregroundColor(themeManager.secondaryTextColor)
+                .foregroundColor(OffRecordColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
-        .background(themeManager.cardBackgroundColor)
-        .cornerRadius(16)
+        .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceLavender)
     }
 
     private func sectionHeader(_ title: String, icon: String) -> some View {
         HStack {
             Image(systemName: icon)
-                .foregroundColor(themeManager.accentColor)
+                .foregroundColor(OffRecordColor.textLavender)
             Text(title)
                 .font(.headline)
-                .foregroundColor(themeManager.textColor)
+                .foregroundColor(OffRecordColor.textHeading)
         }
     }
 
@@ -669,18 +682,18 @@ struct FridayView: View {
             HStack {
                 Text(label)
                     .font(.caption)
-                    .foregroundColor(themeManager.secondaryTextColor)
+                    .foregroundColor(OffRecordColor.textSecondary)
                 Spacer()
             }
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     RoundedRectangle(cornerRadius: 4)
-                        .fill(Color.gray.opacity(0.2))
+                        .fill(OffRecordColor.textTertiary.opacity(0.18))
 
                     RoundedRectangle(cornerRadius: 4)
                         .fill(
                             LinearGradient(
-                                colors: [themeManager.accentColor, .teal],
+                                colors: [OffRecordColor.brandLavenderDark, OffRecordColor.brandAqua],
                                 startPoint: .leading,
                                 endPoint: .trailing
                             )
@@ -692,11 +705,11 @@ struct FridayView: View {
             HStack {
                 Text(lowLabel)
                     .font(.system(size: 9))
-                    .foregroundColor(themeManager.secondaryTextColor)
+                    .foregroundColor(OffRecordColor.textSecondary)
                 Spacer()
                 Text(highLabel)
                     .font(.system(size: 9))
-                    .foregroundColor(themeManager.secondaryTextColor)
+                    .foregroundColor(OffRecordColor.textSecondary)
             }
         }
     }
@@ -707,7 +720,7 @@ struct FridayView: View {
         return VStack(spacing: 6) {
             ZStack {
                 Circle()
-                    .stroke(Color.gray.opacity(0.2), lineWidth: lineWidth)
+                    .stroke(OffRecordColor.textTertiary.opacity(0.2), lineWidth: lineWidth)
                 Circle()
                     .trim(from: 0, to: max(0.05, value))
                     .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
@@ -715,13 +728,13 @@ struct FridayView: View {
 
                 Text(String(format: "%.0f%%", value * 100))
                     .font(.system(size: isIPad ? 14 : 11, weight: .bold))
-                    .foregroundColor(themeManager.textColor)
+                    .foregroundColor(OffRecordColor.textPrimary)
             }
             .frame(width: meterSize, height: meterSize)
 
             Text(label)
                 .font(.system(size: isIPad ? 12 : 10))
-                .foregroundColor(themeManager.secondaryTextColor)
+                .foregroundColor(OffRecordColor.textSecondary)
         }
     }
 
@@ -733,11 +746,11 @@ struct FridayView: View {
 
             Text(sentimentLabel(sentiment))
                 .font(.system(size: 10, weight: .medium))
-                .foregroundColor(sentimentColor(sentiment))
+                .foregroundColor(sentimentTextColor(sentiment))
 
             Text(label)
                 .font(.system(size: 9))
-                .foregroundColor(themeManager.secondaryTextColor)
+                .foregroundColor(OffRecordColor.textSecondary)
         }
         .frame(maxWidth: .infinity)
     }
@@ -757,19 +770,19 @@ struct FridayView: View {
 
                             Text(node.label)
                                 .font(.subheadline)
-                                .foregroundColor(themeManager.textColor)
+                                .foregroundColor(OffRecordColor.textPrimary)
 
                             Spacer()
 
                             Text("\(node.mentions)x")
                                 .font(.caption)
-                                .foregroundColor(themeManager.secondaryTextColor)
+                                .foregroundColor(OffRecordColor.textSecondary)
 
                             // Importance indicator
                             HStack(spacing: 1) {
                                 ForEach(0..<5, id: \.self) { i in
                                     Circle()
-                                        .fill(Double(i) / 5.0 < node.importance ? themeManager.accentColor : Color.gray.opacity(0.2))
+                                        .fill(Double(i) / 5.0 < node.importance ? OffRecordColor.brandLavenderDark : OffRecordColor.textTertiary.opacity(0.2))
                                         .frame(width: 4, height: 4)
                                 }
                             }
@@ -777,8 +790,7 @@ struct FridayView: View {
                     }
                 }
                 .padding()
-                .background(themeManager.cardBackgroundColor)
-                .cornerRadius(16)
+                .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceWarm)
             }
         }
     }
@@ -787,10 +799,10 @@ struct FridayView: View {
         VStack(spacing: 4) {
             Text(value)
                 .font(.title3.bold())
-                .foregroundColor(themeManager.accentColor)
+                .foregroundColor(OffRecordColor.textLavender)
             Text(label)
                 .font(.system(size: 10))
-                .foregroundColor(themeManager.secondaryTextColor)
+                .foregroundColor(OffRecordColor.textSecondary)
         }
         .frame(maxWidth: .infinity)
     }
@@ -801,11 +813,11 @@ struct FridayView: View {
 
             Text("Friday is getting to know you")
                 .font(.headline)
-                .foregroundColor(themeManager.textColor)
+                .foregroundColor(OffRecordColor.textHeading)
 
             Text("Keep journaling with OffRecord AI Journal. Friday learns from every entry and starts noticing the patterns that matter.")
                 .font(.subheadline)
-                .foregroundColor(themeManager.secondaryTextColor)
+                .foregroundColor(OffRecordColor.textSecondary)
                 .multilineTextAlignment(.center)
 
             HStack(spacing: 16) {
@@ -813,34 +825,46 @@ struct FridayView: View {
                 Label("Written entries", systemImage: "square.and.pencil")
             }
             .font(.caption)
-            .foregroundColor(themeManager.accentColor)
+            .foregroundColor(OffRecordColor.textLavender)
         }
         .padding(24)
-        .background(themeManager.cardBackgroundColor)
-        .cornerRadius(16)
+        .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceSage)
     }
 
     private var privacyBadge: some View {
         HStack(spacing: 8) {
             Image(systemName: "lock.shield.fill")
-                .foregroundColor(.green)
+                .foregroundColor(OffRecordReadableTintStyle.privacy.foreground)
             Text("Friday runs on-device. Your journal never leaves your device.")
                 .font(.caption)
-                .foregroundColor(themeManager.secondaryTextColor)
+                .foregroundColor(OffRecordReadableTintStyle.privacy.foreground)
         }
         .padding()
         .frame(maxWidth: .infinity)
-        .offRecordGlassControl(tint: .green, in: RoundedRectangle(cornerRadius: 12, style: .continuous), fallbackFill: Color.green.opacity(0.1))
+        .offRecordGlassControl(
+            tint: OffRecordReadableTintStyle.privacy.tint,
+            in: RoundedRectangle(cornerRadius: 12, style: .continuous),
+            fallbackFill: OffRecordReadableTintStyle.privacy.fill,
+            border: OffRecordReadableTintStyle.privacy.border
+        )
     }
 
     // MARK: - Helpers
 
     private func sentimentColor(_ sentiment: Double) -> Color {
-        if sentiment > 0.3 { return .green }
-        if sentiment > 0.1 { return .blue }
-        if sentiment > -0.1 { return .gray }
-        if sentiment > -0.3 { return .orange }
-        return .red
+        if sentiment > 0.3 { return OffRecordColor.brandMint }
+        if sentiment > 0.1 { return OffRecordColor.brandAqua }
+        if sentiment > -0.1 { return OffRecordColor.textTertiary }
+        if sentiment > -0.3 { return OffRecordColor.brandPeach }
+        return OffRecordColor.brandCoral
+    }
+
+    private func sentimentTextColor(_ sentiment: Double) -> Color {
+        if sentiment > 0.3 { return OffRecordColor.textMint }
+        if sentiment > 0.1 { return OffRecordColor.textAqua }
+        if sentiment > -0.1 { return OffRecordColor.textSecondary }
+        if sentiment > -0.3 { return OffRecordColor.textPeach }
+        return OffRecordColor.textCoral
     }
 
     private func sentimentLabel(_ sentiment: Double) -> String {
@@ -851,31 +875,17 @@ struct FridayView: View {
         return "Tough"
     }
 
-    private func moodEmoji(_ mood: String) -> String {
-        switch mood.lowercased() {
-        case "happy": return "😊"
-        case "calm": return "😌"
-        case "grateful": return "🙏"
-        case "excited": return "🤩"
-        case "tired": return "😴"
-        case "anxious": return "😰"
-        case "sad": return "😢"
-        case "angry": return "😤"
-        default: return "😐"
-        }
-    }
-
     private func moodColor(_ mood: String) -> Color {
         switch mood.lowercased() {
-        case "happy": return .yellow
-        case "calm": return .blue
-        case "grateful": return .green
-        case "excited": return .orange
-        case "tired": return .gray
-        case "anxious": return .purple
-        case "sad": return .indigo
-        case "angry": return .red
-        default: return .gray
+        case "happy": return OffRecordColor.brandYellow
+        case "calm": return OffRecordColor.brandAqua
+        case "grateful": return OffRecordColor.brandMint
+        case "excited": return OffRecordColor.brandPeach
+        case "tired": return OffRecordColor.textTertiary
+        case "anxious": return OffRecordColor.brandLavender
+        case "sad": return OffRecordColor.brandSky
+        case "angry": return OffRecordColor.brandCoral
+        default: return OffRecordColor.textTertiary
         }
     }
 
@@ -891,6 +901,55 @@ struct FridayView: View {
             return String(format: "%.1fk", Double(n) / 1000)
         }
         return "\(n)"
+    }
+
+    private func startPromptNote(from insight: ReflectionInsight) {
+        let hadEntry = todayEntry != nil
+        let entry = getOrCreateTodayEntry()
+        noteEntry = entry
+        promptNoteContext = insight.prompt
+        shouldDeleteEmptyNoteDraft = !hadEntry && entryHasNoContent(entry)
+        isShowingPromptNote = true
+        HapticManager.shared.selectionChanged()
+    }
+
+    private var todayEntry: DiaryEntry? {
+        let calendar = Calendar.current
+        return entries.first { entry in
+            guard let date = entry.date else { return false }
+            return calendar.isDateInToday(date)
+        }
+    }
+
+    private func getOrCreateTodayEntry() -> DiaryEntry {
+        if let existing = todayEntry {
+            return existing
+        }
+
+        let now = Date()
+        let entry = DiaryEntry(context: viewContext)
+        entry.id = UUID()
+        entry.date = now
+        entry.createdAt = now
+        entry.text = ""
+        entry.isStarred = false
+        entry.updatedAt = now
+
+        do {
+            try viewContext.save()
+        } catch {
+            viewContext.rollback()
+        }
+
+        return entry
+    }
+
+    private func entryHasNoContent(_ entry: DiaryEntry) -> Bool {
+        let text = entry.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let duration = entry.value(forKey: "duration") as? Double ?? 0
+        let photoCount = entry.photos?.count ?? 0
+        let hasAudio = (entry.value(forKey: "audioFileName") as? String)?.isEmpty == false
+        return text.isEmpty && !hasAudio && duration <= 0 && photoCount == 0
     }
 }
 

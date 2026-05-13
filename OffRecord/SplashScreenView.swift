@@ -21,7 +21,7 @@ struct SplashScreenView: View {
             let targetScale = targetScale(for: proxy.size, iconSize: iconSize)
 
             ZStack {
-                Color.black
+                OffRecordColor.appBackgroundGradient
                     .ignoresSafeArea()
 
                 Image("SplashIcon")

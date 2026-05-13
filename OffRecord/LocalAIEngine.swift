@@ -150,17 +150,17 @@ enum DetectedEmotion: String, CaseIterable {
     case trust = "trust"
     case neutral = "neutral"
     
-    var emoji: String {
+    var representativeMood: Mood {
         switch self {
-        case .joy: return "😊"
-        case .sadness: return "😢"
-        case .anger: return "😤"
-        case .fear: return "😰"
-        case .surprise: return "😮"
-        case .disgust: return "😒"
-        case .anticipation: return "🤔"
-        case .trust: return "🤝"
-        case .neutral: return "😐"
+        case .joy: return .happy
+        case .sadness: return .sad
+        case .anger: return .angry
+        case .fear: return .anxious
+        case .surprise: return .excited
+        case .disgust: return .angry
+        case .anticipation: return .excited
+        case .trust: return .grateful
+        case .neutral: return .none
         }
     }
     

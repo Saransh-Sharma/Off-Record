@@ -104,9 +104,14 @@ struct AudioPlayerView: View {
                 } label: {
                     Image(systemName: controller.isPlaying ? "pause.circle.fill" : "play.circle.fill")
                         .font(.system(size: 32))
-                        .foregroundColor(.accentColor)
+                        .foregroundColor(OffRecordReadableTintStyle.journal.foreground)
                         .frame(width: 44, height: 44)
-                        .offRecordGlassControl(tint: .accentColor, in: Circle(), fallbackFill: Color.accentColor.opacity(0.1))
+                        .offRecordGlassControl(
+                            tint: OffRecordReadableTintStyle.journal.tint,
+                            in: Circle(),
+                            fallbackFill: OffRecordReadableTintStyle.journal.fill,
+                            border: OffRecordReadableTintStyle.journal.border
+                        )
                 }
                 .buttonStyle(.plain)
 
@@ -118,16 +123,16 @@ struct AudioPlayerView: View {
                         ),
                         in: 0...max(0.01, controller.duration)
                     )
-                    .tint(.accentColor)
+                    .tint(OffRecordColor.brandAqua)
 
                     HStack {
                         Text(formatTime(controller.currentTime))
                             .font(.caption2.monospacedDigit())
-                            .foregroundColor(.secondary)
+                            .foregroundColor(OffRecordColor.textSecondary)
                         Spacer()
                         Text(formatTime(controller.duration))
                             .font(.caption2.monospacedDigit())
-                            .foregroundColor(.secondary)
+                            .foregroundColor(OffRecordColor.textSecondary)
                     }
                 }
             }
@@ -137,7 +142,7 @@ struct AudioPlayerView: View {
                 HStack(spacing: 6) {
                     Text("Speed")
                         .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(OffRecordColor.textSecondary)
 
                     ForEach(AudioPlaybackController.speedOptions, id: \.self) { speed in
                         Button {
@@ -148,11 +153,12 @@ struct AudioPlayerView: View {
                                 .font(.caption2.weight(controller.playbackRate == speed ? .bold : .regular))
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
-                                .foregroundColor(controller.playbackRate == speed ? .accentColor : .secondary)
+                                .foregroundColor(controller.playbackRate == speed ? OffRecordReadableTintStyle.growth.foreground : OffRecordColor.textSecondary)
                                 .offRecordGlassControl(
-                                    tint: controller.playbackRate == speed ? .accentColor : nil,
+                                    tint: controller.playbackRate == speed ? OffRecordReadableTintStyle.growth.tint : nil,
                                     in: Capsule(),
-                                    fallbackFill: controller.playbackRate == speed ? Color.accentColor.opacity(0.15) : Color(.tertiarySystemFill)
+                                    fallbackFill: controller.playbackRate == speed ? OffRecordReadableTintStyle.growth.fill : OffRecordReadableTintStyle.neutral.fill,
+                                    border: controller.playbackRate == speed ? OffRecordReadableTintStyle.growth.border : OffRecordReadableTintStyle.neutral.border
                                 )
                         }
                         .buttonStyle(.plain)
@@ -173,7 +179,7 @@ struct AudioPlayerView: View {
             if let error = loadError {
                 Text(error)
                     .font(.caption)
-                    .foregroundColor(.red)
+                    .foregroundColor(OffRecordColor.textCoral)
             }
         }
     }

@@ -13,6 +13,7 @@ struct StatsView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @ObservedObject private var goalManager = GoalManager.shared
+    @ObservedObject private var proactiveReflection = ProactiveReflectionController.shared
 
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \DiaryEntry.date, ascending: false)],
@@ -31,6 +32,9 @@ struct StatsView: View {
                 } else {
                     // Shareable Weekly Insights
                     WeeklyInsightsSection(entries: Array(entries))
+
+                    // Proactive weekly reflection
+                    ProactiveWeeklyReflectionCard(entries: Array(entries))
 
                     // AI Insights
                     aiInsightsCard
@@ -60,7 +64,7 @@ struct StatsView: View {
             .frame(maxWidth: isIPad ? 700 : .infinity)
             .frame(maxWidth: .infinity)
         }
-        .background(Color(.systemGroupedBackground))
+        .background(OffRecordColor.appBackgroundGradient)
         .navigationTitle("Insights")
         .overlay {
             if let milestone = showMilestone {
@@ -68,6 +72,7 @@ struct StatsView: View {
             }
         }
         .onAppear {
+            proactiveReflection.refreshIfNeeded(entries: Array(entries))
             if let milestone = goalManager.checkMilestone(currentStreak: currentStreak) {
                 HapticManager.shared.streakMilestone()
                 withAnimation(.spring(response: 0.5)) {
@@ -83,19 +88,20 @@ struct StatsView: View {
         VStack(spacing: 16) {
             ZStack {
                 Circle()
-                    .fill(Color.accentColor.opacity(0.08))
+                    .fill(OffRecordColor.surfaceLavender)
                     .frame(width: 80, height: 80)
                 Image(systemName: "chart.bar.xaxis")
                     .font(.system(size: 32))
-                    .foregroundColor(.accentColor)
+                    .foregroundColor(OffRecordColor.textLavender)
             }
 
             Text("Insights will appear here")
                 .font(.headline)
+                .foregroundColor(OffRecordColor.textHeading)
 
             Text("Record a few entries and OffRecord AI Journal will show streaks, mood trends, and gentle summaries of your writing.")
                 .font(.subheadline)
-                .foregroundColor(.secondary)
+                .foregroundColor(OffRecordColor.textSecondary)
                 .multilineTextAlignment(.center)
         }
         .frame(maxWidth: .infinity)
@@ -111,19 +117,20 @@ struct StatsView: View {
             HStack {
                 Image(systemName: "flame.fill")
                     .font(.title2)
-                    .foregroundColor(.orange)
+                    .foregroundColor(OffRecordColor.textPeach)
                 Text("Writing Streak")
                     .font(.headline)
+                    .foregroundColor(OffRecordColor.textHeading)
                 Spacer()
             }
 
             HStack(alignment: .bottom, spacing: 4) {
                 Text("\(currentStreak)")
                     .font(.system(size: 48, weight: .bold, design: .rounded))
-                    .foregroundColor(.orange)
+                    .foregroundColor(OffRecordColor.textPeach)
                 Text(currentStreak == 1 ? "day" : "days")
                     .font(.title3)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(OffRecordColor.textSecondary)
                     .padding(.bottom, 8)
                 Spacer()
             }
@@ -133,9 +140,10 @@ struct StatsView: View {
                 VStack(alignment: .leading) {
                     Text("Longest")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(OffRecordColor.textSecondary)
                     Text("\(longestStreak) days")
                         .font(.subheadline.weight(.medium))
+                        .foregroundColor(OffRecordColor.textPrimary)
                 }
 
                 Divider()
@@ -144,9 +152,10 @@ struct StatsView: View {
                 VStack(alignment: .leading) {
                     Text("This Month")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(OffRecordColor.textSecondary)
                     Text("\(entriesThisMonth) entries")
                         .font(.subheadline.weight(.medium))
+                        .foregroundColor(OffRecordColor.textPrimary)
                 }
 
                 Divider()
@@ -155,17 +164,17 @@ struct StatsView: View {
                 VStack(alignment: .leading) {
                     Text("Total")
                         .font(.caption)
-                        .foregroundColor(.secondary)
+                        .foregroundColor(OffRecordColor.textSecondary)
                     Text("\(entries.count) entries")
                         .font(.subheadline.weight(.medium))
+                        .foregroundColor(OffRecordColor.textPrimary)
                 }
 
                 Spacer()
             }
         }
         .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .offRecordContentCard(cornerRadius: OffRecordRadius.xl, fill: OffRecordColor.surfacePeach)
     }
 
     // MARK: - Week Activity Card
@@ -174,32 +183,32 @@ struct StatsView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("This Week")
                 .font(.headline)
+                .foregroundColor(OffRecordColor.textHeading)
 
             HStack(spacing: 8) {
                 ForEach(last7Days, id: \.self) { date in
                     let hasEntry = hasEntryOn(date)
                     VStack(spacing: 6) {
                         Circle()
-                            .fill(hasEntry ? Color.accentColor : Color.secondary.opacity(0.2))
+                            .fill(hasEntry ? OffRecordColor.surfaceMint : OffRecordColor.textTertiary.opacity(0.16))
                             .frame(width: isIPad ? 44 : 32, height: isIPad ? 44 : 32)
                             .overlay {
                                 if hasEntry {
                                     Image(systemName: "checkmark")
                                         .font(.caption.weight(.bold))
-                                        .foregroundColor(.white)
+                                        .foregroundColor(OffRecordColor.textAqua)
                                 }
                             }
                         Text(dayAbbreviation(date))
-                            .font(.caption2)
-                            .foregroundColor(.secondary)
+                            .font(.caption)
+                            .foregroundColor(OffRecordColor.textSecondary)
                     }
                 }
             }
             .frame(maxWidth: .infinity)
         }
         .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceMint)
     }
 
     // MARK: - Mood Trends Card
@@ -208,11 +217,12 @@ struct StatsView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Mood Trends")
                 .font(.headline)
+                .foregroundColor(OffRecordColor.textHeading)
 
             if moodData.isEmpty {
                 Text("Record entries with moods to see trends")
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(OffRecordColor.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, 20)
             } else {
@@ -220,14 +230,17 @@ struct StatsView: View {
                 HStack(spacing: 12) {
                     ForEach(topMoods, id: \.mood) { item in
                         VStack(spacing: 6) {
-                            Image(systemName: item.mood.icon)
-                                .font(.title2)
-                                .foregroundColor(item.mood.color)
+                            MiniMoodIcon(
+                                mood: item.mood,
+                                size: 24,
+                                opacity: 0.88
+                            )
                             Text("\(item.count)")
                                 .font(.subheadline.weight(.medium))
+                                .foregroundColor(OffRecordColor.textPrimary)
                             Text(item.mood.displayName)
-                                .font(.caption2)
-                                .foregroundColor(.secondary)
+                                .font(.caption)
+                                .foregroundColor(OffRecordColor.textSecondary)
                         }
                         .frame(maxWidth: .infinity)
                     }
@@ -242,8 +255,7 @@ struct StatsView: View {
             }
         }
         .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceMint)
     }
 
     @available(iOS 16.0, *)
@@ -265,8 +277,12 @@ struct StatsView: View {
             AxisMarks(values: [1, 3, 5]) { value in
                 AxisValueLabel {
                     if let v = value.as(Int.self) {
-                        Text(v == 1 ? "😔" : v == 3 ? "😐" : "😊")
-                            .font(.caption)
+                        MiniMoodIcon(
+                            mood: chartAxisMood(for: v),
+                            size: 14,
+                            opacity: 0.78,
+                            accessibilityLabel: "\(chartAxisMood(for: v).displayName) mood"
+                        )
                     }
                 }
             }
@@ -284,17 +300,17 @@ struct StatsView: View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Writing Stats")
                 .font(.headline)
+                .foregroundColor(OffRecordColor.textHeading)
 
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: isIPad ? 4 : 2), spacing: 16) {
-                StatItem(title: "Total Words", value: "\(totalWords)", icon: "text.word.spacing", color: .blue)
-                StatItem(title: "Avg Words/Entry", value: "\(avgWordsPerEntry)", icon: "chart.bar.fill", color: .green)
-                StatItem(title: "Starred", value: "\(starredCount)", icon: "star.fill", color: .yellow)
-                StatItem(title: "With Audio", value: "\(audioCount)", icon: "waveform", color: .teal)
+                StatItem(title: "Total Words", value: "\(totalWords)", icon: "text.word.spacing", color: OffRecordColor.textSky)
+                StatItem(title: "Avg Words/Entry", value: "\(avgWordsPerEntry)", icon: "chart.bar.fill", color: OffRecordColor.textMint)
+                StatItem(title: "Starred", value: "\(starredCount)", icon: "star.fill", color: OffRecordColor.textYellow)
+                StatItem(title: "With Audio", value: "\(audioCount)", icon: "waveform", color: OffRecordColor.textAqua)
             }
         }
         .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceWarm)
     }
 
     // MARK: - AI Insights Card
@@ -307,9 +323,10 @@ struct StatsView: View {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
                         Image(systemName: "sparkles")
-                            .foregroundColor(.teal)
+                            .foregroundColor(OffRecordColor.textLavender)
                         Text("AI Insights")
                             .font(.headline)
+                            .foregroundColor(OffRecordColor.textHeading)
                     }
 
                     ForEach(insights.prefix(3)) { insight in
@@ -322,17 +339,17 @@ struct StatsView: View {
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(insight.title)
                                     .font(.subheadline.weight(.semibold))
+                                    .foregroundColor(OffRecordColor.textPrimary)
                                 Text(insight.description)
                                     .font(.caption)
-                                    .foregroundColor(.secondary)
+                                    .foregroundColor(OffRecordColor.textSecondary)
                             }
                         }
                         .padding(.vertical, 4)
                     }
                 }
                 .padding()
-                .background(Color(.secondarySystemGroupedBackground))
-                .clipShape(RoundedRectangle(cornerRadius: 16))
+                .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceLavender)
             }
         }
     }
@@ -345,18 +362,18 @@ struct StatsView: View {
         return VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "calendar")
-                    .foregroundColor(.blue)
+                    .foregroundColor(OffRecordColor.textSky)
                 Text("Weekly reflection")
                     .font(.headline)
+                    .foregroundColor(OffRecordColor.textHeading)
             }
 
             Text(summary)
                 .font(.subheadline)
-                .foregroundColor(.secondary)
+                .foregroundColor(OffRecordColor.textSecondary)
         }
         .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceWarm)
     }
 
     // MARK: - Goal Progress Card
@@ -370,31 +387,32 @@ struct StatsView: View {
             HStack {
                 Image(systemName: "target")
                     .font(.title2)
-                    .foregroundColor(.teal)
+                    .foregroundColor(OffRecordColor.textAqua)
                 Text("Weekly Goal")
                     .font(.headline)
+                    .foregroundColor(OffRecordColor.textHeading)
                 Spacer()
                 Text("\(count)/\(goalManager.weeklyTarget)")
                     .font(.subheadline.weight(.medium))
-                    .foregroundColor(.teal)
+                    .foregroundColor(OffRecordColor.textAqua)
             }
 
             ZStack {
                 Circle()
-                    .stroke(Color.gray.opacity(0.2), lineWidth: 8)
+                    .stroke(OffRecordColor.borderSoft, lineWidth: 8)
                 Circle()
                     .trim(from: 0, to: progress)
-                    .stroke(Color.teal, style: StrokeStyle(lineWidth: 8, lineCap: .round))
+                    .stroke(OffRecordColor.brandAqua, style: StrokeStyle(lineWidth: 8, lineCap: .round))
                     .rotationEffect(.degrees(-90))
                     .animation(.spring(response: 0.6), value: progress)
 
                 VStack(spacing: 2) {
                     Text("\(Int(progress * 100))%")
                         .font(.title2.bold())
-                        .foregroundColor(.teal)
+                        .foregroundColor(OffRecordColor.textAqua)
                     Text("\(remaining) days left")
-                        .font(.caption2)
-                        .foregroundColor(.secondary)
+                        .font(.caption)
+                        .foregroundColor(OffRecordColor.textSecondary)
                 }
             }
             .frame(width: 100, height: 100)
@@ -402,19 +420,18 @@ struct StatsView: View {
             if progress >= 1.0 {
                 Text("Goal reached! Great work this week.")
                     .font(.caption)
-                    .foregroundColor(.green)
+                    .foregroundColor(OffRecordColor.textSage)
             }
         }
         .padding()
-        .background(Color(.secondarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceMint)
     }
 
     // MARK: - Milestone Overlay
 
     private func milestoneOverlay(days: Int) -> some View {
         ZStack {
-            Color.black.opacity(0.5)
+            OffRecordColor.textBrand.opacity(0.42)
                 .ignoresSafeArea()
                 .onTapGesture {
                     withAnimation {
@@ -425,18 +442,19 @@ struct StatsView: View {
             VStack(spacing: 20) {
                 Image(systemName: "trophy.fill")
                     .font(.system(size: 60))
-                    .foregroundColor(.yellow)
+                    .foregroundColor(OffRecordColor.textYellow)
 
                 Text("Milestone!")
                     .font(.largeTitle.bold())
+                    .foregroundColor(OffRecordColor.textHeading)
 
                 Text("\(days)-Day Streak")
                     .font(.title2)
-                    .foregroundColor(.orange)
+                    .foregroundColor(OffRecordColor.textPeach)
 
                 Text("You've journaled for \(days) consecutive days. Your dedication to self-reflection is paying off.")
                     .font(.subheadline)
-                    .foregroundColor(.secondary)
+                    .foregroundColor(OffRecordColor.textSecondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
 
@@ -448,11 +466,16 @@ struct StatsView: View {
                 .font(.headline)
                 .padding(.horizontal, 32)
                 .padding(.vertical, 12)
-                .foregroundColor(.orange)
-                .offRecordGlassControl(tint: .orange, in: Capsule(), fallbackFill: Color.orange.opacity(0.15))
+                .foregroundColor(OffRecordReadableTintStyle.journal.foreground)
+                .offRecordGlassControl(
+                    tint: OffRecordReadableTintStyle.journal.tint,
+                    in: Capsule(),
+                    fallbackFill: OffRecordReadableTintStyle.journal.fill,
+                    border: OffRecordReadableTintStyle.journal.border
+                )
             }
             .padding(32)
-            .offRecordGlassBar(cornerRadius: 24, fallbackFill: Color(.systemBackground))
+            .offRecordGlassBar(cornerRadius: 24, fallbackFill: OffRecordColor.surfaceWarm)
             .shadow(radius: 20)
             .padding(40)
             .transition(.scale.combined(with: .opacity))
@@ -461,14 +484,14 @@ struct StatsView: View {
 
     private func colorFromName(_ name: String) -> Color {
         switch name {
-        case "orange": return .orange
-        case "green": return .green
-        case "blue": return .blue
-        case "yellow": return .yellow
-        case "pink": return .pink
-        case "purple": return .purple
-        case "indigo": return .indigo
-        default: return .secondary
+        case "orange": return OffRecordColor.brandPeach
+        case "green": return OffRecordColor.brandMint
+        case "blue": return OffRecordColor.brandSky
+        case "yellow": return OffRecordColor.brandYellow
+        case "pink": return OffRecordColor.brandBlush
+        case "purple": return OffRecordColor.brandLavenderDark
+        case "indigo": return OffRecordColor.brandLavender
+        default: return OffRecordColor.textSecondary
         }
     }
 
@@ -561,6 +584,19 @@ struct StatsView: View {
         return counts.map { ($0.key, $0.value) }.sorted { $0.count > $1.count }
     }
 
+    private func chartAxisMood(for value: Int) -> Mood {
+        switch value {
+        case 1:
+            return .sad
+        case 3:
+            return .none
+        case 5:
+            return .happy
+        default:
+            return .none
+        }
+    }
+
     private var topMoods: [(mood: Mood, count: Int)] {
         Array(moodData.prefix(4))
     }
@@ -626,13 +662,13 @@ struct StatItem: View {
             }
             Text(value)
                 .font(.title2.weight(.semibold))
+                .foregroundColor(OffRecordColor.textPrimary)
             Text(title)
                 .font(.caption)
-                .foregroundColor(.secondary)
+                .foregroundColor(OffRecordColor.textSecondary)
         }
         .padding()
-        .background(Color(.tertiarySystemGroupedBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .offRecordContentCard(cornerRadius: OffRecordRadius.md, fill: OffRecordColor.surfacePrimary)
     }
 }
 

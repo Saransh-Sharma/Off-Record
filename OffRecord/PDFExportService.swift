@@ -13,6 +13,12 @@
 import Foundation
 import UIKit
 
+private enum PDFExportPalette {
+    static let textPrimary = UIColor(red: 0x18 / 255, green: 0x13 / 255, blue: 0x1D / 255, alpha: 1)
+    static let textSecondary = UIColor(red: 0x71 / 255, green: 0x6A / 255, blue: 0x75 / 255, alpha: 1)
+    static let borderSoft = UIColor(red: 0xEE / 255, green: 0xE7 / 255, blue: 0xEF / 255, alpha: 1)
+}
+
 /// Paper size options for PDF export
 enum PDFPaperSize: String, CaseIterable, Identifiable {
     case a4 = "A4"
@@ -165,7 +171,7 @@ struct PDFExportService {
                 let dateString = dateFormatter.string(from: entry.date ?? Date())
                 let dateAttrs: [NSAttributedString.Key: Any] = [
                     .font: dateFont,
-                    .foregroundColor: UIColor.darkGray
+                    .foregroundColor: PDFExportPalette.textSecondary
                 ]
                 let dateSize = (dateString as NSString).size(withAttributes: dateAttrs)
                 addPageIfNeeded(for: dateSize.height + 8)
@@ -175,7 +181,7 @@ struct PDFExportService {
                 if let text = entry.text, !text.isEmpty {
                     let bodyAttrs: [NSAttributedString.Key: Any] = [
                         .font: bodyFont,
-                        .foregroundColor: UIColor.black
+                        .foregroundColor: PDFExportPalette.textPrimary
                     ]
                     let maxWidth = pageRect.width - (margin * 2)
 
@@ -225,7 +231,7 @@ struct PDFExportService {
                     let separatorPath = UIBezierPath()
                     separatorPath.move(to: CGPoint(x: margin, y: separatorY))
                     separatorPath.addLine(to: CGPoint(x: pageRect.width - margin, y: separatorY))
-                    UIColor.lightGray.withAlphaComponent(0.3).setStroke()
+                    PDFExportPalette.borderSoft.withAlphaComponent(0.65).setStroke()
                     separatorPath.lineWidth = 0.5
                     separatorPath.stroke()
                 }
@@ -255,7 +261,7 @@ struct PDFExportService {
         let titleText = "OffRecord AI Journal"
         let titleAttrs: [NSAttributedString.Key: Any] = [
             .font: UIFont.systemFont(ofSize: 36, weight: .light),
-            .foregroundColor: UIColor.darkGray
+            .foregroundColor: PDFExportPalette.textSecondary
         ]
         let titleSize = (titleText as NSString).size(withAttributes: titleAttrs)
         (titleText as NSString).draw(
@@ -267,7 +273,7 @@ struct PDFExportService {
         // Period title (year, month, or quarter)
         let periodAttrs: [NSAttributedString.Key: Any] = [
             .font: UIFont.systemFont(ofSize: 42, weight: .bold),
-            .foregroundColor: UIColor.black
+            .foregroundColor: PDFExportPalette.textPrimary
         ]
         let periodSize = (periodTitle as NSString).size(withAttributes: periodAttrs)
         (periodTitle as NSString).draw(
@@ -280,7 +286,7 @@ struct PDFExportService {
         let linePath = UIBezierPath()
         linePath.move(to: CGPoint(x: centerX - 50, y: yPosition))
         linePath.addLine(to: CGPoint(x: centerX + 50, y: yPosition))
-        UIColor.lightGray.setStroke()
+        PDFExportPalette.borderSoft.setStroke()
         linePath.lineWidth = 1
         linePath.stroke()
         yPosition += 40
@@ -289,7 +295,7 @@ struct PDFExportService {
         if let name = authorName, !name.isEmpty {
             let nameAttrs: [NSAttributedString.Key: Any] = [
                 .font: UIFont.systemFont(ofSize: 20, weight: .medium),
-                .foregroundColor: UIColor.black
+                .foregroundColor: PDFExportPalette.textPrimary
             ]
             let nameSize = (name as NSString).size(withAttributes: nameAttrs)
             (name as NSString).draw(
@@ -303,7 +309,7 @@ struct PDFExportService {
         if let desc = authorDescription, !desc.isEmpty {
             let descAttrs: [NSAttributedString.Key: Any] = [
                 .font: UIFont.italicSystemFont(ofSize: 14),
-                .foregroundColor: UIColor.gray
+                .foregroundColor: PDFExportPalette.textSecondary
             ]
             let descSize = (desc as NSString).size(withAttributes: descAttrs)
             (desc as NSString).draw(
@@ -317,7 +323,7 @@ struct PDFExportService {
         let bottomY = pageRect.height - 80
         let infoAttrs: [NSAttributedString.Key: Any] = [
             .font: UIFont.systemFont(ofSize: 11),
-            .foregroundColor: UIColor.gray
+            .foregroundColor: PDFExportPalette.textSecondary
         ]
 
         let countText = "\(entryCount) entr\(entryCount == 1 ? "y" : "ies")"
@@ -338,7 +344,7 @@ struct PDFExportService {
     private static func drawFooter(context: UIGraphicsPDFRendererContext, pageRect: CGRect) {
         let footerAttrs: [NSAttributedString.Key: Any] = [
             .font: UIFont.systemFont(ofSize: 9),
-            .foregroundColor: UIColor.lightGray
+            .foregroundColor: PDFExportPalette.borderSoft
         ]
         let footerSize = (footerText as NSString).size(withAttributes: footerAttrs)
         let footerY = pageRect.height - margin + 10

@@ -14,6 +14,8 @@ import CoreData
 /// Uses TabView on all devices. On iPadOS 18+, the tab bar adapts to a sidebar.
 struct ContentView: View {
     @Environment(\.managedObjectContext) private var viewContext
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @State private var selectedTab: OffRecordTab = .today
 
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \DiaryEntry.date, ascending: false)],
@@ -21,6 +23,51 @@ struct ContentView: View {
     private var entries: FetchedResults<DiaryEntry>
 
     var body: some View {
+        if horizontalSizeClass == .compact {
+            compactTabs
+        } else {
+            adaptiveTabs
+        }
+    }
+
+    private var compactTabs: some View {
+        GeometryReader { proxy in
+            ZStack(alignment: .bottom) {
+                switch selectedTab {
+                case .today:
+                    NavigationStack {
+                        TodayView(
+                            compactTabSelection: $selectedTab,
+                            compactBottomSafeAreaInset: proxy.safeAreaInsets.bottom
+                        )
+                    }
+                case .timeline:
+                    NavigationStack { TimelineView() }
+                        .safeAreaPadding(.bottom, OffRecordCompactTabBarLayout.reservedContentBottomInset)
+                case .insights:
+                    NavigationStack { StatsView() }
+                        .safeAreaPadding(.bottom, OffRecordCompactTabBarLayout.reservedContentBottomInset)
+                case .friday:
+                    NavigationStack { FridayView() }
+                        .safeAreaPadding(.bottom, OffRecordCompactTabBarLayout.reservedContentBottomInset)
+                case .settings:
+                    NavigationStack { SettingsView() }
+                        .safeAreaPadding(.bottom, OffRecordCompactTabBarLayout.reservedContentBottomInset)
+                }
+
+                if selectedTab != .today {
+                    OffRecordFloatingTabBar(selectedTab: $selectedTab)
+                        .padding(.horizontal, OffRecordCompactTabBarLayout.horizontalPadding)
+                        .padding(.bottom, OffRecordCompactTabBarLayout.screenEdgeBottomPadding)
+                        .offset(y: proxy.safeAreaInsets.bottom)
+                }
+            }
+        }
+        .offRecordScreenBackground()
+    }
+
+    @ViewBuilder
+    private var adaptiveTabs: some View {
         if #available(iOS 26.0, *) {
             tabs
                 .tabViewStyle(.sidebarAdaptable)
@@ -66,6 +113,114 @@ struct ContentView: View {
                 Label("Settings", systemImage: "gearshape")
             }
         }
+    }
+}
+
+enum OffRecordCompactTabBarLayout {
+    static let horizontalPadding: CGFloat = 16
+    static let screenEdgeBottomPadding: CGFloat = 8
+    static let reservedContentBottomInset: CGFloat = 108
+    static let todayDockScrollContentBottomPadding: CGFloat = 244
+}
+
+enum OffRecordTab: String, CaseIterable, Identifiable {
+    case today = "Today"
+    case timeline = "Timeline"
+    case insights = "Insights"
+    case friday = "Friday"
+    case settings = "Settings"
+
+    var id: String { rawValue }
+
+    var systemImage: String {
+        switch self {
+        case .today: return "sun.max.fill"
+        case .timeline: return "book.pages.fill"
+        case .insights: return "chart.xyaxis.line"
+        case .friday: return "sparkles"
+        case .settings: return "gearshape.fill"
+        }
+    }
+
+    var tint: Color {
+        switch self {
+        case .today: return OffRecordColor.brandPeach
+        case .timeline: return OffRecordColor.brandSageDark
+        case .insights: return OffRecordColor.brandAqua
+        case .friday: return OffRecordColor.brandLavenderDark
+        case .settings: return OffRecordColor.brandPlum
+        }
+    }
+
+    var readableStyle: OffRecordReadableTintStyle {
+        switch self {
+        case .today: return .journal
+        case .timeline: return .privacy
+        case .insights: return .growth
+        case .friday: return .friday
+        case .settings: return .brand
+        }
+    }
+}
+
+struct OffRecordFloatingTabBar: View {
+    @Binding var selectedTab: OffRecordTab
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(OffRecordTab.allCases) { tab in
+                Button {
+                    withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+                        selectedTab = tab
+                    }
+                    HapticManager.shared.selectionChanged()
+                } label: {
+                    let style = tab.readableStyle
+                    VStack(spacing: 4) {
+                        Image(systemName: tab.systemImage)
+                            .font(.system(size: 16, weight: .semibold))
+                        Text(tab.rawValue)
+                            .font(OffRecordTypography.labelSmall)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.78)
+                    }
+                    .foregroundStyle(selectedTab == tab ? selectedForeground(for: tab, style: style) : OffRecordColor.textPrimary.opacity(0.82))
+                    .frame(maxWidth: .infinity)
+                    .frame(height: 56)
+                    .background {
+                        if selectedTab == tab {
+                            Capsule()
+                                .fill(selectedFill(for: tab, style: style))
+                                .overlay(Capsule().stroke(selectedBorder(for: tab, style: style), lineWidth: 1))
+                        }
+                    }
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(tab.rawValue)
+                .accessibilityIdentifier("tab.\(tab.rawValue.lowercased())")
+                .accessibilityAddTraits(selectedTab == tab ? .isSelected : [])
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 10)
+        .background(
+            Capsule()
+                .fill(OffRecordColor.surfacePrimary)
+                .overlay(Capsule().stroke(OffRecordColor.borderSoft, lineWidth: 1))
+                .shadow(color: OffRecordShadow.tabColor, radius: 30, x: 0, y: 8)
+        )
+    }
+
+    private func selectedForeground(for tab: OffRecordTab, style: OffRecordReadableTintStyle) -> Color {
+        tab == .today ? OffRecordColor.textWarm : style.foreground
+    }
+
+    private func selectedFill(for tab: OffRecordTab, style: OffRecordReadableTintStyle) -> Color {
+        tab == .today ? OffRecordColor.backgroundPeachTint : style.fill
+    }
+
+    private func selectedBorder(for tab: OffRecordTab, style: OffRecordReadableTintStyle) -> Color {
+        tab == .today ? OffRecordColor.borderSoft : style.border
     }
 }
 
