@@ -25,7 +25,7 @@ struct MoodDialSheet: View {
                 cancel: cancel,
                 done: done
             )
-            .padding(.top, 44)
+            .padding(.top, 16)
         }
         .interactiveDismissDisabled()
         .accessibilityIdentifier("moodDial.sheet")

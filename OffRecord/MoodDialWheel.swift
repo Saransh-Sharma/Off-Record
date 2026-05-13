@@ -75,10 +75,11 @@ struct MoodDialWheel: View {
                         .blendMode(.softLight)
                 )
 
-                Image(mood.miniMoodAssetName)
+                Image(mood.dialFaceAssetName)
                     .resizable()
                     .scaledToFit()
                     .frame(width: isSelected ? 48 : 42, height: isSelected ? 48 : 42)
+                    .rotationEffect(.degrees(iconPreRotationDegrees(for: index)))
                     .opacity(isSelected ? 0.88 : 0.56)
                     .position(iconPosition(for: index, metrics: metrics))
                     .accessibilityHidden(true)
@@ -168,5 +169,9 @@ struct MoodDialWheel: View {
             x: metrics.center.x + CGFloat(cos(radians)) * radius,
             y: metrics.center.y + CGFloat(sin(radians)) * radius
         )
+    }
+
+    private func iconPreRotationDegrees(for index: Int) -> Double {
+        MoodDialMath.centerAngleDegrees(for: index) - MoodDialMath.pointerAngleDegrees
     }
 }

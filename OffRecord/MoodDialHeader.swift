@@ -6,17 +6,7 @@ struct MoodDialHeader: View {
     let done: () -> Void
 
     var body: some View {
-        ZStack {
-            Text("How are\nyou feeling?")
-                .font(.system(size: 32, weight: .heavy))
-                .foregroundStyle(OffRecordColor.textHeading)
-                .multilineTextAlignment(.center)
-                .lineSpacing(0)
-                .lineLimit(2)
-                .minimumScaleFactor(0.84)
-                .frame(maxWidth: 160)
-                .accessibilityAddTraits(.isHeader)
-
+        VStack(spacing: 12) {
             HStack {
                 Button("Cancel", action: cancel)
                     .font(.system(size: 17, weight: .semibold))
@@ -37,8 +27,20 @@ struct MoodDialHeader: View {
                     .accessibilityHint(canSave ? "Saves the selected mood." : "Closes without changing the mood.")
                     .accessibilityIdentifier("moodDial.done")
             }
+
+            Text("How are\nyou feeling?")
+                .font(.system(size: 32, weight: .heavy))
+                .foregroundStyle(OffRecordColor.textHeading)
+                .multilineTextAlignment(.center)
+                .lineSpacing(0)
+                .lineLimit(2)
+                .minimumScaleFactor(0.84)
+                .frame(width: 180)
+                .frame(minHeight: 68)
+                .fixedSize(horizontal: false, vertical: true)
+                .accessibilityAddTraits(.isHeader)
         }
-        .frame(height: 76)
+        .frame(height: 140)
         .padding(.horizontal, 16)
         .padding(.top, 8)
     }
