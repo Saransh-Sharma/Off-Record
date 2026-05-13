@@ -165,8 +165,7 @@ struct EntryDetailView: View {
                             )
                     } else {
                         HStack(spacing: 6) {
-                            Image(systemName: selectedMood.icon)
-                                .font(.caption)
+                            MiniMoodIcon(mood: selectedMood, size: 16, opacity: 0.92)
                             Text(selectedMood.displayName)
                                 .font(.caption)
                         }
@@ -318,8 +317,11 @@ struct EntryDetailView: View {
                     // Emotion & Sentiment
                     HStack(spacing: 16) {
                         VStack(spacing: 4) {
-                            Text(analysis.dominantEmotion.emoji)
-                                .font(.title)
+                            MiniMoodIcon(
+                                mood: analysis.dominantEmotion.representativeMood,
+                                size: 24,
+                                opacity: 0.92
+                            )
                             Text(analysis.dominantEmotion.rawValue.capitalized)
                                 .font(.caption)
                                 .foregroundColor(OffRecordColor.textSecondary)
@@ -386,9 +388,13 @@ struct EntryDetailView: View {
                     
                     // AI Response
                     VStack(alignment: .leading, spacing: 4) {
-                        Text("💭 Reflection")
-                            .font(.caption)
-                            .foregroundColor(OffRecordColor.textSecondary)
+                        HStack(spacing: 4) {
+                            Image(systemName: "bubble.left.and.text.bubble.right")
+                                .font(.caption)
+                            Text("Reflection")
+                                .font(.caption)
+                        }
+                        .foregroundColor(OffRecordColor.textSecondary)
                         Text(analysis.suggestedResponse)
                             .font(.caption)
                             .foregroundColor(OffRecordColor.textPrimary)

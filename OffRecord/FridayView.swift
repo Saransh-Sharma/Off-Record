@@ -449,7 +449,11 @@ struct FridayView: View {
 
                     ForEach(sorted.prefix(6), id: \.key) { mood, count in
                         HStack {
-                            Text(moodEmoji(mood))
+                            MiniMoodIcon(
+                                mood: Mood(rawEmotion: mood),
+                                size: 18,
+                                opacity: 0.86
+                            )
                             Text(mood.capitalized)
                                 .font(.caption)
                                 .frame(width: 60, alignment: .leading)
@@ -869,20 +873,6 @@ struct FridayView: View {
         if sentiment > -0.1 { return "Neutral" }
         if sentiment > -0.3 { return "Low" }
         return "Tough"
-    }
-
-    private func moodEmoji(_ mood: String) -> String {
-        switch mood.lowercased() {
-        case "happy": return "😊"
-        case "calm": return "😌"
-        case "grateful": return "🙏"
-        case "excited": return "🤩"
-        case "tired": return "😴"
-        case "anxious": return "😰"
-        case "sad": return "😢"
-        case "angry": return "😤"
-        default: return "😐"
-        }
     }
 
     private func moodColor(_ mood: String) -> Color {

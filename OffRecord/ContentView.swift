@@ -31,28 +31,36 @@ struct ContentView: View {
     }
 
     private var compactTabs: some View {
-        ZStack(alignment: .bottom) {
-            switch selectedTab {
-            case .today:
-                NavigationStack { TodayView(compactTabSelection: $selectedTab) }
-            case .timeline:
-                NavigationStack { TimelineView() }
-                    .safeAreaPadding(.bottom, OffRecordCompactTabBarLayout.reservedContentBottomInset)
-            case .insights:
-                NavigationStack { StatsView() }
-                    .safeAreaPadding(.bottom, OffRecordCompactTabBarLayout.reservedContentBottomInset)
-            case .friday:
-                NavigationStack { FridayView() }
-                    .safeAreaPadding(.bottom, OffRecordCompactTabBarLayout.reservedContentBottomInset)
-            case .settings:
-                NavigationStack { SettingsView() }
-                    .safeAreaPadding(.bottom, OffRecordCompactTabBarLayout.reservedContentBottomInset)
-            }
+        GeometryReader { proxy in
+            ZStack(alignment: .bottom) {
+                switch selectedTab {
+                case .today:
+                    NavigationStack {
+                        TodayView(
+                            compactTabSelection: $selectedTab,
+                            compactBottomSafeAreaInset: proxy.safeAreaInsets.bottom
+                        )
+                    }
+                case .timeline:
+                    NavigationStack { TimelineView() }
+                        .safeAreaPadding(.bottom, OffRecordCompactTabBarLayout.reservedContentBottomInset)
+                case .insights:
+                    NavigationStack { StatsView() }
+                        .safeAreaPadding(.bottom, OffRecordCompactTabBarLayout.reservedContentBottomInset)
+                case .friday:
+                    NavigationStack { FridayView() }
+                        .safeAreaPadding(.bottom, OffRecordCompactTabBarLayout.reservedContentBottomInset)
+                case .settings:
+                    NavigationStack { SettingsView() }
+                        .safeAreaPadding(.bottom, OffRecordCompactTabBarLayout.reservedContentBottomInset)
+                }
 
-            if selectedTab != .today {
-                OffRecordFloatingTabBar(selectedTab: $selectedTab)
-                    .padding(.horizontal, OffRecordCompactTabBarLayout.horizontalPadding)
-                    .padding(.bottom, OffRecordCompactTabBarLayout.bottomPadding)
+                if selectedTab != .today {
+                    OffRecordFloatingTabBar(selectedTab: $selectedTab)
+                        .padding(.horizontal, OffRecordCompactTabBarLayout.horizontalPadding)
+                        .padding(.bottom, OffRecordCompactTabBarLayout.screenEdgeBottomPadding)
+                        .offset(y: proxy.safeAreaInsets.bottom)
+                }
             }
         }
         .offRecordScreenBackground()
@@ -110,7 +118,7 @@ struct ContentView: View {
 
 enum OffRecordCompactTabBarLayout {
     static let horizontalPadding: CGFloat = 16
-    static let bottomPadding: CGFloat = 12
+    static let screenEdgeBottomPadding: CGFloat = 8
     static let reservedContentBottomInset: CGFloat = 108
     static let todayDockScrollContentBottomPadding: CGFloat = 244
 }
