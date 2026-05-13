@@ -131,6 +131,20 @@ enum Mood: String, CaseIterable, Identifiable {
         }
     }
 
+    var dialFaceAssetName: String {
+        switch self {
+        case .none: return "Neutral_face"
+        case .happy: return "Happy_face"
+        case .calm: return "Calm_face"
+        case .grateful: return "Grateful_face"
+        case .excited: return "Excited_face"
+        case .tired: return "Sleepy_face"
+        case .anxious: return "Anxious_face"
+        case .sad: return "Sad_face"
+        case .angry: return "Angry_face"
+        }
+    }
+
     var moodGlowAssetName: String {
         switch self {
         case .angry, .sad, .anxious, .tired:
@@ -177,5 +191,57 @@ enum Mood: String, CaseIterable, Identifiable {
         case .angry:
             return .warning
         }
+    }
+
+    init(rawEmotion: String) {
+        switch rawEmotion.lowercased() {
+        case "joy", "happy":
+            self = .happy
+        case "sadness", "sad":
+            self = .sad
+        case "anger", "disgust", "angry":
+            self = .angry
+        case "fear", "anxious":
+            self = .anxious
+        case "surprise", "anticipation", "excited":
+            self = .excited
+        case "trust", "grateful":
+            self = .grateful
+        case "calm":
+            self = .calm
+        case "tired":
+            self = .tired
+        default:
+            self = .none
+        }
+    }
+}
+
+struct MiniMoodIcon: View {
+    let mood: Mood
+    let size: CGFloat
+    let opacity: Double
+    let accessibilityLabel: String?
+
+    init(
+        mood: Mood,
+        size: CGFloat = 16,
+        opacity: Double = 0.76,
+        accessibilityLabel: String? = nil
+    ) {
+        self.mood = mood
+        self.size = size
+        self.opacity = opacity
+        self.accessibilityLabel = accessibilityLabel
+    }
+
+    var body: some View {
+        Image(mood.miniMoodAssetName)
+            .resizable()
+            .scaledToFit()
+            .frame(width: size, height: size)
+            .opacity(opacity)
+            .accessibilityLabel(accessibilityLabel ?? "\(mood.displayName) mood")
+            .accessibilityHidden(accessibilityLabel == nil)
     }
 }
