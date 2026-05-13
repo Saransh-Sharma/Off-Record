@@ -146,6 +146,7 @@ struct TimelineView: View {
         }
         .background(OffRecordColor.appBackgroundGradient)
         .navigationTitle("Timeline")
+        .toolbarBackground(.hidden, for: .navigationBar)
         #if os(iOS)
         .onChange(of: voiceSearch.transcribedText) { _, newValue in
             if !newValue.isEmpty {
@@ -292,7 +293,11 @@ struct TimelineView: View {
                             HapticManager.shared.selectionChanged()
                         } label: {
                             HStack(spacing: 4) {
-                                Image(systemName: mood.icon)
+                                MiniMoodIcon(
+                                    mood: mood,
+                                    size: 14,
+                                    opacity: selectedMoodFilter == mood ? 0.92 : 0.72
+                                )
                                 Text(mood.rawValue)
                             }
                             .font(.caption)
@@ -349,7 +354,7 @@ struct TimelineView: View {
                 }
                 
                 if let mood = selectedMoodFilter {
-                    FilterChip(label: mood.rawValue, icon: mood.icon, style: mood.readableStyle) {
+                    FilterChip(label: mood.rawValue, mood: mood, style: mood.readableStyle) {
                         selectedMoodFilter = nil
                     }
                 }
@@ -637,9 +642,12 @@ struct EntryRowView: View {
                     if let moodString = entry.value(forKey: "mood") as? String,
                        let mood = Mood(rawValue: moodString),
                        mood != .none {
-                        Image(systemName: mood.icon)
-                            .font(.caption)
-                            .foregroundColor(mood.color)
+                        MiniMoodIcon(
+                            mood: mood,
+                            size: 16,
+                            opacity: 0.82,
+                            accessibilityLabel: "\(mood.displayName) mood"
+                        )
                     }
 
                     if wordCount > 0 {
@@ -731,14 +739,33 @@ struct EntryRowView: View {
 
 struct FilterChip: View {
     let label: String
-    let icon: String
+    let icon: String?
+    let mood: Mood?
     let style: OffRecordReadableTintStyle
     let onRemove: () -> Void
+
+    init(
+        label: String,
+        icon: String? = nil,
+        mood: Mood? = nil,
+        style: OffRecordReadableTintStyle,
+        onRemove: @escaping () -> Void
+    ) {
+        self.label = label
+        self.icon = icon
+        self.mood = mood
+        self.style = style
+        self.onRemove = onRemove
+    }
     
     var body: some View {
         HStack(spacing: 4) {
-            Image(systemName: icon)
-                .font(.caption2)
+            if let mood {
+                MiniMoodIcon(mood: mood, size: 14, opacity: 0.92)
+            } else if let icon {
+                Image(systemName: icon)
+                    .font(.caption2)
+            }
             Text(label)
                 .font(.caption)
             Button {

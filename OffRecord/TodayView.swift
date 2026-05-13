@@ -34,6 +34,7 @@ struct TodayView: View {
     @AppStorage("authorName") private var authorName: String = ""
     @ObservedObject private var proactiveReflection = ProactiveReflectionController.shared
     private let compactTabSelection: Binding<OffRecordTab>?
+    private let compactBottomSafeAreaInset: CGFloat
 
     @StateObject private var recorder = AudioRecorder()
     @State private var recordingState: RecordingState = .idle
@@ -58,8 +59,12 @@ struct TodayView: View {
 
     private var isIPad: Bool { horizontalSizeClass == .regular }
 
-    init(compactTabSelection: Binding<OffRecordTab>? = nil) {
+    init(
+        compactTabSelection: Binding<OffRecordTab>? = nil,
+        compactBottomSafeAreaInset: CGFloat = 0
+    ) {
         self.compactTabSelection = compactTabSelection
+        self.compactBottomSafeAreaInset = compactBottomSafeAreaInset
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: Date())
         let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? startOfDay
@@ -152,7 +157,10 @@ struct TodayView: View {
             }
 
             if let compactTabSelection {
-                compactBottomDock(selectedTab: compactTabSelection)
+                compactBottomDock(
+                    selectedTab: compactTabSelection,
+                    bottomSafeAreaInset: compactBottomSafeAreaInset
+                )
             }
         }
         .alert("Recording Error", isPresented: Binding(
@@ -415,7 +423,10 @@ struct TodayView: View {
 
     // MARK: - Recording Section
 
-    private func compactBottomDock(selectedTab: Binding<OffRecordTab>) -> some View {
+    private func compactBottomDock(
+        selectedTab: Binding<OffRecordTab>,
+        bottomSafeAreaInset: CGFloat
+    ) -> some View {
         VStack(spacing: 12) {
             compactRecordingFeedback
 
@@ -433,7 +444,8 @@ struct TodayView: View {
             }
         }
         .padding(.horizontal, OffRecordCompactTabBarLayout.horizontalPadding)
-        .padding(.bottom, OffRecordCompactTabBarLayout.bottomPadding)
+        .padding(.bottom, OffRecordCompactTabBarLayout.screenEdgeBottomPadding)
+        .offset(y: bottomSafeAreaInset)
         .animation(.spring(response: 0.4, dampingFraction: 0.86), value: recordingState)
     }
 
