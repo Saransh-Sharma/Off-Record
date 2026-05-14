@@ -34,9 +34,9 @@ struct AddDiaryEntryIntent: AppIntent {
 
         let request: NSFetchRequest<DiaryEntry> = DiaryEntry.fetchRequest()
         request.predicate = NSPredicate(format: "date >= %@ AND date < %@", startOfDay as NSDate, endOfDay as NSDate)
-        request.fetchLimit = 1
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \DiaryEntry.updatedAt, ascending: false)]
 
-        let existingEntry = try? context.fetch(request).first
+        let existingEntry = (try? context.fetch(request))?.first
 
         let savedEntry: DiaryEntry
         if let entry = existingEntry {
@@ -109,9 +109,8 @@ struct GetTodayEntryIntent: AppIntent {
         let request: NSFetchRequest<DiaryEntry> = DiaryEntry.fetchRequest()
         request.predicate = NSPredicate(format: "date >= %@ AND date < %@", startOfDay as NSDate, endOfDay as NSDate)
         request.sortDescriptors = [NSSortDescriptor(keyPath: \DiaryEntry.updatedAt, ascending: false)]
-        request.fetchLimit = 1
 
-        if let entry = try? context.fetch(request).first,
+        if let entry = (try? context.fetch(request))?.first(where: \.isStartedEntry),
            let text = entry.text, !text.isEmpty {
             // Truncate for Siri response
             let truncated = text.count > 500 ? String(text.prefix(500)) + "..." : text

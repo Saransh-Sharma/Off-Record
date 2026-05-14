@@ -743,11 +743,13 @@ struct EntryDetailView: View {
         let persistedText = entry.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let duration = entry.value(forKey: "duration") as? Double ?? 0
         let photoCount = entry.photos?.count ?? 0
+        let hasSelectedMood = selectedMood != .none || entry.hasStartedEntryMood
         return trimmed.isEmpty
             && persistedText.isEmpty
             && !hasAudioReference
             && duration <= 0
             && photoCount == 0
+            && !hasSelectedMood
     }
 
     private func saveMood() {

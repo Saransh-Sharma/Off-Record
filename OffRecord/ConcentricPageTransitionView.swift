@@ -192,7 +192,7 @@ struct ConcentricPageTransitionView<Content: View>: View {
             if let secondaryTitle {
                 Button(secondaryTitle, action: onSecondaryAction)
                     .font(.system(.subheadline, design: .rounded, weight: .bold))
-                    .foregroundStyle(OffRecordColor.textInverse.opacity(0.90))
+                    .foregroundStyle(OffRecordColor.textBrand.opacity(0.78))
                     .buttonStyle(.plain)
                     .disabled(isAnimating)
                     .opacity(isAnimating ? 0.55 : 1)
@@ -214,7 +214,7 @@ struct ConcentricPageTransitionView<Content: View>: View {
                     .frame(width: 2 * radius, height: 2 * radius)
                 Image(systemName: ctaIcon ?? "chevron.forward")
                     .font(.system(size: 20, weight: .black, design: .rounded))
-                    .foregroundStyle(OffRecordColor.textInverse)
+                    .foregroundStyle(OffRecordColor.textBrand)
             }
             .frame(width: 2 * radius, height: 2 * radius)
             .contentShape(Circle())
@@ -234,13 +234,13 @@ struct ConcentricPageTransitionView<Content: View>: View {
                 }
             }
             .font(.system(.headline, design: .rounded, weight: .bold))
-            .foregroundStyle(backgroundColor)
+            .foregroundStyle(OffRecordColor.textBrand)
             .frame(maxWidth: 360)
             .padding(.horizontal, 22)
             .padding(.vertical, 17)
-            .background(Color.white)
+            .background(OffRecordColor.surfacePrimary)
             .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .shadow(color: .black.opacity(0.18), radius: 18, y: 8)
+            .shadow(color: .black.opacity(0.10), radius: 18, y: 8)
         }
         .buttonStyle(.plain)
         .disabled(isAnimating || isCTADisabled)

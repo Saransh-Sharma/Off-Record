@@ -39,6 +39,8 @@ struct SettingsView: View {
     @AppStorage("authorDescription") private var authorDescription: String = ""
     @AppStorage("iCloudSyncEnabled") private var iCloudSyncEnabled: Bool = true
 
+    private var startedEntries: [DiaryEntry] { entries.startedEntries }
+
     enum ExportPeriod: String, CaseIterable, Identifiable {
         case monthly = "Monthly"
         case quarterly = "Quarterly"
@@ -73,7 +75,7 @@ struct SettingsView: View {
         .background(OffRecordColor.appBackgroundGradient)
         .onAppear {
             calculateStorage()
-            proactiveReflection.refreshIfNeeded(entries: Array(entries))
+            proactiveReflection.refreshIfNeeded(entries: startedEntries)
         }
         .navigationTitle("Settings")
         .alert("Notifications Disabled", isPresented: $showPermissionDeniedAlert) {
@@ -345,7 +347,7 @@ struct SettingsView: View {
                 }
 
                 Button {
-                    semanticMemory.rebuildIndex(entries: Array(entries))
+                    semanticMemory.rebuildIndex(entries: startedEntries)
                 } label: {
                     Label("Rebuild Semantic Memory", systemImage: "arrow.clockwise")
                 }
@@ -545,7 +547,7 @@ struct SettingsView: View {
     private var backupSection: some View {
         Section {
             NavigationLink {
-                BackupExportView(entries: Array(entries))
+                BackupExportView(entries: startedEntries)
             } label: {
                 HStack(spacing: 12) {
                     ZStack {
@@ -708,13 +710,12 @@ struct SettingsView: View {
     }
 
     private var totalEntriesCount: Int {
-        let fetchRequest = DiaryEntry.fetchRequest() as NSFetchRequest<NSFetchRequestResult>
-        return (try? viewContext.count(for: fetchRequest)) ?? entries.count
+        startedEntries.count
     }
 
     private var years: [Int] {
         let calendar = Calendar.current
-        let allYears = entries.compactMap { entry -> Int? in
+        let allYears = startedEntries.compactMap { entry -> Int? in
             guard let date = entry.date else { return nil }
             return calendar.component(.year, from: date)
         }
@@ -767,9 +768,9 @@ struct SettingsView: View {
             do {
                 let baseEntries: [DiaryEntry]
                 if starredOnly {
-                    baseEntries = entries.filter { $0.isStarred }
+                    baseEntries = startedEntries.filter { $0.isStarred }
                 } else {
-                    baseEntries = Array(entries)
+                    baseEntries = startedEntries
                 }
 
                 let url = try PDFExportService.generatePDF(
