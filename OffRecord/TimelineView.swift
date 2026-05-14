@@ -50,43 +50,60 @@ struct TimelineView: View {
     private var assistant: FridayAssistantEngine { FridayAssistantEngine.shared }
 
     var body: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: TimelineDesign.contentSpacing) {
-                timelineHeader
-                searchArea
+        ZStack(alignment: .topTrailing) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: TimelineDesign.contentSpacing) {
+                    VStack(alignment: .leading, spacing: TimelineDesign.headerSearchSpacing) {
+                        timelineHeader
+                        searchArea
+                    }
 
-                if showFilters {
-                    filterBar
-                        .transition(.move(edge: .top).combined(with: .opacity))
+                    if showFilters {
+                        filterBar
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                    }
+
+                    if hasActiveFilters {
+                        activeFiltersBar
+                            .transition(.opacity)
+                    }
+
+                    semanticSearchStatusBanner
+
+                    if !filteredEntries.isEmpty {
+                        MonthSummaryCard(entries: summaryEntries)
+                    }
+
+                    timelineContent
                 }
-
-                if hasActiveFilters {
-                    activeFiltersBar
-                        .transition(.opacity)
-                }
-
-                semanticSearchStatusBanner
-
-                if !filteredEntries.isEmpty {
-                    MonthSummaryCard(entries: summaryEntries)
-                }
-
-                timelineContent
+                .frame(maxWidth: TimelineDesign.maxContentWidth)
+                .padding(.horizontal, 8)
+                .padding(.top, 8)
+                .padding(.bottom, 28)
+                .frame(maxWidth: .infinity)
             }
-            .frame(maxWidth: TimelineDesign.maxContentWidth)
-            .padding(.horizontal, 8)
-            .padding(.top, 8)
-            .padding(.bottom, 28)
-            .frame(maxWidth: .infinity)
+            .refreshable {
+                HapticManager.shared.pullToRefresh()
+                try? await Task.sleep(nanoseconds: 300_000_000)
+            }
+
+            timelinePlanterArtwork
         }
-        .refreshable {
-            HapticManager.shared.pullToRefresh()
-            try? await Task.sleep(nanoseconds: 300_000_000)
+        .background {
+            OffRecordColor.appBackgroundGradient
+                .ignoresSafeArea()
         }
-        .background(OffRecordColor.appBackgroundGradient.ignoresSafeArea())
-        .navigationTitle("")
-        .navigationBarTitleDisplayMode(.inline)
-        .toolbar(.hidden, for: .navigationBar)
+        .navigationTitle("Timeline")
+        .navigationBarTitleDisplayMode(.large)
+        .toolbar {
+            ToolbarItem(placement: .navigationBarLeading) {
+                starredToolbarButton
+            }
+
+            ToolbarItem(placement: .navigationBarTrailing) {
+                toolbarActions
+            }
+        }
         #if os(iOS)
         .onChange(of: voiceSearch.transcribedText) { _, newValue in
             if !newValue.isEmpty {
@@ -106,108 +123,77 @@ struct TimelineView: View {
             }
         }
         .onAppear {
-            semanticMemory.ensureIndexed(entries: Array(entries))
+            semanticMemory.ensureIndexed(entries: entries.startedEntries)
         }
     }
 
     // MARK: - Header
 
     private var timelineHeader: some View {
-        ZStack(alignment: .topTrailing) {
-            Image("CreeperPlant01")
-                .resizable()
-                .scaledToFit()
-                .frame(width: dynamicTypeSize.isAccessibilitySize ? 102 : TimelineDesign.planterWidth)
-                .offset(x: -4, y: 40)
-                .allowsHitTesting(false)
-                .accessibilityHidden(true)
-                .zIndex(0)
-
-            VStack(alignment: .leading, spacing: 0) {
-                HStack(alignment: .top) {
-                    Button {
-                        showStarredOnly.toggle()
-                        HapticManager.shared.selectionChanged()
-                    } label: {
-                        Image(systemName: showStarredOnly ? "star.fill" : "star")
-                            .font(.system(size: 25, weight: .medium))
-                            .foregroundStyle(showStarredOnly ? OffRecordColor.textYellow : OffRecordColor.textBrand)
-                            .frame(width: 56, height: 56)
-                            .background(Circle().fill(OffRecordColor.surfacePrimary.opacity(0.78)))
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityLabel("Show starred only")
-
-                    Spacer(minLength: 12)
-
-                    headerActions
-                }
-
-                Text("Timeline")
-                    .font(.system(size: dynamicTypeSize.isAccessibilitySize ? 46 : 56, weight: .black, design: .serif))
-                    .foregroundStyle(OffRecordColor.textBrand)
-                    .minimumScaleFactor(0.72)
-                    .lineLimit(1)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.top, dynamicTypeSize.isAccessibilitySize ? 34 : 20)
-            }
-            .zIndex(1)
-        }
-        .frame(minHeight: dynamicTypeSize.isAccessibilitySize ? 132 : 108)
+        Color.clear
+            .frame(
+                height: dynamicTypeSize.isAccessibilitySize
+                    ? TimelineDesign.accessibilityHeaderHeight
+                    : TimelineDesign.compactHeaderHeight
+            )
+            .frame(maxWidth: .infinity)
     }
 
-    private var headerActions: some View {
+    private var timelinePlanterArtwork: some View {
+        Image("CreeperPlant01")
+            .resizable()
+            .scaledToFit()
+            .frame(width: TimelineDesign.planterWidth)
+            .offset(
+                x: -16,
+                y: dynamicTypeSize.isAccessibilitySize ? 30 : -64
+            )
+            .allowsHitTesting(false)
+            .accessibilityHidden(true)
+    }
+
+    private var starredToolbarButton: some View {
+        Button {
+            showStarredOnly.toggle()
+            HapticManager.shared.selectionChanged()
+        } label: {
+            Image(systemName: showStarredOnly ? "star.fill" : "star")
+                .foregroundStyle(showStarredOnly ? OffRecordColor.textYellow : OffRecordColor.textBrand)
+        }
+        .accessibilityLabel("Show starred only")
+    }
+
+    private var toolbarActions: some View {
         HStack(spacing: 12) {
             #if os(iOS)
             Button {
                 toggleVoiceSearch()
             } label: {
                 Image(systemName: isListening ? "mic.fill" : "mic")
-                    .font(.system(size: 25, weight: .medium))
                     .foregroundStyle(isListening ? OffRecordColor.textCoral : OffRecordColor.textBrand)
-                    .frame(width: 56, height: 56)
-                    .background(Circle().fill(OffRecordColor.surfacePrimary.opacity(0.82)))
             }
-            .buttonStyle(.plain)
             .accessibilityLabel("Voice search")
             #endif
 
-            HStack(spacing: 14) {
-                Button {
-                    withAnimation(.easeInOut(duration: 0.2)) {
-                        showFilters.toggle()
-                    }
-                    HapticManager.shared.buttonTap()
-                } label: {
-                    Image(systemName: hasActiveFilters ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
-                        .font(.system(size: 25, weight: .semibold))
-                        .foregroundStyle(OffRecordColor.brandLavenderDark)
-                        .frame(width: 30, height: 34)
+            Button {
+                withAnimation(.easeInOut(duration: 0.2)) {
+                    showFilters.toggle()
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Filters")
-
-                Rectangle()
-                    .fill(OffRecordColor.divider)
-                    .frame(width: 1, height: 34)
-
-                Button {
-                    withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
-                        isEditingTimeline.toggle()
-                    }
-                    HapticManager.shared.buttonTap()
-                } label: {
-                    Text(isEditingTimeline ? "Done" : "Edit")
-                        .font(.system(size: 20, weight: .bold))
-                        .foregroundStyle(OffRecordColor.brandLavenderDark)
-                        .frame(minWidth: 48, alignment: .center)
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(isEditingTimeline ? "Done editing" : "Edit timeline")
+                HapticManager.shared.buttonTap()
+            } label: {
+                Image(systemName: hasActiveFilters ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
+                    .foregroundStyle(OffRecordColor.brandLavenderDark)
             }
-            .padding(.horizontal, 18)
-            .frame(height: 56)
-            .background(Capsule().fill(OffRecordColor.surfacePrimary.opacity(0.84)))
+            .accessibilityLabel("Filters")
+
+            Button(isEditingTimeline ? "Done" : "Edit") {
+                withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
+                    isEditingTimeline.toggle()
+                }
+                HapticManager.shared.buttonTap()
+            }
+            .foregroundStyle(OffRecordColor.brandLavenderDark)
+            .accessibilityLabel(isEditingTimeline ? "Done editing" : "Edit timeline")
         }
     }
 
@@ -547,7 +533,7 @@ struct TimelineView: View {
 
     private func scheduleSemanticSearch(_ query: String) {
         semanticSearchTask?.cancel()
-        let entrySnapshot = Array(entries)
+        let entrySnapshot = entries.startedEntries
         semanticSearchTask = Task {
             try? await Task.sleep(nanoseconds: 220_000_000)
             guard !Task.isCancelled else { return }
@@ -622,7 +608,7 @@ struct TimelineView: View {
     }
 
     private var filteredEntries: [DiaryEntry] {
-        entries.filter { entry in
+        entries.startedEntries.filter { entry in
             guard let entryDate = entry.date else { return false }
 
             if showStarredOnly && !entry.isStarred { return false }
