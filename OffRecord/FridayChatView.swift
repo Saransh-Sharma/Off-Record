@@ -495,6 +495,8 @@ struct FridayChatView: View {
     @State private var appliedInitialQuestion = false
     @Namespace private var bottomAnchor
 
+    private var startedEntries: [DiaryEntry] { entries.startedEntries }
+
     init(initialQuestion: String? = nil, autoSubmitInitialQuestion: Bool = false) {
         self.initialQuestion = initialQuestion
         self.autoSubmitInitialQuestion = autoSubmitInitialQuestion
@@ -543,7 +545,7 @@ struct FridayChatView: View {
         .navigationTitle("Talk to Friday")
         .background(OffRecordColor.appBackgroundGradient.ignoresSafeArea())
         .onAppear {
-            semanticMemory.ensureIndexed(entries: Array(entries))
+            semanticMemory.ensureIndexed(entries: startedEntries)
             applyInitialQuestionIfNeeded()
         }
     }
@@ -790,9 +792,10 @@ struct FridayChatView: View {
         let userMessage = FridayChatMessage(text: question, isUser: true)
         messages.append(userMessage)
         isAnswering = true
+        let entrySnapshot = startedEntries
 
         Task {
-            let answer = await EvidenceFridayEngine.answer(question: question, entries: Array(entries), profileSummary: profileSummary)
+            let answer = await EvidenceFridayEngine.answer(question: question, entries: entrySnapshot, profileSummary: profileSummary)
             let text = ([answer.summary] + answer.observations.map(\.text)).joined(separator: " ")
             let fridayMessage = FridayChatMessage(
                 text: text,
@@ -810,7 +813,7 @@ struct FridayChatView: View {
     }
 
     private func entry(for id: UUID) -> DiaryEntry? {
-        entries.first { $0.id == id }
+        startedEntries.first { $0.id == id }
     }
 }
 

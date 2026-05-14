@@ -28,6 +28,7 @@ struct FridayView: View {
     private var entries: FetchedResults<DiaryEntry>
 
     private var isIPad: Bool { horizontalSizeClass == .regular }
+    private var startedEntries: [DiaryEntry] { entries.startedEntries }
 
     enum FridaySection: String, CaseIterable {
         case overview = "Overview"
@@ -246,7 +247,7 @@ struct FridayView: View {
     private var overviewSection: some View {
         VStack(spacing: 16) {
             // Proactive Reflection Loop — "Friday noticed"
-            ProactiveReflectionSection(entries: Array(entries)) { insight in
+            ProactiveReflectionSection(entries: startedEntries) { insight in
                 startPromptNote(from: insight)
             }
 
@@ -915,6 +916,14 @@ struct FridayView: View {
 
     private var todayEntry: DiaryEntry? {
         let calendar = Calendar.current
+        return startedEntries.first { entry in
+            guard let date = entry.date else { return false }
+            return calendar.isDateInToday(date)
+        }
+    }
+
+    private var todayDraftOrStartedEntry: DiaryEntry? {
+        let calendar = Calendar.current
         return entries.first { entry in
             guard let date = entry.date else { return false }
             return calendar.isDateInToday(date)
@@ -922,7 +931,7 @@ struct FridayView: View {
     }
 
     private func getOrCreateTodayEntry() -> DiaryEntry {
-        if let existing = todayEntry {
+        if let existing = todayDraftOrStartedEntry {
             return existing
         }
 
@@ -945,11 +954,7 @@ struct FridayView: View {
     }
 
     private func entryHasNoContent(_ entry: DiaryEntry) -> Bool {
-        let text = entry.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        let duration = entry.value(forKey: "duration") as? Double ?? 0
-        let photoCount = entry.photos?.count ?? 0
-        let hasAudio = (entry.value(forKey: "audioFileName") as? String)?.isEmpty == false
-        return text.isEmpty && !hasAudio && duration <= 0 && photoCount == 0
+        !entry.isStartedEntry
     }
 }
 
