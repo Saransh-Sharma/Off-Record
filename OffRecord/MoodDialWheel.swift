@@ -2,6 +2,7 @@ import SwiftUI
 
 struct MoodDialWheel: View {
     @Binding var selectedMood: Mood
+    @Binding var isDragging: Bool
     let metrics: MoodDialWheelMetrics
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -9,11 +10,10 @@ struct MoodDialWheel: View {
     @State private var dragStartRotationDegrees = 0.0
     @State private var dragStartAngleDegrees: Double?
     @State private var pointerBounce = false
-    @State private var isDragging = false
 
     var body: some View {
         ZStack {
-            dialSegments(metrics: metrics)
+            dialSegments
                 .rotationEffect(
                     .degrees(rotationDegrees),
                     anchor: UnitPoint(
@@ -50,38 +50,42 @@ struct MoodDialWheel: View {
         }
     }
 
-    private func dialSegments(metrics: MoodDialWheelMetrics) -> some View {
-        ZStack {
-            ForEach(Array(Mood.dialMoods.enumerated()), id: \.element.id) { index, mood in
-                let isSelected = mood == selectedMood
-                let sweep = MoodDialMath.segmentSweepDegrees()
-                let gap = 0.0
-                let startAngle = MoodDialMath.arcStartDegrees + Double(index) * sweep + gap / 2
-                let endAngle = MoodDialMath.arcStartDegrees + Double(index + 1) * sweep - gap / 2
-                let outerRadius = metrics.outerRadius + (isSelected ? 10 : 0)
-                let segmentShape = MoodDialSegmentShape(
-                    center: metrics.center,
-                    innerRadius: metrics.innerRadius,
-                    outerRadius: outerRadius,
-                    startAngleDegrees: startAngle,
-                    endAngleDegrees: endAngle
-                )
+    private var dialSegments: some View {
+        let geometry = MoodDialWheelGeometryCache.geometry(for: metrics)
 
-                segmentShape
-                    .fill(mood.dialSegmentColor.opacity(isSelected ? 1 : 0.78))
-                .overlay(
-                    segmentShape
-                        .fill(Color.white.opacity(isSelected ? 0.08 : 0))
-                        .blendMode(.softLight)
-                )
+        return ZStack {
+            ForEach(geometry.segments) { segment in
+                segment.path
+                    .fill(segment.mood.dialSegmentColor.opacity(0.78))
 
-                Image(mood.dialFaceAssetName)
+                Image(segment.mood.dialFaceAssetName)
                     .resizable()
+                    .interpolation(.medium)
                     .scaledToFit()
-                    .frame(width: isSelected ? 48 : 42, height: isSelected ? 48 : 42)
-                    .rotationEffect(.degrees(iconPreRotationDegrees(for: index)))
-                    .opacity(isSelected ? 0.88 : 0.56)
-                    .position(iconPosition(for: index, metrics: metrics))
+                    .frame(width: 42, height: 42)
+                    .rotationEffect(.degrees(segment.iconPreRotationDegrees))
+                    .opacity(0.56)
+                    .position(segment.iconPosition)
+                    .accessibilityHidden(true)
+            }
+
+            if let selectedSegment = geometry.segment(for: selectedMood) {
+                selectedSegment.selectedPath
+                    .fill(selectedMood.dialSegmentColor)
+                    .overlay(
+                        selectedSegment.selectedPath
+                            .fill(Color.white.opacity(0.08))
+                            .blendMode(.softLight)
+                    )
+
+                Image(selectedMood.dialFaceAssetName)
+                    .resizable()
+                    .interpolation(.medium)
+                    .scaledToFit()
+                    .frame(width: 48, height: 48)
+                    .rotationEffect(.degrees(selectedSegment.iconPreRotationDegrees))
+                    .opacity(0.88)
+                    .position(selectedSegment.iconPosition)
                     .accessibilityHidden(true)
             }
         }
@@ -91,6 +95,7 @@ struct MoodDialWheel: View {
         DragGesture(minimumDistance: 4, coordinateSpace: .local)
             .onChanged { value in
                 if dragStartAngleDegrees == nil {
+                    PerformanceSignposts.event("MoodDialDragStarted")
                     isDragging = true
                     dragStartAngleDegrees = MoodDialMath.angleDegrees(for: value.startLocation, around: center)
                     dragStartRotationDegrees = rotationDegrees
@@ -103,6 +108,7 @@ struct MoodDialWheel: View {
                 updateSelection(forRotation: nextRotation, animated: false)
             }
             .onEnded { _ in
+                PerformanceSignposts.event("MoodDialDragEnded")
                 dragStartAngleDegrees = nil
                 isDragging = false
                 snapToCurrentMood()
@@ -160,18 +166,137 @@ struct MoodDialWheel: View {
             pointerBounce = false
         }
     }
+}
 
-    private func iconPosition(for index: Int, metrics: MoodDialWheelMetrics) -> CGPoint {
-        let angle = MoodDialMath.centerAngleDegrees(for: index)
-        let radians = angle * .pi / 180
-        let radius = (metrics.innerRadius + metrics.outerRadius) / 2
-        return CGPoint(
-            x: metrics.center.x + CGFloat(cos(radians)) * radius,
-            y: metrics.center.y + CGFloat(sin(radians)) * radius
-        )
+struct MoodDialWheelGeometry {
+    let segments: [Segment]
+
+    struct Segment: Identifiable {
+        let id: Mood.ID
+        let mood: Mood
+        let path: Path
+        let selectedPath: Path
+        let iconPosition: CGPoint
+        let iconPreRotationDegrees: Double
     }
 
-    private func iconPreRotationDegrees(for index: Int) -> Double {
-        MoodDialMath.centerAngleDegrees(for: index) - MoodDialMath.pointerAngleDegrees
+    func segment(for mood: Mood) -> Segment? {
+        segments.first { $0.mood == mood }
+    }
+}
+
+enum MoodDialWheelGeometryCache {
+    private struct Key: Hashable {
+        let width: Int
+        let height: Int
+        let topInset: Int
+        let bottomInset: Int
+
+        init(metrics: MoodDialWheelMetrics) {
+            width = Int((metrics.size.width * 2).rounded())
+            height = Int((metrics.size.height * 2).rounded())
+            topInset = Int((metrics.safeAreaInsets.top * 2).rounded())
+            bottomInset = Int((metrics.safeAreaInsets.bottom * 2).rounded())
+        }
+    }
+
+    private static let lock = NSLock()
+    private static var cache: [Key: MoodDialWheelGeometry] = [:]
+
+    static func geometry(for metrics: MoodDialWheelMetrics) -> MoodDialWheelGeometry {
+        let key = Key(metrics: metrics)
+
+        lock.lock()
+        if let geometry = cache[key] {
+            lock.unlock()
+            return geometry
+        }
+        lock.unlock()
+
+        let geometry = makeGeometry(for: metrics)
+
+        lock.lock()
+        cache[key] = geometry
+        lock.unlock()
+        return geometry
+    }
+
+    #if DEBUG
+    static func resetForTesting() {
+        lock.lock()
+        cache = [:]
+        lock.unlock()
+    }
+    #endif
+
+    private static func makeGeometry(for metrics: MoodDialWheelMetrics) -> MoodDialWheelGeometry {
+        PerformanceSignposts.event("MoodDialGeometryCacheMiss")
+        let sweep = MoodDialMath.segmentSweepDegrees()
+        let segments = Mood.dialMoods.enumerated().map { index, mood in
+            let startAngle = MoodDialMath.arcStartDegrees + Double(index) * sweep
+            let endAngle = MoodDialMath.arcStartDegrees + Double(index + 1) * sweep
+            let iconAngle = MoodDialMath.centerAngleDegrees(for: index)
+            let iconRadians = iconAngle * .pi / 180
+            let iconRadius = (metrics.innerRadius + metrics.outerRadius) / 2
+            let iconPosition = CGPoint(
+                x: metrics.center.x + CGFloat(cos(iconRadians)) * iconRadius,
+                y: metrics.center.y + CGFloat(sin(iconRadians)) * iconRadius
+            )
+
+            return MoodDialWheelGeometry.Segment(
+                id: mood.id,
+                mood: mood,
+                path: segmentPath(
+                    center: metrics.center,
+                    innerRadius: metrics.innerRadius,
+                    outerRadius: metrics.outerRadius,
+                    startAngleDegrees: startAngle,
+                    endAngleDegrees: endAngle
+                ),
+                selectedPath: segmentPath(
+                    center: metrics.center,
+                    innerRadius: metrics.innerRadius,
+                    outerRadius: metrics.outerRadius + 10,
+                    startAngleDegrees: startAngle,
+                    endAngleDegrees: endAngle
+                ),
+                iconPosition: iconPosition,
+                iconPreRotationDegrees: iconAngle - MoodDialMath.pointerAngleDegrees
+            )
+        }
+
+        return MoodDialWheelGeometry(segments: segments)
+    }
+
+    private static func segmentPath(
+        center: CGPoint,
+        innerRadius: CGFloat,
+        outerRadius: CGFloat,
+        startAngleDegrees: Double,
+        endAngleDegrees: Double
+    ) -> Path {
+        var path = Path()
+        let outerPoints = points(radius: outerRadius, center: center, from: startAngleDegrees, to: endAngleDegrees)
+        let innerPoints = points(radius: innerRadius, center: center, from: endAngleDegrees, to: startAngleDegrees)
+
+        guard let first = outerPoints.first else { return path }
+        path.move(to: first)
+        outerPoints.dropFirst().forEach { path.addLine(to: $0) }
+        innerPoints.forEach { path.addLine(to: $0) }
+        path.closeSubpath()
+        return path
+    }
+
+    private static func points(radius: CGFloat, center: CGPoint, from startAngle: Double, to endAngle: Double) -> [CGPoint] {
+        let steps = max(6, Int(abs(endAngle - startAngle) / 2))
+        return (0...steps).map { step in
+            let progress = Double(step) / Double(steps)
+            let angle = startAngle + (endAngle - startAngle) * progress
+            let radians = angle * .pi / 180
+            return CGPoint(
+                x: center.x + CGFloat(cos(radians)) * radius,
+                y: center.y + CGFloat(sin(radians)) * radius
+            )
+        }
     }
 }
