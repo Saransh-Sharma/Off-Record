@@ -23,18 +23,19 @@ struct StatsView: View {
     @State private var showMilestone: Int? = nil
 
     private var isIPad: Bool { horizontalSizeClass == .regular }
+    private var startedEntries: [DiaryEntry] { entries.startedEntries }
 
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                if entries.isEmpty {
+                if startedEntries.isEmpty {
                     emptyStateCard
                 } else {
                     // Shareable Weekly Insights
-                    WeeklyInsightsSection(entries: Array(entries))
+                    WeeklyInsightsSection(entries: startedEntries)
 
                     // Proactive weekly reflection
-                    ProactiveWeeklyReflectionCard(entries: Array(entries))
+                    ProactiveWeeklyReflectionCard(entries: startedEntries)
 
                     // AI Insights
                     aiInsightsCard
@@ -72,7 +73,7 @@ struct StatsView: View {
             }
         }
         .onAppear {
-            proactiveReflection.refreshIfNeeded(entries: Array(entries))
+            proactiveReflection.refreshIfNeeded(entries: startedEntries)
             if let milestone = goalManager.checkMilestone(currentStreak: currentStreak) {
                 HapticManager.shared.streakMilestone()
                 withAnimation(.spring(response: 0.5)) {
@@ -117,7 +118,7 @@ struct StatsView: View {
             currentStreak: currentStreak,
             longestStreak: longestStreak,
             entriesThisMonth: entriesThisMonth,
-            totalEntries: entries.count,
+            totalEntries: startedEntries.count,
             isIPad: isIPad
         )
     }
@@ -261,7 +262,7 @@ struct StatsView: View {
     // MARK: - AI Insights Card
 
     private var aiInsightsCard: some View {
-        let insights = InsightsEngine.generateInsights(from: Array(entries))
+        let insights = InsightsEngine.generateInsights(from: startedEntries)
 
         return Group {
             if !insights.isEmpty {
@@ -302,7 +303,7 @@ struct StatsView: View {
     // MARK: - Weekly Summary Card
 
     private var weeklySummaryCard: some View {
-        let summary = InsightsEngine.generateWeeklySummary(from: Array(entries))
+        let summary = InsightsEngine.generateWeeklySummary(from: startedEntries)
 
         return VStack(alignment: .leading, spacing: 12) {
             HStack {
@@ -324,8 +325,8 @@ struct StatsView: View {
     // MARK: - Goal Progress Card
 
     private var goalProgressCard: some View {
-        let progress = goalManager.progressThisWeek(from: Array(entries))
-        let count = goalManager.entriesThisWeek(from: Array(entries))
+        let progress = goalManager.progressThisWeek(from: startedEntries)
+        let count = goalManager.entriesThisWeek(from: startedEntries)
         let remaining = goalManager.daysRemainingInWeek()
 
         return VStack(spacing: 16) {
@@ -467,7 +468,7 @@ struct StatsView: View {
 
     private var longestStreak: Int {
         let calendar = Calendar.current
-        let sortedDates = entries.compactMap { $0.date }.map { calendar.startOfDay(for: $0) }
+        let sortedDates = startedEntries.compactMap { $0.date }.map { calendar.startOfDay(for: $0) }
         let uniqueDates = Set(sortedDates).sorted(by: >)
 
         guard !uniqueDates.isEmpty else { return 0 }
@@ -491,7 +492,7 @@ struct StatsView: View {
     private var entriesThisMonth: Int {
         let calendar = Calendar.current
         let now = Date()
-        return entries.filter { entry in
+        return startedEntries.filter { entry in
             guard let date = entry.date else { return false }
             return calendar.isDate(date, equalTo: now, toGranularity: .month)
         }.count
@@ -505,7 +506,7 @@ struct StatsView: View {
 
     private func hasEntryOn(_ date: Date) -> Bool {
         let calendar = Calendar.current
-        return entries.contains { entry in
+        return startedEntries.contains { entry in
             guard let entryDate = entry.date else { return false }
             return calendar.isDate(entryDate, inSameDayAs: date)
         }
@@ -519,7 +520,7 @@ struct StatsView: View {
 
     private var moodData: [(mood: Mood, count: Int)] {
         var counts: [Mood: Int] = [:]
-        for entry in entries {
+        for entry in startedEntries {
             if let moodString = entry.value(forKey: "mood") as? String,
                let mood = Mood(rawValue: moodString),
                mood != .none {
@@ -552,7 +553,7 @@ struct StatsView: View {
 
         return (0..<14).compactMap { offset -> (Date, Mood?)? in
             guard let date = calendar.date(byAdding: .day, value: -offset, to: today) else { return nil }
-            let entry = entries.first { entry in
+            let entry = startedEntries.first { entry in
                 guard let entryDate = entry.date else { return false }
                 return calendar.isDate(entryDate, inSameDayAs: date)
             }
@@ -567,23 +568,23 @@ struct StatsView: View {
     }
 
     private var totalWords: Int {
-        entries.reduce(0) { total, entry in
+        startedEntries.reduce(0) { total, entry in
             let text = entry.text ?? ""
             return total + text.split { $0.isWhitespace || $0.isNewline }.count
         }
     }
 
     private var avgWordsPerEntry: Int {
-        guard entries.count > 0 else { return 0 }
-        return totalWords / entries.count
+        guard startedEntries.count > 0 else { return 0 }
+        return totalWords / startedEntries.count
     }
 
     private var starredCount: Int {
-        entries.filter { $0.isStarred }.count
+        startedEntries.filter { $0.isStarred }.count
     }
 
     private var audioCount: Int {
-        entries.filter { entry in
+        startedEntries.filter { entry in
             let fileName = entry.value(forKey: "audioFileName") as? String
             return fileName != nil && !fileName!.isEmpty
         }.count
