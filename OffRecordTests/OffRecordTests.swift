@@ -7,6 +7,7 @@
 
 import Testing
 import Foundation
+import CoreData
 import SwiftUI
 import CryptoKit
 import UserNotifications
@@ -14,6 +15,106 @@ import UserNotifications
 import UIKit
 #endif
 @testable import OffRecord
+
+// MARK: - Entry Visibility Tests
+
+@MainActor
+struct EntryVisibilityTests {
+
+    @Test func emptyDraftIsNotStarted() {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let entry = makeEntry(in: context, text: "", mood: "", audioFileName: nil, duration: 0)
+
+        #expect(!entry.isStartedEntry)
+    }
+
+    @Test func whitespaceOnlyTextIsNotStarted() {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let entry = makeEntry(in: context, text: " \n\t ", mood: "", audioFileName: nil, duration: 0)
+
+        #expect(entry.startedEntryWordCount == 0)
+        #expect(!entry.isStartedEntry)
+    }
+
+    @Test func textWithWordsIsStarted() {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let entry = makeEntry(in: context, text: "A real note", mood: "", audioFileName: nil, duration: 0)
+
+        #expect(entry.startedEntryWordCount == 3)
+        #expect(entry.isStartedEntry)
+    }
+
+    @Test func audioReferenceIsStarted() {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let entry = makeEntry(in: context, text: "", mood: "", audioFileName: "recording.m4a", duration: 0)
+
+        #expect(entry.isStartedEntry)
+    }
+
+    @Test func positiveAudioDurationIsStarted() {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let entry = makeEntry(in: context, text: "", mood: "", audioFileName: nil, duration: 0.5)
+
+        #expect(entry.isStartedEntry)
+    }
+
+    @Test func selectedMoodIsStarted() {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let entry = makeEntry(in: context, text: "", mood: Mood.calm.rawValue, audioFileName: nil, duration: 0)
+
+        #expect(entry.isStartedEntry)
+    }
+
+    @Test func noneMoodIsNotStarted() {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let entry = makeEntry(in: context, text: "", mood: Mood.none.rawValue, audioFileName: nil, duration: 0)
+
+        #expect(!entry.isStartedEntry)
+    }
+
+    @Test func photoAttachmentIsStarted() {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let entry = makeEntry(in: context, text: "", mood: "", audioFileName: nil, duration: 0)
+        let photo = PhotoAttachment(context: context)
+        photo.id = UUID()
+        photo.createdAt = Date()
+        photo.fileName = "photo.jpg"
+        photo.entry = entry
+
+        #expect(entry.isStartedEntry)
+    }
+
+    @Test func sequenceFiltersOnlyStartedEntries() {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let empty = makeEntry(in: context, text: "", mood: "", audioFileName: nil, duration: 0)
+        let written = makeEntry(in: context, text: "Started", mood: "", audioFileName: nil, duration: 0)
+        let moodOnly = makeEntry(in: context, text: "", mood: Mood.happy.rawValue, audioFileName: nil, duration: 0)
+
+        let started = [empty, written, moodOnly].startedEntries
+
+        #expect(started.map(\.id) == [written.id, moodOnly.id])
+    }
+
+    private func makeEntry(
+        in context: NSManagedObjectContext,
+        text: String?,
+        mood: String?,
+        audioFileName: String?,
+        duration: Double
+    ) -> DiaryEntry {
+        let entry = DiaryEntry(context: context)
+        entry.id = UUID()
+        entry.date = Date()
+        entry.createdAt = Date()
+        entry.updatedAt = Date()
+        entry.text = text
+        entry.mood = mood
+        entry.audioFileName = audioFileName
+        entry.duration = duration
+        entry.isStarred = false
+        return entry
+    }
+}
 
 // MARK: - Semantic Memory Tests
 
