@@ -17,6 +17,34 @@ private let logger = Logger(subsystem: "com.singularity.offrecord.widget", categ
 struct WidgetDataFetcher {
     static let shared = WidgetDataFetcher()
     let persistenceController = WidgetPersistenceController.shared
+
+    private func isStartedEntry(_ entry: NSManagedObject) -> Bool {
+        let text = ((entry.value(forKey: "text") as? String) ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let wordCount = text.split { $0.isWhitespace || $0.isNewline }.count
+        if wordCount > 0 { return true }
+
+        let audioFileName = ((entry.value(forKey: "audioFileName") as? String) ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        let duration = entry.value(forKey: "duration") as? Double ?? 0
+        if !audioFileName.isEmpty || duration > 0 { return true }
+
+        let mood = ((entry.value(forKey: "mood") as? String) ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        if !mood.isEmpty { return true }
+
+        if let photos = entry.value(forKey: "photos") as? NSSet, photos.count > 0 {
+            return true
+        }
+
+        let photoFileNames = ((entry.value(forKey: "photoFileNames") as? String) ?? "")
+            .trimmingCharacters(in: .whitespacesAndNewlines)
+        return !photoFileNames.isEmpty
+    }
+
+    private func startedEntries(from entries: [NSManagedObject]) -> [NSManagedObject] {
+        entries.filter(isStartedEntry)
+    }
     
     /// Fetch today's entry
     func fetchTodayEntry() -> (text: String?, mood: String?, hasEntry: Bool) {
@@ -29,11 +57,10 @@ struct WidgetDataFetcher {
         
         request.predicate = NSPredicate(format: "date >= %@ AND date < %@", startOfDay as NSDate, endOfDay as NSDate)
         request.sortDescriptors = [NSSortDescriptor(key: "updatedAt", ascending: false)]
-        request.fetchLimit = 1
         
         do {
             let results = try context.fetch(request)
-            if let entry = results.first {
+            if let entry = startedEntries(from: results).first {
                 let text = entry.value(forKey: "text") as? String
                 let moodString = entry.value(forKey: "mood") as? String
                 return (text, moodString, true)
@@ -52,7 +79,7 @@ struct WidgetDataFetcher {
         request.sortDescriptors = [NSSortDescriptor(key: "date", ascending: false)]
         
         do {
-            let entries = try context.fetch(request)
+            let entries = startedEntries(from: try context.fetch(request))
             let calendar = Calendar.current
             var streak = 0
             var checkDate = calendar.startOfDay(for: Date())
@@ -101,7 +128,7 @@ struct WidgetDataFetcher {
         request.predicate = NSPredicate(format: "date >= %@", weekAgo as NSDate)
         
         do {
-            let entries = try context.fetch(request)
+            let entries = startedEntries(from: try context.fetch(request))
             var moodCounts: [String: Int] = [:]
             
             for entry in entries {
@@ -122,7 +149,7 @@ struct WidgetDataFetcher {
         let request: NSFetchRequest<NSManagedObject> = NSFetchRequest(entityName: "DiaryEntry")
         
         do {
-            return try context.count(for: request)
+            return startedEntries(from: try context.fetch(request)).count
         } catch {
             return 0
         }
