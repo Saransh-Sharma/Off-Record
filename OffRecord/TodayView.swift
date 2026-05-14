@@ -92,7 +92,15 @@ struct TodayView: View {
     }
 
     private var latestEntry: DiaryEntry? {
+        todayEntries.first(where: \.isStartedEntry)
+    }
+
+    private var latestDraftOrStartedEntry: DiaryEntry? {
         todayEntries.first
+    }
+
+    private var startedEntries: [DiaryEntry] {
+        allEntries.startedEntries
     }
 
     private var effectiveLatestEntry: DiaryEntry? {
@@ -109,7 +117,7 @@ struct TodayView: View {
         if isHeroUITestEmptyToday {
             return true
         }
-        return !allEntries.isEmpty
+        return !startedEntries.isEmpty
     }
 
     private var isHeroUITestEmptyToday: Bool {
@@ -208,11 +216,11 @@ struct TodayView: View {
         }
         .onAppear {
             recorder.prepareForFirstUse()
-            proactiveReflection.refreshIfNeeded(entries: Array(allEntries))
+            proactiveReflection.refreshIfNeeded(entries: startedEntries)
             refreshHero(recordExposure: true)
         }
         .onChange(of: allEntries.count) { _, _ in
-            proactiveReflection.refreshIfNeeded(entries: Array(allEntries))
+            proactiveReflection.refreshIfNeeded(entries: startedEntries)
         }
         .onChange(of: latestEntry?.objectID) { _, _ in
             guard !isHeroRecordingActive else { return }
@@ -360,7 +368,7 @@ struct TodayView: View {
                 }
 
                 ProactiveReflectionPromptCard(
-                    entries: Array(allEntries),
+                    entries: startedEntries,
                     hasEntryToday: effectiveLatestEntry != nil
                 ) { insight in
                     startTypedNote(promptContext: insight.prompt, heroPromptID: nil)
@@ -903,7 +911,7 @@ struct TodayView: View {
     }
 
     private func getOrCreateTodayEntry() -> DiaryEntry {
-        if let existing = latestEntry {
+        if let existing = latestDraftOrStartedEntry {
             return existing
         }
         let now = Date()
@@ -935,6 +943,15 @@ struct TodayView: View {
                 Text("Tap to add text or more photos")
                     .font(.caption)
                     .foregroundColor(OffRecordColor.textSecondary)
+            } else if let moodString = entry.value(forKey: "mood") as? String,
+                      let mood = Mood(rawValue: moodString),
+                      mood != .none {
+                Text("\(mood.displayName) mood")
+                    .font(.subheadline)
+                    .foregroundColor(OffRecordColor.textPrimary)
+                Text("Tap to add text or audio")
+                    .font(.caption)
+                    .foregroundColor(OffRecordColor.textSecondary)
             } else {
                 Text("Draft note")
                     .font(.subheadline)
@@ -951,10 +968,7 @@ struct TodayView: View {
     }
 
     private func entryHasNoContent(_ entry: DiaryEntry) -> Bool {
-        let text = entry.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        let duration = entry.value(forKey: "duration") as? Double ?? 0
-        let photoCount = entry.photos?.count ?? 0
-        return text.isEmpty && !hasAudioReference(entry) && duration <= 0 && photoCount == 0
+        !entry.isStartedEntry
     }
 
     // MARK: - Recording Logic
@@ -1147,7 +1161,7 @@ struct TodayView: View {
         let calendar = Calendar.current
         let currentYear = calendar.component(.year, from: Date())
 
-        let days: Set<Date> = Set(allEntries.compactMap { entry in
+        let days: Set<Date> = Set(startedEntries.compactMap { entry in
             guard let date = entry.date else { return nil }
             return calendar.startOfDay(for: date)
         })
@@ -1158,7 +1172,7 @@ struct TodayView: View {
     private var streakCount: Int {
         let calendar = Calendar.current
 
-        let daysSet: Set<Date> = Set(allEntries.compactMap { entry in
+        let daysSet: Set<Date> = Set(startedEntries.compactMap { entry in
             guard let date = entry.date else { return nil }
             return calendar.startOfDay(for: date)
         })
