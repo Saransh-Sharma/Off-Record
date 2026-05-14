@@ -9,6 +9,9 @@
 
 import SwiftUI
 import CoreData
+#if os(iOS)
+import UIKit
+#endif
 
 /// Main content view with tab-based navigation.
 /// Uses TabView on all devices. On iPadOS 18+, the tab bar adapts to a sidebar.
@@ -16,6 +19,7 @@ struct ContentView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @State private var selectedTab: OffRecordTab = .today
+    @State private var isKeyboardVisible = false
 
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \DiaryEntry.date, ascending: false)],
@@ -59,10 +63,18 @@ struct ContentView: View {
                     OffRecordFloatingTabBar(selectedTab: $selectedTab)
                         .padding(.horizontal, OffRecordCompactTabBarLayout.horizontalPadding)
                         .padding(.bottom, OffRecordCompactTabBarLayout.screenEdgeBottomPadding)
-                        .offset(y: proxy.safeAreaInsets.bottom)
+                        .offset(y: isKeyboardVisible ? 0 : proxy.safeAreaInsets.bottom)
                 }
             }
         }
+        #if os(iOS)
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+            isKeyboardVisible = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            isKeyboardVisible = false
+        }
+        #endif
         .offRecordScreenBackground()
     }
 
@@ -170,10 +182,7 @@ struct OffRecordFloatingTabBar: View {
         HStack(spacing: 4) {
             ForEach(OffRecordTab.allCases) { tab in
                 Button {
-                    withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
-                        selectedTab = tab
-                    }
-                    HapticManager.shared.selectionChanged()
+                    select(tab)
                 } label: {
                     let style = tab.readableStyle
                     VStack(spacing: 4) {
@@ -209,6 +218,20 @@ struct OffRecordFloatingTabBar: View {
                 .overlay(Capsule().stroke(OffRecordColor.borderSoft, lineWidth: 1))
                 .shadow(color: OffRecordShadow.tabColor, radius: 30, x: 0, y: 8)
         )
+    }
+
+    private func select(_ tab: OffRecordTab) {
+        dismissKeyboard()
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+            selectedTab = tab
+        }
+        HapticManager.shared.selectionChanged()
+    }
+
+    private func dismissKeyboard() {
+        #if os(iOS)
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        #endif
     }
 
     private func selectedForeground(for tab: OffRecordTab, style: OffRecordReadableTintStyle) -> Color {

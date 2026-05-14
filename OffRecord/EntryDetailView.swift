@@ -10,6 +10,27 @@ import SwiftUI
 import AVFoundation
 import PhotosUI
 
+private enum EntryDetailDateFormatters {
+    static let shortDate: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM d"
+        return formatter
+    }()
+
+    static let fullDate: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEEE, MMMM d, yyyy"
+        return formatter
+    }()
+
+    static let time: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .none
+        formatter.timeStyle = .short
+        return formatter
+    }()
+}
+
 /// Detail view for a single diary entry.
 /// Allows viewing, editing text, setting mood, playing back audio, and attaching photos.
 struct EntryDetailView: View {
@@ -603,22 +624,15 @@ struct EntryDetailView: View {
     }
 
     private var formattedShortDate: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMM d"
-        return formatter.string(from: entry.date ?? Date())
+        EntryDetailDateFormatters.shortDate.string(from: entry.date ?? Date())
     }
 
     private var formattedFullDate: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE, MMMM d, yyyy"
-        return formatter.string(from: entry.date ?? Date())
+        EntryDetailDateFormatters.fullDate.string(from: entry.date ?? Date())
     }
 
     private func formattedTime(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .none
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
+        EntryDetailDateFormatters.time.string(from: date)
     }
 
     /// Entry has an audio filename stored (may have been recorded on another device)
@@ -661,7 +675,7 @@ struct EntryDetailView: View {
         HapticManager.shared.entryStarred()
         do {
             try viewContext.save()
-            SemanticMemoryIndexController.shared.upsertEntry(entry)
+            EntryLearningPipeline.upsertSemanticEntry(entry)
         } catch {
             // ignore
         }
@@ -679,7 +693,7 @@ struct EntryDetailView: View {
             entry.updatedAt = Date()
             do {
                 try viewContext.save()
-                SemanticMemoryIndexController.shared.upsertEntry(entry)
+                EntryLearningPipeline.upsertSemanticEntry(entry)
 
                 // Feed into Friday — use reprocess if text was edited
                 if !trimmed.isEmpty {
@@ -689,8 +703,7 @@ struct EntryDetailView: View {
                     )
 
                     if !oldText.isEmpty && trimmed != oldText {
-                        // Text was edited — re-process to update entity names
-                        FridayAssistantEngine.shared.reprocessEditedEntry(
+                        EntryLearningPipeline.reprocessEditedEntry(
                             oldText: oldText,
                             newText: trimmed,
                             mood: selectedMood.rawValue,
@@ -698,7 +711,7 @@ struct EntryDetailView: View {
                             duration: entry.duration
                         )
                     } else {
-                        FridayAssistantEngine.shared.processEntry(
+                        EntryLearningPipeline.processSavedEntry(
                             text: trimmed,
                             mood: selectedMood.rawValue,
                             date: entry.date ?? Date(),
@@ -743,6 +756,7 @@ struct EntryDetailView: View {
         HapticManager.shared.moodSelected()
         do {
             try viewContext.save()
+            EntryLearningPipeline.upsertSemanticEntry(entry)
         } catch {
             // ignore
         }
