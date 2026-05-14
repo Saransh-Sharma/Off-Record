@@ -3,6 +3,7 @@ import SwiftUI
 struct MoodDialSelectedMoodView: View {
     let mood: Mood
     let layoutScale: CGFloat
+    let isInteractionActive: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var chevronPulse = false
 
@@ -17,14 +18,15 @@ struct MoodDialSelectedMoodView: View {
             ZStack {
                 Image(mood.moodGlowAssetName)
                     .resizable()
+                    .interpolation(.medium)
                     .scaledToFit()
                     .frame(width: 292 * layoutScale, height: 292 * layoutScale)
                     .opacity(0.24)
-                    .blur(radius: 7)
                     .accessibilityHidden(true)
 
                 Image(mood.largeMoodAssetName)
                     .resizable()
+                    .interpolation(.medium)
                     .scaledToFit()
                     .frame(width: 160 * layoutScale, height: 160 * layoutScale)
                     .scaleEffect(reduceMotion ? 1 : 1.035)
@@ -32,8 +34,6 @@ struct MoodDialSelectedMoodView: View {
                     .accessibilityIdentifier("moodDial.largeIcon")
             }
             .frame(width: 220 * layoutScale, height: 176 * layoutScale)
-            .id(mood.largeMoodAssetName)
-            .transition(reduceMotion ? .opacity : .scale(scale: 0.96).combined(with: .opacity))
 
             Text(mood.supportiveCopy)
                 .font(.system(size: 15 * layoutScale, weight: .regular))
@@ -51,10 +51,22 @@ struct MoodDialSelectedMoodView: View {
                 )
                 .accessibilityHidden(true)
         }
-        .animation(reduceMotion ? .easeInOut(duration: 0.18) : .spring(response: 0.28, dampingFraction: 0.72), value: mood)
+        .animation(selectedMoodAnimation, value: mood)
         .onAppear {
             guard !reduceMotion else { return }
             chevronPulse = true
         }
+    }
+
+    private var selectedMoodAnimation: Animation? {
+        if reduceMotion {
+            return .easeInOut(duration: 0.18)
+        }
+
+        if isInteractionActive {
+            return nil
+        }
+
+        return .spring(response: 0.28, dampingFraction: 0.72)
     }
 }

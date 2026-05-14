@@ -476,6 +476,8 @@ struct FridayResponseGenerator {
 // MARK: - Friday Chat View
 
 struct FridayChatView: View {
+    private let initialQuestion: String?
+    private let autoSubmitInitialQuestion: Bool
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @ObservedObject private var themeManager = ThemeManager.shared
     @ObservedObject private var semanticMemory = SemanticMemoryIndexController.shared
@@ -490,7 +492,13 @@ struct FridayChatView: View {
     @State private var askedQuestions: Set<FridayQuestion> = []
     @State private var inputText: String = ""
     @State private var isAnswering = false
+    @State private var appliedInitialQuestion = false
     @Namespace private var bottomAnchor
+
+    init(initialQuestion: String? = nil, autoSubmitInitialQuestion: Bool = false) {
+        self.initialQuestion = initialQuestion
+        self.autoSubmitInitialQuestion = autoSubmitInitialQuestion
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -536,6 +544,7 @@ struct FridayChatView: View {
         .background(OffRecordColor.appBackgroundGradient.ignoresSafeArea())
         .onAppear {
             semanticMemory.ensureIndexed(entries: Array(entries))
+            applyInitialQuestionIfNeeded()
         }
     }
 
@@ -745,6 +754,18 @@ struct FridayChatView: View {
         let unasked = FridayQuestion.allCases.filter { !askedQuestions.contains($0) }
         let asked = FridayQuestion.allCases.filter { askedQuestions.contains($0) }
         return unasked + asked
+    }
+
+    private func applyInitialQuestionIfNeeded() {
+        guard !appliedInitialQuestion else { return }
+        appliedInitialQuestion = true
+        let question = initialQuestion?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !question.isEmpty else { return }
+        if autoSubmitInitialQuestion {
+            askEvidenceQuestion(question, profileSummary: nil)
+        } else if inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            inputText = question
+        }
     }
 
     private func askQuestion(_ question: FridayQuestion) {

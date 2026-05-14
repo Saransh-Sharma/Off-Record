@@ -375,12 +375,13 @@ struct OnboardingView: View {
                     entry.setValue(selectedMood.rawValue, forKey: "mood")
                     entry.updatedAt = Date()
                     try? viewContext.save()
-                    FridayAssistantEngine.shared.processEntry(
+                    EntryLearningPipeline.processSavedEntry(
                         text: text,
                         mood: selectedMood.rawValue,
                         date: entry.date ?? Date(),
                         duration: entry.duration
                     )
+                    EntryLearningPipeline.upsertSemanticEntry(entry)
                     HapticManager.shared.entrySaved()
                 case .failure:
                     response.speechChoice = .denied
@@ -398,12 +399,13 @@ struct OnboardingView: View {
         let entry = createEntry(text: text, audioFileName: nil, duration: 0)
         entryCreated = true
         response.firstEntryText = text
-        FridayAssistantEngine.shared.processEntry(
+        EntryLearningPipeline.processSavedEntry(
             text: text,
             mood: selectedMood.rawValue,
             date: entry.date ?? Date(),
             duration: 0
         )
+        EntryLearningPipeline.upsertSemanticEntry(entry)
         HapticManager.shared.entrySaved()
         goForward()
     }
