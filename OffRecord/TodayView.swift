@@ -15,11 +15,27 @@ import os.log
 
 private let logger = Logger(subsystem: "com.singularity.offrecord", category: "TodayView")
 
+private enum TodayDateFormatters {
+    static let today: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEEE, MMMM d"
+        return formatter
+    }()
+
+    static let time: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateStyle = .none
+        formatter.timeStyle = .short
+        return formatter
+    }()
+}
+
 // MARK: - Recording State
 
 /// Represents the current state of the recording process
-enum RecordingState {
+enum RecordingState: Equatable {
     case idle       // Ready to record
+    case starting   // Permission/audio session setup is in progress
     case recording  // Currently recording audio
     case processing // Transcribing audio to text
 }
@@ -191,6 +207,7 @@ struct TodayView: View {
             }
         }
         .onAppear {
+            recorder.prepareForFirstUse()
             proactiveReflection.refreshIfNeeded(entries: Array(allEntries))
             refreshHero(recordExposure: true)
         }
@@ -545,9 +562,7 @@ struct TodayView: View {
 
     private var compactRecordButton: some View {
         Button {
-            if recordingState != .processing {
-                toggleRecording()
-            }
+            toggleRecording()
         } label: {
             ZStack {
                 Circle()
@@ -562,7 +577,7 @@ struct TodayView: View {
                     RoundedRectangle(cornerRadius: 7, style: .continuous)
                         .fill(OffRecordColor.textInverse)
                         .frame(width: 30, height: 30)
-                } else if recordingState == .processing {
+                } else if recordingState == .starting || recordingState == .processing {
                     ProgressView()
                         .tint(OffRecordColor.textInverse)
                 } else {
@@ -576,7 +591,8 @@ struct TodayView: View {
             .contentShape(Circle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(recordingState == .recording ? "Stop recording" : "Start recording")
+        .disabled(recordingState == .starting || recordingState == .processing)
+        .accessibilityLabel(recordingAccessibilityLabel)
         .accessibilityIdentifier("todayDock.record")
     }
 
@@ -701,9 +717,7 @@ struct TodayView: View {
 
     private var recordButton: some View {
         Button {
-            if recordingState != .processing {
-                toggleRecording()
-            }
+            toggleRecording()
         } label: {
             ZStack {
                 if #available(iOS 26.0, *) {
@@ -726,7 +740,7 @@ struct TodayView: View {
                     RoundedRectangle(cornerRadius: 6)
                         .fill(recordIconColor)
                         .frame(width: isIPad ? 30 : 24, height: isIPad ? 30 : 24)
-                } else if recordingState == .processing {
+                } else if recordingState == .starting || recordingState == .processing {
                     ProgressView()
                         .tint(recordIconColor)
                 } else {
@@ -740,7 +754,8 @@ struct TodayView: View {
             .offRecordGlassControl(tint: buttonColor, in: Circle(), fallbackFill: buttonColor)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(recordingState == .recording ? "Stop recording" : "Start recording")
+        .disabled(recordingState == .starting || recordingState == .processing)
+        .accessibilityLabel(recordingAccessibilityLabel)
     }
 
     private var recordIconColor: Color {
@@ -754,6 +769,7 @@ struct TodayView: View {
     private var buttonColor: Color {
         switch recordingState {
         case .idle: return OffRecordColor.brandPlum
+        case .starting: return OffRecordColor.brandPeach
         case .recording: return OffRecordColor.brandCoral
         case .processing: return OffRecordColor.brandPeach
         }
@@ -762,8 +778,22 @@ struct TodayView: View {
     private var statusText: String {
         switch recordingState {
         case .idle: return "Tap to record or write"
+        case .starting: return "Starting..."
         case .recording: return "Tap to stop"
         case .processing: return "Almost done..."
+        }
+    }
+
+    private var recordingAccessibilityLabel: String {
+        switch recordingState {
+        case .idle:
+            return "Start recording"
+        case .starting:
+            return "Starting recording"
+        case .recording:
+            return "Stop recording"
+        case .processing:
+            return "Processing recording"
         }
     }
 
@@ -935,12 +965,15 @@ struct TodayView: View {
             startRecording()
         case .recording:
             stopRecording()
-        case .processing:
+        case .starting, .processing:
             break
         }
     }
 
     private func startRecording() {
+        PerformanceSignposts.event("RecordTap")
+        recordingState = .starting
+
         if ProcessInfo.processInfo.arguments.contains("-HeroNudgeUITest") {
             recordingState = .recording
             HapticManager.shared.recordingStarted()
@@ -957,12 +990,14 @@ struct TodayView: View {
                         HapticManager.shared.recordingStarted()
                     } catch {
                         self.errorMessage = "Unable to start recording. Please try again."
+                        self.recordingState = .idle
                         self.heroRecordingPromptID = nil
                         self.activeHeroPromptID = nil
                         HapticManager.shared.error()
                     }
                 } else {
                     self.errorMessage = "OffRecord AI Journal needs microphone access to record your diary."
+                    self.recordingState = .idle
                     self.heroRecordingPromptID = nil
                     self.activeHeroPromptID = nil
                     HapticManager.shared.warning()
@@ -971,6 +1006,7 @@ struct TodayView: View {
         }
         #else
         errorMessage = "Recording is only available on iOS."
+        recordingState = .idle
         #endif
     }
 
@@ -1028,6 +1064,7 @@ struct TodayView: View {
         #if os(iOS)
         SpeechTranscriber.shared.transcribe(from: audioURL) { result in
             DispatchQueue.main.async {
+                PerformanceSignposts.event("TranscriptionCompleted")
                 switch result {
                 case .success(let textSegment):
                     let existingText = entry.text ?? ""
@@ -1045,17 +1082,18 @@ struct TodayView: View {
                         )
                         HapticManager.shared.entrySaved()
                         ReviewManager.shared.recordEntry()
+                        recordingState = .idle
 
-                        // Feed into Friday for learning
-                        FridayAssistantEngine.shared.processEntry(
+                        EntryLearningPipeline.processSavedEntry(
                             text: textSegment,
                             mood: entry.mood,
                             date: entry.date ?? Date(),
                             duration: entry.duration
                         )
-                        SemanticMemoryIndexController.shared.upsertEntry(entry)
+                        EntryLearningPipeline.upsertSemanticEntry(entry)
                     } catch {
                         logger.error("Failed to update entry with transcription: \(error.localizedDescription)")
+                        recordingState = .idle
                     }
                 case .failure(let error):
                     logger.error("Transcription failed: \(error.localizedDescription)")
@@ -1065,8 +1103,8 @@ struct TodayView: View {
                     } else {
                         self.errorMessage = "Transcription failed. Your recording is saved—tap the entry to add text manually."
                     }
+                    recordingState = .idle
                 }
-                recordingState = .idle
             }
         }
         #else
@@ -1077,16 +1115,11 @@ struct TodayView: View {
     // MARK: - Formatting
 
     private var formattedToday: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE, MMMM d"
-        return formatter.string(from: Date())
+        TodayDateFormatters.today.string(from: Date())
     }
 
     private func formattedTime(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .none
-        formatter.timeStyle = .short
-        return formatter.string(from: date)
+        TodayDateFormatters.time.string(from: date)
     }
 
     private func formatTime(_ time: TimeInterval) -> String {
