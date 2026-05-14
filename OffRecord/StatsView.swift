@@ -113,68 +113,13 @@ struct StatsView: View {
     // MARK: - Streak Card
 
     private var streakCard: some View {
-        VStack(spacing: 16) {
-            HStack {
-                Image(systemName: "flame.fill")
-                    .font(.title2)
-                    .foregroundColor(OffRecordColor.textPeach)
-                Text("Writing Streak")
-                    .font(.headline)
-                    .foregroundColor(OffRecordColor.textHeading)
-                Spacer()
-            }
-
-            HStack(alignment: .bottom, spacing: 4) {
-                Text("\(currentStreak)")
-                    .font(.system(size: 48, weight: .bold, design: .rounded))
-                    .foregroundColor(OffRecordColor.textPeach)
-                Text(currentStreak == 1 ? "day" : "days")
-                    .font(.title3)
-                    .foregroundColor(OffRecordColor.textSecondary)
-                    .padding(.bottom, 8)
-                Spacer()
-            }
-
-            // Streak info
-            HStack(spacing: 20) {
-                VStack(alignment: .leading) {
-                    Text("Longest")
-                        .font(.caption)
-                        .foregroundColor(OffRecordColor.textSecondary)
-                    Text("\(longestStreak) days")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundColor(OffRecordColor.textPrimary)
-                }
-
-                Divider()
-                    .frame(height: 30)
-
-                VStack(alignment: .leading) {
-                    Text("This Month")
-                        .font(.caption)
-                        .foregroundColor(OffRecordColor.textSecondary)
-                    Text("\(entriesThisMonth) entries")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundColor(OffRecordColor.textPrimary)
-                }
-
-                Divider()
-                    .frame(height: 30)
-
-                VStack(alignment: .leading) {
-                    Text("Total")
-                        .font(.caption)
-                        .foregroundColor(OffRecordColor.textSecondary)
-                    Text("\(entries.count) entries")
-                        .font(.subheadline.weight(.medium))
-                        .foregroundColor(OffRecordColor.textPrimary)
-                }
-
-                Spacer()
-            }
-        }
-        .padding()
-        .offRecordContentCard(cornerRadius: OffRecordRadius.xl, fill: OffRecordColor.surfacePeach)
+        StreakCardView(
+            currentStreak: currentStreak,
+            longestStreak: longestStreak,
+            entriesThisMonth: entriesThisMonth,
+            totalEntries: entries.count,
+            isIPad: isIPad
+        )
     }
 
     // MARK: - Week Activity Card
