@@ -78,6 +78,29 @@ final class OffRecordUITests: XCTestCase {
     }
 
     @MainActor
+    func testTimelineSearchKeyboardKeepsBottomTabsUsable() throws {
+        let app = launchSeededApp()
+        navigateToTab("Timeline", in: app)
+
+        let searchField = app.searchFields["timeline.searchField"].firstMatch
+        XCTAssertTrue(searchField.waitForExistence(timeout: 8))
+        searchField.tap()
+
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 4))
+
+        let insightsTab = app.buttons["tab.insights"].firstMatch
+        XCTAssertTrue(insightsTab.waitForExistence(timeout: 4))
+        XCTAssertTrue(insightsTab.isHittable)
+
+        insightsTab.tap()
+        XCTAssertTrue(app.navigationBars["Insights"].waitForExistence(timeout: 4))
+
+        let keyboardGone = NSPredicate(format: "exists == false")
+        expectation(for: keyboardGone, evaluatedWith: app.keyboards.firstMatch)
+        waitForExpectations(timeout: 3)
+    }
+
+    @MainActor
     func testDaypartHeroShowsForEmptyToday() throws {
         let app = launchHeroNudgeApp(arguments: ["-HeroNudgeEmptyToday"])
 
@@ -176,15 +199,7 @@ final class OffRecordUITests: XCTestCase {
     func testMoodDialReplacesListAndCancelDoesNotPersist() throws {
         let app = launchSeededApp()
         navigateToTab("Timeline", in: app)
-
-        let firstEntry = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "cherry blossoms")).firstMatch
-        if firstEntry.waitForExistence(timeout: 5) {
-            firstEntry.tap()
-        } else {
-            let fallbackEntry = app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] %@", "cherry blossoms")).firstMatch
-            XCTAssertTrue(fallbackEntry.waitForExistence(timeout: 5))
-            fallbackEntry.tap()
-        }
+        openSeededCherryBlossomEntry(in: app)
 
         let moodButton = app.buttons["entryDetail.moodButton"].firstMatch
         XCTAssertTrue(moodButton.waitForExistence(timeout: 6))
@@ -210,6 +225,30 @@ final class OffRecordUITests: XCTestCase {
         app.buttons["moodDial.cancel"].tap()
         XCTAssertTrue(moodButton.waitForExistence(timeout: 4))
         XCTAssertEqual(moodButton.label, originalMoodLabel)
+    }
+
+    @MainActor
+    func testMoodDialDragAndDonePersistsSelection() throws {
+        let app = launchSeededApp()
+        navigateToTab("Timeline", in: app)
+        openSeededCherryBlossomEntry(in: app)
+
+        let moodButton = app.buttons["entryDetail.moodButton"].firstMatch
+        XCTAssertTrue(moodButton.waitForExistence(timeout: 6))
+        let originalMoodLabel = moodButton.label
+        moodButton.tap()
+
+        let wheel = app.otherElements["moodDial.wheel"].firstMatch
+        XCTAssertTrue(wheel.waitForExistence(timeout: 4))
+        wheel.coordinate(withNormalizedOffset: CGVector(dx: 0.84, dy: 0.78))
+            .press(forDuration: 0.1, thenDragTo: wheel.coordinate(withNormalizedOffset: CGVector(dx: 0.16, dy: 0.78)))
+
+        let doneButton = app.buttons["moodDial.done"].firstMatch
+        XCTAssertTrue(doneButton.waitForExistence(timeout: 4))
+        doneButton.tap()
+
+        XCTAssertTrue(moodButton.waitForExistence(timeout: 4))
+        XCTAssertNotEqual(moodButton.label, originalMoodLabel)
     }
 
     private func launchOnboardingApp() -> XCUIApplication {
@@ -240,6 +279,18 @@ final class OffRecordUITests: XCTestCase {
         ]
         app.launch()
         return app
+    }
+
+    private func openSeededCherryBlossomEntry(in app: XCUIApplication) {
+        let firstEntry = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "cherry blossoms")).firstMatch
+        if firstEntry.waitForExistence(timeout: 5) {
+            firstEntry.tap()
+            return
+        }
+
+        let fallbackEntry = app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] %@", "cherry blossoms")).firstMatch
+        XCTAssertTrue(fallbackEntry.waitForExistence(timeout: 5))
+        fallbackEntry.tap()
     }
 
     private func navigateToTab(_ name: String, in app: XCUIApplication) {
