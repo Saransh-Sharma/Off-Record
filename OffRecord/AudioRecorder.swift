@@ -25,22 +25,34 @@ final class AudioRecorder: NSObject, ObservableObject {
     
     private var recorder: AVAudioRecorder?
     private var timer: Timer?
+    private var audioSessionPrepared = false
+    private let settings: [String: Any] = [
+        AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
+        AVSampleRateKey: 44_100,
+        AVNumberOfChannelsKey: 1,
+        AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
+    ]
+
+    func prepareForFirstUse() {
+        #if os(iOS)
+        DispatchQueue.global(qos: .utility).async {
+            let token = PerformanceSignposts.begin("AudioRecorderPrewarm")
+            _ = try? Self.recordingsDirectory()
+            PerformanceSignposts.end(token)
+        }
+        #endif
+    }
     
     // MARK: - Recording
 
     func startRecording() throws {
         #if os(iOS)
-        let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.playAndRecord, mode: .spokenAudio, options: [.defaultToSpeaker])
-        try session.setActive(true)
+        let token = PerformanceSignposts.begin("AudioRecorderStart")
+        defer { PerformanceSignposts.end(token) }
+
+        try prepareAudioSessionIfNeeded()
 
         let url = try Self.newRecordingURL()
-        let settings: [String: Any] = [
-            AVFormatIDKey: Int(kAudioFormatMPEG4AAC),
-            AVSampleRateKey: 44_100,
-            AVNumberOfChannelsKey: 1,
-            AVEncoderAudioQualityKey: AVAudioQuality.high.rawValue
-        ]
 
         let recorder = try AVAudioRecorder(url: url, settings: settings)
         recorder.isMeteringEnabled = true
@@ -66,6 +78,19 @@ final class AudioRecorder: NSObject, ObservableObject {
         throw NSError(domain: "AudioRecorder", code: -1, userInfo: [NSLocalizedDescriptionKey: "Recording is only available on iOS."])
         #endif
     }
+
+    #if os(iOS)
+    private func prepareAudioSessionIfNeeded() throws {
+        guard !audioSessionPrepared else { return }
+        let token = PerformanceSignposts.begin("AudioSessionPrepare")
+        defer { PerformanceSignposts.end(token) }
+
+        let session = AVAudioSession.sharedInstance()
+        try session.setCategory(.playAndRecord, mode: .spokenAudio, options: [.defaultToSpeaker])
+        try session.setActive(true)
+        audioSessionPrepared = true
+    }
+    #endif
 
     func stopRecording() -> (url: URL, duration: TimeInterval)? {
         guard let recorder = recorder else { return nil }

@@ -94,7 +94,7 @@ final class ReminderManager: ObservableObject {
 
     func reminderBody() -> String {
         usesFridaySmartPrompts
-            ? ProactiveReflectionController.shared.privacySafeReminderBody()
+            ? ProactiveReflectionController.cachedPrivacySafeReminderBody()
             : fallbackBody
     }
 
