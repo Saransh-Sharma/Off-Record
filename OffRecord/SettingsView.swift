@@ -1,5 +1,6 @@
 import SwiftUI
 import CoreData
+import AppIntents
 #if os(iOS)
 import UIKit
 #endif
@@ -12,10 +13,10 @@ struct SettingsView: View {
     @ObservedObject private var themeManager = ThemeManager.shared
     @ObservedObject private var goalManager = GoalManager.shared
     @ObservedObject private var semanticMemory = SemanticMemoryIndexController.shared
-    @ObservedObject private var proactiveReflection = ProactiveReflectionController.shared
 
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \DiaryEntry.date, ascending: true)],
+        predicate: DiaryEntry.startedEntryPredicate,
         animation: .default)
     private var entries: FetchedResults<DiaryEntry>
 
@@ -38,6 +39,9 @@ struct SettingsView: View {
     @AppStorage("authorName") private var authorName: String = ""
     @AppStorage("authorDescription") private var authorDescription: String = ""
     @AppStorage("iCloudSyncEnabled") private var iCloudSyncEnabled: Bool = true
+    @AppStorage(SpeechTranscriptionConsent.appleSpeechProcessingKey) private var appleSpeechProcessingConsentGranted: Bool = false
+    @AppStorage(JournalSpotlightIndexer.isEnabledDefaultsKey) private var spotlightMetadataIndexingEnabled: Bool = true
+    @State private var showSearchSiriTip = true
 
     private var startedEntries: [DiaryEntry] { entries.startedEntries }
 
@@ -55,6 +59,15 @@ struct SettingsView: View {
     @State private var databaseStorageBytes: Int64 = 0
     @State private var isCalculatingStorage = false
     @State private var showDeleteAudioConfirm = false
+    @State private var settingsStats: JournalStatsSnapshot = .empty
+
+    private var entriesSignature: String {
+        entries.map { entry in
+            let updated = entry.updatedAt?.timeIntervalSinceReferenceDate ?? 0
+            return "\(entry.objectID.uriRepresentation().absoluteString):\(updated)"
+        }
+        .joined(separator: "|")
+    }
 
     var body: some View {
         Form {
@@ -64,6 +77,7 @@ struct SettingsView: View {
             securitySection
             localAIPrivacySection
             semanticMemorySection
+            systemSearchSection
             dailyReminderSection
             storageSection
             iCloudSection
@@ -75,7 +89,9 @@ struct SettingsView: View {
         .background(OffRecordColor.appBackgroundGradient)
         .onAppear {
             calculateStorage()
-            proactiveReflection.refreshIfNeeded(entries: startedEntries)
+        }
+        .task(id: "\(entriesSignature)-\(goalManager.weeklyTarget)-\(goalManager.isEnabled)") {
+            await refreshSettingsStats()
         }
         .navigationTitle("Settings")
         .alert("Notifications Disabled", isPresented: $showPermissionDeniedAlert) {
@@ -120,6 +136,13 @@ struct SettingsView: View {
             #else
             Text("PDF export is available on iOS.")
             #endif
+        }
+        .onChange(of: spotlightMetadataIndexingEnabled) { _, enabled in
+            if enabled {
+                JournalSpotlightIndexer.shared.rebuild(entries: startedEntries)
+            } else {
+                JournalSpotlightIndexer.shared.deleteAll()
+            }
         }
     }
 
@@ -270,18 +293,26 @@ struct SettingsView: View {
                 PrivacyInfoRow(
                     icon: "cpu.fill",
                     title: "Local AI on your device",
-                    description: "All transcription, mood analysis, Friday insights, and knowledge graph updates run on this device."
+                    description: "Mood analysis, Friday insights, Semantic Memory, and knowledge graph updates run on this device."
                 )
                 PrivacyInfoRow(
                     icon: "wifi.slash",
-                    title: "No internet required",
-                    description: "Core journaling and AI insights work without an internet connection."
+                    title: "Core app works offline",
+                    description: "Core journaling and local AI insights work without an internet connection. Voice transcription may use Apple Speech when you allow it."
                 )
                 PrivacyInfoRow(
                     icon: "person.fill.xmark",
                     title: "No accounts or tracking",
-                    description: "No accounts, analytics, tracking, or third-party AI servers."
+                    description: "No accounts, analytics, tracking, developer AI servers, or non-Apple AI services."
                 )
+
+                Toggle("Allow Apple Speech transcription", isOn: $appleSpeechProcessingConsentGranted)
+                    .accessibilityIdentifier("settings.privacy.appleSpeechConsentToggle")
+
+                Text(SpeechTranscriptionConsent.settingsDescription)
+                    .font(.caption)
+                    .foregroundColor(OffRecordColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
             .padding(.vertical, 4)
         } header: {
@@ -348,6 +379,7 @@ struct SettingsView: View {
 
                 Button {
                     semanticMemory.rebuildIndex(entries: startedEntries)
+                    JournalSpotlightIndexer.shared.rebuild(entries: startedEntries)
                 } label: {
                     Label("Rebuild Semantic Memory", systemImage: "arrow.clockwise")
                 }
@@ -368,6 +400,38 @@ struct SettingsView: View {
                 .accessibilityIdentifier("semanticMemory.section")
         } footer: {
             Text("Embeddings are derived locally from your journal entries and are not synced to iCloud. If Apple model assets are requested, only model files are downloaded; journal text stays on device.")
+        }
+    }
+
+    @ViewBuilder
+    private var systemSearchSection: some View {
+        Section {
+            Toggle("Show entries in Spotlight", isOn: $spotlightMetadataIndexingEnabled)
+                .accessibilityIdentifier("settings.systemSearch.spotlightToggle")
+
+            Text("Spotlight uses private metadata only: date, mood, starred state, word count, and whether an entry has voice or photos. Raw journal text, transcripts, photo thumbnails, and audio filenames stay out of system search.")
+                .font(.caption)
+                .foregroundColor(OffRecordColor.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+
+            ShortcutsLink()
+                .accessibilityIdentifier("settings.systemSearch.shortcutsLink")
+
+            SiriTipView(intent: SearchJournalIntent(), isVisible: $showSearchSiriTip)
+                .siriTipViewStyle(.automatic)
+
+            Button {
+                JournalSpotlightIndexer.shared.rebuild(entries: startedEntries)
+            } label: {
+                Label("Rebuild Spotlight Metadata", systemImage: "magnifyingglass")
+            }
+            .accessibilityIdentifier("settings.systemSearch.rebuildSpotlight")
+            .disabled(!spotlightMetadataIndexingEnabled)
+        } header: {
+            Text("Siri & System Search")
+                .accessibilityIdentifier("settings.systemSearch.section")
+        } footer: {
+            Text("Siri, Shortcuts, Spotlight, Action Button, and widgets can open private OffRecord surfaces. Reading and searching entry text still happens inside the locked app.")
         }
     }
 
@@ -521,13 +585,13 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 12) {
                 PrivacyInfoRow(
                     icon: "waveform",
-                    title: "On-Device Transcription",
-                    description: "Voice is converted to text locally using Apple's speech recognition."
+                    title: "Apple Speech Transcription",
+                    description: "Voice is converted to text using Apple Speech after you allow it. When online, audio may be processed by Apple."
                 )
                 PrivacyInfoRow(
                     icon: "server.rack",
-                    title: "No Third-Party Servers",
-                    description: "OffRecord does not send your journal data to AI servers."
+                    title: "No Developer AI Servers",
+                    description: "OffRecord does not send your journal data to developer servers or non-Apple AI services."
                 )
                 PrivacyInfoRow(
                     icon: "person.fill.xmark",
@@ -536,6 +600,10 @@ struct SettingsView: View {
                 )
             }
             .padding(.vertical, 8)
+
+            Link(destination: OffRecordExternalLinks.privacyPolicyURL) {
+                Label("Privacy Policy", systemImage: "hand.raised.fill")
+            }
         } header: {
             Text("Privacy & Security")
         } footer: {
@@ -710,16 +778,11 @@ struct SettingsView: View {
     }
 
     private var totalEntriesCount: Int {
-        startedEntries.count
+        settingsStats.entryCount
     }
 
     private var years: [Int] {
-        let calendar = Calendar.current
-        let allYears = startedEntries.compactMap { entry -> Int? in
-            guard let date = entry.date else { return nil }
-            return calendar.component(.year, from: date)
-        }
-        return Array(Set(allYears)).sorted()
+        settingsStats.availableYears
     }
 
     private var currentMonth: Int {
@@ -731,12 +794,10 @@ struct SettingsView: View {
     }
 
     private func monthName(_ month: Int) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM"
         var components = DateComponents()
         components.month = month
         if let date = Calendar.current.date(from: components) {
-            return formatter.string(from: date)
+            return Self.monthFormatter.string(from: date)
         }
         return ""
     }
@@ -745,6 +806,7 @@ struct SettingsView: View {
         #if os(iOS)
         let year = selectedYear ?? years.last!
         isExporting = true
+        let token = PerformanceSignposts.begin("SettingsPDFExport")
 
         // Determine date range based on export period
         let dateRange: PDFExportService.DateRange
@@ -766,11 +828,12 @@ struct SettingsView: View {
 
         Task {
             do {
+                let exportEntries = startedEntries
                 let baseEntries: [DiaryEntry]
                 if starredOnly {
-                    baseEntries = startedEntries.filter { $0.isStarred }
+                    baseEntries = exportEntries.filter { $0.isStarred }
                 } else {
-                    baseEntries = startedEntries
+                    baseEntries = exportEntries
                 }
 
                 let url = try PDFExportService.generatePDF(
@@ -784,17 +847,43 @@ struct SettingsView: View {
                 await MainActor.run {
                     exportURL = url
                     isExporting = false
+                    PerformanceSignposts.end(token)
                 }
             } catch {
                 await MainActor.run {
                     exportError = error.localizedDescription
                     isExporting = false
+                    PerformanceSignposts.end(token)
                 }
             }
         }
         #else
         exportError = "PDF export is available on iOS."
         #endif
+    }
+
+    private static let monthFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM"
+        return formatter
+    }()
+
+    @MainActor
+    private func refreshSettingsStats() async {
+        let token = PerformanceSignposts.begin("SettingsSummaryRefresh")
+        let snapshots = startedEntries.journalSnapshots
+        let nextStats = await JournalAnalyticsWorker.shared.makeStats(
+            from: snapshots,
+            now: Date(),
+            weeklyTarget: goalManager.weeklyTarget,
+            goalEnabled: goalManager.isEnabled
+        )
+        guard !Task.isCancelled else {
+            PerformanceSignposts.end(token)
+            return
+        }
+        settingsStats = nextStats
+        PerformanceSignposts.end(token)
     }
 }
 
