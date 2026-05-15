@@ -7,6 +7,7 @@ import SwiftUI
 
 struct TimelineEntryCard: View {
     let entry: DiaryEntry
+    let metrics: TimelineEntryPresentation?
     let searchText: String
     let evidence: EvidenceReference?
     let isEditing: Bool
@@ -21,11 +22,11 @@ struct TimelineEntryCard: View {
     }
 
     private var wordCount: Int {
-        TimelineEntryMetrics.wordCount(for: entry)
+        metrics?.wordCount ?? TimelineEntryMetrics.wordCount(for: entry)
     }
 
     private var hasPhotos: Bool {
-        !PhotoStorageManager.shared.attachments(for: entry).isEmpty
+        metrics?.hasPhotos ?? !PhotoStorageManager.shared.attachments(for: entry).isEmpty
     }
 
     var body: some View {

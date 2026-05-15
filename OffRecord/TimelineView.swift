@@ -18,10 +18,13 @@ import UIKit
 struct TimelineView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ObservedObject private var semanticMemory = SemanticMemoryIndexController.shared
+    @ObservedObject private var navigationRouter = OffRecordNavigationRouter.shared
 
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \DiaryEntry.date, ascending: false)],
+        predicate: DiaryEntry.startedEntryPredicate,
         animation: .default)
     private var entries: FetchedResults<DiaryEntry>
 
@@ -42,12 +45,42 @@ struct TimelineView: View {
     @State private var isSemanticSearching = false
     @State private var semanticSearchMessage: String?
     @State private var isSearchFocused = false
+    @State private var planterShakeTrigger = 0
+    @State private var planterShakeAngle = 0.0
+    @State private var filteredEntriesCache: [DiaryEntry] = []
+    @State private var groupedEntriesCache: [SectionKey: [DiaryEntry]] = [:]
+    @State private var sectionKeysCache: [SectionKey] = []
+    @State private var summaryEntriesCache: [DiaryEntry] = []
+    @State private var entryMetricsCache: [NSManagedObjectID: TimelineEntryPresentation] = [:]
+    @State private var routedEntry: DiaryEntry?
+    @State private var currentSearchActivity: NSUserActivity?
+    @State private var showSpeechConsentPrompt = false
 
     #if os(iOS)
     @StateObject private var voiceSearch = VoiceSearchManager()
     #endif
 
     private var assistant: FridayAssistantEngine { FridayAssistantEngine.shared }
+    private var entriesSignature: String {
+        entries.map { entry in
+            let updated = entry.updatedAt?.timeIntervalSinceReferenceDate ?? 0
+            return "\(entry.objectID.uriRepresentation().absoluteString):\(updated)"
+        }
+        .joined(separator: "|")
+    }
+    private var cacheSignature: String {
+        [
+            entriesSignature,
+            searchText,
+            showStarredOnly.description,
+            selectedMoodFilter?.rawValue ?? "",
+            String(startDate?.timeIntervalSinceReferenceDate ?? 0),
+            String(endDate?.timeIntervalSinceReferenceDate ?? 0),
+            semanticSearchQuery,
+            isSemanticSearching.description,
+            semanticResults.keys.map(\.uuidString).sorted().joined(separator: ",")
+        ].joined(separator: "|")
+    }
 
     var body: some View {
         ZStack(alignment: .topTrailing) {
@@ -70,8 +103,8 @@ struct TimelineView: View {
 
                     semanticSearchStatusBanner
 
-                    if !filteredEntries.isEmpty {
-                        MonthSummaryCard(entries: summaryEntries)
+                    if !filteredEntriesCache.isEmpty {
+                        MonthSummaryCard(entries: summaryEntriesCache)
                     }
 
                     timelineContent
@@ -95,6 +128,19 @@ struct TimelineView: View {
         }
         .navigationTitle("Timeline")
         .navigationBarTitleDisplayMode(.large)
+        .navigationDestination(isPresented: Binding(
+            get: { routedEntry != nil },
+            set: { isPresented in
+                if !isPresented {
+                    navigationRouter.clearEntryRouteIfNeeded(routedEntry?.id)
+                    routedEntry = nil
+                }
+            }
+        )) {
+            if let routedEntry {
+                EntryDetailView(entry: routedEntry)
+            }
+        }
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 starredToolbarButton
@@ -103,6 +149,15 @@ struct TimelineView: View {
             ToolbarItem(placement: .navigationBarTrailing) {
                 toolbarActions
             }
+        }
+        .alert(SpeechTranscriptionConsent.disclosureTitle, isPresented: $showSpeechConsentPrompt) {
+            Button("Agree and Transcribe") {
+                SpeechTranscriptionConsent.grantAppleSpeechProcessing()
+                startVoiceSearch()
+            }
+            Button("Not Now", role: .cancel) { }
+        } message: {
+            Text(SpeechTranscriptionConsent.disclosureMessage)
         }
         #if os(iOS)
         .onChange(of: voiceSearch.transcribedText) { _, newValue in
@@ -114,6 +169,13 @@ struct TimelineView: View {
         #endif
         .onChange(of: searchText) { _, newValue in
             handleSearchTextChanged(newValue)
+            updateSearchActivity(for: newValue)
+        }
+        .onChange(of: navigationRouter.timelineSearchText) { _, newValue in
+            applyRoutedSearch(newValue)
+        }
+        .onChange(of: navigationRouter.routedEntryID) { _, newValue in
+            resolveRoutedEntry(newValue)
         }
         .onChange(of: semanticMemory.isBuilding) { _, isBuilding in
             guard !isBuilding else { return }
@@ -124,6 +186,15 @@ struct TimelineView: View {
         }
         .onAppear {
             semanticMemory.ensureIndexed(entries: entries.startedEntries)
+            applyRoutedSearch(navigationRouter.timelineSearchText)
+            resolveRoutedEntry(navigationRouter.routedEntryID)
+        }
+        .onDisappear {
+            currentSearchActivity?.resignCurrent()
+            currentSearchActivity = nil
+        }
+        .task(id: cacheSignature) {
+            refreshTimelineCache()
         }
     }
 
@@ -140,16 +211,52 @@ struct TimelineView: View {
     }
 
     private var timelinePlanterArtwork: some View {
-        Image("CreeperPlant01")
-            .resizable()
-            .scaledToFit()
-            .frame(width: TimelineDesign.planterWidth)
-            .offset(
-                x: -16,
-                y: dynamicTypeSize.isAccessibilitySize ? 30 : -64
-            )
-            .allowsHitTesting(false)
-            .accessibilityHidden(true)
+        Button(action: triggerPlanterShake) {
+            Image("CreeperPlant01")
+                .resizable()
+                .scaledToFit()
+                .frame(width: TimelineDesign.planterWidth)
+                .rotationEffect(.degrees(planterShakeAngle), anchor: .top)
+        }
+        .buttonStyle(.plain)
+        .contentShape(Rectangle())
+        .offset(
+            x: -16,
+            y: dynamicTypeSize.isAccessibilitySize ? 28 : -66
+        )
+        .accessibilityLabel("Planter")
+        .accessibilityHint("Plays a subtle shake")
+        .task(id: planterShakeTrigger) {
+            await runPlanterShake()
+        }
+    }
+
+    private func triggerPlanterShake() {
+        HapticManager.shared.selectionChanged()
+
+        if reduceMotion {
+            planterShakeAngle = 0
+        } else {
+            planterShakeTrigger += 1
+        }
+    }
+
+    @MainActor
+    private func runPlanterShake() async {
+        guard planterShakeTrigger > 0, !reduceMotion else {
+            planterShakeAngle = 0
+            return
+        }
+
+        for angle in [-2.0, 1.6, -0.8, 0.4, 0] {
+            guard !Task.isCancelled else { return }
+
+            withAnimation(.easeInOut(duration: 0.05)) {
+                planterShakeAngle = angle
+            }
+
+            try? await Task.sleep(nanoseconds: 50_000_000)
+        }
     }
 
     private var starredToolbarButton: some View {
@@ -426,15 +533,16 @@ struct TimelineView: View {
 
     @ViewBuilder
     private var timelineContent: some View {
-        if filteredEntries.isEmpty {
+        if filteredEntriesCache.isEmpty {
             emptySearchState
         } else {
             LazyVStack(alignment: .leading, spacing: 22) {
-                ForEach(sectionKeys, id: \.self) { key in
-                    if let sectionEntries = groupedEntries[key] {
+                ForEach(sectionKeysCache, id: \.self) { key in
+                    if let sectionEntries = groupedEntriesCache[key] {
                         TimelineMonthSection(
                             title: sectionTitle(for: key),
                             entries: sectionEntries,
+                            metrics: entryMetricsCache,
                             searchText: searchText,
                             semanticResults: semanticResults,
                             isEditing: isEditingTimeline,
@@ -497,10 +605,21 @@ struct TimelineView: View {
             voiceSearch.stopListening()
             isListening = false
         } else {
-            voiceSearch.startListening()
-            isListening = true
-            HapticManager.shared.recordingStarted()
+            guard SpeechTranscriptionConsent.hasGrantedAppleSpeechProcessing else {
+                showSpeechConsentPrompt = true
+                return
+            }
+            startVoiceSearch()
         }
+        #endif
+    }
+
+    private func startVoiceSearch() {
+        #if os(iOS)
+        voiceSearch.startListening()
+        guard voiceSearch.errorMessage == nil else { return }
+        isListening = true
+        HapticManager.shared.recordingStarted()
         #endif
     }
 
@@ -519,6 +638,41 @@ struct TimelineView: View {
             isSemanticSearching = false
             semanticSearchMessage = nil
         }
+    }
+
+    private func applyRoutedSearch(_ newValue: String) {
+        let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, trimmed != searchText else { return }
+        searchText = trimmed
+        isSearchFocused = true
+    }
+
+    private func resolveRoutedEntry(_ id: UUID?) {
+        guard let id else { return }
+        if let entry = entries.startedEntries.first(where: { $0.id == id }) {
+            routedEntry = entry
+        } else {
+            JournalSpotlightIndexer.shared.delete(entryID: id)
+            navigationRouter.clearEntryRouteIfNeeded(id)
+        }
+    }
+
+    private func updateSearchActivity(for query: String) {
+        let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        currentSearchActivity?.resignCurrent()
+        currentSearchActivity = nil
+
+        guard trimmed.count >= 2,
+              let activity = JournalSpotlightIndexer.shared.predictionActivity(
+                type: "com.singularity.offrecord.searchTimeline",
+                title: "Search OffRecord Timeline",
+                route: .timeline(query: trimmed)
+              ) else {
+            return
+        }
+
+        activity.becomeCurrent()
+        currentSearchActivity = activity
     }
 
     private func dismissTimelineSearch(clearText: Bool) {
@@ -607,8 +761,10 @@ struct TimelineView: View {
         let month: Int
     }
 
-    private var filteredEntries: [DiaryEntry] {
-        entries.startedEntries.filter { entry in
+    @MainActor
+    private func refreshTimelineCache() {
+        let token = PerformanceSignposts.begin("TimelineFilterAndGroup")
+        let filteredEntries = entries.startedEntries.filter { entry in
             guard let entryDate = entry.date else { return false }
 
             if showStarredOnly && !entry.isStarred { return false }
@@ -640,30 +796,37 @@ struct TimelineView: View {
 
             return true
         }
-    }
 
-    private var groupedEntries: [SectionKey: [DiaryEntry]] {
         let calendar = Calendar.current
         let groups = Dictionary(grouping: filteredEntries) { (entry: DiaryEntry) -> SectionKey in
             let date = entry.date ?? Date.distantPast
             let comps = calendar.dateComponents([.year, .month], from: date)
             return SectionKey(year: comps.year ?? 0, month: comps.month ?? 0)
         }
-        return groups.mapValues { entries in
+        let groupedEntries = groups.mapValues { entries in
             entries.sorted { ($0.date ?? .distantPast) > ($1.date ?? .distantPast) }
         }
-    }
-
-    private var sectionKeys: [SectionKey] {
-        groupedEntries.keys.sorted { lhs, rhs in
+        let sectionKeys = groupedEntries.keys.sorted { lhs, rhs in
             if lhs.year != rhs.year { return lhs.year > rhs.year }
             return lhs.month > rhs.month
         }
-    }
+        let summaryEntries = sectionKeys.first.flatMap { groupedEntries[$0] } ?? []
+        let metrics = Dictionary(uniqueKeysWithValues: filteredEntries.map { entry in
+            (
+                entry.objectID,
+                TimelineEntryPresentation(
+                    wordCount: TimelineEntryMetrics.wordCount(for: entry),
+                    hasPhotos: (entry.photos?.count ?? 0) > 0
+                )
+            )
+        })
 
-    private var summaryEntries: [DiaryEntry] {
-        guard let key = sectionKeys.first else { return [] }
-        return groupedEntries[key] ?? []
+        filteredEntriesCache = filteredEntries
+        groupedEntriesCache = groupedEntries
+        sectionKeysCache = sectionKeys
+        summaryEntriesCache = summaryEntries
+        entryMetricsCache = metrics
+        PerformanceSignposts.end(token)
     }
 
     private func sectionTitle(for key: SectionKey) -> String {
@@ -672,9 +835,7 @@ struct TimelineView: View {
         comps.month = key.month
         let calendar = Calendar.current
         if let date = calendar.date(from: comps) {
-            let formatter = DateFormatter()
-            formatter.dateFormat = "LLLL yyyy"
-            return formatter.string(from: date)
+            return Self.sectionTitleFormatter.string(from: date)
         }
         return "Unknown"
     }
@@ -688,12 +849,19 @@ struct TimelineView: View {
             try viewContext.save()
             if let deletedID {
                 SemanticMemoryIndexController.shared.deleteEntry(id: deletedID)
+                JournalSpotlightIndexer.shared.delete(entryID: deletedID)
             }
             HapticManager.shared.entryDeleted()
         } catch {
             viewContext.rollback()
         }
     }
+
+    private static let sectionTitleFormatter: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "LLLL yyyy"
+        return formatter
+    }()
 }
 
 // MARK: - Filter Chip

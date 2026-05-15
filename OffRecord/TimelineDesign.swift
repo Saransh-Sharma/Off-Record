@@ -12,7 +12,7 @@ enum TimelineDesign {
     static let headerSearchSpacing: CGFloat = 2
     static let searchHeight: CGFloat = 46
 
-    static let planterWidth: CGFloat = 120
+    static let planterWidth: CGFloat = 108
     static let compactHeaderHeight: CGFloat = 12
     static let accessibilityHeaderHeight: CGFloat = 16
 

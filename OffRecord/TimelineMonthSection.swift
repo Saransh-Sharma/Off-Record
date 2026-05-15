@@ -3,11 +3,20 @@
 //  OffRecord
 //
 
+import CoreData
 import SwiftUI
+
+struct TimelineEntryPresentation: Equatable {
+    let wordCount: Int
+    let hasPhotos: Bool
+
+    static let empty = TimelineEntryPresentation(wordCount: 0, hasPhotos: false)
+}
 
 struct TimelineMonthSection: View {
     let title: String
     let entries: [DiaryEntry]
+    let metrics: [NSManagedObjectID: TimelineEntryPresentation]
     let searchText: String
     let semanticResults: [UUID: EvidenceReference]
     let isEditing: Bool
@@ -36,6 +45,7 @@ struct TimelineMonthSection: View {
                         entry: entry,
                         index: index,
                         isLast: index == entries.count - 1,
+                        metrics: metrics[entry.objectID],
                         searchText: searchText,
                         evidence: entry.id.flatMap { semanticResults[$0] },
                         isEditing: isEditing,
@@ -71,6 +81,7 @@ struct TimelineDayRow: View {
     let entry: DiaryEntry
     let index: Int
     let isLast: Bool
+    let metrics: TimelineEntryPresentation?
     let searchText: String
     let evidence: EvidenceReference?
     let isEditing: Bool
@@ -86,6 +97,7 @@ struct TimelineDayRow: View {
             } label: {
                 TimelineEntryCard(
                     entry: entry,
+                    metrics: metrics,
                     searchText: searchText,
                     evidence: evidence,
                     isEditing: isEditing,
