@@ -17,25 +17,35 @@ struct StatsView: View {
 
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \DiaryEntry.date, ascending: false)],
+        predicate: DiaryEntry.startedEntryPredicate,
         animation: .default)
     private var entries: FetchedResults<DiaryEntry>
 
     @State private var showMilestone: Int? = nil
+    @State private var stats: JournalStatsSnapshot = .empty
+    @State private var startedEntriesForCards: [DiaryEntry] = []
 
     private var isIPad: Bool { horizontalSizeClass == .regular }
     private var startedEntries: [DiaryEntry] { entries.startedEntries }
+    private var entriesSignature: String {
+        entries.map { entry in
+            let updated = entry.updatedAt?.timeIntervalSinceReferenceDate ?? 0
+            return "\(entry.objectID.uriRepresentation().absoluteString):\(updated)"
+        }
+        .joined(separator: "|")
+    }
 
     var body: some View {
         ScrollView {
             VStack(spacing: 20) {
-                if startedEntries.isEmpty {
+                if stats.isEmpty && startedEntriesForCards.isEmpty {
                     emptyStateCard
                 } else {
                     // Shareable Weekly Insights
-                    WeeklyInsightsSection(entries: startedEntries)
+                    WeeklyInsightsSection(entries: startedEntriesForCards)
 
                     // Proactive weekly reflection
-                    ProactiveWeeklyReflectionCard(entries: startedEntries)
+                    ProactiveWeeklyReflectionCard(entries: startedEntriesForCards)
 
                     // AI Insights
                     aiInsightsCard
@@ -72,14 +82,8 @@ struct StatsView: View {
                 milestoneOverlay(days: milestone)
             }
         }
-        .onAppear {
-            proactiveReflection.refreshIfNeeded(entries: startedEntries)
-            if let milestone = goalManager.checkMilestone(currentStreak: currentStreak) {
-                HapticManager.shared.streakMilestone()
-                withAnimation(.spring(response: 0.5)) {
-                    showMilestone = milestone
-                }
-            }
+        .task(id: "\(entriesSignature)-\(goalManager.weeklyTarget)-\(goalManager.isEnabled)") {
+            await refreshStats()
         }
     }
 
@@ -115,10 +119,10 @@ struct StatsView: View {
 
     private var streakCard: some View {
         StreakCardView(
-            currentStreak: currentStreak,
-            longestStreak: longestStreak,
-            entriesThisMonth: entriesThisMonth,
-            totalEntries: startedEntries.count,
+            currentStreak: stats.currentStreak,
+            longestStreak: stats.longestStreak,
+            entriesThisMonth: stats.entriesThisMonth,
+            totalEntries: stats.entryCount,
             isIPad: isIPad
         )
     }
@@ -132,20 +136,19 @@ struct StatsView: View {
                 .foregroundColor(OffRecordColor.textHeading)
 
             HStack(spacing: 8) {
-                ForEach(last7Days, id: \.self) { date in
-                    let hasEntry = hasEntryOn(date)
+                ForEach(stats.last7Days) { day in
                     VStack(spacing: 6) {
                         Circle()
-                            .fill(hasEntry ? OffRecordColor.surfaceMint : OffRecordColor.textTertiary.opacity(0.16))
+                            .fill(day.hasEntry ? OffRecordColor.surfaceMint : OffRecordColor.textTertiary.opacity(0.16))
                             .frame(width: isIPad ? 44 : 32, height: isIPad ? 44 : 32)
                             .overlay {
-                                if hasEntry {
+                                if day.hasEntry {
                                     Image(systemName: "checkmark")
                                         .font(.caption.weight(.bold))
                                         .foregroundColor(OffRecordColor.textAqua)
                                 }
                             }
-                        Text(dayAbbreviation(date))
+                        Text(day.label)
                             .font(.caption)
                             .foregroundColor(OffRecordColor.textSecondary)
                     }
@@ -165,7 +168,7 @@ struct StatsView: View {
                 .font(.headline)
                 .foregroundColor(OffRecordColor.textHeading)
 
-            if moodData.isEmpty {
+            if stats.moodCounts.isEmpty {
                 Text("Record entries with moods to see trends")
                     .font(.subheadline)
                     .foregroundColor(OffRecordColor.textSecondary)
@@ -174,7 +177,7 @@ struct StatsView: View {
             } else {
                 // Mood distribution
                 HStack(spacing: 12) {
-                    ForEach(topMoods, id: \.mood) { item in
+                    ForEach(stats.moodCounts.prefix(4)) { item in
                         VStack(spacing: 6) {
                             MiniMoodIcon(
                                 mood: item.mood,
@@ -207,7 +210,7 @@ struct StatsView: View {
     @available(iOS 16.0, *)
     private var moodChart: some View {
         Chart {
-            ForEach(moodChartData, id: \.date) { item in
+            ForEach(stats.moodChartData) { item in
                 if let mood = item.mood {
                     PointMark(
                         x: .value("Date", item.date, unit: .day),
@@ -249,10 +252,10 @@ struct StatsView: View {
                 .foregroundColor(OffRecordColor.textHeading)
 
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: isIPad ? 4 : 2), spacing: 16) {
-                StatItem(title: "Total Words", value: "\(totalWords)", icon: "text.word.spacing", color: OffRecordColor.textSky)
-                StatItem(title: "Avg Words/Entry", value: "\(avgWordsPerEntry)", icon: "chart.bar.fill", color: OffRecordColor.textMint)
-                StatItem(title: "Starred", value: "\(starredCount)", icon: "star.fill", color: OffRecordColor.textYellow)
-                StatItem(title: "With Audio", value: "\(audioCount)", icon: "waveform", color: OffRecordColor.textAqua)
+                StatItem(title: "Total Words", value: "\(stats.totalWords)", icon: "text.word.spacing", color: OffRecordColor.textSky)
+                StatItem(title: "Avg Words/Entry", value: "\(stats.avgWordsPerEntry)", icon: "chart.bar.fill", color: OffRecordColor.textMint)
+                StatItem(title: "Starred", value: "\(stats.starredCount)", icon: "star.fill", color: OffRecordColor.textYellow)
+                StatItem(title: "With Audio", value: "\(stats.audioCount)", icon: "waveform", color: OffRecordColor.textAqua)
             }
         }
         .padding()
@@ -262,10 +265,8 @@ struct StatsView: View {
     // MARK: - AI Insights Card
 
     private var aiInsightsCard: some View {
-        let insights = InsightsEngine.generateInsights(from: startedEntries)
-
-        return Group {
-            if !insights.isEmpty {
+        Group {
+            if !stats.insights.isEmpty {
                 VStack(alignment: .leading, spacing: 12) {
                     HStack {
                         Image(systemName: "sparkles")
@@ -275,11 +276,11 @@ struct StatsView: View {
                             .foregroundColor(OffRecordColor.textHeading)
                     }
 
-                    ForEach(insights.prefix(3)) { insight in
+                    ForEach(stats.insights.prefix(3)) { insight in
                         HStack(alignment: .top, spacing: 12) {
                             Image(systemName: insight.icon)
                                 .font(.title3)
-                                .foregroundColor(colorFromName(insight.color))
+                                .foregroundColor(colorFromName(insight.colorName))
                                 .frame(width: 30)
 
                             VStack(alignment: .leading, spacing: 4) {
@@ -303,9 +304,7 @@ struct StatsView: View {
     // MARK: - Weekly Summary Card
 
     private var weeklySummaryCard: some View {
-        let summary = InsightsEngine.generateWeeklySummary(from: startedEntries)
-
-        return VStack(alignment: .leading, spacing: 12) {
+        VStack(alignment: .leading, spacing: 12) {
             HStack {
                 Image(systemName: "calendar")
                     .foregroundColor(OffRecordColor.textSky)
@@ -314,7 +313,7 @@ struct StatsView: View {
                     .foregroundColor(OffRecordColor.textHeading)
             }
 
-            Text(summary)
+            Text(stats.weeklySummary)
                 .font(.subheadline)
                 .foregroundColor(OffRecordColor.textSecondary)
         }
@@ -325,11 +324,7 @@ struct StatsView: View {
     // MARK: - Goal Progress Card
 
     private var goalProgressCard: some View {
-        let progress = goalManager.progressThisWeek(from: startedEntries)
-        let count = goalManager.entriesThisWeek(from: startedEntries)
-        let remaining = goalManager.daysRemainingInWeek()
-
-        return VStack(spacing: 16) {
+        VStack(spacing: 16) {
             HStack {
                 Image(systemName: "target")
                     .font(.title2)
@@ -338,7 +333,7 @@ struct StatsView: View {
                     .font(.headline)
                     .foregroundColor(OffRecordColor.textHeading)
                 Spacer()
-                Text("\(count)/\(goalManager.weeklyTarget)")
+                Text("\(stats.goal.count)/\(stats.goal.weeklyTarget)")
                     .font(.subheadline.weight(.medium))
                     .foregroundColor(OffRecordColor.textAqua)
             }
@@ -347,23 +342,23 @@ struct StatsView: View {
                 Circle()
                     .stroke(OffRecordColor.borderSoft, lineWidth: 8)
                 Circle()
-                    .trim(from: 0, to: progress)
+                    .trim(from: 0, to: stats.goal.progress)
                     .stroke(OffRecordColor.brandAqua, style: StrokeStyle(lineWidth: 8, lineCap: .round))
                     .rotationEffect(.degrees(-90))
-                    .animation(.spring(response: 0.6), value: progress)
+                    .animation(.spring(response: 0.6), value: stats.goal.progress)
 
                 VStack(spacing: 2) {
-                    Text("\(Int(progress * 100))%")
+                    Text("\(Int(stats.goal.progress * 100))%")
                         .font(.title2.bold())
                         .foregroundColor(OffRecordColor.textAqua)
-                    Text("\(remaining) days left")
+                    Text("\(stats.goal.daysRemaining) days left")
                         .font(.caption)
                         .foregroundColor(OffRecordColor.textSecondary)
                 }
             }
             .frame(width: 100, height: 100)
 
-            if progress >= 1.0 {
+            if stats.goal.progress >= 1.0 {
                 Text("Goal reached! Great work this week.")
                     .font(.caption)
                     .foregroundColor(OffRecordColor.textSage)
@@ -441,95 +436,6 @@ struct StatsView: View {
         }
     }
 
-    // MARK: - Computed Properties
-
-    private var currentStreak: Int {
-        let calendar = Calendar.current
-        var streak = 0
-        var checkDate = calendar.startOfDay(for: Date())
-
-        // Check if there's an entry today
-        if !hasEntryOn(checkDate) {
-            // Check yesterday - streak might still be active
-            checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate) ?? checkDate
-            if !hasEntryOn(checkDate) {
-                return 0
-            }
-        }
-
-        // Count consecutive days
-        while hasEntryOn(checkDate) {
-            streak += 1
-            checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate) ?? checkDate
-        }
-
-        return streak
-    }
-
-    private var longestStreak: Int {
-        let calendar = Calendar.current
-        let sortedDates = startedEntries.compactMap { $0.date }.map { calendar.startOfDay(for: $0) }
-        let uniqueDates = Set(sortedDates).sorted(by: >)
-
-        guard !uniqueDates.isEmpty else { return 0 }
-
-        var longest = 1
-        var current = 1
-
-        for i in 1..<uniqueDates.count {
-            let diff = calendar.dateComponents([.day], from: uniqueDates[i], to: uniqueDates[i-1]).day ?? 0
-            if diff == 1 {
-                current += 1
-                longest = max(longest, current)
-            } else {
-                current = 1
-            }
-        }
-
-        return longest
-    }
-
-    private var entriesThisMonth: Int {
-        let calendar = Calendar.current
-        let now = Date()
-        return startedEntries.filter { entry in
-            guard let date = entry.date else { return false }
-            return calendar.isDate(date, equalTo: now, toGranularity: .month)
-        }.count
-    }
-
-    private var last7Days: [Date] {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-        return (0..<7).compactMap { calendar.date(byAdding: .day, value: -$0, to: today) }.reversed()
-    }
-
-    private func hasEntryOn(_ date: Date) -> Bool {
-        let calendar = Calendar.current
-        return startedEntries.contains { entry in
-            guard let entryDate = entry.date else { return false }
-            return calendar.isDate(entryDate, inSameDayAs: date)
-        }
-    }
-
-    private func dayAbbreviation(_ date: Date) -> String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEE"
-        return String(formatter.string(from: date).prefix(1))
-    }
-
-    private var moodData: [(mood: Mood, count: Int)] {
-        var counts: [Mood: Int] = [:]
-        for entry in startedEntries {
-            if let moodString = entry.value(forKey: "mood") as? String,
-               let mood = Mood(rawValue: moodString),
-               mood != .none {
-                counts[mood, default: 0] += 1
-            }
-        }
-        return counts.map { ($0.key, $0.value) }.sorted { $0.count > $1.count }
-    }
-
     private func chartAxisMood(for value: Int) -> Mood {
         switch value {
         case 1:
@@ -543,51 +449,33 @@ struct StatsView: View {
         }
     }
 
-    private var topMoods: [(mood: Mood, count: Int)] {
-        Array(moodData.prefix(4))
-    }
+    @MainActor
+    private func refreshStats() async {
+        let token = PerformanceSignposts.begin("StatsViewRefresh")
+        let currentEntries = startedEntries
+        let snapshots = currentEntries.journalSnapshots
+        let nextStats = await JournalAnalyticsWorker.shared.makeStats(
+            from: snapshots,
+            now: Date(),
+            weeklyTarget: goalManager.weeklyTarget,
+            goalEnabled: goalManager.isEnabled
+        )
 
-    private var moodChartData: [(date: Date, mood: Mood?)] {
-        let calendar = Calendar.current
-        let today = calendar.startOfDay(for: Date())
-
-        return (0..<14).compactMap { offset -> (Date, Mood?)? in
-            guard let date = calendar.date(byAdding: .day, value: -offset, to: today) else { return nil }
-            let entry = startedEntries.first { entry in
-                guard let entryDate = entry.date else { return false }
-                return calendar.isDate(entryDate, inSameDayAs: date)
-            }
-            let mood: Mood?
-            if let moodString = entry?.value(forKey: "mood") as? String {
-                mood = Mood(rawValue: moodString)
-            } else {
-                mood = nil
-            }
-            return (date, mood)
-        }.reversed()
-    }
-
-    private var totalWords: Int {
-        startedEntries.reduce(0) { total, entry in
-            let text = entry.text ?? ""
-            return total + text.split { $0.isWhitespace || $0.isNewline }.count
+        guard !Task.isCancelled else {
+            PerformanceSignposts.end(token)
+            return
         }
-    }
 
-    private var avgWordsPerEntry: Int {
-        guard startedEntries.count > 0 else { return 0 }
-        return totalWords / startedEntries.count
-    }
-
-    private var starredCount: Int {
-        startedEntries.filter { $0.isStarred }.count
-    }
-
-    private var audioCount: Int {
-        startedEntries.filter { entry in
-            let fileName = entry.value(forKey: "audioFileName") as? String
-            return fileName != nil && !fileName!.isEmpty
-        }.count
+        startedEntriesForCards = currentEntries
+        stats = nextStats
+        proactiveReflection.refreshIfNeeded(entries: currentEntries)
+        if let milestone = goalManager.checkMilestone(currentStreak: nextStats.currentStreak) {
+            HapticManager.shared.streakMilestone()
+            withAnimation(.spring(response: 0.5)) {
+                showMilestone = milestone
+            }
+        }
+        PerformanceSignposts.end(token)
     }
 }
 
