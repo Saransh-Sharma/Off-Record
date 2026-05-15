@@ -12,6 +12,11 @@ import AVFoundation
 import UIKit
 #endif
 
+private struct PendingOnboardingTranscription {
+    let entryObjectID: NSManagedObjectID
+    let audioURL: URL
+}
+
 struct OnboardingView: View {
     @Binding var hasCompletedOnboarding: Bool
 
@@ -38,6 +43,9 @@ struct OnboardingView: View {
     @State private var firstEntryMode: FirstEntryMode = .voice
     @State private var onboardingError: String?
     @State private var showNotificationDeniedAlert = false
+    @State private var firstEntryAudioEntryID: NSManagedObjectID?
+    @State private var pendingTranscription: PendingOnboardingTranscription?
+    @State private var showSpeechConsentPrompt = false
 
     private var isIPad: Bool { horizontalSizeClass == .regular }
 
@@ -95,6 +103,17 @@ struct OnboardingView: View {
             Button("OK", role: .cancel) { }
         } message: {
             Text("You can enable reminders later in Settings. OffRecord still works fully offline.")
+        }
+        .alert(SpeechTranscriptionConsent.disclosureTitle, isPresented: $showSpeechConsentPrompt) {
+            Button("Agree and Transcribe") {
+                SpeechTranscriptionConsent.grantAppleSpeechProcessing()
+                resumePendingTranscription()
+            }
+            Button("Save Recording Only", role: .cancel) {
+                keepPendingRecordingOnly()
+            }
+        } message: {
+            Text(SpeechTranscriptionConsent.disclosureMessage)
         }
         .ignoresSafeArea(.keyboard)
     }
@@ -164,11 +183,11 @@ struct OnboardingView: View {
             PermissionPrimerStep(
                 icon: "text.bubble.fill",
                 title: "Turn voice into a private journal entry.",
-                subtitle: "OffRecord uses Apple's speech recognition and asks for permission only when it transcribes.",
+                subtitle: "OffRecord uses Apple Speech for transcription and asks before voice is processed.",
                 bullets: [
-                    "No third-party AI servers.",
+                    "Online transcription may be processed by Apple Speech.",
                     "No account and no analytics.",
-                    "Core journaling and insights work without internet."
+                    "Friday insights and mood analysis stay on this device."
                 ]
             )
         case .processing:
@@ -362,9 +381,49 @@ struct OnboardingView: View {
         isTranscribing = true
         HapticManager.shared.recordingStopped()
         let entry = createEntry(text: "", audioFileName: result.url.lastPathComponent, duration: result.duration)
-        entryCreated = true
+        firstEntryAudioEntryID = entry.objectID
 
-        SpeechTranscriber.shared.transcribe(from: result.url) { result in
+        beginTranscription(entry: entry, audioURL: result.url)
+    }
+
+    private func beginTranscription(entry: DiaryEntry, audioURL: URL) {
+        guard SpeechTranscriptionConsent.hasGrantedAppleSpeechProcessing else {
+            pendingTranscription = PendingOnboardingTranscription(entryObjectID: entry.objectID, audioURL: audioURL)
+            firstEntryMode = .textFallback
+            isTranscribing = false
+            showSpeechConsentPrompt = true
+            return
+        }
+
+        transcribeFirstEntry(entry: entry, audioURL: audioURL)
+    }
+
+    private func resumePendingTranscription() {
+        guard let pendingTranscription else {
+            isTranscribing = false
+            return
+        }
+
+        self.pendingTranscription = nil
+        guard let entry = try? viewContext.existingObject(with: pendingTranscription.entryObjectID) as? DiaryEntry else {
+            isTranscribing = false
+            return
+        }
+
+        isTranscribing = true
+        firstEntryMode = .voice
+        transcribeFirstEntry(entry: entry, audioURL: pendingTranscription.audioURL)
+    }
+
+    private func keepPendingRecordingOnly() {
+        pendingTranscription = nil
+        isTranscribing = false
+        firstEntryMode = .textFallback
+    }
+
+    private func transcribeFirstEntry(entry: DiaryEntry, audioURL: URL) {
+        isTranscribing = true
+        SpeechTranscriber.shared.transcribe(from: audioURL) { result in
             DispatchQueue.main.async {
                 switch result {
                 case .success(let text):
@@ -386,6 +445,7 @@ struct OnboardingView: View {
                 case .failure:
                     response.speechChoice = .denied
                     onboardingError = "Your recording was saved, but transcription did not finish. You can type a few words before continuing."
+                    firstEntryMode = .textFallback
                 }
                 isTranscribing = false
             }
@@ -396,7 +456,17 @@ struct OnboardingView: View {
         let text = firstEntryDraft.trimmed
         guard !text.isEmpty else { return }
 
-        let entry = createEntry(text: text, audioFileName: nil, duration: 0)
+        let entry: DiaryEntry
+        if let firstEntryAudioEntryID,
+           let existingEntry = try? viewContext.existingObject(with: firstEntryAudioEntryID) as? DiaryEntry {
+            existingEntry.text = text
+            existingEntry.updatedAt = Date()
+            existingEntry.setValue(selectedMood.rawValue, forKey: "mood")
+            try? viewContext.save()
+            entry = existingEntry
+        } else {
+            entry = createEntry(text: text, audioFileName: nil, duration: 0)
+        }
         entryCreated = true
         response.firstEntryText = text
         EntryLearningPipeline.processSavedEntry(
@@ -484,7 +554,7 @@ enum OnboardingStep: Int, CaseIterable, Identifiable {
         case .welcome: return "Understand yourself, privately."
         case .goal: return "What do you want your journal to help with?"
         case .painPoints: return "What usually stops you from journaling honestly?"
-        case .privacyProof: return "No internet required. No account. No servers."
+        case .privacyProof: return "Local by design. Clear when Apple Speech is used."
         case .faceID: return "Protect your journal before you write."
         case .relatable: return "Which statements sound like you?"
         case .solution: return "A smarter way to reflect, built around you."
@@ -655,7 +725,7 @@ enum OnboardingPainPoint: String, CaseIterable, Codable, Identifiable {
         switch self {
         case .typingSlow: return "Speak naturally and let OffRecord transcribe."
         case .detailsFade: return "Capture the honest version while it is fresh."
-        case .privacyWorry: return "Local AI means no journal server ever sees it."
+        case .privacyWorry: return "Local AI means Friday analysis stays on this device."
         case .blankPage: return "Private prompts make the first sentence easier."
         case .manualMood: return "Mood trends emerge from entries over time."
         case .hardToSearch: return "Friday connects people, topics, and themes."
@@ -1013,11 +1083,12 @@ private struct PrivacyProofStep: View {
     var body: some View {
         OnboardingQuestion(
             eyebrow: "Privacy proof",
-            title: "No internet required. No account. No servers.",
-            subtitle: "Your thoughts stay on your iPhone. OffRecord uses local Apple frameworks for transcription, mood analysis, Friday insights, and your private graph."
+            title: "Local by design. Clear when Apple Speech is used.",
+            subtitle: "Your journal is stored on your iPhone. Friday insights, mood analysis, Semantic Memory, and your private graph use on-device Apple frameworks."
         ) {
             VStack(spacing: 12) {
-                PrivacyComparisonRow(label: "Voice and journal text", offRecord: "On device", other: "Often uploaded")
+                PrivacyComparisonRow(label: "Journal text", offRecord: "On device", other: "Often uploaded")
+                PrivacyComparisonRow(label: "Voice transcription", offRecord: "Apple Speech", other: "Cloud AI")
                 PrivacyComparisonRow(label: "AI insights", offRecord: "Local AI", other: "Cloud AI")
                 PrivacyComparisonRow(label: "Account", offRecord: "Not needed", other: "Usually required")
                 PrivacyComparisonRow(label: "Analytics", offRecord: "None", other: "Common")
@@ -1222,7 +1293,7 @@ private struct ProcessingStep: View {
             }
 
             VStack(spacing: 10) {
-                Text("No network call. No account lookup. Just local AI preparing your first reflection.")
+                Text("No account lookup. Local AI is preparing your first reflection.")
                     .font(.subheadline.weight(.medium))
                     .foregroundStyle(OnboardingPalette.secondaryForeground)
                     .multilineTextAlignment(.center)
@@ -1844,7 +1915,7 @@ private struct LocalAIBadge: View {
             Image(systemName: "cpu.fill")
             Text("Local AI")
             Circle().fill(OnboardingPalette.tertiaryForeground).frame(width: 4, height: 4)
-            Text("No internet required")
+            Text("Core works offline")
         }
         .font(.caption.weight(.black))
         .foregroundStyle(OffRecordColor.textPrimary)
@@ -1999,7 +2070,7 @@ private struct TopicGraphCard: View {
             .frame(height: 210)
             .frame(maxWidth: .infinity)
 
-            Text("As you journal, OffRecord connects recurring people, places, moods, and themes locally. This graph never leaves your device.")
+            Text("As you journal, OffRecord connects recurring people, places, moods, and themes locally. This graph stays on this device.")
                 .font(.subheadline.weight(.semibold))
                 .foregroundStyle(OnboardingPalette.secondaryForeground)
         }
