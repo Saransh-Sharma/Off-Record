@@ -12,6 +12,7 @@ import AVFoundation
 import UIKit
 import PhotosUI
 import os.log
+import AppIntents
 
 private let logger = Logger(subsystem: "com.singularity.offrecord", category: "TodayView")
 
@@ -28,6 +29,11 @@ private enum TodayDateFormatters {
         formatter.timeStyle = .short
         return formatter
     }()
+}
+
+private struct PendingTodayTranscription {
+    let entryObjectID: NSManagedObjectID
+    let audioURL: URL
 }
 
 // MARK: - Recording State
@@ -49,6 +55,7 @@ struct TodayView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @AppStorage("authorName") private var authorName: String = ""
     @ObservedObject private var proactiveReflection = ProactiveReflectionController.shared
+    @ObservedObject private var navigationRouter = OffRecordNavigationRouter.shared
     private let compactTabSelection: Binding<OffRecordTab>?
     private let compactBottomSafeAreaInset: CGFloat
 
@@ -66,12 +73,15 @@ struct TodayView: View {
     @State private var heroStore = DaypartHeroStore()
     @State private var activeHeroPromptID: String?
     @State private var heroRecordingPromptID: String?
+    @State private var lastExposedHeroPromptID: String?
+    @State private var historicalEntries: [DiaryEntry] = []
+    @State private var showRecordSiriTip = true
+    @State private var todayActivity: NSUserActivity?
+    @State private var todayStats: JournalStatsSnapshot = .empty
+    @State private var pendingTranscription: PendingTodayTranscription?
+    @State private var showSpeechConsentPrompt = false
 
     @FetchRequest private var todayEntries: FetchedResults<DiaryEntry>
-    @FetchRequest(
-        sortDescriptors: [NSSortDescriptor(keyPath: \DiaryEntry.date, ascending: true)],
-        animation: .default)
-    private var allEntries: FetchedResults<DiaryEntry>
 
     private var isIPad: Bool { horizontalSizeClass == .regular }
 
@@ -100,7 +110,15 @@ struct TodayView: View {
     }
 
     private var startedEntries: [DiaryEntry] {
-        allEntries.startedEntries
+        historicalEntries
+    }
+
+    private var todayEntriesSignature: String {
+        todayEntries.map { entry in
+            let updated = entry.updatedAt?.timeIntervalSinceReferenceDate ?? 0
+            return "\(entry.objectID.uriRepresentation().absoluteString):\(updated)"
+        }
+        .joined(separator: "|")
     }
 
     private var effectiveLatestEntry: DiaryEntry? {
@@ -195,10 +213,30 @@ struct TodayView: View {
         } message: {
             Text(errorMessage ?? "")
         }
+        .alert(SpeechTranscriptionConsent.disclosureTitle, isPresented: $showSpeechConsentPrompt) {
+            Button("Agree and Transcribe") {
+                SpeechTranscriptionConsent.grantAppleSpeechProcessing()
+                resumePendingTranscription()
+            }
+            Button("Save Recording Only", role: .cancel) {
+                keepPendingRecordingOnly()
+            }
+        } message: {
+            Text(SpeechTranscriptionConsent.disclosureMessage)
+        }
         .onReceive(NotificationCenter.default.publisher(for: .startRecordingFromSiri)) { _ in
             // Auto-start recording when triggered from Siri shortcut
             if recordingState == .idle {
                 DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
+                    toggleRecording()
+                }
+            }
+        }
+        .onChange(of: navigationRouter.shouldStartRecording) { _, shouldStart in
+            guard shouldStart else { return }
+            navigationRouter.shouldStartRecording = false
+            if recordingState == .idle {
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
                     toggleRecording()
                 }
             }
@@ -216,22 +254,32 @@ struct TodayView: View {
         }
         .onAppear {
             recorder.prepareForFirstUse()
-            proactiveReflection.refreshIfNeeded(entries: startedEntries)
-            refreshHero(recordExposure: true)
+            refreshHero(recordExposure: false)
+            startTodayPredictionActivity()
+            if navigationRouter.shouldStartRecording {
+                navigationRouter.shouldStartRecording = false
+                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+                    toggleRecording()
+                }
+            }
         }
-        .onChange(of: allEntries.count) { _, _ in
-            proactiveReflection.refreshIfNeeded(entries: startedEntries)
+        .onDisappear {
+            todayActivity?.resignCurrent()
+            todayActivity = nil
         }
         .onChange(of: latestEntry?.objectID) { _, _ in
             guard !isHeroRecordingActive else { return }
-            refreshHero(recordExposure: true)
+            refreshHero(recordExposure: false)
         }
         .onChange(of: recordingState) { _, newState in
             if newState == .idle, heroRecordingPromptID != nil {
                 heroRecordingPromptID = nil
                 activeHeroPromptID = nil
-                refreshHero(recordExposure: true)
+                refreshHero(recordExposure: false)
             }
+        }
+        .task(id: todayEntriesSignature) {
+            await refreshHistoricalEntryCache(recordHeroExposure: true)
         }
     }
 
@@ -666,6 +714,10 @@ struct TodayView: View {
                             .multilineTextAlignment(.center)
                             .padding(.top, 4)
                     }
+
+                    SiriTipView(intent: RecordJournalIntent(), isVisible: $showRecordSiriTip)
+                        .siriTipViewStyle(.automatic)
+                        .padding(.top, 6)
                 }
             }
         }
@@ -837,15 +889,26 @@ struct TodayView: View {
         let entry = getOrCreateTodayEntry()
 
         for item in items {
+            let token = PerformanceSignposts.begin("PhotoImport")
             item.loadTransferable(type: Data.self) { result in
-                if case .success(let data) = result, let data, let image = UIImage(data: data) {
-                    DispatchQueue.main.async {
-                        if PhotoStorageManager.shared.addPhoto(image, to: entry, in: viewContext) != nil {
-                            entry.updatedAt = Date()
-                            try? viewContext.save()
-                            HapticManager.shared.entrySaved()
-                        }
+                guard case .success(let data) = result, let data else {
+                    PerformanceSignposts.end(token)
+                    return
+                }
+
+                Task { @MainActor in
+                    guard let jpegData = await PhotoAttachmentProcessor.shared.preparedJPEGData(from: data) else {
+                        PerformanceSignposts.end(token)
+                        return
                     }
+
+                    if PhotoStorageManager.shared.addPhotoData(jpegData, to: entry, in: viewContext) != nil {
+                        entry.updatedAt = Date()
+                        try? viewContext.save()
+                        JournalSpotlightIndexer.shared.upsert(entry: entry)
+                        HapticManager.shared.entrySaved()
+                    }
+                    PerformanceSignposts.end(token)
                 }
             }
         }
@@ -895,6 +958,7 @@ struct TodayView: View {
         )
         if let selectedHero {
             heroStore.recordExposure(selectedHero)
+            lastExposedHeroPromptID = selectedHero.prompt.id
         }
         HapticManager.shared.selectionChanged()
     }
@@ -905,8 +969,9 @@ struct TodayView: View {
             hasEntryToday: effectiveLatestEntry != nil,
             store: heroStore
         )
-        if recordExposure, let selectedHero {
+        if recordExposure, let selectedHero, lastExposedHeroPromptID != selectedHero.prompt.id {
             heroStore.recordExposure(selectedHero)
+            lastExposedHeroPromptID = selectedHero.prompt.id
         }
     }
 
@@ -924,6 +989,16 @@ struct TodayView: View {
         entry.updatedAt = now
         try? viewContext.save()
         return entry
+    }
+
+    private func startTodayPredictionActivity() {
+        todayActivity?.resignCurrent()
+        todayActivity = JournalSpotlightIndexer.shared.predictionActivity(
+            type: "com.singularity.offrecord.today",
+            title: "Write in OffRecord",
+            route: .today
+        )
+        todayActivity?.becomeCurrent()
     }
 
     @ViewBuilder
@@ -1067,6 +1142,7 @@ struct TodayView: View {
 
         do {
             try viewContext.save()
+            JournalSpotlightIndexer.shared.upsert(entry: entry)
             // Clear any selected prompt once an entry has been saved
             selectedPrompt = nil
         } catch {
@@ -1076,6 +1152,46 @@ struct TodayView: View {
         }
 
         #if os(iOS)
+        beginTranscription(entry: entry, audioURL: audioURL)
+        #else
+        recordingState = .idle
+        #endif
+    }
+
+    private func beginTranscription(entry: DiaryEntry, audioURL: URL) {
+        guard SpeechTranscriptionConsent.hasGrantedAppleSpeechProcessing else {
+            pendingTranscription = PendingTodayTranscription(entryObjectID: entry.objectID, audioURL: audioURL)
+            recordingState = .idle
+            showSpeechConsentPrompt = true
+            return
+        }
+
+        transcribeSavedEntry(entry: entry, audioURL: audioURL)
+    }
+
+    private func resumePendingTranscription() {
+        guard let pendingTranscription else {
+            recordingState = .idle
+            return
+        }
+
+        self.pendingTranscription = nil
+        guard let entry = try? viewContext.existingObject(with: pendingTranscription.entryObjectID) as? DiaryEntry else {
+            recordingState = .idle
+            return
+        }
+
+        recordingState = .processing
+        transcribeSavedEntry(entry: entry, audioURL: pendingTranscription.audioURL)
+    }
+
+    private func keepPendingRecordingOnly() {
+        pendingTranscription = nil
+        recordingState = .idle
+    }
+
+    private func transcribeSavedEntry(entry: DiaryEntry, audioURL: URL) {
+        recordingState = .processing
         SpeechTranscriber.shared.transcribe(from: audioURL) { result in
             DispatchQueue.main.async {
                 PerformanceSignposts.event("TranscriptionCompleted")
@@ -1105,6 +1221,7 @@ struct TodayView: View {
                             duration: entry.duration
                         )
                         EntryLearningPipeline.upsertSemanticEntry(entry)
+                        JournalSpotlightIndexer.shared.upsert(entry: entry)
                     } catch {
                         logger.error("Failed to update entry with transcription: \(error.localizedDescription)")
                         recordingState = .idle
@@ -1121,9 +1238,6 @@ struct TodayView: View {
                 }
             }
         }
-        #else
-        recordingState = .idle
-        #endif
     }
 
     // MARK: - Formatting
@@ -1158,39 +1272,40 @@ struct TodayView: View {
     // MARK: - Stats
 
     private var daysRecordedThisYear: Int {
-        let calendar = Calendar.current
-        let currentYear = calendar.component(.year, from: Date())
-
-        let days: Set<Date> = Set(startedEntries.compactMap { entry in
-            guard let date = entry.date else { return nil }
-            return calendar.startOfDay(for: date)
-        })
-
-        return days.filter { calendar.component(.year, from: $0) == currentYear }.count
+        todayStats.daysRecordedThisYear
     }
 
     private var streakCount: Int {
-        let calendar = Calendar.current
+        todayStats.currentStreak
+    }
 
-        let daysSet: Set<Date> = Set(startedEntries.compactMap { entry in
-            guard let date = entry.date else { return nil }
-            return calendar.startOfDay(for: date)
-        })
+    @MainActor
+    private func refreshHistoricalEntryCache(recordHeroExposure: Bool) async {
+        let token = PerformanceSignposts.begin("TodayHistoricalRefresh")
+        defer { PerformanceSignposts.end(token) }
 
-        var days = Array(daysSet)
-        guard !days.isEmpty else { return 0 }
-        days.sort(by: >)
+        let request: NSFetchRequest<DiaryEntry> = DiaryEntry.fetchRequest()
+        request.predicate = DiaryEntry.startedEntryPredicate
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \DiaryEntry.date, ascending: false)]
+        request.fetchBatchSize = 50
 
-        var streak = 1
-        for i in 1..<days.count {
-            let diff = calendar.dateComponents([.day], from: days[i], to: days[i - 1]).day ?? 0
-            if diff == 1 {
-                streak += 1
-            } else {
-                break
-            }
+        do {
+            let entries = try viewContext.fetch(request).startedEntries
+            let snapshots = entries.journalSnapshots
+            let stats = await JournalAnalyticsWorker.shared.makeStats(
+                from: snapshots,
+                now: Date(),
+                weeklyTarget: 3,
+                goalEnabled: false
+            )
+            historicalEntries = entries
+            todayStats = stats
+            proactiveReflection.refreshIfNeeded(entries: entries)
+            refreshHero(recordExposure: recordHeroExposure)
+        } catch {
+            historicalEntries = []
+            todayStats = .empty
         }
-        return streak
     }
 }
 
