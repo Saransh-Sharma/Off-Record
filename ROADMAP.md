@@ -11,7 +11,7 @@ This roadmap outlines the planned evolution of OffRecord AI Journal. Contributio
 - Core Data storage with optional iCloud sync
 - Biometric security (Face ID / Touch ID)
 - Widgets (Home Screen & Lock Screen)
-- Siri Shortcuts via AppIntents
+- Basic Siri shortcut support through App Intents
 - AES-256-GCM encrypted exports
 - 8 themes, photo attachments, journaling goals
 
@@ -34,6 +34,8 @@ This roadmap outlines the planned evolution of OffRecord AI Journal. Contributio
 - Local-only semantic index sidecar with Settings controls for rebuild and delete
 - Background index lifecycle for first build, incremental entry updates, deletes, and CloudKit reconciliation
 - Optional iOS 26 Foundation Models phrasing layer where available; retrieved evidence remains the source of truth
+- Privacy-safe system discoverability through App Shortcuts, Siri, Spotlight metadata, Action Button-ready shortcuts, widgets links, `NSUserActivity`, and `offrecord://` deep links
+- “Siri & System Search” Settings controls for Spotlight metadata visibility and rebuilds
 - Automated and manual QA coverage for chunking, ranking, typed states, index lifecycle, and Friday citation behavior
 
 ## Planned

@@ -7,7 +7,7 @@
 
 OffRecord AI Journal is a **free voice journal app** for iOS that turns your spoken thoughts into a searchable, AI-powered diary — entirely on your device. No accounts, no cloud servers, no data collection. It is the **private journal app** built for people who value both convenience and privacy.
 
-Speak naturally, and OffRecord AI Journal transcribes everything offline using Apple's on-device Speech framework. Over time, **Friday** learns your personality, emotional patterns, and the people and topics in your life. Semantic Memory helps you find entries by meaning, and Evidence-Based Friday answers with citations from your own journal when there is enough support. Think of it as an **AI diary app** with a private assistant that actually understands you, without ever sending a byte of your data anywhere.
+Speak naturally, and OffRecord AI Journal transcribes with Apple Speech after asking your permission. Over time, **Friday** learns your personality, emotional patterns, and the people and topics in your life locally on your device. Semantic Memory helps you find entries by meaning, and Evidence-Based Friday answers with citations from your own journal when there is enough support. Think of it as an **AI diary app** with a private assistant that actually understands you, without sending your journal to developer servers or non-Apple AI services.
 
 **Your thoughts never leave your device. Ever.**
 
@@ -36,10 +36,10 @@ Speak naturally, and OffRecord AI Journal transcribes everything offline using A
 ## Features
 
 ### Voice Journaling That Works Offline
-Record your thoughts and OffRecord AI Journal transcribes them instantly using Apple's on-device Speech framework. No internet required. This is **voice journaling** the way it should work — fast, private, and always available.
+Record your thoughts and OffRecord AI Journal transcribes them using Apple Speech after asking your permission. When your device is online, Apple Speech may process audio and return a transcript saved in your journal. This is **voice journaling** the way it should work — fast, private, and transparent.
 
 ### Friday AI — Your Personal AI Journal Companion
-The **Friday journal** feature learns your personality, communication style, emotional patterns, and life themes. Free-form Friday questions retrieve evidence from your entries first, then answer with visible citations when the journal supports a claim. Processing stays local on your iPhone or iPad. No server-side AI for journal data, no developer API calls — a truly **on-device AI journal**.
+The **Friday journal** feature learns your personality, communication style, emotional patterns, and life themes. Free-form Friday questions retrieve evidence from your entries first, then answer with visible citations when the journal supports a claim. Friday processing stays local on your iPhone or iPad. No server-side AI for journal data, no developer API calls — a private **on-device AI journal**.
 
 ### Semantic Memory Search
 Search your Timeline by meaning, not only exact words. Queries like "stress after work" or "people I miss" can surface related entries even when those exact words are not present, while exact names, places, moods, dates, and starred entries still rank highly.
@@ -71,6 +71,9 @@ Sync across your Apple devices via your personal iCloud account. Completely opti
 ### Home Screen & Lock Screen Widgets
 Widgets for streaks, mood tracking, and quick recording. Journal without even opening the app.
 
+### Siri, Shortcuts, Spotlight & Action Button Ready
+Record, write, search, set mood, ask Friday, and open key journal surfaces through App Shortcuts, Siri, Spotlight, Control Center, widgets, and the Action Button. Spotlight only indexes privacy-safe metadata such as date, mood, starred state, word count, and whether an entry has voice or photos. Raw journal text, transcripts, photo thumbnails, and audio filenames stay out of system search.
+
 ### Journaling Goals
 Set weekly targets with milestone celebrations to build a consistent journaling habit.
 
@@ -82,7 +85,7 @@ OffRecord AI Journal carries Apple's **"Data Not Collected"** privacy nutrition 
 
 | | OffRecord AI Journal | Most Journal Apps |
 |---|---|---|
-| **Cloud processing** | None — 100% on-device | Audio/text sent to servers |
+| **Journal analysis** | On-device Friday and Semantic Memory | Often server-based |
 | **Account required** | No | Yes |
 | **Data collection** | Zero | Analytics, usage data, often text |
 | **Works offline** | Fully functional | Partial or none |
@@ -90,8 +93,9 @@ OffRecord AI Journal carries Apple's **"Data Not Collected"** privacy nutrition 
 | **Ad tracking** | None | Common |
 | **AI processing** | On-device Apple frameworks | Server-side APIs |
 | **Semantic memory** | Local-only derived index | Often cloud search or server embeddings |
+| **System search** | Private metadata only | Often content snippets or cloud-backed indexes |
 
-All AI features — voice transcription, sentiment analysis, semantic search, Friday, knowledge graph — run entirely on your iPhone or iPad using Apple's NaturalLanguage and Speech frameworks. Semantic Memory stores a rebuildable local index on your device; it is not sent to developer servers or third-party APIs.
+Friday insights, sentiment analysis, semantic search, and the knowledge graph run on your iPhone or iPad using Apple's local frameworks. Voice transcription uses Apple Speech after permission; when online, Apple may process audio and return the transcript. Semantic Memory stores a rebuildable local index on your device; it is not sent to developer servers or third-party APIs. System discoverability uses private metadata only, so iOS can help you return to entries without exposing journal text outside the locked app.
 
 ---
 
@@ -110,7 +114,7 @@ Looking for the best **AI diary app for iOS**? Here is how OffRecord AI Journal 
 | Friday | Yes | No | No | No |
 | Knowledge graph | Yes | No | No | No |
 
-OffRecord AI Journal is the only **free journal app** with full AI capabilities that runs 100% on-device.
+OffRecord AI Journal is a **free journal app** with local Friday insights, Semantic Memory, and clear Apple Speech transcription consent.
 
 ---
 
@@ -119,6 +123,7 @@ OffRecord AI Journal is the only **free journal app** with full AI capabilities 
 - **Language:** Swift, SwiftUI
 - **Data:** Core Data + CloudKit (optional iCloud sync)
 - **AI/ML:** Apple NaturalLanguage, NLContextualEmbedding, Apple Speech, on-device NLP via Neural Engine
+- **System Integration:** App Intents, App Shortcuts, Core Spotlight, NSUserActivity, WidgetKit, custom `offrecord://` deep links
 - **Minimum:** iOS 17.0+
 - **Devices:** iPhone, iPad (Universal)
 
@@ -149,6 +154,15 @@ Yes. Evidence chips point back to retrieved `EvidenceReference` sources from you
 
 ### Are embeddings or the semantic index synced to iCloud?
 No. Your journal entries can optionally sync through your personal iCloud account, but the derived Semantic Memory index is local-only and rebuilds separately on each device. Apple embedding asset downloads may fetch model files only; your journal text stays on device.
+
+### Can Spotlight search my journal?
+Spotlight can find entries by safe metadata only: date, mood, starred state, word count, and whether an entry has voice or photos. It does not index raw journal text, transcript snippets, photo thumbnails, or audio filenames. Full text and semantic search stay inside OffRecord after authentication.
+
+### What can Siri, Shortcuts, and the Action Button do?
+OffRecord exposes high-value App Shortcuts for recording, writing, searching, setting mood, and asking Friday. Privacy-sensitive actions require local device authentication, and Siri does not read raw journal text aloud by default.
+
+### What system links does OffRecord support?
+OffRecord supports private deep links for Today, recording, Timeline search, entry detail, and Friday questions. Widgets, Spotlight results, App Shortcuts, and `NSUserActivity` handoff use those routes to open the right in-app surface without exposing journal contents to the system.
 
 ### Does OffRecord AI Journal collect any analytics or telemetry?
 No. Zero data collection. No analytics SDKs, no crash reporting services, no telemetry of any kind. Check Apple's privacy label for confirmation.

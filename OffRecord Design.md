@@ -47,6 +47,14 @@ colors:
   text-inverse: "#FFFFFF"
   text-sage: "#5F806B"
   text-warm: "#C97836"
+  text-aqua: "#2D7168"
+  text-blush: "#9B4357"
+  text-coral: "#9F4036"
+  text-lavender: "#7B5CAF"
+  text-mint: "#4C775B"
+  text-peach: "#8D4F1E"
+  text-sky: "#386C84"
+  text-yellow: "#735F1E"
 
   border-soft: "#EEE7EF"
   border-warm: "#F2E2D5"
@@ -143,6 +151,58 @@ spacing:
   screen-x: "24px"
   screen-y: "28px"
 
+readable-tints:
+  neutral:
+    tint: null
+    fill: "{colors.surface-warm}"
+    foreground: "{colors.text-brand}"
+    border: "{colors.border-soft}"
+  brand:
+    tint: "{colors.brand-plum}"
+    fill: "{colors.surface-lavender}"
+    foreground: "{colors.text-brand}"
+    border: "{colors.border-soft}"
+  privacy:
+    tint: "{colors.brand-sage-dark}"
+    fill: "{colors.bg-sage-tint}"
+    foreground: "{colors.text-sage}"
+    border: "{colors.border-sage}"
+  friday:
+    tint: "{colors.brand-lavender-dark}"
+    fill: "{colors.bg-lavender-tint}"
+    foreground: "{colors.text-lavender}"
+    border: "{colors.border-soft}"
+  journal:
+    tint: "{colors.brand-peach}"
+    fill: "{colors.bg-peach-tint}"
+    foreground: "{colors.text-peach}"
+    border: "{colors.border-warm}"
+  blush:
+    tint: "{colors.brand-blush}"
+    fill: "{colors.bg-blush-tint}"
+    foreground: "{colors.text-blush}"
+    border: "{colors.border-soft}"
+  growth:
+    tint: "{colors.brand-aqua}"
+    fill: "{colors.surface-mint}"
+    foreground: "{colors.text-aqua}"
+    border: "{colors.border-sage}"
+  export:
+    tint: "{colors.brand-sky}"
+    fill: "{colors.bg-sky-tint}"
+    foreground: "{colors.text-sky}"
+    border: "{colors.border-soft}"
+  highlight:
+    tint: "{colors.brand-yellow}"
+    fill: "{colors.surface-peach}"
+    foreground: "{colors.text-yellow}"
+    border: "{colors.border-warm}"
+  warning:
+    tint: "{colors.brand-coral}"
+    fill: "{colors.bg-blush-tint}"
+    foreground: "{colors.text-coral}"
+    border: "{colors.border-warm}"
+
 components:
   screen-background:
     backgroundColor: "{colors.bg-primary}"
@@ -236,6 +296,24 @@ components:
     typography: "{typography.label-sm}"
     rounded: "{rounded.pill}"
     padding: "10px"
+
+timeline:
+  maxContentWidth: "860px"
+  contentInset: "20px"
+  contentSpacing: "16px"
+  headerSearchSpacing: "2px"
+  searchHeight: "46px"
+  planterWidth: "108px"
+  compactHeaderHeight: "12px"
+  accessibilityHeaderHeight: "16px"
+  summaryCardHeight: "124px"
+  summaryChartHeight: "88px"
+  monthRowSpacing: "13px"
+  dayRowContentSpacing: "4px"
+  daySpineWidth: "48px"
+  dateBadgeSize: "50px"
+  entryRowMinHeight: "104px"
+  moodArtSize: "66px"
 ---
 
 ## Overview
@@ -406,15 +484,16 @@ Core elements to preserve:
 
 #### Timeline
 
-Timeline should feel like a memory archive. Use date grouping, highlighted recent entries, search, and quiet metadata. Avoid a plain settings-like list. Use small icons, soft dividers, and differentiated entry cards.
+Timeline should feel like a visual memory archive, not a plain settings-like list. Use a centered readable archive column on the warm app background gradient, with compact search, monthly context, date grouping, quiet metadata, mood artwork, and soft dividers that imply passage of time.
 
 Core elements to preserve:
 
-- Search
-- Date groups
-- Entry previews
-- Word count / time metadata
-- Star/favorite indicator where relevant
+- Compact native search field with suggestions, voice search, filter controls, active filter chips, and semantic-memory status states.
+- Monthly summary card with entry count, word count, and a soft lavender-peach trend chart.
+- Month sections with a calendar icon, section entry count, date spine, circular pastel day badges, and differentiated entry cards.
+- Entry previews with mood icon, word count, photo/star metadata, highlighted matching text, semantic evidence labels, and large mood artwork.
+- Edit mode with a visible destructive delete affordance only when editing.
+- Small decorative Timeline planter illustration in the top-right. It may shake on tap and use haptics, but it must respect Reduce Motion and must never carry essential information.
 
 #### Insights
 
@@ -459,7 +538,7 @@ Core elements to preserve:
 
 ## Elevation & Depth
 
-Use soft paper-like elevation. The interface should feel warm and layered, not glassy or heavy.
+Use soft paper-like elevation. The interface should feel warm and layered, not broadly glassy or heavy. Compact iOS Liquid Glass controls are allowed when they keep readable tinted fallback fills, soft borders, and clear contrast.
 
 Recommended shadow system:
 
@@ -473,7 +552,8 @@ Shadow rules:
 - Use broad, low-opacity shadows.
 - Avoid hard dark shadows.
 - Avoid neumorphism.
-- Avoid strong glassmorphism.
+- Avoid strong glassmorphism and large glassy content containers.
+- Use Liquid Glass only for compact controls such as chips, filters, segmented tabs, and small bars; pair it with semantic readable tint styles and 1px soft borders.
 - Cards may use a 1px soft border plus subtle shadow.
 - Floating tab bar should feel elevated but not oversized.
 
@@ -503,6 +583,27 @@ Icon metaphors:
 - Mood: face, heart, leaf, weather-like states
 - Insights: soft bar chart, trend line, ring
 - Export/sync: document, cloud, arrow, archive
+
+### Illustration & Pastel Art
+
+Subtle pastel illustration art is part of the app UI. Use it as a quiet emotional anchor, not generic decoration. Illustrations should make the journal feel warm, personal, and reflective while staying secondary to text, controls, and private content.
+
+Appropriate uses:
+
+- Daypart nudge art for morning, afternoon, evening, and night prompts.
+- Mood artwork in entry cards, mood selection, summaries, and empty states.
+- Streak/fire artwork for ritual, continuity, and gentle progress.
+- Friday artwork and sprites where the companion is central to the screen.
+- Small screen-specific accents such as the Timeline planter.
+
+Art rules:
+
+- Keep shapes soft, rounded, warm, and low-contrast.
+- Prefer pastel scenes, soft gradients, friendly objects, and calm environmental cues.
+- Integrate artwork into the layout; it should not compete with the primary action or obscure readable text.
+- Decorative art must be paired with accessible labels or hidden from accessibility when it adds no information.
+- Interactive illustration should be optional, small, and respectful of Reduce Motion.
+- Avoid dark, busy, hyper-realistic, corporate, stock-like, or surveillance-like artwork.
 
 ### Friday Mascot
 

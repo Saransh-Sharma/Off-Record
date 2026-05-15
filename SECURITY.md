@@ -23,7 +23,7 @@ You can expect an initial response within 72 hours. We will work with you to und
 
 ## Scope
 
-Since OffRecord AI Journal processes all data on-device with no network calls, the primary security concerns are:
+Since OffRecord AI Journal keeps journal intelligence local and only uses Apple Speech for transcription after permission, the primary security concerns are:
 
 - Local data encryption and storage
 - App lock / biometric authentication bypass
@@ -43,7 +43,8 @@ Security expectations:
 - Embeddings and tokenized lexical rows must be treated as sensitive derived journal data, not anonymous telemetry.
 - File protection should remain aligned with the rest of OffRecord's local journal-derived storage.
 - Settings must allow users to delete and rebuild the local semantic index without deleting entries, photos, audio, exports, widgets, or iCloud data.
-- Apple embedding asset downloads may fetch model files only; journal text, snippets, embeddings, and Friday questions must not be sent to developer servers or third-party APIs.
+- Apple embedding asset downloads may fetch model files only; journal text, snippets, embeddings, and Friday questions must not be sent to developer servers or non-Apple third-party APIs.
+- Apple Speech transcription must remain gated by explicit consent before any online speech recognition path can run.
 
 Please report any issue where the semantic sidecar stores unexpected plaintext, survives delete-index controls, syncs outside the device-local path, bypasses app lock expectations, or transmits journal-derived data.
 
