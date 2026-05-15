@@ -18,7 +18,7 @@ import UIKit
 struct ContentView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @State private var selectedTab: OffRecordTab = .today
+    @ObservedObject private var navigationRouter = OffRecordNavigationRouter.shared
     @State private var isKeyboardVisible = false
 
     @FetchRequest(
@@ -37,11 +37,11 @@ struct ContentView: View {
     private var compactTabs: some View {
         GeometryReader { proxy in
             ZStack(alignment: .bottom) {
-                switch selectedTab {
+                switch navigationRouter.selectedTab {
                 case .today:
                     NavigationStack {
                         TodayView(
-                            compactTabSelection: $selectedTab,
+                            compactTabSelection: selectedTabBinding,
                             compactBottomSafeAreaInset: proxy.safeAreaInsets.bottom
                         )
                     }
@@ -59,8 +59,8 @@ struct ContentView: View {
                         .safeAreaPadding(.bottom, OffRecordCompactTabBarLayout.reservedContentBottomInset)
                 }
 
-                if selectedTab != .today {
-                    OffRecordFloatingTabBar(selectedTab: $selectedTab)
+                if navigationRouter.selectedTab != .today {
+                    OffRecordFloatingTabBar(selectedTab: selectedTabBinding)
                         .padding(.horizontal, OffRecordCompactTabBarLayout.horizontalPadding)
                         .padding(.bottom, OffRecordCompactTabBarLayout.screenEdgeBottomPadding)
                         .offset(y: isKeyboardVisible ? 0 : proxy.safeAreaInsets.bottom)
@@ -89,13 +89,14 @@ struct ContentView: View {
     }
 
     private var tabs: some View {
-        TabView {
+        TabView(selection: selectedTabBinding) {
             NavigationStack {
                 TodayView()
             }
             .tabItem {
                 Label("Today", systemImage: "sun.max")
             }
+            .tag(OffRecordTab.today)
 
             NavigationStack {
                 TimelineView()
@@ -103,6 +104,7 @@ struct ContentView: View {
             .tabItem {
                 Label("Timeline", systemImage: "list.bullet")
             }
+            .tag(OffRecordTab.timeline)
 
             NavigationStack {
                 StatsView()
@@ -110,6 +112,7 @@ struct ContentView: View {
             .tabItem {
                 Label("Insights", systemImage: "chart.bar")
             }
+            .tag(OffRecordTab.insights)
 
             NavigationStack {
                 FridayView()
@@ -117,6 +120,7 @@ struct ContentView: View {
             .tabItem {
                 Label("Friday", systemImage: "sparkles")
             }
+            .tag(OffRecordTab.friday)
 
             NavigationStack {
                 SettingsView()
@@ -124,7 +128,15 @@ struct ContentView: View {
             .tabItem {
                 Label("Settings", systemImage: "gearshape")
             }
+            .tag(OffRecordTab.settings)
         }
+    }
+
+    private var selectedTabBinding: Binding<OffRecordTab> {
+        Binding(
+            get: { navigationRouter.selectedTab },
+            set: { navigationRouter.selectedTab = $0 }
+        )
     }
 }
 

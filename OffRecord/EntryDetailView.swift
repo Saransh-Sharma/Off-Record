@@ -48,6 +48,7 @@ struct EntryDetailView: View {
     private let deleteEmptyDraftOnDisappear: Bool
     private let promptContext: String?
     private let heroPromptID: String?
+    @State private var currentActivity: NSUserActivity?
 
     // Photo state
     @State private var selectedPhotos: [PhotosPickerItem] = []
@@ -133,9 +134,12 @@ struct EntryDetailView: View {
         .onDisappear {
             saveIfNeeded()
             deleteEmptyDraftIfNeeded()
+            currentActivity?.resignCurrent()
+            currentActivity = nil
         }
         .onAppear {
             loadPhotos()
+            startEntryActivity()
         }
         .onChange(of: selectedPhotos) { _, newItems in
             handlePhotoSelection(newItems)
@@ -577,15 +581,26 @@ struct EntryDetailView: View {
     private func handlePhotoSelection(_ items: [PhotosPickerItem]) {
         #if canImport(UIKit)
         for item in items {
+            let token = PerformanceSignposts.begin("PhotoImport")
             item.loadTransferable(type: Data.self) { result in
-                if case .success(let data) = result, let data, let image = UIImage(data: data) {
-                    DispatchQueue.main.async {
-                        if let attachment = PhotoStorageManager.shared.addPhoto(image, to: entry, in: viewContext) {
+                guard case .success(let data) = result, let data else {
+                    PerformanceSignposts.end(token)
+                    return
+                }
+
+                Task { @MainActor in
+                    guard let jpegData = await PhotoAttachmentProcessor.shared.preparedJPEGData(from: data),
+                          let image = UIImage(data: jpegData) else {
+                        PerformanceSignposts.end(token)
+                        return
+                    }
+
+                    if let attachment = PhotoStorageManager.shared.addPhotoData(jpegData, to: entry, in: viewContext) {
                             photoAttachments.append(attachment)
                             photoImages.append(image)
                             savePhotos()
-                        }
                     }
+                    PerformanceSignposts.end(token)
                 }
             }
         }
@@ -611,6 +626,7 @@ struct EntryDetailView: View {
         entry.updatedAt = Date()
         try? viewContext.save()
         photoAttachments = PhotoStorageManager.shared.attachments(for: entry)
+        JournalSpotlightIndexer.shared.upsert(entry: entry)
     }
 
     // MARK: - Computed Properties
@@ -676,6 +692,7 @@ struct EntryDetailView: View {
         do {
             try viewContext.save()
             EntryLearningPipeline.upsertSemanticEntry(entry)
+            JournalSpotlightIndexer.shared.upsert(entry: entry)
         } catch {
             // ignore
         }
@@ -694,6 +711,7 @@ struct EntryDetailView: View {
             do {
                 try viewContext.save()
                 EntryLearningPipeline.upsertSemanticEntry(entry)
+                JournalSpotlightIndexer.shared.upsert(entry: entry)
 
                 // Feed into Friday — use reprocess if text was edited
                 if !trimmed.isEmpty {
@@ -733,6 +751,7 @@ struct EntryDetailView: View {
         do {
             try viewContext.save()
             SemanticMemoryIndexController.shared.deleteEntry(id: id)
+            JournalSpotlightIndexer.shared.delete(entryID: id)
         } catch {
             viewContext.rollback()
         }
@@ -759,8 +778,15 @@ struct EntryDetailView: View {
         do {
             try viewContext.save()
             EntryLearningPipeline.upsertSemanticEntry(entry)
+            JournalSpotlightIndexer.shared.upsert(entry: entry)
         } catch {
             // ignore
         }
+    }
+
+    private func startEntryActivity() {
+        currentActivity?.resignCurrent()
+        currentActivity = JournalSpotlightIndexer.shared.activity(for: entry)
+        currentActivity?.becomeCurrent()
     }
 }
