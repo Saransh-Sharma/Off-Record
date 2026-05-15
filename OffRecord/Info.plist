@@ -4,6 +4,17 @@
 <dict>
 	<key>CFBundleDisplayName</key>
 	<string>OffRecord</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.singularity.offrecord.routes</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>offrecord</string>
+			</array>
+		</dict>
+	</array>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<key>NSFaceIDUsageDescription</key>
