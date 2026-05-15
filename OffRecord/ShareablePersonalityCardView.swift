@@ -47,7 +47,7 @@ struct PersonalityCardRenderer {
     }
 
     /// Share text to include alongside the image
-    static let shareText = "My Friday personality from OffRecord AI Journal \u{2014} free AI voice journal. offrecord.example.com"
+    static let shareText = "My Friday personality from OffRecord AI Journal \u{2014} free AI voice journal. saransh-sharma.github.io/Off-Record"
 }
 
 // MARK: - Story Format Export (1080x1920 at 3x)
@@ -183,7 +183,7 @@ private struct ShareablePersonalityCardExport: View {
                         .foregroundColor(OffRecordColor.textInverse.opacity(0.66))
                 }
                 Spacer()
-                Text("offrecord.example.com")
+                Text("OffRecord")
                     .font(.system(size: 10, weight: .medium, design: .monospaced))
                     .foregroundColor(OffRecordColor.textInverse.opacity(0.66))
             }
@@ -272,7 +272,7 @@ private struct ShareablePersonalityCardExport: View {
                         .font(.system(size: 10, weight: .bold))
                         .foregroundColor(OffRecordColor.textInverse)
                     Spacer()
-                    Text("offrecord.example.com")
+                    Text("OffRecord")
                         .font(.system(size: 8, weight: .medium, design: .monospaced))
                         .foregroundColor(OffRecordColor.textInverse.opacity(0.66))
                 }

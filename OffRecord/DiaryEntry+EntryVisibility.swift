@@ -1,6 +1,17 @@
+import CoreData
 import Foundation
 
 extension DiaryEntry {
+    static var startedEntryPredicate: NSPredicate {
+        NSCompoundPredicate(orPredicateWithSubpredicates: [
+            NSPredicate(format: "text != nil AND text != ''"),
+            NSPredicate(format: "duration > 0"),
+            NSPredicate(format: "audioFileName != nil AND audioFileName != ''"),
+            NSPredicate(format: "mood != nil AND mood != '' AND mood != %@", Mood.none.rawValue),
+            NSPredicate(format: "photos.@count > 0")
+        ])
+    }
+
     var startedEntryWordCount: Int {
         let text = (self.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return 0 }

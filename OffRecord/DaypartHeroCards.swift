@@ -303,7 +303,7 @@ private struct CompactDaypartHeroActionRow: View {
 
     private var recordButton: some View {
         Button(action: onRecordAction) {
-            Label("Start recording", systemImage: "mic.fill")
+            Label("Start recording", systemImage: "waveform")
                 .font(.system(size: 16, weight: .bold, design: .rounded))
                 .padding(.horizontal, 14)
                 .padding(.vertical, 9)
@@ -504,7 +504,7 @@ private struct DaypartHeroActionRow: View {
         if isRecording {
             return "stop.fill"
         }
-        return isProcessing ? "waveform" : "mic.fill"
+        return "waveform"
     }
 
     private var primaryButtonTint: Color {
