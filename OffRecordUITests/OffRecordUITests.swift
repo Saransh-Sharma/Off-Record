@@ -101,6 +101,24 @@ final class OffRecordUITests: XCTestCase {
     }
 
     @MainActor
+    func testSettingsExposeSiriAndSystemSearchControls() throws {
+        let app = launchSeededApp()
+        navigateToTab("Settings", in: app)
+
+        let section = app.descendants(matching: .any)["settings.systemSearch.section"].firstMatch
+        scrollUntilExists(section, in: app)
+
+        XCTAssertTrue(section.waitForExistence(timeout: 5))
+        let spotlightToggle = app.switches["settings.systemSearch.spotlightToggle"].firstMatch
+        scrollUntilExists(spotlightToggle, in: app)
+        XCTAssertTrue(spotlightToggle.exists)
+
+        let rebuildButton = app.buttons["settings.systemSearch.rebuildSpotlight"].firstMatch
+        scrollUntilExists(rebuildButton, in: app)
+        XCTAssertTrue(rebuildButton.exists)
+    }
+
+    @MainActor
     func testDaypartHeroShowsForEmptyToday() throws {
         let app = launchHeroNudgeApp(arguments: ["-HeroNudgeEmptyToday"])
 
@@ -307,5 +325,12 @@ final class OffRecordUITests: XCTestCase {
         }
 
         XCTFail("Could not find tab: \(name)")
+    }
+
+    private func scrollUntilExists(_ element: XCUIElement, in app: XCUIApplication, maxSwipes: Int = 8) {
+        guard !element.exists else { return }
+        for _ in 0..<maxSwipes where !element.exists {
+            app.swipeUp()
+        }
     }
 }

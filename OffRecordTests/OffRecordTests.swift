@@ -16,6 +16,128 @@ import UIKit
 #endif
 @testable import OffRecord
 
+// MARK: - System Discoverability Tests
+
+@MainActor
+struct SystemDiscoverabilityTests {
+    @Test func spotlightMetadataDoesNotExposeRawJournalText() {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let entry = makeDiscoverabilityEntry(
+            in: context,
+            text: "Secret project codename marmalade midnight",
+            mood: Mood.calm.rawValue,
+            audioFileName: "private-recording-file.m4a",
+            duration: 12,
+            isStarred: true
+        )
+
+        let metadata = JournalSpotlightMetadataBuilder.metadata(for: entry)
+
+        #expect(metadata != nil)
+        let searchableSurface = [
+            metadata?.title ?? "",
+            metadata?.subtitle ?? "",
+            metadata?.keywords.joined(separator: " ") ?? ""
+        ].joined(separator: " ").lowercased()
+
+        #expect(!searchableSurface.contains("marmalade"))
+        #expect(!searchableSurface.contains("midnight"))
+        #expect(!searchableSurface.contains("private-recording-file"))
+        #expect(searchableSurface.contains("calm"))
+        #expect(searchableSurface.contains("voice"))
+        #expect(searchableSurface.contains("starred"))
+    }
+
+    @Test func emptyDraftDoesNotProduceSpotlightMetadata() {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let entry = makeDiscoverabilityEntry(
+            in: context,
+            text: "   ",
+            mood: Mood.none.rawValue,
+            audioFileName: nil,
+            duration: 0,
+            isStarred: false
+        )
+
+        #expect(JournalSpotlightMetadataBuilder.metadata(for: entry) == nil)
+    }
+
+    @Test func startedEntryUsesStableSpotlightIdentifier() {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let id = UUID()
+        let entry = makeDiscoverabilityEntry(
+            in: context,
+            id: id,
+            text: "",
+            mood: Mood.grateful.rawValue,
+            audioFileName: nil,
+            duration: 0,
+            isStarred: false
+        )
+
+        let metadata = JournalSpotlightMetadataBuilder.metadata(for: entry)
+
+        #expect(metadata?.uniqueIdentifier == "entry:\(id.uuidString)")
+        #expect(metadata?.subtitle.contains("Grateful mood") == true)
+    }
+
+    @Test func routerParsesSupportedDeepLinks() {
+        #expect(OffRecordNavigationRouter.route(from: URL(string: "offrecord://today")!) == .today)
+        #expect(OffRecordNavigationRouter.route(from: URL(string: "offrecord://record")!) == .record)
+        #expect(OffRecordNavigationRouter.route(from: URL(string: "offrecord://timeline?query=stress")!) == .timeline(query: "stress"))
+        #expect(OffRecordNavigationRouter.route(from: URL(string: "offrecord://friday?question=What%20changed")!) == .friday(question: "What changed"))
+
+        let id = UUID()
+        #expect(OffRecordNavigationRouter.route(from: URL(string: "offrecord://entry/\(id.uuidString)")!) == .entry(id))
+        #expect(OffRecordNavigationRouter.route(fromSpotlightIdentifier: "entry:\(id.uuidString)") == .entry(id))
+    }
+
+    @available(iOS 17.0, *)
+    @Test func journalEntityDisplayUsesSafeMetadata() {
+        let metadata = JournalSpotlightMetadata(
+            id: UUID(),
+            date: Date(timeIntervalSince1970: 0),
+            updatedAt: nil,
+            mood: Mood.happy.rawValue,
+            wordCount: 42,
+            isStarred: true,
+            hasAudio: true,
+            hasPhotos: true
+        )
+
+        let entity = JournalEntryEntity(metadata: metadata)
+
+        #expect(entity.title.contains("Journal Entry"))
+        #expect(entity.subtitle.contains("Happy mood"))
+        #expect(entity.subtitle.contains("42 words"))
+        #expect(entity.subtitle.contains("voice note"))
+        #expect(entity.subtitle.contains("photos"))
+        #expect(entity.subtitle.contains("starred"))
+    }
+
+    private func makeDiscoverabilityEntry(
+        in context: NSManagedObjectContext,
+        id: UUID = UUID(),
+        text: String?,
+        mood: String?,
+        audioFileName: String?,
+        duration: Double,
+        isStarred: Bool
+    ) -> DiaryEntry {
+        let entry = DiaryEntry(context: context)
+        entry.id = id
+        entry.date = Date()
+        entry.createdAt = Date()
+        entry.updatedAt = Date()
+        entry.text = text
+        entry.mood = mood
+        entry.audioFileName = audioFileName
+        entry.duration = duration
+        entry.isStarred = isStarred
+        return entry
+    }
+}
+
 // MARK: - Entry Visibility Tests
 
 @MainActor
@@ -113,6 +235,125 @@ struct EntryVisibilityTests {
         entry.duration = duration
         entry.isStarred = false
         return entry
+    }
+}
+
+// MARK: - Journal Performance Model Tests
+
+@MainActor
+struct JournalPerformanceModelTests {
+    @Test func snapshotPreservesStartedEntryState() {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let entry = makeEntry(
+            in: context,
+            text: "A quiet walk helped",
+            mood: Mood.calm.rawValue,
+            audioFileName: "voice.m4a",
+            duration: 18,
+            isStarred: true
+        )
+        let photo = PhotoAttachment(context: context)
+        photo.id = UUID()
+        photo.createdAt = Date()
+        photo.imageData = Data([0xFF, 0xD8, 0xFF])
+        photo.entry = entry
+
+        let snapshot = JournalEntrySnapshot(entry: entry)
+
+        #expect(snapshot.uuid == entry.id)
+        #expect(snapshot.wordCount == 4)
+        #expect(snapshot.mood == .calm)
+        #expect(snapshot.hasAudio)
+        #expect(snapshot.photoCount == 1)
+        #expect(snapshot.isStarred)
+        #expect(snapshot.isStartedEntry)
+    }
+
+    @Test func analyticsWorkerProducesDeterministicStats() async {
+        let calendar = Calendar(identifier: .gregorian)
+        let now = calendar.date(from: DateComponents(year: 2026, month: 5, day: 14, hour: 12))!
+        let entries = [
+            makeSnapshot(id: "today", date: now, text: "one two three", mood: .happy, isStarred: true, hasAudio: true),
+            makeSnapshot(id: "yesterday", date: calendar.date(byAdding: .day, value: -1, to: now)!, text: "four five", mood: .calm),
+            makeSnapshot(id: "older", date: calendar.date(from: DateComponents(year: 2025, month: 12, day: 31, hour: 12))!, text: "six", mood: .sad)
+        ]
+
+        let stats = await JournalAnalyticsWorker.shared.makeStats(
+            from: entries,
+            now: now,
+            weeklyTarget: 3,
+            goalEnabled: true
+        )
+
+        #expect(stats.entryCount == 3)
+        #expect(stats.currentStreak == 2)
+        #expect(stats.longestStreak == 2)
+        #expect(stats.totalWords == 6)
+        #expect(stats.avgWordsPerEntry == 2)
+        #expect(stats.starredCount == 1)
+        #expect(stats.audioCount == 1)
+        #expect(stats.availableYears == [2025, 2026])
+        #expect(stats.goal.count == 2)
+        #expect(stats.goal.progress == 2.0 / 3.0)
+    }
+
+    #if canImport(UIKit)
+    @Test func photoProcessorReturnsJPEGData() async {
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 24, height: 24)).image { context in
+            UIColor.systemTeal.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 24, height: 24))
+        }
+        let pngData = image.pngData()!
+
+        let jpegData = await PhotoAttachmentProcessor.shared.preparedJPEGData(from: pngData)
+
+        #expect(jpegData != nil)
+        #expect(UIImage(data: jpegData ?? Data()) != nil)
+    }
+    #endif
+
+    private func makeEntry(
+        in context: NSManagedObjectContext,
+        text: String?,
+        mood: String?,
+        audioFileName: String?,
+        duration: Double,
+        isStarred: Bool
+    ) -> DiaryEntry {
+        let entry = DiaryEntry(context: context)
+        entry.id = UUID()
+        entry.date = Date()
+        entry.createdAt = Date()
+        entry.updatedAt = Date()
+        entry.text = text
+        entry.mood = mood
+        entry.audioFileName = audioFileName
+        entry.duration = duration
+        entry.isStarred = isStarred
+        return entry
+    }
+
+    private func makeSnapshot(
+        id: String,
+        date: Date,
+        text: String,
+        mood: Mood,
+        isStarred: Bool = false,
+        hasAudio: Bool = false
+    ) -> JournalEntrySnapshot {
+        JournalEntrySnapshot(
+            id: id,
+            uuid: UUID(uuidString: "00000000-0000-0000-0000-\(String(format: "%012d", abs(id.hashValue) % 1_000_000_000_000))"),
+            objectIDURI: "memory://\(id)",
+            date: date,
+            text: text,
+            mood: mood,
+            wordCount: text.split { $0.isWhitespace || $0.isNewline }.count,
+            duration: hasAudio ? 10 : 0,
+            isStarred: isStarred,
+            hasAudio: hasAudio,
+            photoCount: 0
+        )
     }
 }
 

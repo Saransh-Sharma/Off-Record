@@ -687,6 +687,7 @@ struct OffRecordWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: Provider()) { entry in
             OffRecordWidgetEntryView(entry: entry)
+                .widgetURL(URL(string: entry.hasEntry ? "offrecord://today" : "offrecord://record"))
         }
         .configurationDisplayName("Diary Entry")
         .description("View today's diary entry and quick access to record.")
@@ -700,6 +701,7 @@ struct StreakWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: StreakProvider()) { entry in
             StreakWidgetView(entry: entry)
+                .widgetURL(URL(string: entry.hasEntryToday ? "offrecord://timeline" : "offrecord://record"))
         }
         .configurationDisplayName("Streak Counter")
         .description("Track your journaling streak.")
@@ -713,6 +715,7 @@ struct MoodWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: MoodProvider()) { entry in
             MoodWidgetView(entry: entry)
+                .widgetURL(URL(string: "offrecord://today"))
         }
         .configurationDisplayName("Mood Tracker")
         .description("See your mood at a glance.")
@@ -726,6 +729,7 @@ struct QuickRecordWidget: Widget {
     var body: some WidgetConfiguration {
         StaticConfiguration(kind: kind, provider: Provider()) { _ in
             QuickRecordWidgetView()
+                .widgetURL(URL(string: "offrecord://record"))
         }
         .configurationDisplayName("Quick Record")
         .description("Tap to open OffRecord AI Journal and start recording.")
