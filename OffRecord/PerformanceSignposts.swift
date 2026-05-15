@@ -3,24 +3,24 @@ import os
 
 enum PerformanceSignposts {
     struct Token {
-        #if DEBUG
+        #if DEBUG || PROFILE_SIGNPOSTS
         let name: StaticString
         let id: OSSignpostID
         #endif
     }
 
-    #if DEBUG
+    #if DEBUG || PROFILE_SIGNPOSTS
     private static let log = OSLog(subsystem: "com.singularity.offrecord", category: .pointsOfInterest)
     #endif
 
     static func event(_ name: StaticString) {
-        #if DEBUG
+        #if DEBUG || PROFILE_SIGNPOSTS
         os_signpost(.event, log: log, name: name)
         #endif
     }
 
     static func begin(_ name: StaticString) -> Token {
-        #if DEBUG
+        #if DEBUG || PROFILE_SIGNPOSTS
         let id = OSSignpostID(log: log)
         os_signpost(.begin, log: log, name: name, signpostID: id)
         return Token(name: name, id: id)
@@ -30,7 +30,7 @@ enum PerformanceSignposts {
     }
 
     static func end(_ token: Token) {
-        #if DEBUG
+        #if DEBUG || PROFILE_SIGNPOSTS
         os_signpost(.end, log: log, name: token.name, signpostID: token.id)
         #endif
     }

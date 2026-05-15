@@ -3,10 +3,10 @@
 //  OffRecord
 //
 //  Handles speech-to-text transcription using Apple's Speech framework.
-//  All transcription is performed on-device when possible.
+//  Recognition can use Apple Speech servers when online after explicit consent.
 //
-//  Privacy: Uses Apple's on-device speech recognition - audio is processed
-//  locally and never sent to third-party servers.
+//  Privacy: OffRecord does not send audio or journal data to developer servers
+//  or non-Apple AI services.
 //
 
 #if os(iOS)
@@ -15,7 +15,7 @@ import Speech
 import Network
 
 /// Transcribes audio recordings to text using Apple's Speech framework.
-/// Prioritizes on-device recognition for privacy; falls back to Apple's servers when needed.
+/// Requires explicit consent because online recognition may be processed by Apple Speech.
 final class SpeechTranscriber {
     
     // MARK: - Shared Instance
@@ -34,6 +34,7 @@ final class SpeechTranscriber {
         case recognizerUnavailable
         case noFinalResult
         case offlineNoTranscription
+        case appleSpeechConsentRequired
 
         var errorDescription: String? {
             switch self {
@@ -45,6 +46,8 @@ final class SpeechTranscriber {
                 return "No final transcription result."
             case .offlineNoTranscription:
                 return "You're offline. Your recording is saved—tap Edit to add text manually, or transcription will happen when you're back online."
+            case .appleSpeechConsentRequired:
+                return "Your recording is saved. Allow Apple Speech transcription before OffRecord turns voice into text."
             }
         }
     }
@@ -67,11 +70,16 @@ final class SpeechTranscriber {
     // MARK: - Transcription
     
     /// Transcribes audio from the given URL to text.
-    /// Uses on-device recognition when offline, Apple's servers when online for better punctuation.
+    /// Uses on-device recognition when offline and may use Apple Speech servers when online for better punctuation.
     /// - Parameters:
     ///   - audioURL: URL to the audio file to transcribe
     ///   - completion: Called with the transcription result or error
     func transcribe(from audioURL: URL, completion: @escaping (Result<String, Error>) -> Void) {
+        guard SpeechTranscriptionConsent.hasGrantedAppleSpeechProcessing else {
+            completion(.failure(TranscriptionError.appleSpeechConsentRequired))
+            return
+        }
+
         SFSpeechRecognizer.requestAuthorization { status in
             DispatchQueue.main.async {
                 guard status == .authorized else {
@@ -92,9 +100,8 @@ final class SpeechTranscriber {
                 let request = SFSpeechURLRecognitionRequest(url: audioURL)
                 request.shouldReportPartialResults = false
 
-                // Privacy: Prefer on-device recognition when offline
-                // When online, Apple's servers provide better punctuation
-                // Note: Even server-based recognition goes through Apple, not third parties
+                // When online, Apple Speech may process audio and return a transcript.
+                // OffRecord gates this path behind explicit user consent.
                 if recognizer.supportsOnDeviceRecognition && !self.isOnline {
                     request.requiresOnDeviceRecognition = true
                 } else {
