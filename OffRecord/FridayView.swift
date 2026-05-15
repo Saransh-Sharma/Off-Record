@@ -12,6 +12,7 @@ struct FridayView: View {
     @ObservedObject private var assistant = FridayAssistantEngine.shared
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.managedObjectContext) private var viewContext
+    @ObservedObject private var navigationRouter = OffRecordNavigationRouter.shared
     @State private var selectedSection: FridaySection = .overview
     @State private var showingDetail = false
     @State private var animateMascot = false
@@ -21,6 +22,8 @@ struct FridayView: View {
     @State private var isShowingPromptNote = false
     @State private var promptNoteContext: String?
     @State private var shouldDeleteEmptyNoteDraft = false
+    @State private var routedFridayQuestion: String?
+    @State private var fridayActivity: NSUserActivity?
 
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \DiaryEntry.date, ascending: false)],
@@ -74,7 +77,18 @@ struct FridayView: View {
         }
         .navigationTitle("Friday")
         .background(OffRecordColor.appBackgroundGradient.ignoresSafeArea())
-        .onAppear { animateMascot = true }
+        .onAppear {
+            animateMascot = true
+            startFridayPredictionActivity()
+            applyRoutedFridayQuestion(navigationRouter.fridayQuestion)
+        }
+        .onDisappear {
+            fridayActivity?.resignCurrent()
+            fridayActivity = nil
+        }
+        .onChange(of: navigationRouter.fridayQuestion) { _, question in
+            applyRoutedFridayQuestion(question)
+        }
         .navigationDestination(isPresented: $isShowingPromptNote) {
             if let noteEntry {
                 EntryDetailView(
@@ -84,6 +98,20 @@ struct FridayView: View {
                     promptContext: promptNoteContext
                 )
             }
+        }
+        .navigationDestination(isPresented: Binding(
+            get: { routedFridayQuestion != nil },
+            set: { isPresented in
+                if !isPresented {
+                    navigationRouter.clearFridayQuestion(routedFridayQuestion)
+                    routedFridayQuestion = nil
+                }
+            }
+        )) {
+            FridayChatView(
+                initialQuestion: routedFridayQuestion,
+                autoSubmitInitialQuestion: routedFridayQuestion?.isEmpty == false
+            )
         }
     }
 
@@ -164,6 +192,21 @@ struct FridayView: View {
             )
         }
         .accessibilityIdentifier("friday.talk")
+    }
+
+    private func applyRoutedFridayQuestion(_ question: String?) {
+        guard let question else { return }
+        routedFridayQuestion = question
+    }
+
+    private func startFridayPredictionActivity() {
+        fridayActivity?.resignCurrent()
+        fridayActivity = JournalSpotlightIndexer.shared.predictionActivity(
+            type: "com.singularity.offrecord.friday",
+            title: "Talk to Friday",
+            route: .friday(question: nil)
+        )
+        fridayActivity?.becomeCurrent()
     }
 
     // MARK: - Orb Color (reflects emotional state)
@@ -836,7 +879,7 @@ struct FridayView: View {
         HStack(spacing: 8) {
             Image(systemName: "lock.shield.fill")
                 .foregroundColor(OffRecordReadableTintStyle.privacy.foreground)
-            Text("Friday runs on-device. Your journal never leaves your device.")
+            Text("Friday analysis runs on-device. No non-Apple AI services.")
                 .font(.caption)
                 .foregroundColor(OffRecordReadableTintStyle.privacy.foreground)
         }

@@ -420,7 +420,7 @@ private struct FridayProfileCardExport: View {
                         .foregroundColor(OffRecordColor.textInverse.opacity(0.68))
                 }
                 Spacer()
-                Text("offrecord.example.com")
+                Text("OffRecord")
                     .font(.system(size: 10, weight: .medium, design: .monospaced))
                     .foregroundColor(OffRecordColor.textInverse.opacity(0.68))
             }
