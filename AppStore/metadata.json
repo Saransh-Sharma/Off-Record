@@ -7,17 +7,17 @@
     "secondary_category": "PRODUCTIVITY",
     "age_rating": "FOUR_PLUS",
     "copyright": "2026 OffRecord AI Journal",
-    "privacy_policy_url": "https://offrecord.example.com/privacy",
-    "support_url": "https://offrecord.example.com/support",
-    "marketing_url": "https://offrecord.example.com"
+    "privacy_policy_url": "https://saransh-sharma.github.io/Off-Record/privacy.html",
+    "support_url": "https://saransh-sharma.github.io/Off-Record/support.html",
+    "marketing_url": "https://saransh-sharma.github.io/Off-Record/"
   },
   "localization": {
     "en-US": {
       "name": "OffRecord AI Journal",
       "subtitle": "Private Journal & Mood Tracker",
       "keywords": "diary,journal,voice,mood tracker,private AI assistant,private,speech to text,mindfulness,encrypted,anxiety",
-      "promotional_text": "NEW: Friday now predicts your mood, topics, and best journaling times. Plus shareable personality cards and weekly insight cards. All AI runs on your iPhone.",
-      "whats_new": "New in v1.1:\n\n- Friday Predictions: Friday now predicts your likely mood, topics, and best journaling times based on your patterns\n- Shareable Personality Card: Share a beautiful snapshot of your Friday profile\n- Weekly Insight Cards: Shareable visual summaries of your weekly emotional journey\n- Improved NLP: Better keyword extraction with refined text processing\n- 100% privacy-first: all new features run entirely on-device"
+      "promotional_text": "NEW: Friday now predicts your mood, topics, and best journaling times. Journal analysis stays on your iPhone.",
+      "whats_new": "New in v1.1:\n\n- Friday Predictions: Friday now predicts your likely mood, topics, and best journaling times based on your patterns\n- Shareable Personality Card: Share a beautiful snapshot of your Friday profile\n- Weekly Insight Cards: Shareable visual summaries of your weekly emotional journey\n- Improved NLP: Better keyword extraction with refined text processing\n- Privacy-first: Friday analysis runs locally; Apple Speech transcription is disclosed and permission-based"
     }
   },
   "app_privacy": {
@@ -33,7 +33,7 @@
   },
   "review_information": {
     "demo_account_required": false,
-    "notes_for_reviewer": "OffRecord AI Journal is a privacy-first voice diary app. All AI processing happens on-device using Apple's NaturalLanguage framework. The app requires microphone access for voice recording, Speech Recognition for transcription, and optionally Photo Library access for attaching photos to entries. Encrypted backups use CryptoKit (AES-256-GCM). No data is sent to external servers. The app does not require an account or internet connection to function."
+    "notes_for_reviewer": "OffRecord AI Journal is a privacy-first voice diary app. It does not integrate OpenAI, Anthropic, Gemini, analytics SDKs, advertising SDKs, or non-Apple third-party AI services. Voice transcription uses Apple's Speech framework; before transcription begins, the app discloses that voice audio may be processed by Apple Speech when online and asks for permission. If the user declines, the recording is saved locally and the user can type manually. Friday insights, mood analysis, Semantic Memory, and journal analysis run locally using Apple NaturalLanguage/Foundation Models where available. Optional iCloud Sync uses the user's personal Apple iCloud account for entries/photos; audio recordings stay on the recording device. The app requires microphone access for voice recording, Speech Recognition for transcription, and optionally Photo Library access for attaching photos to entries. Encrypted backups use CryptoKit (AES-256-GCM)."
   },
   "screenshots": {
     "iphone_67": {

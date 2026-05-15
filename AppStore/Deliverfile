@@ -18,16 +18,16 @@ keywords({
 })
 
 promotional_text({
-  "en-US" => "NEW: Friday is your private AI assistant for journaling. See personality, emotion, and thought patterns evolve - all 100% on-device."
+  "en-US" => "NEW: Friday is your private AI assistant for journaling. See personality, emotion, and thought patterns evolve locally."
 })
 
 release_notes({
-  "en-US" => "Welcome to OffRecord AI Journal - your private AI voice diary with Friday.\n\n- Record diary entries with your voice\n- AI-powered insights and mood trends\n- Watch Friday evolve as it learns about you\n- Track moods, streaks, and emotional patterns\n- 8 beautiful themes\n- Face ID security\n- Lock Screen & Home Screen widgets\n- Export your journal in multiple formats\n- 100% privacy-first: everything stays on your device"
+  "en-US" => "Welcome to OffRecord AI Journal - your private AI voice diary with Friday.\n\n- Record diary entries with your voice\n- Apple Speech transcription with clear permission\n- Local Friday insights and mood trends\n- Watch Friday evolve as it learns about you\n- Track moods, streaks, and emotional patterns\n- 8 beautiful themes\n- Face ID security\n- Lock Screen & Home Screen widgets\n- Export your journal in multiple formats\n- Privacy-first: no developer AI servers or non-Apple AI services"
 })
 
-privacy_url "https://offrecord.example.com/privacy"
-support_url "https://offrecord.example.com/support"
-marketing_url "https://offrecord.example.com"
+privacy_url "https://saransh-sharma.github.io/Off-Record/privacy.html"
+support_url "https://saransh-sharma.github.io/Off-Record/support.html"
+marketing_url "https://saransh-sharma.github.io/Off-Record/"
 
 copyright "2026 OffRecord AI Journal"
 

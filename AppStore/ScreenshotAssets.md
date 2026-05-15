@@ -26,7 +26,7 @@
 - Recording timer showing "1:23"
 - Background gradient: warm cream to lavender/peach
 - Overlay text at top: "Your voice diary"
-- Small privacy badge at bottom: "100% on-device"
+- Small privacy badge at bottom: "Local Friday AI"
 
 **Feature callout**: Voice-to-text journaling
 
@@ -115,7 +115,8 @@
 **Layout**:
 - Show Settings page highlighting privacy features
 - Privacy section with green checkmarks:
-  - 100% on-device AI processing
+  - Local Friday insights
+  - Apple Speech transcription with consent
   - No accounts required
   - No tracking or analytics
   - Face ID / Touch ID protection
@@ -183,13 +184,13 @@
 ## Promotional Text Variations
 
 ### Short (for social media - 280 chars)
-OffRecord AI Journal is a private AI voice diary that builds a private AI assistant of your mind. Speak your thoughts, discover AI-powered insights about your patterns, and watch your personality profile evolve. 100% on-device. Your assistant never leaves your phone.
+OffRecord AI Journal is a private AI voice diary that builds a private AI assistant of your mind. Speak your thoughts, discover AI-powered insights about your patterns, and watch your personality profile evolve. Friday analysis runs locally, and Apple Speech transcription is permission-based.
 
 ### Medium (for press)
 OffRecord AI Journal reimagines personal journaling with AI-powered Friday assistant. By combining voice-to-text recording with cognitive science-based AI, OffRecord AI Journal builds a comprehensive personality pattern model, emotions, and thought patterns - all processed entirely on-device. No cloud, no accounts, no compromises. Features include a Friday that deepens its understanding over time using Bayesian learning, Plutchik's emotional model, and AI-powered insights into your mood trends and behavioral patterns. With 8 themes, widgets, Face ID security, and multiple export formats, OffRecord AI Journal is the most private and intelligent diary app available.
 
 ### Long (for blog/feature)
-In a world where every app wants your data, OffRecord AI Journal takes a radical stance: your most personal thoughts should never leave your device. OffRecord AI Journal is an AI-powered voice diary that builds a "Friday" - a living, learning model of who you are. As you journal, OffRecord AI Journal learns your communication style, maps your emotional landscape, tracks your thought patterns, and builds a knowledge graph of the people, places, and topics in your life. All powered by cognitive science (Plutchik's emotions, Big Five personality, Bayesian inference) and running 100% on-device using Apple's NaturalLanguage framework. The result is the most personal and private AI journal possible.
+In a world where every app wants your data, OffRecord AI Journal takes a clear privacy stance: your journal analysis should not go to developer servers or non-Apple AI services. OffRecord AI Journal is an AI-powered voice diary that builds a "Friday" - a living, learning model of who you are. As you journal, OffRecord AI Journal learns your communication style, maps your emotional landscape, tracks your thought patterns, and builds a knowledge graph of the people, places, and topics in your life. Friday analysis is powered by cognitive science (Plutchik's emotions, Big Five personality, Bayesian inference) and local Apple frameworks. Apple Speech transcription is disclosed and permission-based.
 
 ---
 

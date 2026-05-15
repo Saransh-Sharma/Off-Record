@@ -41,6 +41,7 @@
 - [x] Privacy Policy written
 - [x] Privacy Policy hosted at URL
 - [x] App Privacy labels configured (Data Not Collected)
+- [x] Apple Speech transcription disclosure and consent shown before transcription
 
 ### App Review
 - [x] Review notes prepared (in metadata.json)
@@ -70,7 +71,8 @@
 
 ### App Privacy
 1. Data Collection: "No, we do not collect data from this app"
-2. No data types to declare
+2. No data types to declare for developer collection
+3. Review notes explain Apple Speech transcription and optional iCloud Sync
 
 ### Version Information
 1. Upload screenshots for each device size
