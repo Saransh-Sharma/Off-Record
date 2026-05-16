@@ -143,6 +143,7 @@ struct ContentView: View {
 enum OffRecordCompactTabBarLayout {
     static let horizontalPadding: CGFloat = 16
     static let screenEdgeBottomPadding: CGFloat = 8
+    static let todayDockRecordingFeedbackClearance: CGFloat = 112
     static let reservedContentBottomInset: CGFloat = 108
     static let todayDockScrollContentBottomPadding: CGFloat = 244
 }

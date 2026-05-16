@@ -13,13 +13,23 @@ import PhotosUI
 private enum EntryDetailDateFormatters {
     static let shortDate: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.dateFormat = "MMM d"
+        formatter.locale = .autoupdatingCurrent
+        formatter.dateFormat = DateFormatter.dateFormat(
+            fromTemplate: "MMM d",
+            options: 0,
+            locale: formatter.locale
+        )
         return formatter
     }()
 
     static let fullDate: DateFormatter = {
         let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE, MMMM d, yyyy"
+        formatter.locale = .autoupdatingCurrent
+        formatter.dateFormat = DateFormatter.dateFormat(
+            fromTemplate: "EEEE MMMM d yyyy",
+            options: 0,
+            locale: formatter.locale
+        )
         return formatter
     }()
 
