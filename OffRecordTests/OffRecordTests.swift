@@ -7,6 +7,7 @@
 
 import Testing
 import Foundation
+import CoreData
 import SwiftUI
 import CryptoKit
 import UserNotifications
@@ -14,6 +15,378 @@ import UserNotifications
 import UIKit
 #endif
 @testable import OffRecord
+
+// MARK: - System Discoverability Tests
+
+@MainActor
+struct SystemDiscoverabilityTests {
+    @Test func spotlightMetadataDoesNotExposeRawJournalText() {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let entry = makeDiscoverabilityEntry(
+            in: context,
+            text: "Secret project codename marmalade midnight",
+            mood: Mood.calm.rawValue,
+            audioFileName: "private-recording-file.m4a",
+            duration: 12,
+            isStarred: true
+        )
+
+        let metadata = JournalSpotlightMetadataBuilder.metadata(for: entry)
+
+        #expect(metadata != nil)
+        let searchableSurface = [
+            metadata?.title ?? "",
+            metadata?.subtitle ?? "",
+            metadata?.keywords.joined(separator: " ") ?? ""
+        ].joined(separator: " ").lowercased()
+
+        #expect(!searchableSurface.contains("marmalade"))
+        #expect(!searchableSurface.contains("midnight"))
+        #expect(!searchableSurface.contains("private-recording-file"))
+        #expect(searchableSurface.contains("calm"))
+        #expect(searchableSurface.contains("voice"))
+        #expect(searchableSurface.contains("starred"))
+    }
+
+    @Test func emptyDraftDoesNotProduceSpotlightMetadata() {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let entry = makeDiscoverabilityEntry(
+            in: context,
+            text: "   ",
+            mood: Mood.none.rawValue,
+            audioFileName: nil,
+            duration: 0,
+            isStarred: false
+        )
+
+        #expect(JournalSpotlightMetadataBuilder.metadata(for: entry) == nil)
+    }
+
+    @Test func startedEntryUsesStableSpotlightIdentifier() {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let id = UUID()
+        let entry = makeDiscoverabilityEntry(
+            in: context,
+            id: id,
+            text: "",
+            mood: Mood.grateful.rawValue,
+            audioFileName: nil,
+            duration: 0,
+            isStarred: false
+        )
+
+        let metadata = JournalSpotlightMetadataBuilder.metadata(for: entry)
+
+        #expect(metadata?.uniqueIdentifier == "entry:\(id.uuidString)")
+        #expect(metadata?.subtitle.contains("Grateful mood") == true)
+    }
+
+    @Test func routerParsesSupportedDeepLinks() {
+        #expect(OffRecordNavigationRouter.route(from: URL(string: "offrecord://today")!) == .today)
+        #expect(OffRecordNavigationRouter.route(from: URL(string: "offrecord://record")!) == .record)
+        #expect(OffRecordNavigationRouter.route(from: URL(string: "offrecord://timeline?query=stress")!) == .timeline(query: "stress"))
+        #expect(OffRecordNavigationRouter.route(from: URL(string: "offrecord://friday?question=What%20changed")!) == .friday(question: "What changed"))
+
+        let id = UUID()
+        #expect(OffRecordNavigationRouter.route(from: URL(string: "offrecord://entry/\(id.uuidString)")!) == .entry(id))
+        #expect(OffRecordNavigationRouter.route(fromSpotlightIdentifier: "entry:\(id.uuidString)") == .entry(id))
+    }
+
+    @Test func storedRouteIsRetainedUntilNavigationRuns() {
+        UserDefaults.standard.removeObject(forKey: OffRecordNavigationRouter.pendingRouteDefaultsKey)
+        OffRecordNavigationRouter.storePendingRoute(.timeline(query: "stress"))
+        let router = OffRecordNavigationRouter.shared
+        router.timelineSearchText = ""
+
+        router.consumeStoredRoute(canNavigate: false)
+
+        #expect(UserDefaults.standard.string(forKey: OffRecordNavigationRouter.pendingRouteDefaultsKey) != nil)
+        #expect(router.timelineSearchText.isEmpty)
+
+        router.consumeStoredRoute(canNavigate: true)
+
+        #expect(UserDefaults.standard.string(forKey: OffRecordNavigationRouter.pendingRouteDefaultsKey) == nil)
+        #expect(router.timelineSearchText == "stress")
+    }
+
+    @available(iOS 17.0, *)
+    @Test func journalEntityDisplayUsesSafeMetadata() {
+        let metadata = JournalSpotlightMetadata(
+            id: UUID(),
+            date: Date(timeIntervalSince1970: 0),
+            updatedAt: nil,
+            mood: Mood.happy.rawValue,
+            wordCount: 42,
+            isStarred: true,
+            hasAudio: true,
+            hasPhotos: true
+        )
+
+        let entity = JournalEntryEntity(metadata: metadata)
+
+        #expect(entity.title.contains("Journal Entry"))
+        #expect(entity.subtitle.contains("Happy mood"))
+        #expect(entity.subtitle.contains("42 words"))
+        #expect(entity.subtitle.contains("voice note"))
+        #expect(entity.subtitle.contains("photos"))
+        #expect(entity.subtitle.contains("starred"))
+    }
+
+    private func makeDiscoverabilityEntry(
+        in context: NSManagedObjectContext,
+        id: UUID = UUID(),
+        text: String?,
+        mood: String?,
+        audioFileName: String?,
+        duration: Double,
+        isStarred: Bool
+    ) -> DiaryEntry {
+        let entry = DiaryEntry(context: context)
+        entry.id = id
+        entry.date = Date()
+        entry.createdAt = Date()
+        entry.updatedAt = Date()
+        entry.text = text
+        entry.mood = mood
+        entry.audioFileName = audioFileName
+        entry.duration = duration
+        entry.isStarred = isStarred
+        return entry
+    }
+}
+
+// MARK: - Entry Visibility Tests
+
+@MainActor
+struct EntryVisibilityTests {
+
+    @Test func emptyDraftIsNotStarted() {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let entry = makeEntry(in: context, text: "", mood: "", audioFileName: nil, duration: 0)
+
+        #expect(!entry.isStartedEntry)
+    }
+
+    @Test func whitespaceOnlyTextIsNotStarted() {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let entry = makeEntry(in: context, text: " \n\t ", mood: "", audioFileName: nil, duration: 0)
+
+        #expect(entry.startedEntryWordCount == 0)
+        #expect(!entry.isStartedEntry)
+    }
+
+    @Test func textWithWordsIsStarted() {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let entry = makeEntry(in: context, text: "A real note", mood: "", audioFileName: nil, duration: 0)
+
+        #expect(entry.startedEntryWordCount == 3)
+        #expect(entry.isStartedEntry)
+    }
+
+    @Test func audioReferenceIsStarted() {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let entry = makeEntry(in: context, text: "", mood: "", audioFileName: "recording.m4a", duration: 0)
+
+        #expect(entry.isStartedEntry)
+    }
+
+    @Test func positiveAudioDurationIsStarted() {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let entry = makeEntry(in: context, text: "", mood: "", audioFileName: nil, duration: 0.5)
+
+        #expect(entry.isStartedEntry)
+    }
+
+    @Test func selectedMoodIsStarted() {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let entry = makeEntry(in: context, text: "", mood: Mood.calm.rawValue, audioFileName: nil, duration: 0)
+
+        #expect(entry.isStartedEntry)
+    }
+
+    @Test func noneMoodIsNotStarted() {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let entry = makeEntry(in: context, text: "", mood: Mood.none.rawValue, audioFileName: nil, duration: 0)
+
+        #expect(!entry.isStartedEntry)
+    }
+
+    @Test func whitespaceMoodIsNotStarted() {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let entry = makeEntry(in: context, text: "", mood: " \n\t ", audioFileName: nil, duration: 0)
+
+        #expect(!entry.isStartedEntry)
+    }
+
+    @Test func unknownNonEmptyMoodIsStarted() {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let entry = makeEntry(in: context, text: "", mood: "reflective", audioFileName: nil, duration: 0)
+
+        #expect(entry.isStartedEntry)
+    }
+
+    @Test func photoAttachmentIsStarted() {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let entry = makeEntry(in: context, text: "", mood: "", audioFileName: nil, duration: 0)
+        let photo = PhotoAttachment(context: context)
+        photo.id = UUID()
+        photo.createdAt = Date()
+        photo.fileName = "photo.jpg"
+        photo.entry = entry
+
+        #expect(entry.isStartedEntry)
+    }
+
+    @Test func sequenceFiltersOnlyStartedEntries() {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let empty = makeEntry(in: context, text: "", mood: "", audioFileName: nil, duration: 0)
+        let written = makeEntry(in: context, text: "Started", mood: "", audioFileName: nil, duration: 0)
+        let moodOnly = makeEntry(in: context, text: "", mood: Mood.happy.rawValue, audioFileName: nil, duration: 0)
+
+        let started = [empty, written, moodOnly].startedEntries
+
+        #expect(started.map(\.id) == [written.id, moodOnly.id])
+    }
+
+    private func makeEntry(
+        in context: NSManagedObjectContext,
+        text: String?,
+        mood: String?,
+        audioFileName: String?,
+        duration: Double
+    ) -> DiaryEntry {
+        let entry = DiaryEntry(context: context)
+        entry.id = UUID()
+        entry.date = Date()
+        entry.createdAt = Date()
+        entry.updatedAt = Date()
+        entry.text = text
+        entry.mood = mood
+        entry.audioFileName = audioFileName
+        entry.duration = duration
+        entry.isStarred = false
+        return entry
+    }
+}
+
+// MARK: - Journal Performance Model Tests
+
+@MainActor
+struct JournalPerformanceModelTests {
+    @Test func snapshotPreservesStartedEntryState() {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let entry = makeEntry(
+            in: context,
+            text: "A quiet walk helped",
+            mood: Mood.calm.rawValue,
+            audioFileName: "voice.m4a",
+            duration: 18,
+            isStarred: true
+        )
+        let photo = PhotoAttachment(context: context)
+        photo.id = UUID()
+        photo.createdAt = Date()
+        photo.imageData = Data([0xFF, 0xD8, 0xFF])
+        photo.entry = entry
+
+        let snapshot = JournalEntrySnapshot(entry: entry)
+
+        #expect(snapshot.uuid == entry.id)
+        #expect(snapshot.wordCount == 4)
+        #expect(snapshot.mood == .calm)
+        #expect(snapshot.hasAudio)
+        #expect(snapshot.photoCount == 1)
+        #expect(snapshot.isStarred)
+        #expect(snapshot.isStartedEntry)
+    }
+
+    @Test func analyticsWorkerProducesDeterministicStats() async {
+        let calendar = Calendar(identifier: .gregorian)
+        let now = calendar.date(from: DateComponents(year: 2026, month: 5, day: 14, hour: 12))!
+        let entries = [
+            makeSnapshot(id: "today", date: now, text: "one two three", mood: .happy, isStarred: true, hasAudio: true),
+            makeSnapshot(id: "yesterday", date: calendar.date(byAdding: .day, value: -1, to: now)!, text: "four five", mood: .calm),
+            makeSnapshot(id: "older", date: calendar.date(from: DateComponents(year: 2025, month: 12, day: 31, hour: 12))!, text: "six", mood: .sad)
+        ]
+
+        let stats = await JournalAnalyticsWorker.shared.makeStats(
+            from: entries,
+            now: now,
+            weeklyTarget: 3,
+            goalEnabled: true
+        )
+
+        #expect(stats.entryCount == 3)
+        #expect(stats.currentStreak == 2)
+        #expect(stats.longestStreak == 2)
+        #expect(stats.totalWords == 6)
+        #expect(stats.avgWordsPerEntry == 2)
+        #expect(stats.starredCount == 1)
+        #expect(stats.audioCount == 1)
+        #expect(stats.availableYears == [2025, 2026])
+        #expect(stats.goal.count == 2)
+        #expect(stats.goal.progress == 2.0 / 3.0)
+    }
+
+    #if canImport(UIKit)
+    @Test func photoProcessorReturnsJPEGData() async {
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 24, height: 24)).image { context in
+            UIColor.systemTeal.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 24, height: 24))
+        }
+        let pngData = image.pngData()!
+
+        let jpegData = await PhotoAttachmentProcessor.shared.preparedJPEGData(from: pngData)
+
+        #expect(jpegData != nil)
+        #expect(UIImage(data: jpegData ?? Data()) != nil)
+    }
+    #endif
+
+    private func makeEntry(
+        in context: NSManagedObjectContext,
+        text: String?,
+        mood: String?,
+        audioFileName: String?,
+        duration: Double,
+        isStarred: Bool
+    ) -> DiaryEntry {
+        let entry = DiaryEntry(context: context)
+        entry.id = UUID()
+        entry.date = Date()
+        entry.createdAt = Date()
+        entry.updatedAt = Date()
+        entry.text = text
+        entry.mood = mood
+        entry.audioFileName = audioFileName
+        entry.duration = duration
+        entry.isStarred = isStarred
+        return entry
+    }
+
+    private func makeSnapshot(
+        id: String,
+        date: Date,
+        text: String,
+        mood: Mood,
+        isStarred: Bool = false,
+        hasAudio: Bool = false
+    ) -> JournalEntrySnapshot {
+        JournalEntrySnapshot(
+            id: id,
+            uuid: UUID(uuidString: "00000000-0000-0000-0000-\(String(format: "%012d", abs(id.hashValue) % 1_000_000_000_000))"),
+            objectIDURI: "memory://\(id)",
+            date: date,
+            text: text,
+            mood: mood,
+            wordCount: text.split { $0.isWhitespace || $0.isNewline }.count,
+            duration: hasAudio ? 10 : 0,
+            isStarred: isStarred,
+            hasAudio: hasAudio,
+            photoCount: 0
+        )
+    }
+}
 
 // MARK: - Semantic Memory Tests
 
@@ -270,6 +643,38 @@ struct SemanticMemoryTests {
     }
 }
 
+// MARK: - Mood Dial Performance Tests
+
+struct MoodDialPerformanceTests {
+    @Test func moodDialPersistenceOnlySavesChanges() {
+        #expect(MoodDialPersistence.openingMood(for: .happy) == .happy)
+        #expect(MoodDialPersistence.openingMood(for: .none) == .none)
+        #expect(MoodDialPersistence.shouldSave(originalMood: .none, draftMood: .happy))
+        #expect(!MoodDialPersistence.shouldSave(originalMood: .calm, draftMood: .calm))
+    }
+
+    @Test func wheelGeometryCacheBuildsOneSegmentPerDialMood() {
+        MoodDialWheelGeometryCache.resetForTesting()
+        let metrics = MoodDialWheelMetrics(size: CGSize(width: 402, height: 874))
+        let geometry = MoodDialWheelGeometryCache.geometry(for: metrics)
+
+        #expect(geometry.segments.count == Mood.dialMoods.count)
+        #expect(geometry.segments.map(\.mood) == Mood.dialMoods)
+        #expect(geometry.segment(for: Mood.none)?.mood == Mood.none)
+    }
+
+    @Test func recordingStateHasResponsiveStartingState() {
+        var state = RecordingState.idle
+        #expect(state == .idle)
+
+        state = .starting
+        #expect(state == .starting)
+
+        state = .recording
+        #expect(state == .recording)
+    }
+}
+
 // MARK: - Proactive Reflection Tests
 
 struct ProactiveReflectionTests {
@@ -492,6 +897,223 @@ struct ProactiveReflectionTests {
         #expect(insights.first?.message.localizedCaseInsensitiveContains("garden") == true)
     }
 
+    @Test func resurfacedThreadRequiresRecentAndOlderEvidence() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let entries = [
+            makeReflectionEntry(daysAgo: 1, sentiment: 0.2, text: "Garden seedlings and balcony soil are back on my mind.", now: now),
+            makeReflectionEntry(daysAgo: 35, sentiment: -0.1, text: "Garden soil seedlings and planter boxes felt overwhelming.", now: now),
+            makeReflectionEntry(daysAgo: 42, sentiment: 0.1, text: "I wanted the garden balcony to feel calmer.", now: now)
+        ]
+
+        let insights = ProactiveReflectionAnalyzer.detectResurfacedThreads(in: entries, now: now)
+
+        #expect(insights.first?.kind == .resurfacedThread)
+        #expect(insights.first?.evidence.contains { $0.role == .source } == true)
+        #expect(insights.first?.evidence.contains { $0.role == .baseline } == true)
+    }
+
+    @Test func resurfacedThreadOmitsWeakSingleOlderMatch() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let entries = [
+            makeReflectionEntry(daysAgo: 1, sentiment: 0.2, text: "Garden seedlings are back on my mind.", now: now),
+            makeReflectionEntry(daysAgo: 35, sentiment: -0.1, text: "Garden soil felt overwhelming.", now: now)
+        ]
+
+        let insights = ProactiveReflectionAnalyzer.detectResurfacedThreads(in: entries, now: now)
+
+        #expect(insights.isEmpty)
+    }
+
+    @Test func topicMoodContrastShowsSameTopicDifferentFeeling() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let entries = [
+            makeReflectionEntry(daysAgo: 1, sentiment: 0.55, text: "Work pressure felt lighter after the planning talk.", now: now),
+            makeReflectionEntry(daysAgo: 15, sentiment: -0.45, text: "Work pressure felt heavy before the deadline.", now: now),
+            makeReflectionEntry(daysAgo: 20, sentiment: -0.40, text: "Work pressure made the office feel tense.", now: now)
+        ]
+
+        let insights = ProactiveReflectionAnalyzer.detectTopicMoodContrasts(in: entries, now: now)
+
+        #expect(insights.first?.kind == .contrast)
+        #expect(insights.first?.title == "Same topic, different feeling")
+        #expect(insights.first?.evidence.contains { $0.role == .baseline } == true)
+    }
+
+    @Test func quietEntityUsesBaselineEvidenceOnly() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let entries = [
+            makeReflectionEntry(daysAgo: 1, sentiment: 0.0, text: "A quiet walk helped me settle after work.", now: now),
+            makeReflectionEntry(daysAgo: 2, sentiment: 0.0, text: "Cooking dinner made the evening feel ordinary.", now: now),
+            makeReflectionEntry(daysAgo: 20, sentiment: 0.2, text: "Dinner with Maya helped me feel less alone.", now: now),
+            makeReflectionEntry(daysAgo: 30, sentiment: 0.1, text: "Maya sent a kind voice note after work.", now: now),
+            makeReflectionEntry(daysAgo: 40, sentiment: 0.0, text: "The office handoff was manageable.", now: now),
+            makeReflectionEntry(daysAgo: 50, sentiment: 0.0, text: "A bookshop visit felt peaceful.", now: now)
+        ]
+
+        let insights = ProactiveReflectionAnalyzer.detectQuietEntities(in: entries, now: now)
+
+        #expect(insights.first?.kind == .quietEntity)
+        #expect(insights.first?.evidence.allSatisfy { $0.role == .baseline } == true)
+    }
+
+    @Test func moodAssociationRequiresRepeatedToneEvidence() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let entries = [
+            makeReflectionEntry(daysAgo: 1, sentiment: -0.6, text: "Deadline pressure made the evening heavy.", now: now),
+            makeReflectionEntry(daysAgo: 3, sentiment: -0.55, text: "Deadline pressure kept me tense before sleep.", now: now),
+            makeReflectionEntry(daysAgo: 5, sentiment: -0.5, text: "Deadline pressure followed me home again.", now: now),
+            makeReflectionEntry(daysAgo: 8, sentiment: 0.0, text: "Cooking dinner was ordinary and quiet.", now: now),
+            makeReflectionEntry(daysAgo: 10, sentiment: 0.1, text: "A walk helped me reset.", now: now),
+            makeReflectionEntry(daysAgo: 12, sentiment: 0.0, text: "Reading made the room feel still.", now: now)
+        ]
+
+        let insights = ProactiveReflectionAnalyzer.detectMoodAssociations(in: entries, now: now)
+
+        #expect(insights.first?.kind == .moodAssociation)
+        #expect((insights.first?.evidence.count ?? 0) >= 3)
+    }
+
+    @Test func repeatedQuestionInsightRequiresMultipleQuestionEntries() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let entries = [
+            makeReflectionEntry(daysAgo: 1, sentiment: -0.1, text: "Why does deadline pressure feel so hard?", now: now),
+            makeReflectionEntry(daysAgo: 3, sentiment: -0.1, text: "What would make deadline pressure easier to handle?", now: now),
+            makeReflectionEntry(daysAgo: 5, sentiment: 0.0, text: "A quiet walk helped me reset.", now: now)
+        ]
+
+        let insights = ProactiveReflectionAnalyzer.detectRepeatedQuestions(in: entries, now: now)
+
+        #expect(insights.first?.kind == .repeatedQuestion)
+        #expect((insights.first?.evidence.count ?? 0) >= 2)
+    }
+
+    @Test func carryForwardWinComparesRecentLightnessToBaseline() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let recent = [
+            makeReflectionEntry(daysAgo: 0, sentiment: 0.55, text: "A calm walk made the day lighter.", now: now),
+            makeReflectionEntry(daysAgo: 1, sentiment: 0.50, text: "Cooking helped me feel grounded.", now: now),
+            makeReflectionEntry(daysAgo: 2, sentiment: 0.45, text: "I felt proud of a clear boundary.", now: now)
+        ]
+        let baseline = (3...8).map { day in
+            makeReflectionEntry(daysAgo: day, sentiment: -0.1, text: "Work felt ordinary and a little tense.", now: now)
+        }
+
+        let insights = ProactiveReflectionAnalyzer.detectCarryForwardWins(in: recent + baseline, now: now)
+
+        #expect(insights.first?.kind == .carryForward)
+        #expect(insights.first?.evidence.contains { $0.role == .baseline } == true)
+    }
+
+    @Test func cardFeedbackTracksSavedSnoozedDismissedAndReason() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let snoozedUntil = now.addingTimeInterval(3600)
+        let feedback = ReflectionCardFeedback(
+            insightID: "moodAssociation:deadline:45d",
+            saved: true,
+            dismissedAt: now,
+            snoozedUntil: snoozedUntil,
+            notUsefulReason: "Not relevant today",
+            updatedAt: now
+        )
+
+        #expect(feedback.saved)
+        #expect(feedback.feedbackKey == "moodAssociation:deadline:45d")
+        #expect(feedback.isDismissed)
+        #expect(feedback.isSnoozed(now: now))
+        #expect(!feedback.isSnoozed(now: snoozedUntil.addingTimeInterval(1)))
+        #expect(feedback.notUsefulReason == "Not relevant today")
+    }
+
+    @MainActor
+    @Test func controllerFiltersDismissedCardsByStableFeedbackKey() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let controller = ProactiveReflectionController(loadPersistedState: false)
+        let feedbackKey = ProactiveReflectionAnalyzer.feedbackKey(kind: .moodAssociation, subject: "Deadline", window: "45d")
+        let oldEvidenceID = UUID()
+        let newEvidenceID = UUID()
+        let oldInsight = ReflectionInsight(
+            id: "old-\(oldEvidenceID.uuidString)",
+            category: .pattern,
+            priority: .high,
+            title: "Deadline seems to weigh on you",
+            message: "Old evidence.",
+            prompt: "What support would help?",
+            evidence: [],
+            kind: .moodAssociation,
+            feedbackKey: feedbackKey,
+            createdAt: now,
+            expiresAt: nil
+        )
+        let refreshedInsight = ReflectionInsight(
+            id: "new-\(newEvidenceID.uuidString)",
+            category: .pattern,
+            priority: .high,
+            title: "Deadline seems to weigh on you",
+            message: "New evidence.",
+            prompt: "What support would help?",
+            evidence: [],
+            kind: .moodAssociation,
+            feedbackKey: feedbackKey,
+            createdAt: now.addingTimeInterval(60),
+            expiresAt: nil
+        )
+
+        controller.markNotUseful(oldInsight, now: now)
+        let visible = controller.visibleInsightsForTesting([refreshedInsight], now: now.addingTimeInterval(120))
+
+        #expect(visible.isEmpty)
+    }
+
+    @Test func feedbackPayloadPersistsSeparatelyFromInsightPayload() throws {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let key = ProactiveReflectionAnalyzer.feedbackKey(kind: .quietEntity, subject: "Maya", window: "14d")
+        let feedback = ReflectionCardFeedback(
+            insightID: key,
+            saved: false,
+            dismissedAt: now,
+            snoozedUntil: nil,
+            notUsefulReason: "Not useful",
+            updatedAt: now
+        )
+        let payload = ProactiveReflectionController.FeedbackPayload(version: 1, cardFeedback: [key: feedback])
+
+        let decoded = try JSONDecoder().decode(
+            ProactiveReflectionController.FeedbackPayload.self,
+            from: JSONEncoder().encode(payload)
+        )
+
+        #expect(decoded.cardFeedback[key]?.notUsefulReason == "Not useful")
+        #expect(decoded.cardFeedback[key]?.isDismissed == true)
+    }
+
+    @Test func analysisWorkerUsesSendableSnapshots() async {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let entries = [
+            makeReflectionEntry(daysAgo: 1, sentiment: 0.2, text: "Garden seedlings and balcony soil are back on my mind.", now: now),
+            makeReflectionEntry(daysAgo: 35, sentiment: -0.1, text: "Garden soil seedlings and planter boxes felt overwhelming.", now: now),
+            makeReflectionEntry(daysAgo: 42, sentiment: 0.1, text: "I wanted the garden balcony to feel calmer.", now: now)
+        ]
+        let worker = ProactiveReflectionAnalysisWorker()
+
+        let result = await worker.analyze(entries: entries, existingFollowUps: [], now: now)
+
+        #expect(result.insights.contains { $0.kind == .resurfacedThread })
+    }
+
+    @Test func deterministicInsightsUsePatternSummaryEvidenceMode() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        let entries = [
+            makeReflectionEntry(daysAgo: 1, sentiment: 0.2, text: "Garden seedlings and balcony soil are back on my mind.", now: now),
+            makeReflectionEntry(daysAgo: 35, sentiment: -0.1, text: "Garden soil seedlings and planter boxes felt overwhelming.", now: now),
+            makeReflectionEntry(daysAgo: 42, sentiment: 0.1, text: "I wanted the garden balcony to feel calmer.", now: now)
+        ]
+
+        let insight = ProactiveReflectionAnalyzer.detectResurfacedThreads(in: entries, now: now).first
+
+        #expect(insight?.evidenceMode == .deterministicPattern)
+        #expect(insight?.feedbackKey == ProactiveReflectionAnalyzer.feedbackKey(kind: .resurfacedThread, subject: "garden", window: "28d"))
+    }
+
     @Test func promptRankingOrderIsDecisionThenHighAnomalyThenWeekly() {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         let entry = makeReflectionEntry(daysAgo: 3, sentiment: -0.2, text: "I regret accepting the rushed project timeline.", now: now)
@@ -563,7 +1185,7 @@ struct ProactiveReflectionTests {
         let trigger = request.trigger as? UNCalendarNotificationTrigger
 
         #expect(trigger?.repeats == false)
-        #expect(request.content.body == ProactiveReflectionController.shared.privacySafeReminderBody())
+        #expect(request.content.body == ProactiveReflectionController.cachedPrivacySafeReminderBody())
     }
 
     @Test func persistedPayloadDoesNotContainRawJournalSnippets() throws {
@@ -581,7 +1203,7 @@ struct ProactiveReflectionTests {
             expiresAt: nil
         )
         let payload = ProactiveReflectionController.Payload(
-            version: 2,
+            version: 3,
             insights: [insight],
             decisionMoments: [],
             followUpStates: [],

@@ -11,6 +11,7 @@
 import SwiftUI
 import WidgetKit
 import CoreData
+import CoreSpotlight
 import os.log
 import UserNotifications
 
@@ -25,6 +26,7 @@ struct OffRecordApp: App {
     let persistenceController = PersistenceController.shared
     @ObservedObject private var lockManager = AppLockManager.shared
     @ObservedObject private var themeManager = ThemeManager.shared
+    @ObservedObject private var navigationRouter = OffRecordNavigationRouter.shared
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @State private var isShowingSplash = true
@@ -68,6 +70,31 @@ struct OffRecordApp: App {
             .animation(.easeInOut(duration: 0.3), value: hasCompletedOnboarding)
             .preferredColorScheme(themeManager.selectedTheme.colorScheme)
             .tint(themeManager.selectedTheme.accentColor)
+            .onOpenURL { url in
+                guard let route = OffRecordNavigationRouter.route(from: url) else { return }
+                navigationRouter.route(route, canNavigate: canNavigateToPrivateContent)
+            }
+            .onContinueUserActivity(CSSearchableItemActionType) { userActivity in
+                _ = navigationRouter.route(userActivity: userActivity, canNavigate: canNavigateToPrivateContent)
+            }
+            .onContinueUserActivity(JournalSpotlightIndexer.viewEntryActivityType) { userActivity in
+                _ = navigationRouter.route(userActivity: userActivity, canNavigate: canNavigateToPrivateContent)
+            }
+            .onContinueUserActivity("com.singularity.offrecord.today") { userActivity in
+                _ = navigationRouter.route(userActivity: userActivity, canNavigate: canNavigateToPrivateContent)
+            }
+            .onContinueUserActivity("com.singularity.offrecord.searchTimeline") { userActivity in
+                _ = navigationRouter.route(userActivity: userActivity, canNavigate: canNavigateToPrivateContent)
+            }
+            .onContinueUserActivity("com.singularity.offrecord.friday") { userActivity in
+                _ = navigationRouter.route(userActivity: userActivity, canNavigate: canNavigateToPrivateContent)
+            }
+            .onChange(of: hasCompletedOnboarding) { _, _ in
+                resumeDeferredRoutesIfPossible()
+            }
+            .onChange(of: lockManager.isUnlocked) { _, _ in
+                resumeDeferredRoutesIfPossible()
+            }
             .onChange(of: scenePhase) { _, newPhase in
                 switch newPhase {
                 case .background:
@@ -78,8 +105,9 @@ struct OffRecordApp: App {
                     WidgetCenter.shared.reloadAllTimelines()
                     runAudioCleanup()
                 case .active:
-                    // Check if launched from Siri shortcut to record
-                    checkForSiriRecordingIntent()
+                    consumeLegacyAndStoredRoutes()
+                    resumeDeferredRoutesIfPossible()
+                    JournalSpotlightIndexer.shared.rebuild(entries: startedEntriesForIndexing())
                     ReminderManager.shared.reconcileScheduleIfNeeded()
                 default:
                     break
@@ -88,12 +116,27 @@ struct OffRecordApp: App {
         }
     }
 
-    private func checkForSiriRecordingIntent() {
+    private var canNavigateToPrivateContent: Bool {
+        hasCompletedOnboarding && (!lockManager.isEnabled || lockManager.isUnlocked)
+    }
+
+    private func consumeLegacyAndStoredRoutes() {
         if UserDefaults.standard.bool(forKey: "shouldStartRecording") {
             UserDefaults.standard.set(false, forKey: "shouldStartRecording")
-            // Post notification to start recording
-            NotificationCenter.default.post(name: .startRecordingFromSiri, object: nil)
+            navigationRouter.route(.record, canNavigate: canNavigateToPrivateContent)
         }
+        navigationRouter.consumeStoredRoute(canNavigate: canNavigateToPrivateContent)
+    }
+
+    private func resumeDeferredRoutesIfPossible() {
+        navigationRouter.resumeDeferredRouteIfPossible(canNavigate: canNavigateToPrivateContent)
+    }
+
+    private func startedEntriesForIndexing() -> [DiaryEntry] {
+        let request: NSFetchRequest<DiaryEntry> = DiaryEntry.fetchRequest()
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \DiaryEntry.updatedAt, ascending: false)]
+        request.fetchLimit = 300
+        return ((try? persistenceController.container.viewContext.fetch(request)) ?? []).startedEntries
     }
 
     private func runAudioCleanup() {

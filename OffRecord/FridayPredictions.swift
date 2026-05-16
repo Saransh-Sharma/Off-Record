@@ -33,6 +33,7 @@ struct FridayPrediction: Identifiable {
 
 // MARK: - Prediction Engine
 
+@MainActor
 struct FridayPredictionEngine {
 
     /// Generate up to 3 relevant predictions based on current state
@@ -433,7 +434,7 @@ struct FridayPredictionsSection: View {
                     HStack(spacing: 8) {
                         FridayMascotView(pose: .thinking, size: 34)
                         Text("Friday noticed...")
-                            .font(.headline)
+                            .font(OffRecordTypography.sectionTitle)
                     }
 
                     ForEach(predictions) { prediction in
@@ -458,13 +459,13 @@ struct FridayPredictionsSection: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(prediction.message)
-                    .font(.subheadline.weight(.semibold))
+                    .font(OffRecordTypography.labelMedium)
                     .foregroundColor(OffRecordColor.textPrimary)
                     .fixedSize(horizontal: false, vertical: true)
 
                 if let detail = prediction.detail {
                     Text(detail)
-                        .font(.caption)
+                        .font(OffRecordTypography.metadata)
                         .foregroundColor(OffRecordColor.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }

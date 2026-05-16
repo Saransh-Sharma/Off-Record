@@ -81,6 +81,7 @@ struct FridayChatMessage: Identifiable {
 
 // MARK: - Response Generator
 
+@MainActor
 struct FridayResponseGenerator {
 
     private static let insufficientData = FridayPersonality.insufficientData
@@ -476,6 +477,8 @@ struct FridayResponseGenerator {
 // MARK: - Friday Chat View
 
 struct FridayChatView: View {
+    private let initialQuestion: String?
+    private let autoSubmitInitialQuestion: Bool
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @ObservedObject private var themeManager = ThemeManager.shared
     @ObservedObject private var semanticMemory = SemanticMemoryIndexController.shared
@@ -490,7 +493,15 @@ struct FridayChatView: View {
     @State private var askedQuestions: Set<FridayQuestion> = []
     @State private var inputText: String = ""
     @State private var isAnswering = false
+    @State private var appliedInitialQuestion = false
     @Namespace private var bottomAnchor
+
+    private var startedEntries: [DiaryEntry] { entries.startedEntries }
+
+    init(initialQuestion: String? = nil, autoSubmitInitialQuestion: Bool = false) {
+        self.initialQuestion = initialQuestion
+        self.autoSubmitInitialQuestion = autoSubmitInitialQuestion
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -535,7 +546,8 @@ struct FridayChatView: View {
         .navigationTitle("Talk to Friday")
         .background(OffRecordColor.appBackgroundGradient.ignoresSafeArea())
         .onAppear {
-            semanticMemory.ensureIndexed(entries: Array(entries))
+            semanticMemory.ensureIndexed(entries: startedEntries)
+            applyInitialQuestionIfNeeded()
         }
     }
 
@@ -550,12 +562,12 @@ struct FridayChatView: View {
             FridayMascotView(pose: .listening, size: 92)
 
             Text(FridayPersonality.welcome(name: authorName))
-                .font(.headline)
+                .font(OffRecordTypography.sectionTitle)
                 .foregroundColor(themeManager.textColor)
                 .multilineTextAlignment(.center)
 
             Text("Tap a question below. Friday answers from on-device patterns in your journal.")
-                .font(.subheadline)
+                .font(OffRecordTypography.bodySmall)
                 .foregroundColor(themeManager.secondaryTextColor)
                 .multilineTextAlignment(.center)
                 .padding(.horizontal)
@@ -576,7 +588,7 @@ struct FridayChatView: View {
 
             VStack(alignment: message.isUser ? .trailing : .leading, spacing: 4) {
                 Text(message.text)
-                    .font(.subheadline)
+                    .font(OffRecordTypography.bodySmall)
                     .foregroundColor(message.isUser ? OffRecordColor.textInverse : themeManager.textColor)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 10)
@@ -591,7 +603,7 @@ struct FridayChatView: View {
                 if !message.isUser {
                     if let limitations = message.limitations {
                         Text(limitations)
-                            .font(.caption)
+                            .font(OffRecordTypography.metadata)
                             .foregroundColor(OffRecordColor.textSecondary)
                             .padding(.horizontal, 4)
                             .accessibilityIdentifier("friday.limitations")
@@ -612,7 +624,7 @@ struct FridayChatView: View {
     private func evidenceRail(_ evidence: [EvidenceReference]) -> some View {
         VStack(alignment: .leading, spacing: 8) {
             Text("Evidence from your journal")
-                .font(.caption.weight(.semibold))
+                .font(OffRecordTypography.labelSmall)
                 .foregroundColor(OffRecordColor.textLavender)
                 .accessibilityIdentifier("friday.evidenceHeader")
 
@@ -643,7 +655,7 @@ struct FridayChatView: View {
                 HStack(spacing: 8) {
                     ProgressView(value: semanticMemory.progress)
                     Text(semanticMemory.statusMessage)
-                        .font(.caption)
+                        .font(OffRecordTypography.metadata)
                         .foregroundColor(OffRecordColor.textSecondary)
                         .lineLimit(2)
                 }
@@ -691,7 +703,7 @@ struct FridayChatView: View {
         VStack(spacing: 8) {
             if availableQuestions.isEmpty {
                 Text("You've asked all the questions! Tap any to ask again.")
-                    .font(.caption)
+                    .font(OffRecordTypography.metadata)
                     .foregroundColor(themeManager.secondaryTextColor)
                     .padding(.top, 8)
             }
@@ -706,7 +718,7 @@ struct FridayChatView: View {
                                 Image(systemName: question.icon)
                                     .font(.system(size: 11))
                                 Text(question.rawValue)
-                                    .font(.caption)
+                                    .font(OffRecordTypography.metadata)
                                     .lineLimit(1)
                             }
                             .foregroundColor(askedQuestions.contains(question)
@@ -747,6 +759,18 @@ struct FridayChatView: View {
         return unasked + asked
     }
 
+    private func applyInitialQuestionIfNeeded() {
+        guard !appliedInitialQuestion else { return }
+        appliedInitialQuestion = true
+        let question = initialQuestion?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !question.isEmpty else { return }
+        if autoSubmitInitialQuestion {
+            askEvidenceQuestion(question, profileSummary: nil)
+        } else if inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            inputText = question
+        }
+    }
+
     private func askQuestion(_ question: FridayQuestion) {
         askEvidenceQuestion(question.rawValue, profileSummary: FridayResponseGenerator.generateResponse(for: question))
         askedQuestions.insert(question)
@@ -769,9 +793,10 @@ struct FridayChatView: View {
         let userMessage = FridayChatMessage(text: question, isUser: true)
         messages.append(userMessage)
         isAnswering = true
+        let entrySnapshot = startedEntries
 
         Task {
-            let answer = await EvidenceFridayEngine.answer(question: question, entries: Array(entries), profileSummary: profileSummary)
+            let answer = await EvidenceFridayEngine.answer(question: question, entries: entrySnapshot, profileSummary: profileSummary)
             let text = ([answer.summary] + answer.observations.map(\.text)).joined(separator: " ")
             let fridayMessage = FridayChatMessage(
                 text: text,
@@ -789,7 +814,7 @@ struct FridayChatView: View {
     }
 
     private func entry(for id: UUID) -> DiaryEntry? {
-        entries.first { $0.id == id }
+        startedEntries.first { $0.id == id }
     }
 }
 
@@ -799,29 +824,29 @@ private struct EvidenceChip: View {
     var body: some View {
         HStack(alignment: .top, spacing: 10) {
             Image(systemName: evidence.matchReason == .exact ? "text.magnifyingglass" : "quote.bubble.fill")
-                .font(.caption)
+                .font(OffRecordTypography.metadata)
                 .foregroundColor(OffRecordColor.brandLavenderDark)
                 .frame(width: 18)
 
             VStack(alignment: .leading, spacing: 4) {
                 HStack(spacing: 6) {
                     Text(formattedDate)
-                        .font(.caption.weight(.semibold))
+                        .font(OffRecordTypography.labelSmall)
                         .foregroundColor(OffRecordColor.textPrimary)
                     if let mood = evidence.mood, !mood.isEmpty {
                         Text(mood.capitalized)
-                            .font(.caption2.weight(.medium))
+                            .font(OffRecordTypography.labelSmall)
                             .foregroundColor(OffRecordColor.textSecondary)
                             .accessibilityIdentifier("friday.evidenceChip.mood")
                     }
                 }
                 Text(evidence.snippet)
-                    .font(.caption)
+                    .font(OffRecordTypography.metadata)
                     .foregroundColor(OffRecordColor.textSecondary)
                     .lineLimit(3)
                     .accessibilityIdentifier("friday.evidenceChip.snippet")
                 Text(evidence.matchReason.rawValue)
-                    .font(.caption2.weight(.semibold))
+                    .font(OffRecordTypography.labelSmall)
                     .foregroundColor(OffRecordColor.textLavender)
                     .accessibilityIdentifier("friday.evidenceChip.reason")
             }

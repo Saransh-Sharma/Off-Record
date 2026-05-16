@@ -21,17 +21,26 @@ extension Color {
 
 enum OffRecordColor {
     static let brandPlum = Color(hex: 0x342044)
-    static let brandSage = Color(hex: 0x7FA08A)
+    static let pastelMint = Color(hex: 0xA8D8BE)
+    static let pastelSage = Color(hex: 0x7FA08A)
+    static let pastelAqua = Color(hex: 0x6FC6B8)
+    static let pastelYellow = Color(hex: 0xF7D98B)
+    static let pastelPeach = Color(hex: 0xF6B98F)
+    static let pastelBlush = Color(hex: 0xF6A9B8)
+    static let pastelLavender = Color(hex: 0xBBA7E8)
+    static let pastelCoral = Color(hex: 0xEF8A7A)
+
+    static let brandSage = pastelSage
     static let brandSageDark = Color(hex: 0x5F806B)
-    static let brandLavender = Color(hex: 0xBBA7E8)
+    static let brandLavender = pastelLavender
     static let brandLavenderDark = Color(hex: 0x7B5CAF)
-    static let brandPeach = Color(hex: 0xF6B98F)
-    static let brandBlush = Color(hex: 0xF6A9B8)
-    static let brandMint = Color(hex: 0xA8D8BE)
-    static let brandAqua = Color(hex: 0x6FC6B8)
+    static let brandPeach = pastelPeach
+    static let brandBlush = pastelBlush
+    static let brandMint = pastelMint
+    static let brandAqua = pastelAqua
     static let brandSky = Color(hex: 0xA8D6F0)
-    static let brandYellow = Color(hex: 0xF7D98B)
-    static let brandCoral = Color(hex: 0xEF8A7A)
+    static let brandYellow = pastelYellow
+    static let brandCoral = pastelCoral
 
     static let backgroundPrimary = Color(hex: 0xFFF8F0)
     static let backgroundSecondary = Color(hex: 0xF7F1EA)
@@ -77,14 +86,14 @@ enum OffRecordColor {
     static let divider = Color(hex: 0xE8E1E8)
     static let hairline = Color(hex: 0xF0ECF1)
 
-    static let moodGreat = Color(hex: 0xA8D8BE)
-    static let moodGood = Color(hex: 0x7FA08A)
-    static let moodCalm = Color(hex: 0x6FC6B8)
-    static let moodOkay = Color(hex: 0xF7D98B)
-    static let moodTired = Color(hex: 0xF6B98F)
-    static let moodSad = Color(hex: 0xF6A9B8)
-    static let moodAnxious = Color(hex: 0xBBA7E8)
-    static let moodAngry = Color(hex: 0xEF8A7A)
+    static let moodGreat = pastelMint
+    static let moodGood = pastelSage
+    static let moodCalm = pastelAqua
+    static let moodOkay = pastelYellow
+    static let moodTired = pastelPeach
+    static let moodSad = pastelBlush
+    static let moodAnxious = pastelLavender
+    static let moodAngry = pastelCoral
 
     static let darkBackground = Color(hex: 0x18131D)
     static let darkSurface = Color(hex: 0x241730)
@@ -139,16 +148,38 @@ enum OffRecordRadius {
 }
 
 enum OffRecordTypography {
-    static let displayXL = Font.system(size: 52, weight: .bold, design: .serif)
-    static let screenTitle = Font.system(size: 40, weight: .heavy, design: .default)
-    static let titleLarge = Font.system(size: 28, weight: .bold, design: .default)
-    static let titleMedium = Font.system(size: 22, weight: .bold, design: .default)
-    static let bodyLarge = Font.system(size: 17, weight: .regular, design: .default)
-    static let bodyMedium = Font.system(size: 15, weight: .regular, design: .default)
-    static let bodySmall = Font.system(size: 13, weight: .regular, design: .default)
-    static let labelMedium = Font.system(size: 13, weight: .semibold, design: .default)
-    static let labelSmall = Font.system(size: 11, weight: .semibold, design: .default)
-    static let numberLarge = Font.system(size: 44, weight: .heavy, design: .rounded)
+    static let displayXL = Font.system(.largeTitle, design: .serif, weight: .bold)
+    static let screenTitle = Font.system(.largeTitle, design: .default, weight: .heavy)
+    static let titleLarge = Font.system(.title, design: .default, weight: .bold)
+    static let titleMedium = Font.system(.title2, design: .default, weight: .bold)
+    static let titleSmall = Font.system(.title3, design: .default, weight: .semibold)
+    static let sectionTitle = Font.system(.headline, design: .default, weight: .semibold)
+    static let cardTitle = Font.system(.headline, design: .default, weight: .semibold)
+    static let bodyLarge = Font.system(.body, design: .default, weight: .regular)
+    static let journalBody = Font.system(.body, design: .default, weight: .regular).leading(.loose)
+    static let bodyMedium = Font.system(.callout, design: .default, weight: .regular)
+    static let bodySmall = Font.system(.subheadline, design: .default, weight: .regular)
+    static let labelLarge = Font.system(.callout, design: .default, weight: .semibold)
+    static let labelMedium = Font.system(.subheadline, design: .default, weight: .semibold)
+    static let labelSmall = Font.system(.footnote, design: .default, weight: .semibold)
+    static let metadata = Font.system(.footnote, design: .default, weight: .regular)
+    static let annotation = Font.system(.caption, design: .default, weight: .regular)
+    static let badgeLabel = Font.system(.footnote, design: .rounded, weight: .semibold)
+    static let numberLarge = Font.system(.largeTitle, design: .rounded, weight: .heavy).monospacedDigit()
+    static let numberMedium = Font.system(.title2, design: .rounded, weight: .bold).monospacedDigit()
+    static let numberSmall = Font.system(.headline, design: .rounded, weight: .semibold).monospacedDigit()
+}
+
+enum OffRecordExportTypography {
+    static let brand = Font.system(size: 14, weight: .bold, design: .rounded)
+    static let eyebrow = Font.system(size: 13, weight: .heavy, design: .rounded)
+    static let headline = Font.system(size: 22, weight: .bold, design: .default)
+    static let body = Font.system(size: 15, weight: .regular, design: .default)
+    static let label = Font.system(size: 12, weight: .semibold, design: .rounded)
+    static let metadata = Font.system(size: 12, weight: .medium, design: .default)
+    static let micro = Font.system(size: 10, weight: .medium, design: .default)
+    static let monospaced = Font.system(size: 12, weight: .medium, design: .monospaced)
+    static let microMonospaced = Font.system(size: 10, weight: .medium, design: .monospaced)
 }
 
 enum OffRecordShadow {
@@ -311,7 +342,7 @@ struct OffRecordPrivacyBadge: View {
     var body: some View {
         HStack(spacing: compact ? 5 : 8) {
             Image(systemName: "lock.shield.fill")
-                .font(compact ? .caption : .subheadline)
+                .font(compact ? OffRecordTypography.annotation : OffRecordTypography.bodySmall)
                 .foregroundStyle(OffRecordColor.brandSageDark)
 
             if !compact {
@@ -321,7 +352,7 @@ struct OffRecordPrivacyBadge: View {
                         .foregroundStyle(OffRecordColor.textSage)
                     if let subtitle {
                         Text(subtitle)
-                            .font(.caption2)
+                            .font(OffRecordTypography.annotation)
                             .foregroundStyle(OffRecordColor.textSecondary)
                     }
                 }

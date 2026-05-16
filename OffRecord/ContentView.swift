@@ -9,13 +9,17 @@
 
 import SwiftUI
 import CoreData
+#if os(iOS)
+import UIKit
+#endif
 
 /// Main content view with tab-based navigation.
 /// Uses TabView on all devices. On iPadOS 18+, the tab bar adapts to a sidebar.
 struct ContentView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @State private var selectedTab: OffRecordTab = .today
+    @ObservedObject private var navigationRouter = OffRecordNavigationRouter.shared
+    @State private var isKeyboardVisible = false
 
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \DiaryEntry.date, ascending: false)],
@@ -33,11 +37,11 @@ struct ContentView: View {
     private var compactTabs: some View {
         GeometryReader { proxy in
             ZStack(alignment: .bottom) {
-                switch selectedTab {
+                switch navigationRouter.selectedTab {
                 case .today:
                     NavigationStack {
                         TodayView(
-                            compactTabSelection: $selectedTab,
+                            compactTabSelection: selectedTabBinding,
                             compactBottomSafeAreaInset: proxy.safeAreaInsets.bottom
                         )
                     }
@@ -55,14 +59,22 @@ struct ContentView: View {
                         .safeAreaPadding(.bottom, OffRecordCompactTabBarLayout.reservedContentBottomInset)
                 }
 
-                if selectedTab != .today {
-                    OffRecordFloatingTabBar(selectedTab: $selectedTab)
+                if navigationRouter.selectedTab != .today {
+                    OffRecordFloatingTabBar(selectedTab: selectedTabBinding)
                         .padding(.horizontal, OffRecordCompactTabBarLayout.horizontalPadding)
                         .padding(.bottom, OffRecordCompactTabBarLayout.screenEdgeBottomPadding)
-                        .offset(y: proxy.safeAreaInsets.bottom)
+                        .offset(y: isKeyboardVisible ? 0 : proxy.safeAreaInsets.bottom)
                 }
             }
         }
+        #if os(iOS)
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+            isKeyboardVisible = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            isKeyboardVisible = false
+        }
+        #endif
         .offRecordScreenBackground()
     }
 
@@ -77,13 +89,14 @@ struct ContentView: View {
     }
 
     private var tabs: some View {
-        TabView {
+        TabView(selection: selectedTabBinding) {
             NavigationStack {
                 TodayView()
             }
             .tabItem {
                 Label("Today", systemImage: "sun.max")
             }
+            .tag(OffRecordTab.today)
 
             NavigationStack {
                 TimelineView()
@@ -91,6 +104,7 @@ struct ContentView: View {
             .tabItem {
                 Label("Timeline", systemImage: "list.bullet")
             }
+            .tag(OffRecordTab.timeline)
 
             NavigationStack {
                 StatsView()
@@ -98,6 +112,7 @@ struct ContentView: View {
             .tabItem {
                 Label("Insights", systemImage: "chart.bar")
             }
+            .tag(OffRecordTab.insights)
 
             NavigationStack {
                 FridayView()
@@ -105,6 +120,7 @@ struct ContentView: View {
             .tabItem {
                 Label("Friday", systemImage: "sparkles")
             }
+            .tag(OffRecordTab.friday)
 
             NavigationStack {
                 SettingsView()
@@ -112,13 +128,22 @@ struct ContentView: View {
             .tabItem {
                 Label("Settings", systemImage: "gearshape")
             }
+            .tag(OffRecordTab.settings)
         }
+    }
+
+    private var selectedTabBinding: Binding<OffRecordTab> {
+        Binding(
+            get: { navigationRouter.selectedTab },
+            set: { navigationRouter.selectedTab = $0 }
+        )
     }
 }
 
 enum OffRecordCompactTabBarLayout {
     static let horizontalPadding: CGFloat = 16
     static let screenEdgeBottomPadding: CGFloat = 8
+    static let todayDockRecordingFeedbackClearance: CGFloat = 112
     static let reservedContentBottomInset: CGFloat = 108
     static let todayDockScrollContentBottomPadding: CGFloat = 244
 }
@@ -170,10 +195,7 @@ struct OffRecordFloatingTabBar: View {
         HStack(spacing: 4) {
             ForEach(OffRecordTab.allCases) { tab in
                 Button {
-                    withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
-                        selectedTab = tab
-                    }
-                    HapticManager.shared.selectionChanged()
+                    select(tab)
                 } label: {
                     let style = tab.readableStyle
                     VStack(spacing: 4) {
@@ -209,6 +231,20 @@ struct OffRecordFloatingTabBar: View {
                 .overlay(Capsule().stroke(OffRecordColor.borderSoft, lineWidth: 1))
                 .shadow(color: OffRecordShadow.tabColor, radius: 30, x: 0, y: 8)
         )
+    }
+
+    private func select(_ tab: OffRecordTab) {
+        dismissKeyboard()
+        withAnimation(.spring(response: 0.32, dampingFraction: 0.82)) {
+            selectedTab = tab
+        }
+        HapticManager.shared.selectionChanged()
+    }
+
+    private func dismissKeyboard() {
+        #if os(iOS)
+        UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+        #endif
     }
 
     private func selectedForeground(for tab: OffRecordTab, style: OffRecordReadableTintStyle) -> Color {

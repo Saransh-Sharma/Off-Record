@@ -295,6 +295,7 @@ struct FridaySummary: Codable {
 
 // MARK: - Friday Assistant Engine
 
+@MainActor
 final class FridayAssistantEngine: ObservableObject {
 
     static let shared = FridayAssistantEngine()

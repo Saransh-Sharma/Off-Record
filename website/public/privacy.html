@@ -1,24 +1,16 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<!-- Google tag (gtag.js) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-R544S4KDBQ"></script>
-<script>
-  window.dataLayer = window.dataLayer || [];
-  function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-R544S4KDBQ');
-</script>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Privacy Policy - OffRecord AI Journal | Zero Data Collection Journal App</title>
-  <meta name="description" content="OffRecord AI Journal collects zero data. No servers, no accounts, no tracking. Read our privacy policy — it's short because there's nothing to disclose.">
+  <title>Privacy Policy - OffRecord AI Journal</title>
+  <meta name="description" content="OffRecord AI Journal does not use developer servers, analytics SDKs, advertising SDKs, or non-Apple AI services. Apple Speech transcription is permission-based.">
   <meta name="theme-color" content="#05081a">
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://offrecord.example.com/privacy">
+  <meta property="og:url" content="https://saransh-sharma.github.io/Off-Record/privacy.html">
   <meta property="og:title" content="Privacy Policy - OffRecord AI Journal">
-  <meta property="og:description" content="OffRecord AI Journal collects zero data. No servers, no accounts, no tracking.">
-  <link rel="canonical" href="https://offrecord.example.com/privacy">
+  <meta property="og:description" content="Private journaling with local Friday analysis, optional iCloud Sync, and permission-based Apple Speech transcription.">
+  <link rel="canonical" href="https://saransh-sharma.github.io/Off-Record/privacy.html">
   <link rel="stylesheet" href="style.css">
   <link rel="icon" href="/app-icon.png">
 </head>
@@ -31,8 +23,8 @@
       </a>
       <ul class="nav-links">
         <li><a href="/blog">Blog</a></li>
-        <li><a href="/privacy">Privacy</a></li>
-        <li><a href="/support">Support</a></li>
+        <li><a href="/privacy.html">Privacy</a></li>
+        <li><a href="/support.html">Support</a></li>
       </ul>
     </div>
   </nav>
@@ -40,63 +32,66 @@
   <main class="container">
     <div class="page-header">
       <h1>Privacy Policy</h1>
-      <p class="updated">Last Updated: March 10, 2026</p>
+      <p class="updated">Last Updated: May 15, 2026</p>
     </div>
 
     <div class="page-content">
       <h2>Our Promise</h2>
-      <p>OffRecord AI Journal is built on one fundamental principle: <strong>your data is yours alone</strong>. We don't collect it, we don't store it, we don't sell it, and we don't have access to it. Period.</p>
+      <p>OffRecord AI Journal is built for private journaling. We do not run developer servers that receive your journal, we do not sell data, and we do not use analytics, advertising SDKs, tracking SDKs, or non-Apple third-party AI services.</p>
 
-      <h2>What Data OffRecord AI Journal Processes</h2>
-      <p>OffRecord AI Journal processes the following types of data <strong>entirely on your device</strong>:</p>
+      <h2>What Data OffRecord Processes</h2>
       <ul>
-        <li><strong>Voice Recordings</strong> &mdash; Audio files recorded through the app</li>
-        <li><strong>Transcriptions</strong> &mdash; Text converted from your voice using Apple's Speech framework</li>
-        <li><strong>Journal Entries</strong> &mdash; Text you write or dictate</li>
-        <li><strong>Mood Data</strong> &mdash; Mood selections you make for your entries</li>
-        <li><strong>AI Analysis</strong> &mdash; Emotional patterns, personality insights, and your Friday model</li>
-        <li><strong>Friday Data</strong> &mdash; Personality model, emotional signature, and knowledge graph</li>
-        <li><strong>Photos</strong> &mdash; Images attached to diary entries, stored on-device only</li>
+        <li><strong>Voice Recordings</strong> - audio files recorded through the app</li>
+        <li><strong>Transcriptions</strong> - text converted from voice recordings using Apple Speech</li>
+        <li><strong>Journal Entries</strong> - text you write or dictate</li>
+        <li><strong>Mood Data</strong> - mood selections you make for entries</li>
+        <li><strong>AI Analysis</strong> - emotional patterns, personality insights, Semantic Memory, and your Friday model</li>
+        <li><strong>Photos</strong> - images you attach to diary entries</li>
+        <li><strong>Settings</strong> - preferences such as theme, reminders, app lock, iCloud sync, and Apple Speech consent</li>
       </ul>
+
+      <h2>Apple Speech Transcription</h2>
+      <p>If you choose to transcribe voice recordings, OffRecord uses Apple's Speech framework.</p>
+      <ul>
+        <li>OffRecord asks for your permission before transcription begins.</li>
+        <li>When your device is online, voice audio may be sent to Apple Speech for speech recognition.</li>
+        <li>Apple Speech returns the transcript, and OffRecord saves that transcript in your journal.</li>
+        <li>If you do not allow Apple Speech transcription, your recording is saved locally and you can type manually.</li>
+        <li>You can revoke Apple Speech transcription consent in Settings.</li>
+      </ul>
+      <p>Apple Speech processing is provided by Apple and is subject to Apple's privacy protections and policies. OffRecord does not send your audio, transcripts, journal entries, photos, Friday prompts, Semantic Memory, or AI analysis to developer servers or non-Apple AI services.</p>
 
       <h2>Where Your Data Lives</h2>
-      <p><strong>On your device. Only on your device.</strong></p>
-      <p>All data is stored locally on your iPhone using:</p>
-      <ul>
-        <li><strong>Core Data</strong> &mdash; For diary entries and metadata</li>
-        <li><strong>UserDefaults</strong> &mdash; For settings, preferences, and AI model data</li>
-        <li><strong>Application Support Directory</strong> &mdash; For audio files</li>
-      </ul>
+      <p>By default, your data is stored locally on your iPhone or iPad using Core Data, UserDefaults, and the app's Application Support directory.</p>
 
       <h2>Optional iCloud Sync</h2>
-      <p>If you choose to enable iCloud sync, your diary entries are synced through <strong>Apple's CloudKit</strong> infrastructure:</p>
+      <p>If iCloud Sync is enabled, entries and attached photos sync through your personal Apple iCloud account using Apple's CloudKit infrastructure.</p>
       <ul>
-        <li>Data is encrypted using your Apple ID</li>
-        <li>We have zero access to your iCloud data</li>
-        <li>Apple's privacy protections apply</li>
-        <li>You can disable this at any time</li>
+        <li>Sync uses your Apple ID and Apple's iCloud protections.</li>
+        <li>OffRecord has no developer server access to your iCloud data.</li>
+        <li>Audio recordings stay on the device where they were recorded.</li>
+        <li>You can disable iCloud Sync in Settings.</li>
       </ul>
 
-      <h2>What We Do NOT Do</h2>
+      <h2>What We Do Not Do</h2>
       <ul>
-        <li>We do <strong>NOT</strong> collect any personal information</li>
-        <li>We do <strong>NOT</strong> send data to our servers</li>
-        <li>We do <strong>NOT</strong> use third-party analytics or tracking</li>
-        <li>We do <strong>NOT</strong> use third-party advertising</li>
-        <li>We do <strong>NOT</strong> share, sell, or transfer your data to anyone</li>
-        <li>We do <strong>NOT</strong> require an account or login</li>
-        <li>We do <strong>NOT</strong> use cookies or web tracking</li>
-        <li>We do <strong>NOT</strong> access your contacts or other personal data</li>
+        <li>We do not collect personal data on developer servers.</li>
+        <li>We do not use OpenAI, Anthropic, Gemini, or other non-Apple third-party AI services.</li>
+        <li>We do not use third-party analytics or tracking.</li>
+        <li>We do not use third-party advertising.</li>
+        <li>We do not share, sell, or transfer your data for advertising or marketing.</li>
+        <li>We do not require an account or login.</li>
       </ul>
 
       <h2>AI Processing</h2>
-      <p>All AI processing in OffRecord AI Journal happens <strong>100% on-device</strong>:</p>
+      <p>OffRecord's journal intelligence is designed to stay local:</p>
       <ul>
-        <li><strong>Speech Recognition</strong> &mdash; Uses Apple's built-in Speech framework. When online, Apple may process audio for better accuracy per their privacy policy. When offline, processing is entirely on-device.</li>
-        <li><strong>Emotion Detection</strong> &mdash; On-device using Apple's NaturalLanguage framework</li>
-        <li><strong>Friday Engine</strong> &mdash; On-device machine learning that builds your personal model</li>
+        <li><strong>Mood Analysis</strong> - on-device using Apple's NaturalLanguage framework</li>
+        <li><strong>Friday Engine</strong> - on-device logic that builds your personal model</li>
+        <li><strong>Semantic Memory</strong> - on-device search index and embeddings derived from journal entries</li>
+        <li><strong>Foundation Models Friday Responder</strong> - optional on-device Apple Foundation Models phrasing layer on supported systems</li>
       </ul>
-      <p><strong>No AI processing is sent to external servers.</strong></p>
+      <p>Voice transcription is separate from these journal analysis features and may use Apple Speech as described above.</p>
 
       <h2>Permissions We Request</h2>
       <table>
@@ -105,65 +100,46 @@
         </thead>
         <tbody>
           <tr><td>Microphone</td><td>Record voice diary entries</td><td>Only while recording</td></tr>
-          <tr><td>Speech Recognition</td><td>Transcribe voice to text</td><td>Processing a recording</td></tr>
+          <tr><td>Speech Recognition</td><td>Transcribe voice to text with Apple Speech</td><td>Only after consent</td></tr>
           <tr><td>Face ID / Touch ID</td><td>Lock the app for privacy</td><td>When app lock is enabled</td></tr>
           <tr><td>Notifications</td><td>Daily journal reminders</td><td>If you enable reminders</td></tr>
-          <tr><td>Photo Library</td><td>Attach photos to entries</td><td>When using photo picker</td></tr>
+          <tr><td>Photo Library</td><td>Attach photos to entries</td><td>When using the photo picker</td></tr>
         </tbody>
       </table>
-      <p>All permissions are optional. The app functions without them in text-only mode.</p>
 
       <h2>Photo Storage</h2>
-      <p>Photos attached to diary entries are:</p>
-      <ul>
-        <li>Stored locally in the app's sandboxed directory</li>
-        <li>Compressed as JPEG files</li>
-        <li><strong>Never uploaded</strong> to any server or cloud service</li>
-        <li>Not included in iCloud sync</li>
-        <li>Deleted when you uninstall the app</li>
-      </ul>
+      <p>Photos are stored in the app's sandboxed data store, may sync through your personal iCloud account if iCloud Sync is enabled, and are not uploaded to developer servers.</p>
 
       <h2>Data Retention</h2>
       <ul>
-        <li>Your data stays on your device until <strong>you</strong> delete it</li>
-        <li>Uninstalling the app removes all local data</li>
-        <li>iCloud data can be managed through your iCloud settings</li>
+        <li>Local journal data stays on your device until you delete it.</li>
+        <li>Uninstalling the app removes local app data.</li>
+        <li>iCloud data can be managed through your iCloud settings.</li>
+        <li>Audio files are stored locally in the app's sandboxed directory.</li>
+        <li>Derived Semantic Memory data can be deleted and rebuilt from Settings.</li>
       </ul>
-
-      <h2>Children's Privacy</h2>
-      <p>OffRecord AI Journal does not knowingly collect data from children under 13. Since we don't collect any data at all, there is no age-specific data collection concern.</p>
 
       <h2>Third-Party Services</h2>
-      <p>OffRecord AI Journal uses only Apple frameworks (subject to Apple's privacy policy):</p>
-      <ul>
-        <li>Apple Speech Framework</li>
-        <li>Apple NaturalLanguage Framework</li>
-        <li>Apple CloudKit (optional)</li>
-        <li>Apple WidgetKit</li>
-      </ul>
-      <p>We do not integrate any third-party SDKs, analytics tools, or advertising networks.</p>
+      <p>OffRecord uses Apple Speech, Apple NaturalLanguage, Apple Foundation Models on supported systems, Apple CloudKit for optional iCloud Sync, and Apple WidgetKit. We do not integrate non-Apple third-party SDKs, analytics tools, advertising networks, or third-party AI APIs.</p>
 
       <h2>App Store Privacy Labels</h2>
       <ul>
-        <li><strong>Data Not Collected</strong> &mdash; OffRecord AI Journal does not collect any data that leaves your device</li>
-        <li><strong>Data Linked to You</strong> &mdash; None</li>
-        <li><strong>Data Used to Track You</strong> &mdash; None</li>
+        <li><strong>Data Not Collected</strong> - OffRecord AI Journal does not collect data on developer servers, and journal analysis stays on device.</li>
+        <li><strong>Data Linked to You</strong> - none by OffRecord.</li>
+        <li><strong>Data Used to Track You</strong> - none.</li>
       </ul>
 
-      <h2>Your Rights</h2>
-      <p>Since we don't collect your data, you're already in full control:</p>
+      <h2>Your Controls</h2>
       <ul>
-        <li>Export all data at any time via Settings &gt; Export</li>
-        <li>Delete individual entries or all data</li>
-        <li>Uninstall to remove all local data</li>
-        <li>Manage iCloud data through Apple's iCloud settings</li>
+        <li>Export your data from Settings.</li>
+        <li>Delete individual entries or all local app data.</li>
+        <li>Disable iCloud Sync in Settings.</li>
+        <li>Revoke Apple Speech transcription consent in Settings.</li>
+        <li>Uninstall the app to remove local data.</li>
       </ul>
-
-      <h2>Changes to This Policy</h2>
-      <p>We may update this privacy policy from time to time. Changes are reflected by the "Last Updated" date above.</p>
 
       <h2>Contact</h2>
-      <p>Questions about this privacy policy? Email us at <a href="mailto:intrepidkarthi@gmail.com">intrepidkarthi@gmail.com</a></p>
+      <p>Questions about this privacy policy? Email <a href="mailto:intrepidkarthi@gmail.com">intrepidkarthi@gmail.com</a>.</p>
     </div>
   </main>
 
@@ -171,8 +147,8 @@
     <div class="container">
       <div class="footer-links">
         <a href="/blog">Blog</a>
-        <a href="/privacy">Privacy Policy</a>
-        <a href="/support">Support</a>
+        <a href="/privacy.html">Privacy Policy</a>
+        <a href="/support.html">Support</a>
       </div>
       <p>&copy; 2026 OffRecord AI Journal. All rights reserved.</p>
     </div>

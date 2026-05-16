@@ -90,13 +90,13 @@ struct LargeDaypartHeroCard: View {
                 VStack(alignment: .leading, spacing: isIPad ? 14 : 12) {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(hero.prompt.title)
-                            .font(.system(size: isIPad ? 28 : 26, weight: .semibold, design: .rounded))
+                            .font(OffRecordTypography.titleLarge)
                             .foregroundColor(OffRecordColor.textPrimary)
                             .lineLimit(2)
                             .fixedSize(horizontal: false, vertical: true)
 
                         Text(hero.prompt.prompt)
-                            .font(.system(size: isIPad ? 22 : 20, weight: .regular, design: .rounded))
+                            .font(OffRecordTypography.titleSmall)
                             .foregroundColor(OffRecordColor.textPrimary.opacity(0.86))
                             .lineSpacing(3)
                             .lineLimit(3)
@@ -175,7 +175,7 @@ struct WelcomeDaypartHeroCard: View {
                 VStack(alignment: .leading, spacing: isIPad ? 13 : 11) {
                     VStack(alignment: .leading, spacing: 7) {
                         Text("Welcome to your private diary")
-                            .font(.system(size: isIPad ? 28 : 26, weight: .semibold, design: .rounded))
+                            .font(OffRecordTypography.titleLarge)
                             .foregroundColor(OffRecordColor.textPrimary)
                             .lineLimit(2)
                             .fixedSize(horizontal: false, vertical: true)
@@ -190,12 +190,12 @@ struct WelcomeDaypartHeroCard: View {
 
                     VStack(alignment: .leading, spacing: 5) {
                         Text(hero.prompt.title)
-                            .font(.system(size: isIPad ? 19 : 18, weight: .semibold, design: .rounded))
+                            .font(OffRecordTypography.labelLarge)
                             .foregroundColor(OffRecordColor.textPrimary)
                             .lineLimit(1)
 
                         Text(hero.prompt.prompt)
-                            .font(.system(size: isIPad ? 21 : 19, weight: .regular, design: .rounded))
+                            .font(OffRecordTypography.titleSmall)
                             .foregroundColor(OffRecordColor.textPrimary.opacity(0.86))
                             .lineSpacing(3)
                             .lineLimit(3)
@@ -250,13 +250,13 @@ struct CompactDaypartHeroCard: View {
 
                 VStack(alignment: .leading, spacing: 8) {
                     Text(hero.prompt.title)
-                        .font(.system(size: isIPad ? 25 : 24, weight: .semibold, design: .rounded))
+                        .font(OffRecordTypography.titleMedium)
                         .foregroundColor(OffRecordColor.textPrimary)
                         .lineLimit(1)
                         .minimumScaleFactor(0.92)
 
                     Text(hero.prompt.prompt)
-                        .font(.system(size: isIPad ? 20 : 19, weight: .regular, design: .rounded))
+                        .font(OffRecordTypography.bodyLarge)
                         .foregroundColor(OffRecordColor.textPrimary.opacity(0.86))
                         .lineSpacing(2)
                         .lineLimit(2)
@@ -303,8 +303,8 @@ private struct CompactDaypartHeroActionRow: View {
 
     private var recordButton: some View {
         Button(action: onRecordAction) {
-            Label("Start recording", systemImage: "mic.fill")
-                .font(.system(size: 16, weight: .bold, design: .rounded))
+            Label("Start recording", systemImage: "waveform")
+                .font(OffRecordTypography.labelLarge)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 9)
                 .fixedSize(horizontal: true, vertical: false)
@@ -325,7 +325,7 @@ private struct CompactDaypartHeroActionRow: View {
     private var writeButton: some View {
         Button(action: onWriteAction) {
             Label("Write", systemImage: "square.and.pencil")
-                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                .font(OffRecordTypography.labelLarge)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 9)
                 .fixedSize(horizontal: true, vertical: false)
@@ -363,7 +363,7 @@ struct HeroRecordingMeter: View {
     private var meterHeader: some View {
         HStack(alignment: .firstTextBaseline) {
             Text(isProcessing ? "Saving reflection..." : formattedTime)
-                .font(.system(size: 26, weight: .semibold, design: .rounded).monospacedDigit())
+                .font(OffRecordTypography.numberMedium)
                 .foregroundColor(OffRecordColor.textPrimary)
 
             Spacer(minLength: 12)
@@ -387,7 +387,7 @@ struct HeroRecordingMeter: View {
             }
         }
         .frame(height: 34)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .center)
     }
 
     private var meterBackground: some View {
@@ -460,7 +460,7 @@ private struct DaypartHeroActionRow: View {
     private var primaryButton: some View {
         Button(action: onPrimaryAction) {
             Label(primaryTitle, systemImage: primarySymbolName)
-                .font(.system(size: 17, weight: .bold, design: .rounded))
+                .font(OffRecordTypography.labelLarge)
                 .padding(.horizontal, 14)
                 .padding(.vertical, 9)
                 .fixedSize(horizontal: true, vertical: false)
@@ -470,11 +470,11 @@ private struct DaypartHeroActionRow: View {
                 }
                 .overlay {
                     Capsule(style: .continuous)
-                        .stroke(DaypartHeroStyling.chromeWarmStroke, lineWidth: 1)
+                        .stroke(primaryButtonStroke, lineWidth: 1)
                 }
         }
         .buttonStyle(.plain)
-        .foregroundColor(OffRecordColor.textBrand)
+        .foregroundColor(primaryForegroundColor)
         .disabled(isProcessing)
         .accessibilityIdentifier("daypartHero.primaryCTA")
     }
@@ -482,7 +482,7 @@ private struct DaypartHeroActionRow: View {
     private var writeButton: some View {
         Button(action: onWriteAction) {
             Label("Write", systemImage: "square.and.pencil")
-                .font(.system(size: 17, weight: .semibold, design: .rounded))
+                .font(OffRecordTypography.labelLarge)
                 .padding(.horizontal, 12)
                 .padding(.vertical, 9)
                 .fixedSize(horizontal: true, vertical: false)
@@ -504,7 +504,7 @@ private struct DaypartHeroActionRow: View {
         if isRecording {
             return "stop.fill"
         }
-        return isProcessing ? "waveform" : "mic.fill"
+        return "waveform"
     }
 
     private var primaryButtonTint: Color {
@@ -515,6 +515,14 @@ private struct DaypartHeroActionRow: View {
             return OffRecordColor.backgroundPeachTint
         }
         return OffRecordColor.backgroundLavenderTint
+    }
+
+    private var primaryForegroundColor: Color {
+        isRecording ? OffRecordColor.textCoral : OffRecordColor.textBrand
+    }
+
+    private var primaryButtonStroke: Color {
+        isRecording ? OffRecordColor.brandCoral.opacity(0.55) : DaypartHeroStyling.chromeWarmStroke
     }
 }
 
@@ -621,7 +629,7 @@ private struct DaypartHeroPill: View {
 
     var body: some View {
         Label(dayPart.displayName, systemImage: dayPart.symbolName)
-            .font(.system(size: compact ? 13 : 14, weight: .semibold, design: .rounded))
+            .font(OffRecordTypography.badgeLabel)
             .foregroundColor(OffRecordColor.textPrimary)
             .padding(.horizontal, compact ? 12 : 14)
             .frame(minHeight: compact ? 30 : 34)
@@ -641,7 +649,7 @@ private struct HeroPrivacyBadge: View {
 
     var body: some View {
         Label(text, systemImage: "lock.shield.fill")
-            .font(.system(size: 13, weight: .semibold, design: .rounded))
+            .font(OffRecordTypography.labelSmall)
             .foregroundColor(OffRecordColor.textSecondary)
             .padding(.horizontal, 12)
             .frame(minHeight: 32)

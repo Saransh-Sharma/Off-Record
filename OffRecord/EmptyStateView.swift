@@ -39,12 +39,12 @@ struct EmptyStateView: View {
 
             VStack(spacing: 8) {
                 Text(title)
-                    .font(.title2.weight(.semibold))
+                    .font(OffRecordTypography.titleMedium)
                     .foregroundColor(OffRecordColor.textHeading)
                     .multilineTextAlignment(.center)
 
                 Text(subtitle)
-                    .font(.subheadline)
+                    .font(OffRecordTypography.bodySmall)
                     .foregroundColor(OffRecordColor.textSecondary)
                     .multilineTextAlignment(.center)
                     .frame(maxWidth: 400)
@@ -54,7 +54,7 @@ struct EmptyStateView: View {
             if let actionTitle = actionTitle, let action = action {
                 Button(action: action) {
                     Text(actionTitle)
-                        .font(.subheadline.weight(.semibold))
+                        .font(OffRecordTypography.labelMedium)
                         .foregroundColor(OffRecordColor.textInverse)
                         .padding(.horizontal, 24)
                         .padding(.vertical, 12)
@@ -116,12 +116,12 @@ struct WelcomeCard: View {
 
             VStack(spacing: 12) {
                 Text(Personalization.appendFirstName(to: "Welcome to Your Private Diary", name: authorName))
-                    .font(.title2.weight(.bold))
+                    .font(OffRecordTypography.titleMedium)
                     .foregroundColor(OffRecordColor.textHeading)
                     .multilineTextAlignment(.center)
 
                 Text("Speak your thoughts freely. All AI runs on your device — private by design, with optional iCloud sync.")
-                    .font(.subheadline)
+                    .font(OffRecordTypography.bodySmall)
                     .foregroundColor(OffRecordColor.textSecondary)
                     .multilineTextAlignment(.center)
                     .lineSpacing(4)
@@ -149,12 +149,12 @@ struct FeatureRow: View {
     var body: some View {
         HStack(spacing: 12) {
             Image(systemName: icon)
-                .font(.subheadline)
+                .font(OffRecordTypography.bodySmall)
                 .foregroundColor(color)
                 .frame(width: 24)
 
             Text(text)
-                .font(.subheadline)
+                .font(OffRecordTypography.bodySmall)
                 .foregroundColor(OffRecordColor.textPrimary)
         }
     }

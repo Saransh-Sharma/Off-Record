@@ -29,6 +29,10 @@ struct MoodDialSheet: View {
         }
         .interactiveDismissDisabled()
         .accessibilityIdentifier("moodDial.sheet")
+        .onAppear {
+            PerformanceSignposts.event("MoodDialSheetPresented")
+            MoodAssetPreheater.preheatMoodAssets()
+        }
     }
 
     private func cancel() {
@@ -37,6 +41,7 @@ struct MoodDialSheet: View {
 
     private func done() {
         if MoodDialPersistence.shouldSave(originalMood: originalMood, draftMood: draftMood) {
+            PerformanceSignposts.event("MoodDialSave")
             selectedMood = draftMood
             onSave()
         }

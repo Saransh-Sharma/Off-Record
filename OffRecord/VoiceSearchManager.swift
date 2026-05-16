@@ -3,7 +3,7 @@
 //  OffRecord
 //
 //  Handles voice-to-text for search functionality.
-//  Uses Apple's Speech framework for on-device recognition.
+//  Uses Apple's Speech framework for voice search.
 //
 
 #if os(iOS)
@@ -12,7 +12,7 @@ import Speech
 import AVFoundation
 
 /// Manages voice search using Apple's Speech framework.
-/// All recognition is performed on-device when possible.
+/// Requires explicit consent because online recognition may be processed by Apple Speech.
 final class VoiceSearchManager: ObservableObject {
     
     // MARK: - Published Properties
@@ -36,6 +36,11 @@ final class VoiceSearchManager: ObservableObject {
     
     /// Start listening for voice input
     func startListening() {
+        guard SpeechTranscriptionConsent.hasGrantedAppleSpeechProcessing else {
+            errorMessage = SpeechTranscriber.TranscriptionError.appleSpeechConsentRequired.errorDescription
+            return
+        }
+
         // Reset state
         transcribedText = ""
         errorMessage = nil
@@ -104,7 +109,7 @@ final class VoiceSearchManager: ObservableObject {
         // Configure for real-time results
         recognitionRequest.shouldReportPartialResults = true
         
-        // Prefer on-device recognition for privacy
+        // Use on-device recognition when available; this avoids server processing.
         if speechRecognizer?.supportsOnDeviceRecognition == true {
             recognitionRequest.requiresOnDeviceRecognition = true
         }

@@ -36,6 +36,7 @@ struct FridayProfile {
 
 // MARK: - Profile Generator
 
+@MainActor
 struct FridayProfileGenerator {
 
     static func generate() -> FridayProfile {
@@ -184,7 +185,7 @@ struct FridayProfileCardSection: View {
                     HStack {
                         FridayMascotView(pose: .idle, size: 34)
                         Text("Your Personality Card")
-                            .font(.headline)
+                            .font(OffRecordTypography.sectionTitle)
                         Spacer()
                         Button {
                             shareProfile(profile, format: .story)
@@ -193,7 +194,7 @@ struct FridayProfileCardSection: View {
                                 Image(systemName: "square.and.arrow.up")
                                 Text("Share")
                             }
-                            .font(.caption.weight(.semibold))
+                            .font(OffRecordTypography.labelSmall)
                             .foregroundColor(OffRecordColor.textAqua)
                         }
                     }
@@ -245,14 +246,14 @@ struct FridayProfileCardContent: View {
             if !profile.signatureWords.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("YOUR WORDS")
-                        .font(.system(size: 10, weight: .semibold, design: .rounded))
+                        .font(OffRecordTypography.badgeLabel)
                         .tracking(1.2)
                         .foregroundColor(OffRecordColor.textInverse.opacity(0.82))
 
                     HStack(spacing: 8) {
                         ForEach(profile.signatureWords, id: \.self) { word in
                             Text(word)
-                                .font(.system(size: 12, weight: .medium, design: .monospaced))
+                                .font(OffRecordTypography.metadata.monospaced())
                                 .foregroundColor(OffRecordColor.textInverse)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
@@ -292,7 +293,7 @@ struct FridayProfileCardContent: View {
 
     private func styleBadge(_ text: String, color: Color) -> some View {
         Text(text)
-            .font(.system(size: 11, weight: .semibold, design: .rounded))
+            .font(OffRecordTypography.badgeLabel)
             .foregroundColor(color)
             .padding(.horizontal, 10)
             .padding(.vertical, 5)
@@ -304,11 +305,11 @@ struct FridayProfileCardContent: View {
         VStack(spacing: 3) {
             HStack {
                 Text(trait.label)
-                    .font(.system(size: 11, weight: .medium))
+                    .font(OffRecordTypography.metadata)
                     .foregroundColor(OffRecordColor.textInverse.opacity(0.78))
                 Spacer()
                 Text(trait.displayLabel)
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(OffRecordTypography.labelSmall)
                     .foregroundColor(OffRecordColor.textInverse.opacity(0.8))
             }
             GeometryReader { geo in
@@ -329,11 +330,11 @@ struct FridayProfileCardContent: View {
             .frame(height: 6)
             HStack {
                 Text(trait.lowLabel)
-                    .font(.system(size: 8))
+                    .font(OffRecordTypography.annotation)
                     .foregroundColor(OffRecordColor.textInverse.opacity(0.62))
                 Spacer()
                 Text(trait.highLabel)
-                    .font(.system(size: 8))
+                    .font(OffRecordTypography.annotation)
                     .foregroundColor(OffRecordColor.textInverse.opacity(0.62))
             }
         }
@@ -342,10 +343,10 @@ struct FridayProfileCardContent: View {
     private func miniStat(value: String, label: String) -> some View {
         VStack(spacing: 3) {
             Text(value)
-                .font(.system(size: 13, weight: .bold))
+                .font(OffRecordTypography.numberSmall)
                 .foregroundColor(OffRecordColor.textInverse)
             Text(label)
-                .font(.system(size: 9))
+                .font(OffRecordTypography.annotation)
                 .foregroundColor(OffRecordColor.textInverse.opacity(0.72))
         }
         .frame(maxWidth: .infinity)
@@ -364,7 +365,7 @@ private struct FridayProfileCardExport: View {
                 Image(systemName: "person.text.rectangle")
                     .font(.system(size: 12, weight: .semibold))
                 Text("My Personality Profile")
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .font(OffRecordExportTypography.label)
                     .textCase(.uppercase)
                     .tracking(1.0)
             }
@@ -385,14 +386,14 @@ private struct FridayProfileCardExport: View {
             if !profile.signatureWords.isEmpty {
                 VStack(alignment: .leading, spacing: 6) {
                     Text("MY WORDS")
-                        .font(.system(size: 10, weight: .semibold, design: .rounded))
+                        .font(OffRecordExportTypography.label)
                         .tracking(1.2)
                         .foregroundColor(OffRecordColor.textInverse.opacity(0.78))
 
                     HStack(spacing: 8) {
                         ForEach(profile.signatureWords, id: \.self) { word in
                             Text(word)
-                                .font(.system(size: 12, weight: .medium, design: .monospaced))
+                                .font(OffRecordExportTypography.monospaced)
                                 .foregroundColor(OffRecordColor.textInverse)
                         }
                     }
@@ -413,15 +414,15 @@ private struct FridayProfileCardExport: View {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("OffRecord AI Journal")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .font(OffRecordExportTypography.brand)
                         .foregroundColor(OffRecordColor.textInverse.opacity(0.78))
                     Text("AI Voice Diary")
-                        .font(.system(size: 10, weight: .regular))
+                        .font(OffRecordExportTypography.micro)
                         .foregroundColor(OffRecordColor.textInverse.opacity(0.68))
                 }
                 Spacer()
-                Text("offrecord.example.com")
-                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                Text("OffRecord")
+                    .font(OffRecordExportTypography.monospaced)
                     .foregroundColor(OffRecordColor.textInverse.opacity(0.68))
             }
         }
@@ -447,7 +448,7 @@ private struct FridayProfileCardExport: View {
 
     private func exportBadge(_ text: String, color: Color) -> some View {
             Text(text)
-                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .font(OffRecordExportTypography.label)
                 .foregroundColor(OffRecordColor.textInverse)
             .padding(.horizontal, 12)
             .padding(.vertical, 6)
@@ -459,11 +460,11 @@ private struct FridayProfileCardExport: View {
         VStack(spacing: 2) {
             HStack {
                 Text(trait.label)
-                    .font(.system(size: 11, weight: .medium))
+                    .font(OffRecordExportTypography.metadata)
                     .foregroundColor(OffRecordColor.textInverse.opacity(0.78))
                 Spacer()
                 Text(trait.displayLabel)
-                    .font(.system(size: 11, weight: .bold))
+                    .font(OffRecordExportTypography.label)
                     .foregroundColor(OffRecordColor.textInverse.opacity(0.85))
             }
             GeometryReader { geo in
@@ -482,10 +483,10 @@ private struct FridayProfileCardExport: View {
     private func exportStat(value: String, label: String) -> some View {
         VStack(spacing: 3) {
             Text(value)
-                .font(.system(size: 14, weight: .bold))
+                .font(OffRecordExportTypography.brand)
                 .foregroundColor(OffRecordColor.textInverse)
             Text(label)
-                .font(.system(size: 9))
+                .font(OffRecordExportTypography.micro)
                 .foregroundColor(OffRecordColor.textInverse.opacity(0.72))
         }
         .frame(maxWidth: .infinity)
