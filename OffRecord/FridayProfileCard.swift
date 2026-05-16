@@ -36,6 +36,7 @@ struct FridayProfile {
 
 // MARK: - Profile Generator
 
+@MainActor
 struct FridayProfileGenerator {
 
     static func generate() -> FridayProfile {

@@ -33,6 +33,7 @@ struct FridayPrediction: Identifiable {
 
 // MARK: - Prediction Engine
 
+@MainActor
 struct FridayPredictionEngine {
 
     /// Generate up to 3 relevant predictions based on current state

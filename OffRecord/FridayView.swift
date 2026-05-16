@@ -195,8 +195,9 @@ struct FridayView: View {
     }
 
     private func applyRoutedFridayQuestion(_ question: String?) {
-        guard let question else { return }
-        routedFridayQuestion = question
+        let trimmed = question?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        guard !trimmed.isEmpty else { return }
+        routedFridayQuestion = trimmed
     }
 
     private func startFridayPredictionActivity() {

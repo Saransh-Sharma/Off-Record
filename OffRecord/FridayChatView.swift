@@ -81,6 +81,7 @@ struct FridayChatMessage: Identifiable {
 
 // MARK: - Response Generator
 
+@MainActor
 struct FridayResponseGenerator {
 
     private static let insufficientData = FridayPersonality.insufficientData
