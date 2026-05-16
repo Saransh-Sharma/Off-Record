@@ -387,7 +387,7 @@ struct HeroRecordingMeter: View {
             }
         }
         .frame(height: 34)
-        .frame(maxWidth: .infinity, alignment: .leading)
+        .frame(maxWidth: .infinity, alignment: .center)
     }
 
     private var meterBackground: some View {
@@ -470,11 +470,11 @@ private struct DaypartHeroActionRow: View {
                 }
                 .overlay {
                     Capsule(style: .continuous)
-                        .stroke(DaypartHeroStyling.chromeWarmStroke, lineWidth: 1)
+                        .stroke(primaryButtonStroke, lineWidth: 1)
                 }
         }
         .buttonStyle(.plain)
-        .foregroundColor(OffRecordColor.textBrand)
+        .foregroundColor(primaryForegroundColor)
         .disabled(isProcessing)
         .accessibilityIdentifier("daypartHero.primaryCTA")
     }
@@ -515,6 +515,14 @@ private struct DaypartHeroActionRow: View {
             return OffRecordColor.backgroundPeachTint
         }
         return OffRecordColor.backgroundLavenderTint
+    }
+
+    private var primaryForegroundColor: Color {
+        isRecording ? OffRecordColor.textCoral : OffRecordColor.textBrand
+    }
+
+    private var primaryButtonStroke: Color {
+        isRecording ? OffRecordColor.brandCoral.opacity(0.55) : DaypartHeroStyling.chromeWarmStroke
     }
 }
 

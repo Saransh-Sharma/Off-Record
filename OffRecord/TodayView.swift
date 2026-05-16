@@ -500,8 +500,9 @@ struct TodayView: View {
         selectedTab: Binding<OffRecordTab>,
         bottomSafeAreaInset: CGFloat
     ) -> some View {
-        VStack(spacing: 12) {
+        VStack(spacing: OffRecordCompactTabBarLayout.todayDockRecordingFeedbackClearance) {
             compactRecordingFeedback
+                .zIndex(4)
 
             ZStack(alignment: .bottom) {
                 compactActionShelf
@@ -622,7 +623,7 @@ struct TodayView: View {
         } label: {
             ZStack {
                 Circle()
-                    .fill(OffRecordColor.brandPlum)
+                    .fill(compactRecordButtonFill)
                     .frame(width: 92, height: 92)
 
                 Circle()
@@ -650,6 +651,17 @@ struct TodayView: View {
         .disabled(recordingState == .starting || recordingState == .processing)
         .accessibilityLabel(recordingAccessibilityLabel)
         .accessibilityIdentifier("todayDock.record")
+    }
+
+    private var compactRecordButtonFill: Color {
+        switch recordingState {
+        case .idle:
+            return OffRecordColor.brandPlum
+        case .starting, .processing:
+            return OffRecordColor.brandPeach
+        case .recording:
+            return OffRecordColor.brandCoral
+        }
     }
 
     private var recordingSection: some View {
