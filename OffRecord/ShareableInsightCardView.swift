@@ -26,7 +26,7 @@ struct ShareableInsightCardView: View {
                     Image(systemName: "square.and.arrow.up")
                         .font(.system(size: 14, weight: .semibold))
                     Text("Share")
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(OffRecordTypography.labelLarge)
                 }
                 .foregroundColor(OffRecordColor.textInverse)
                 .padding(.horizontal, 20)
@@ -43,7 +43,7 @@ struct ShareableInsightCardView: View {
                 Image(systemName: insight.category.icon)
                     .font(.system(size: 11, weight: .semibold))
                 Text("Weekly Insight")
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .font(OffRecordTypography.badgeLabel)
                     .textCase(.uppercase)
                     .tracking(1.2)
             }
@@ -51,14 +51,14 @@ struct ShareableInsightCardView: View {
 
             // Headline
             Text(insight.headline)
-                .font(.system(size: 22, weight: .bold, design: .default))
+                .font(OffRecordTypography.titleMedium)
                 .foregroundColor(OffRecordColor.textHeading)
                 .lineSpacing(4)
                 .fixedSize(horizontal: false, vertical: true)
 
             // Subtext
             Text(insight.subtext)
-                .font(.system(size: 15, weight: .regular))
+                .font(OffRecordTypography.bodyMedium)
                 .foregroundColor(OffRecordColor.textSecondary)
                 .lineSpacing(2)
 
@@ -69,7 +69,7 @@ struct ShareableInsightCardView: View {
                         .fill(categoryColor)
                         .frame(width: 6, height: 6)
                     Text(dataPoint)
-                        .font(.system(size: 12, weight: .medium, design: .monospaced))
+                        .font(OffRecordTypography.metadata.monospaced())
                         .foregroundColor(OffRecordColor.textSecondary)
                 }
             }
@@ -80,7 +80,7 @@ struct ShareableInsightCardView: View {
             HStack {
                 Spacer()
                 Text("OffRecord AI Journal")
-                    .font(.system(size: 11, weight: .medium, design: .rounded))
+                    .font(OffRecordTypography.metadata)
                     .foregroundColor(OffRecordColor.textTertiary)
             }
         }
@@ -142,7 +142,7 @@ private struct ShareableCardForExport: View {
                 Image(systemName: insight.category.icon)
                     .font(.system(size: 12, weight: .semibold))
                 Text("Weekly Insight")
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .font(OffRecordExportTypography.label)
                     .textCase(.uppercase)
                     .tracking(1.2)
             }
@@ -152,13 +152,13 @@ private struct ShareableCardForExport: View {
 
             // Headline
             Text(insight.headline)
-                .font(.system(size: 26, weight: .bold))
+                .font(OffRecordExportTypography.headline)
                 .foregroundColor(OffRecordColor.textHeading)
                 .lineSpacing(6)
 
             // Subtext
             Text(insight.subtext)
-                .font(.system(size: 16, weight: .regular))
+                .font(OffRecordExportTypography.body)
                 .foregroundColor(OffRecordColor.textSecondary)
                 .lineSpacing(3)
 
@@ -169,7 +169,7 @@ private struct ShareableCardForExport: View {
                         .fill(categoryColor)
                         .frame(width: 6, height: 6)
                     Text(dataPoint)
-                        .font(.system(size: 13, weight: .medium, design: .monospaced))
+                        .font(OffRecordExportTypography.monospaced)
                         .foregroundColor(OffRecordColor.textSecondary)
                 }
             }
@@ -180,15 +180,15 @@ private struct ShareableCardForExport: View {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("OffRecord AI Journal")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .font(OffRecordExportTypography.brand)
                         .foregroundColor(OffRecordColor.textSecondary)
                     Text("AI Voice Diary")
-                        .font(.system(size: 10, weight: .regular))
+                        .font(OffRecordExportTypography.micro)
                         .foregroundColor(OffRecordColor.textTertiary)
                 }
                 Spacer()
                 Text("OffRecord")
-                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .font(OffRecordExportTypography.monospaced)
                     .foregroundColor(OffRecordColor.textTertiary)
             }
         }
@@ -249,11 +249,11 @@ struct WeeklyInsightsSection: View {
                 Image(systemName: "sparkles")
                     .foregroundColor(OffRecordColor.brandLavenderDark)
                 Text("Your Week, Decoded")
-                    .font(.headline)
+                    .font(OffRecordTypography.sectionTitle)
                 Spacer()
                 if insights.count > 1 {
                     Text("\(currentIndex + 1)/\(insights.count)")
-                        .font(.caption)
+                        .font(OffRecordTypography.metadata)
                         .foregroundColor(OffRecordColor.textSecondary)
                 }
             }

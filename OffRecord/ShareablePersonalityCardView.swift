@@ -75,20 +75,20 @@ private struct ShareablePersonalityCardExport: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(OffRecordColor.brandAqua)
                 Text("OffRecord AI Journal")
-                    .font(.system(size: 14, weight: .bold, design: .rounded))
+                    .font(OffRecordExportTypography.brand)
                     .foregroundColor(OffRecordColor.textInverse.opacity(0.78))
             }
             .padding(.bottom, 20)
 
             // Header
             Text("FRIDAY NOTICED")
-                .font(.system(size: 13, weight: .heavy, design: .rounded))
+                .font(OffRecordExportTypography.eyebrow)
                 .tracking(2.5)
                 .foregroundColor(OffRecordColor.brandAqua)
                 .padding(.bottom, 6)
 
             Text(profile.maturityLevel)
-                .font(.system(size: 11, weight: .medium))
+                .font(OffRecordExportTypography.metadata)
                 .foregroundColor(OffRecordColor.textInverse.opacity(0.72))
                 .padding(.bottom, 20)
 
@@ -113,13 +113,13 @@ private struct ShareablePersonalityCardExport: View {
                     .fill(OffRecordColor.brandAqua)
                     .frame(width: 8, height: 8)
                 Text("Dominant Mood")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(OffRecordExportTypography.label)
                     .foregroundColor(OffRecordColor.textInverse.opacity(0.78))
                     .textCase(.uppercase)
                     .tracking(1.0)
                 Spacer()
                 Text(profile.dominantMood)
-                    .font(.system(size: 14, weight: .bold))
+                    .font(OffRecordExportTypography.brand)
                     .foregroundColor(OffRecordColor.textInverse)
             }
             .padding(.bottom, 14)
@@ -130,13 +130,13 @@ private struct ShareablePersonalityCardExport: View {
                     .fill(OffRecordColor.brandLavenderDark)
                     .frame(width: 8, height: 8)
                 Text("Communication")
-                    .font(.system(size: 10, weight: .semibold))
+                    .font(OffRecordExportTypography.label)
                     .foregroundColor(OffRecordColor.textInverse.opacity(0.78))
                     .textCase(.uppercase)
                     .tracking(1.0)
                 Spacer()
                 Text(profile.communicationStyle)
-                    .font(.system(size: 14, weight: .bold))
+                    .font(OffRecordExportTypography.brand)
                     .foregroundColor(OffRecordColor.textInverse)
             }
             .padding(.bottom, 20)
@@ -145,14 +145,14 @@ private struct ShareablePersonalityCardExport: View {
             if !profile.signatureWords.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
                     Text("SIGNATURE WORDS")
-                        .font(.system(size: 10, weight: .semibold, design: .rounded))
+                        .font(OffRecordExportTypography.label)
                         .tracking(1.2)
                         .foregroundColor(OffRecordColor.textInverse.opacity(0.76))
 
                     HStack(spacing: 8) {
                         ForEach(Array(profile.signatureWords.prefix(3)), id: \.self) { word in
                             Text(word)
-                                .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                                .font(OffRecordExportTypography.monospaced)
                                 .foregroundColor(OffRecordColor.brandAqua)
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 5)
@@ -168,7 +168,7 @@ private struct ShareablePersonalityCardExport: View {
 
             // Entry count
             Text("Built from \(profile.totalEntries) journal entries")
-                .font(.system(size: 11, weight: .medium))
+                .font(OffRecordExportTypography.metadata)
                 .foregroundColor(OffRecordColor.textInverse.opacity(0.70))
                 .padding(.bottom, 8)
 
@@ -176,15 +176,15 @@ private struct ShareablePersonalityCardExport: View {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text("OffRecord AI Journal")
-                        .font(.system(size: 14, weight: .semibold, design: .rounded))
+                        .font(OffRecordExportTypography.brand)
                         .foregroundColor(OffRecordColor.textInverse.opacity(0.76))
                     Text("AI Voice Journal")
-                        .font(.system(size: 10, weight: .regular))
+                        .font(OffRecordExportTypography.micro)
                         .foregroundColor(OffRecordColor.textInverse.opacity(0.66))
                 }
                 Spacer()
                 Text("OffRecord")
-                    .font(.system(size: 10, weight: .medium, design: .monospaced))
+                    .font(OffRecordExportTypography.microMonospaced)
                     .foregroundColor(OffRecordColor.textInverse.opacity(0.66))
             }
         }
@@ -224,15 +224,15 @@ private struct ShareablePersonalityCardExport: View {
             VStack(alignment: .leading, spacing: 10) {
                 HStack(spacing: 6) {
                     Image(systemName: "waveform.circle.fill")
-                        .font(.system(size: 10, weight: .semibold))
+                        .font(OffRecordExportTypography.label)
                         .foregroundColor(OffRecordColor.brandAqua)
                     Text("OffRecord AI Journal")
-                        .font(.system(size: 10, weight: .bold, design: .rounded))
+                        .font(OffRecordExportTypography.micro)
                         .foregroundColor(OffRecordColor.textInverse.opacity(0.76))
                 }
 
                 Text("FRIDAY NOTICED")
-                    .font(.system(size: 11, weight: .heavy, design: .rounded))
+                    .font(OffRecordExportTypography.metadata)
                     .tracking(2.0)
                     .foregroundColor(OffRecordColor.brandAqua)
 
@@ -247,14 +247,14 @@ private struct ShareablePersonalityCardExport: View {
                     HStack(spacing: 6) {
                         ForEach(Array(profile.signatureWords.prefix(3)), id: \.self) { word in
                             Text(word)
-                                .font(.system(size: 9, weight: .medium, design: .monospaced))
+                                .font(OffRecordExportTypography.microMonospaced)
                                 .foregroundColor(OffRecordColor.brandAqua)
                         }
                     }
                 }
 
                 Text("Built from \(profile.totalEntries) entries")
-                    .font(.system(size: 8, weight: .medium))
+                    .font(OffRecordExportTypography.micro)
                     .foregroundColor(OffRecordColor.textInverse.opacity(0.66))
             }
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -269,11 +269,11 @@ private struct ShareablePersonalityCardExport: View {
 
                 HStack {
                     Text(profile.dominantMood)
-                        .font(.system(size: 10, weight: .bold))
+                        .font(OffRecordExportTypography.micro)
                         .foregroundColor(OffRecordColor.textInverse)
                     Spacer()
                     Text("OffRecord")
-                        .font(.system(size: 8, weight: .medium, design: .monospaced))
+                        .font(OffRecordExportTypography.microMonospaced)
                         .foregroundColor(OffRecordColor.textInverse.opacity(0.66))
                 }
             }
@@ -310,7 +310,7 @@ private struct ShareablePersonalityCardExport: View {
 
     private func exportBadge(_ text: String, color: Color, compact: Bool = false) -> some View {
         Text(text)
-            .font(.system(size: compact ? 9 : 12, weight: .semibold, design: .rounded))
+            .font(compact ? OffRecordExportTypography.micro : OffRecordExportTypography.label)
             .foregroundColor(OffRecordColor.textInverse)
             .padding(.horizontal, compact ? 8 : 12)
             .padding(.vertical, compact ? 4 : 6)
@@ -322,11 +322,11 @@ private struct ShareablePersonalityCardExport: View {
         VStack(spacing: 3) {
             HStack {
                 Text(trait.label)
-                    .font(.system(size: 11, weight: .medium))
+                    .font(OffRecordExportTypography.metadata)
                     .foregroundColor(OffRecordColor.textInverse.opacity(0.78))
                 Spacer()
                 Text(trait.displayLabel)
-                    .font(.system(size: 12, weight: .bold))
+                    .font(OffRecordExportTypography.label)
                     .foregroundColor(OffRecordColor.textInverse.opacity(0.85))
             }
             GeometryReader { geo in
@@ -347,11 +347,11 @@ private struct ShareablePersonalityCardExport: View {
             .frame(height: 6)
             HStack {
                 Text(trait.lowLabel)
-                    .font(.system(size: 8))
+                    .font(OffRecordExportTypography.micro)
                     .foregroundColor(OffRecordColor.textInverse.opacity(0.62))
                 Spacer()
                 Text(trait.highLabel)
-                    .font(.system(size: 8))
+                    .font(OffRecordExportTypography.micro)
                     .foregroundColor(OffRecordColor.textInverse.opacity(0.62))
             }
         }
@@ -361,11 +361,11 @@ private struct ShareablePersonalityCardExport: View {
         VStack(spacing: 2) {
             HStack {
                 Text(trait.label)
-                    .font(.system(size: 9, weight: .medium))
+                    .font(OffRecordExportTypography.micro)
                     .foregroundColor(OffRecordColor.textInverse.opacity(0.78))
                 Spacer()
                 Text(trait.displayLabel)
-                    .font(.system(size: 9, weight: .bold))
+                    .font(OffRecordExportTypography.micro)
                     .foregroundColor(OffRecordColor.textInverse.opacity(0.8))
             }
             GeometryReader { geo in
