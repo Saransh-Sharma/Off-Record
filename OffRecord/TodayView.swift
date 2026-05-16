@@ -432,17 +432,17 @@ struct TodayView: View {
             VStack(alignment: .leading, spacing: 12) {
                 HStack {
                     Label("Today's Entry", systemImage: "doc.text")
-                        .font(.subheadline.weight(.semibold))
+                        .font(OffRecordTypography.labelMedium)
                         .foregroundColor(OffRecordColor.textPeach)
                     Spacer()
                     Image(systemName: "chevron.right")
-                        .font(.caption.weight(.semibold))
+                        .font(OffRecordTypography.labelSmall)
                         .foregroundColor(OffRecordColor.textTertiary)
                 }
 
                 if let text = entry.text, !text.isEmpty {
                     Text(text)
-                        .font(.body)
+                        .font(OffRecordTypography.journalBody)
                         .foregroundColor(OffRecordColor.textPrimary)
                         .multilineTextAlignment(.leading)
                         .lineLimit(nil)
@@ -450,14 +450,14 @@ struct TodayView: View {
                     HStack(spacing: 16) {
                         if let duration = entry.value(forKey: "duration") as? Double, duration > 0 {
                             Label(formatDuration(duration), systemImage: "waveform")
-                                .font(.caption)
+                                .font(OffRecordTypography.metadata)
                                 .foregroundColor(OffRecordColor.textSecondary)
                         }
 
                         let words = wordCount(for: text)
                         if words > 0 {
                             Label("\(words) words", systemImage: "text.word.spacing")
-                                .font(.caption)
+                                .font(OffRecordTypography.metadata)
                                 .foregroundColor(OffRecordColor.textSecondary)
                         }
 
@@ -465,7 +465,7 @@ struct TodayView: View {
 
                         if let updatedAt = entry.updatedAt {
                             Text(formattedTime(updatedAt))
-                                .font(.caption)
+                                .font(OffRecordTypography.metadata)
                                 .foregroundColor(OffRecordColor.textTertiary)
                         }
                     }
@@ -476,7 +476,7 @@ struct TodayView: View {
                                 ProgressView()
                                     .scaleEffect(0.8)
                                 Text("Transcribing your recording...")
-                                    .font(.subheadline)
+                                    .font(OffRecordTypography.bodySmall)
                                     .foregroundColor(OffRecordColor.textSecondary)
                             }
                         } else {
@@ -529,7 +529,7 @@ struct TodayView: View {
                 ProgressView()
                     .scaleEffect(0.9)
                 Text("Transcribing your thoughts...")
-                    .font(.subheadline.weight(.medium))
+                    .font(OffRecordTypography.labelMedium)
                     .foregroundColor(OffRecordColor.textSecondary)
             }
             .padding(.vertical, 12)
@@ -660,7 +660,7 @@ struct TodayView: View {
                     ProgressView()
                         .scaleEffect(0.9)
                     Text("Transcribing your thoughts...")
-                        .font(.subheadline.weight(.medium))
+                        .font(OffRecordTypography.labelMedium)
                         .foregroundColor(OffRecordColor.textSecondary)
                 }
                 .padding(.vertical, 12)
@@ -701,15 +701,15 @@ struct TodayView: View {
             if recordingState == .idle {
                 VStack(spacing: 6) {
                     Text(statusText)
-                        .font(.subheadline.weight(.medium))
+                        .font(OffRecordTypography.labelMedium)
                         .foregroundColor(OffRecordColor.textBrand)
                     Text("Your journal stays on this device")
-                        .font(.caption)
+                        .font(OffRecordTypography.metadata)
                         .foregroundColor(OffRecordColor.textSage)
 
                     if let prompt = selectedPrompt {
                         Text(prompt.detail)
-                            .font(.caption)
+                            .font(OffRecordTypography.metadata)
                             .foregroundColor(OffRecordColor.textSecondary)
                             .multilineTextAlignment(.center)
                             .padding(.top, 4)
@@ -1006,33 +1006,33 @@ struct TodayView: View {
         VStack(alignment: .leading, spacing: 4) {
             if hasAudioReference(entry) {
                 Text("Recording saved")
-                    .font(.subheadline)
+                    .font(OffRecordTypography.bodySmall)
                     .foregroundColor(OffRecordColor.textPrimary)
                 Text("Tap to add text or play your recording")
-                    .font(.caption)
+                    .font(OffRecordTypography.metadata)
                     .foregroundColor(OffRecordColor.textSecondary)
             } else if entry.photos?.count ?? 0 > 0 {
                 Text("Photos added")
-                    .font(.subheadline)
+                    .font(OffRecordTypography.bodySmall)
                     .foregroundColor(OffRecordColor.textPrimary)
                 Text("Tap to add text or more photos")
-                    .font(.caption)
+                    .font(OffRecordTypography.metadata)
                     .foregroundColor(OffRecordColor.textSecondary)
             } else if let moodString = entry.value(forKey: "mood") as? String,
                       let mood = Mood(rawValue: moodString),
                       mood != .none {
                 Text("\(mood.displayName) mood")
-                    .font(.subheadline)
+                    .font(OffRecordTypography.bodySmall)
                     .foregroundColor(OffRecordColor.textPrimary)
                 Text("Tap to add text or audio")
-                    .font(.caption)
+                    .font(OffRecordTypography.metadata)
                     .foregroundColor(OffRecordColor.textSecondary)
             } else {
                 Text("Draft note")
-                    .font(.subheadline)
+                    .font(OffRecordTypography.bodySmall)
                     .foregroundColor(OffRecordColor.textPrimary)
                 Text("Tap to start writing")
-                    .font(.caption)
+                    .font(OffRecordTypography.metadata)
                     .foregroundColor(OffRecordColor.textSecondary)
             }
         }
@@ -1319,9 +1319,9 @@ struct StatBadge: View {
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: icon)
-                .font(.caption)
+                .font(OffRecordTypography.metadata)
             Text(value)
-                .font(.caption)
+                .font(OffRecordTypography.metadata)
         }
         .foregroundColor(style.foreground)
         .padding(.horizontal, 12)
@@ -1377,10 +1377,10 @@ struct PromptChip: View {
         Button(action: onTap) {
             VStack(alignment: .leading, spacing: 4) {
                 Text(prompt.title)
-                    .font(.caption.weight(.semibold))
+                    .font(OffRecordTypography.labelSmall)
                     .foregroundColor(isSelected ? OffRecordReadableTintStyle.friday.foreground : OffRecordColor.textPrimary)
                 Text(prompt.detail)
-                    .font(.caption)
+                    .font(OffRecordTypography.metadata)
                     .foregroundColor(OffRecordColor.textSecondary)
                     .lineLimit(2)
             }
