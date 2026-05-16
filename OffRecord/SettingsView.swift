@@ -601,8 +601,10 @@ struct SettingsView: View {
             }
             .padding(.vertical, 8)
 
-            Link(destination: OffRecordExternalLinks.privacyPolicyURL) {
-                Label("Privacy Policy", systemImage: "hand.raised.fill")
+            if let privacyPolicyURL = OffRecordExternalLinks.privacyPolicyURL {
+                Link(destination: privacyPolicyURL) {
+                    Label("Privacy Policy", systemImage: "hand.raised.fill")
+                }
             }
         } header: {
             Text("Privacy & Security")

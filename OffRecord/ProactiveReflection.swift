@@ -1352,6 +1352,7 @@ final class ProactiveReflectionController: ObservableObject {
         insights = rankedVisibleInsights(insights, now: now)
         if selectedPrompt?.id == insight.id { selectedPrompt = insights.first }
         saveFeedback()
+        refreshReminderSchedule()
     }
 
     func dismiss(_ insight: ReflectionInsight, now: Date = Date()) {
@@ -1369,6 +1370,7 @@ final class ProactiveReflectionController: ObservableObject {
         insights = rankedVisibleInsights(insights, now: now)
         if selectedPrompt?.id == insight.id { selectedPrompt = insights.first }
         saveFeedback()
+        refreshReminderSchedule()
     }
 
     func markNotUseful(_ insight: ReflectionInsight, reason: String = "Not useful", now: Date = Date()) {
@@ -1387,6 +1389,7 @@ final class ProactiveReflectionController: ObservableObject {
         insights = rankedVisibleInsights(insights, now: now)
         if selectedPrompt?.id == insight.id { selectedPrompt = insights.first }
         saveFeedback()
+        refreshReminderSchedule()
     }
 
     func privacySafeReminderBody() -> String {
@@ -1479,6 +1482,11 @@ final class ProactiveReflectionController: ObservableObject {
 
     private func cacheReminderBody() {
         UserDefaults.standard.set(Self.privacySafeReminderBody(for: selectedPrompt), forKey: proactiveReflectionReminderBodyKey)
+    }
+
+    private func refreshReminderSchedule() {
+        cacheReminderBody()
+        ReminderManager.shared.reconcileScheduleIfNeeded()
     }
 
     private func save() {
