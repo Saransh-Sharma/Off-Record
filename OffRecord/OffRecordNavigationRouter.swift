@@ -46,8 +46,12 @@ final class OffRecordNavigationRouter: ObservableObject {
               let route = Self.route(from: url) else {
             return
         }
-        UserDefaults.standard.removeObject(forKey: Self.pendingRouteDefaultsKey)
-        self.route(route, canNavigate: canNavigate)
+        if canNavigate {
+            self.route(route, canNavigate: true)
+            UserDefaults.standard.removeObject(forKey: Self.pendingRouteDefaultsKey)
+        } else {
+            deferredRoute = route
+        }
     }
 
     func route(userActivity: NSUserActivity, canNavigate: Bool) -> Bool {

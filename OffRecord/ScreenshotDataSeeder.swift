@@ -9,6 +9,7 @@
 import Foundation
 import CoreData
 
+@MainActor
 struct ScreenshotDataSeeder {
 
     static func seedIfNeeded(context: NSManagedObjectContext) {

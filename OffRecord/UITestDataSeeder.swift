@@ -8,6 +8,7 @@
 import CoreData
 import Foundation
 
+@MainActor
 struct UITestDataSeeder {
     static func seedIfNeeded(context: NSManagedObjectContext) {
         let arguments = ProcessInfo.processInfo.arguments

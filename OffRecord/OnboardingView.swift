@@ -419,6 +419,7 @@ struct OnboardingView: View {
         pendingTranscription = nil
         isTranscribing = false
         firstEntryMode = .textFallback
+        entryCreated = true
     }
 
     private func transcribeFirstEntry(entry: DiaryEntry, audioURL: URL) {
@@ -442,6 +443,7 @@ struct OnboardingView: View {
                     )
                     EntryLearningPipeline.upsertSemanticEntry(entry)
                     HapticManager.shared.entrySaved()
+                    entryCreated = true
                 case .failure:
                     response.speechChoice = .denied
                     onboardingError = "Your recording was saved, but transcription did not finish. You can type a few words before continuing."
@@ -473,7 +475,7 @@ struct OnboardingView: View {
             text: text,
             mood: selectedMood.rawValue,
             date: entry.date ?? Date(),
-            duration: 0
+            duration: entry.duration
         )
         EntryLearningPipeline.upsertSemanticEntry(entry)
         HapticManager.shared.entrySaved()
