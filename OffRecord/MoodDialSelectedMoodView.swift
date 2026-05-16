@@ -10,7 +10,7 @@ struct MoodDialSelectedMoodView: View {
     var body: some View {
         VStack(spacing: 12 * layoutScale) {
             Text(mood.moodSentence)
-                .font(.system(size: 18 * layoutScale, weight: .medium))
+                .font(OffRecordTypography.labelLarge)
                 .foregroundStyle(OffRecordColor.textSecondary)
                 .contentTransition(.opacity)
                 .accessibilityIdentifier("moodDial.sentence")
@@ -36,7 +36,7 @@ struct MoodDialSelectedMoodView: View {
             .frame(width: 220 * layoutScale, height: 176 * layoutScale)
 
             Text(mood.supportiveCopy)
-                .font(.system(size: 15 * layoutScale, weight: .regular))
+                .font(OffRecordTypography.bodySmall)
                 .foregroundStyle(OffRecordColor.textTertiary)
                 .multilineTextAlignment(.center)
                 .contentTransition(.opacity)

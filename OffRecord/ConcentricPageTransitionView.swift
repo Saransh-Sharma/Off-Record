@@ -191,7 +191,7 @@ struct ConcentricPageTransitionView<Content: View>: View {
         VStack(spacing: 12) {
             if let secondaryTitle {
                 Button(secondaryTitle, action: onSecondaryAction)
-                    .font(.system(.subheadline, design: .rounded, weight: .bold))
+                    .font(OffRecordTypography.labelMedium)
                     .foregroundStyle(OffRecordColor.textBrand.opacity(0.78))
                     .buttonStyle(.plain)
                     .disabled(isAnimating)
@@ -233,7 +233,7 @@ struct ConcentricPageTransitionView<Content: View>: View {
                     Image(systemName: ctaIcon)
                 }
             }
-            .font(.system(.headline, design: .rounded, weight: .bold))
+            .font(OffRecordTypography.sectionTitle)
             .foregroundStyle(OffRecordColor.textBrand)
             .frame(maxWidth: 360)
             .padding(.horizontal, 22)

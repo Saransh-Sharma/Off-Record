@@ -9,7 +9,7 @@ struct MoodDialHeader: View {
         VStack(spacing: 12) {
             HStack {
                 Button("Cancel", action: cancel)
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(OffRecordTypography.labelLarge)
                     .foregroundStyle(OffRecordColor.brandPlum)
                     .frame(width: 96, height: 52)
                     .background(Color.white, in: Capsule())
@@ -19,7 +19,7 @@ struct MoodDialHeader: View {
                 Spacer()
 
                 Button("Done", action: done)
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(OffRecordTypography.labelLarge)
                     .foregroundStyle(Color.white)
                     .frame(width: 100, height: 52)
                     .background(OffRecordColor.brandPlum.opacity(canSave ? 1 : 0.62), in: Capsule())
@@ -29,7 +29,7 @@ struct MoodDialHeader: View {
             }
 
             Text("How are\nyou feeling?")
-                .font(.system(size: 32, weight: .heavy))
+                .font(OffRecordTypography.screenTitle)
                 .foregroundStyle(OffRecordColor.textHeading)
                 .multilineTextAlignment(.center)
                 .lineSpacing(0)
