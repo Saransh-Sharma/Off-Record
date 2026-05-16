@@ -293,31 +293,31 @@ struct SmallWidgetView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 Image(systemName: "mic.fill")
-                    .font(.caption)
+                    .font(OffRecordWidgetTypography.metadata)
                     .foregroundColor(OffRecordColor.textBrand)
                 Text(formattedDate)
-                    .font(.caption2)
+                    .font(OffRecordWidgetTypography.metadata)
                     .foregroundColor(OffRecordColor.textSecondary)
                 Spacer()
                 if let moodString = entry.mood, let mood = Mood(rawValue: moodString), mood != .none {
                     Image(systemName: mood.icon)
-                        .font(.caption)
+                        .font(OffRecordWidgetTypography.metadata)
                         .foregroundColor(mood.color)
                 }
             }
 
             if entry.hasEntry, let text = entry.text, !text.isEmpty {
                 Text(text)
-                    .font(.caption)
+                    .font(OffRecordWidgetTypography.metadata)
                     .lineLimit(4)
                     .foregroundColor(OffRecordColor.textPrimary)
             } else {
                 VStack(spacing: 4) {
                     Image(systemName: "plus.circle.fill")
-                        .font(.title2)
+                        .font(OffRecordWidgetTypography.titleMedium)
                         .foregroundColor(OffRecordColor.textBrand)
                     Text("Tap to record")
-                        .font(.caption2)
+                        .font(OffRecordWidgetTypography.metadata)
                         .foregroundColor(OffRecordColor.textSecondary)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -345,7 +345,7 @@ struct MediumWidgetView: View {
             VStack(alignment: .leading, spacing: 8) {
                 HStack {
                     Text("Today")
-                        .font(.headline)
+                        .font(OffRecordWidgetTypography.cardTitle)
                         .foregroundColor(OffRecordColor.textPrimary)
                     Spacer()
                     if let moodString = entry.mood, let mood = Mood(rawValue: moodString), mood != .none {
@@ -353,19 +353,19 @@ struct MediumWidgetView: View {
                             Image(systemName: mood.icon)
                             Text(mood.displayName)
                         }
-                        .font(.caption)
+                        .font(OffRecordWidgetTypography.metadata)
                         .foregroundColor(mood.readableColor)
                     }
                 }
 
                 if entry.hasEntry, let text = entry.text, !text.isEmpty {
                     Text(text)
-                        .font(.subheadline)
+                        .font(OffRecordWidgetTypography.bodySmall)
                         .lineLimit(3)
                         .foregroundColor(OffRecordColor.textPrimary)
                 } else {
                     Text("No entry yet")
-                        .font(.subheadline)
+                        .font(OffRecordWidgetTypography.bodySmall)
                         .foregroundColor(OffRecordColor.textSecondary)
                         .italic()
                 }
@@ -373,7 +373,7 @@ struct MediumWidgetView: View {
                 Spacer()
 
                 Text(formattedDate)
-                    .font(.caption2)
+                    .font(OffRecordWidgetTypography.metadata)
                     .foregroundColor(OffRecordColor.textSecondary)
             }
 
@@ -382,10 +382,10 @@ struct MediumWidgetView: View {
             // Right side - Quick action
             VStack(spacing: 8) {
                 Image(systemName: "mic.fill")
-                    .font(.title)
+                    .font(OffRecordWidgetTypography.titleLarge)
                     .foregroundColor(OffRecordColor.textBrand)
                 Text("Record")
-                    .font(.caption)
+                    .font(OffRecordWidgetTypography.metadata)
                     .foregroundColor(OffRecordColor.textSecondary)
             }
             .frame(width: 60)
@@ -408,7 +408,7 @@ struct AccessoryCircularView: View {
         ZStack {
             AccessoryWidgetBackground()
             Image(systemName: entry.hasEntry ? "checkmark.circle.fill" : "mic.fill")
-                .font(.title2)
+                .font(OffRecordWidgetTypography.titleMedium)
         }
     }
 }
@@ -419,16 +419,16 @@ struct AccessoryRectangularView: View {
     var body: some View {
         HStack {
             Image(systemName: "mic.fill")
-                .font(.title3)
+                .font(OffRecordWidgetTypography.bodySmall)
             VStack(alignment: .leading) {
                 Text("OffRecord AI Journal")
-                    .font(.headline)
+                    .font(OffRecordWidgetTypography.cardTitle)
                 if entry.hasEntry {
                     Text("Entry recorded")
-                        .font(.caption)
+                        .font(OffRecordWidgetTypography.metadata)
                 } else {
                     Text("Tap to record")
-                        .font(.caption)
+                        .font(OffRecordWidgetTypography.metadata)
                 }
             }
         }
@@ -471,20 +471,20 @@ struct SmallStreakView: View {
             
             // Streak count
             Text("\(entry.streak)")
-                .font(.system(size: 32, weight: .bold, design: .rounded))
+                .font(OffRecordWidgetTypography.numberLarge)
                 .foregroundColor(OffRecordColor.textPrimary)
             
             Text(entry.streak == 1 ? "day streak" : "day streak")
-                .font(.caption)
+                .font(OffRecordWidgetTypography.metadata)
                 .foregroundColor(OffRecordColor.textSecondary)
             
             // Today status
             HStack(spacing: 4) {
                 Image(systemName: entry.hasEntryToday ? "checkmark.circle.fill" : "circle")
-                    .font(.caption2)
+                    .font(OffRecordWidgetTypography.metadata)
                     .foregroundColor(entry.hasEntryToday ? OffRecordColor.brandSageDark : OffRecordColor.textSecondary)
                 Text(entry.hasEntryToday ? "Done today" : "Record today")
-                    .font(.caption2)
+                    .font(OffRecordWidgetTypography.metadata)
                     .foregroundColor(entry.hasEntryToday ? OffRecordColor.brandSageDark : OffRecordColor.textSecondary)
             }
         }
@@ -507,9 +507,9 @@ struct CircularStreakView: View {
             AccessoryWidgetBackground()
             VStack(spacing: 0) {
                 Image(systemName: "flame.fill")
-                    .font(.caption)
+                    .font(OffRecordWidgetTypography.metadata)
                 Text("\(entry.streak)")
-                    .font(.system(size: 18, weight: .bold, design: .rounded))
+                    .font(OffRecordWidgetTypography.numberMedium)
             }
         }
     }
@@ -539,7 +539,7 @@ struct SmallMoodView: View {
     var body: some View {
         VStack(spacing: 12) {
             Text("Today's Mood")
-                .font(.caption)
+                .font(OffRecordWidgetTypography.metadata)
                 .foregroundColor(OffRecordColor.textSecondary)
             
             if let moodString = entry.todayMood, let mood = Mood(rawValue: moodString), mood != .none {
@@ -549,20 +549,20 @@ struct SmallMoodView: View {
                             .fill(mood.color.opacity(0.2))
                             .frame(width: 50, height: 50)
                         Image(systemName: mood.icon)
-                            .font(.title2)
+                            .font(OffRecordWidgetTypography.titleMedium)
                             .foregroundColor(mood.color)
                     }
                     Text(mood.displayName)
-                        .font(.subheadline.weight(.medium))
+                        .font(OffRecordWidgetTypography.label)
                         .foregroundColor(mood.readableColor)
                 }
             } else {
                 VStack(spacing: 8) {
                     Image(systemName: "face.dashed")
-                        .font(.largeTitle)
+                        .font(OffRecordWidgetTypography.titleLarge)
                         .foregroundColor(OffRecordColor.textSecondary)
                     Text("No mood set")
-                        .font(.caption)
+                        .font(OffRecordWidgetTypography.metadata)
                         .foregroundColor(OffRecordColor.textSecondary)
                 }
             }
@@ -583,7 +583,7 @@ struct MediumMoodView: View {
             // Today's mood
             VStack(spacing: 8) {
                 Text("Today")
-                    .font(.caption)
+                    .font(OffRecordWidgetTypography.metadata)
                     .foregroundColor(OffRecordColor.textSecondary)
                 
                 if let moodString = entry.todayMood, let mood = Mood(rawValue: moodString), mood != .none {
@@ -592,18 +592,18 @@ struct MediumMoodView: View {
                             .fill(mood.color.opacity(0.2))
                             .frame(width: 44, height: 44)
                         Image(systemName: mood.icon)
-                            .font(.title3)
+                            .font(OffRecordWidgetTypography.bodySmall)
                             .foregroundColor(mood.color)
                     }
                     Text(mood.displayName)
-                        .font(.caption.weight(.medium))
+                        .font(OffRecordWidgetTypography.label)
                         .foregroundColor(mood.readableColor)
                 } else {
                     Image(systemName: "face.dashed")
-                        .font(.title)
+                        .font(OffRecordWidgetTypography.titleLarge)
                         .foregroundColor(OffRecordColor.textSecondary)
                     Text("Not set")
-                        .font(.caption)
+                        .font(OffRecordWidgetTypography.metadata)
                         .foregroundColor(OffRecordColor.textSecondary)
                 }
             }
@@ -614,12 +614,12 @@ struct MediumMoodView: View {
             // Week mood summary
             VStack(alignment: .leading, spacing: 8) {
                 Text("This Week")
-                    .font(.caption)
+                    .font(OffRecordWidgetTypography.metadata)
                     .foregroundColor(OffRecordColor.textSecondary)
                 
                 if entry.weekMoods.isEmpty {
                     Text("No moods recorded")
-                        .font(.caption)
+                        .font(OffRecordWidgetTypography.metadata)
                         .foregroundColor(OffRecordColor.textSecondary)
                         .italic()
                 } else {
@@ -629,14 +629,14 @@ struct MediumMoodView: View {
                         if let mood = Mood(rawValue: moodString), mood != .none {
                             HStack(spacing: 6) {
                                 Image(systemName: mood.icon)
-                                    .font(.caption2)
+                                    .font(OffRecordWidgetTypography.metadata)
                                     .foregroundColor(mood.color)
                                 Text(mood.displayName)
-                                    .font(.caption2)
+                                    .font(OffRecordWidgetTypography.metadata)
                                     .foregroundColor(OffRecordColor.textPrimary)
                                 Spacer()
                                 Text("\(count)")
-                                    .font(.caption2.weight(.medium))
+                                    .font(OffRecordWidgetTypography.label)
                                     .foregroundColor(OffRecordColor.textSecondary)
                             }
                         }
@@ -662,16 +662,16 @@ struct QuickRecordWidgetView: View {
                     .frame(width: 60, height: 60)
                 
                 Image(systemName: "mic.fill")
-                    .font(.title)
+                    .font(OffRecordWidgetTypography.titleLarge)
                     .foregroundColor(OffRecordColor.textBrand)
             }
             
             Text("Tap to Record")
-                .font(.subheadline.weight(.medium))
+                .font(OffRecordWidgetTypography.label)
                 .foregroundColor(OffRecordColor.textPrimary)
             
             Text("Open OffRecord AI Journal")
-                .font(.caption)
+                .font(OffRecordWidgetTypography.metadata)
                 .foregroundColor(OffRecordColor.textSecondary)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
