@@ -274,13 +274,13 @@ struct SettingsView: View {
 
             if lockManager.isEnabled {
                 Text("Your journal locks when you leave the app. OffRecord never sees or stores your \(lockManager.biometryTypeName).")
-                    .font(.caption)
+                    .font(OffRecordTypography.metadata)
                     .foregroundColor(OffRecordColor.textSecondary)
             }
 
             if !lockManager.biometricsAvailable {
                 Text("If \(lockManager.biometryTypeName) is unavailable, iOS will use your device passcode.")
-                    .font(.caption)
+                    .font(OffRecordTypography.metadata)
                     .foregroundColor(OffRecordColor.textSecondary)
             }
         }
@@ -310,7 +310,7 @@ struct SettingsView: View {
                     .accessibilityIdentifier("settings.privacy.appleSpeechConsentToggle")
 
                 Text(SpeechTranscriptionConsent.settingsDescription)
-                    .font(.caption)
+                    .font(OffRecordTypography.metadata)
                     .foregroundColor(OffRecordColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
@@ -332,15 +332,15 @@ struct SettingsView: View {
                             .fill(OffRecordColor.surfaceLavender)
                             .frame(width: 38, height: 38)
                         Image(systemName: "brain.head.profile")
-                            .font(.subheadline)
+                            .font(OffRecordTypography.bodySmall)
                             .foregroundColor(OffRecordColor.textLavender)
                     }
 
                     VStack(alignment: .leading, spacing: 3) {
                         Text("Semantic Memory")
-                            .font(.subheadline.weight(.semibold))
+                            .font(OffRecordTypography.labelMedium)
                         Text(semanticMemory.statusMessage)
-                            .font(.caption)
+                            .font(OffRecordTypography.metadata)
                             .foregroundColor(OffRecordColor.textSecondary)
                             .lineLimit(2)
                             .accessibilityIdentifier("semanticMemory.statusMessage")
@@ -371,7 +371,7 @@ struct SettingsView: View {
                         Image(systemName: "exclamationmark.triangle.fill")
                         Text("Apple embedding assets were unavailable, so OffRecord is using a local lexical fallback until rebuild succeeds.")
                     }
-                    .font(.caption)
+                    .font(OffRecordTypography.metadata)
                     .foregroundColor(OffRecordColor.textPeach)
                     .fixedSize(horizontal: false, vertical: true)
                         .accessibilityIdentifier("semanticMemory.fallbackWarning")
@@ -410,7 +410,7 @@ struct SettingsView: View {
                 .accessibilityIdentifier("settings.systemSearch.spotlightToggle")
 
             Text("Spotlight uses private metadata only: date, mood, starred state, word count, and whether an entry has voice or photos. Raw journal text, transcripts, photo thumbnails, and audio filenames stay out of system search.")
-                .font(.caption)
+                .font(OffRecordTypography.metadata)
                 .foregroundColor(OffRecordColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
@@ -471,7 +471,7 @@ struct SettingsView: View {
 
             if reminderManager.usesFridaySmartPrompts {
                 Text("Reminder text stays privacy-safe and never includes names, topics, moods, regrets, or journal snippets.")
-                    .font(.caption)
+                    .font(OffRecordTypography.metadata)
                     .foregroundColor(OffRecordColor.textSecondary)
             }
         } header: {
@@ -491,14 +491,14 @@ struct SettingsView: View {
                             .fill(iCloudSyncEnabled && PersistenceController.isCloudAvailable ? OffRecordColor.surfaceBlue : OffRecordColor.surfaceWarm)
                             .frame(width: 36, height: 36)
                         Image(systemName: iCloudSyncEnabled && PersistenceController.isCloudAvailable ? "icloud.fill" : "icloud.slash")
-                            .font(.body)
+                            .font(OffRecordTypography.bodyLarge)
                             .foregroundColor(iCloudSyncEnabled && PersistenceController.isCloudAvailable ? OffRecordColor.textSky : OffRecordColor.textTertiary)
                     }
                     VStack(alignment: .leading, spacing: 2) {
                         Text("iCloud Sync")
-                            .font(.subheadline.weight(.semibold))
+                            .font(OffRecordTypography.labelMedium)
                         Text(syncStatusText)
-                            .font(.caption)
+                            .font(OffRecordTypography.metadata)
                             .foregroundColor(OffRecordColor.textSecondary)
                     }
                 }
@@ -513,17 +513,17 @@ struct SettingsView: View {
                     HStack(spacing: 8) {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundColor(OffRecordColor.textSage)
-                            .font(.caption)
+                            .font(OffRecordTypography.metadata)
                         Text("Entries sync automatically via your personal iCloud")
-                            .font(.caption)
+                            .font(OffRecordTypography.metadata)
                             .foregroundColor(OffRecordColor.textSecondary)
                     }
                     HStack(spacing: 8) {
                         Image(systemName: "lock.fill")
                             .foregroundColor(OffRecordColor.textSage)
-                            .font(.caption)
+                            .font(OffRecordTypography.metadata)
                         Text("Encrypted through your Apple ID")
-                            .font(.caption)
+                            .font(OffRecordTypography.metadata)
                             .foregroundColor(OffRecordColor.textSecondary)
                     }
                 }
@@ -532,9 +532,9 @@ struct SettingsView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundColor(OffRecordColor.textPeach)
-                        .font(.caption)
+                        .font(OffRecordTypography.metadata)
                     Text("iCloud unavailable")
-                        .font(.caption)
+                        .font(OffRecordTypography.metadata)
                         .foregroundColor(OffRecordColor.textSecondary)
                 }
                 .padding(.vertical, 4)
@@ -569,14 +569,14 @@ struct SettingsView: View {
                         .fill(OffRecordColor.surfaceSage)
                         .frame(width: 44, height: 44)
                     Image(systemName: "lock.shield.fill")
-                        .font(.title3)
+                        .font(OffRecordTypography.titleSmall)
                         .foregroundColor(OffRecordColor.textSage)
                 }
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Privacy First")
-                        .font(.subheadline.weight(.semibold))
+                        .font(OffRecordTypography.labelMedium)
                     Text("Your data is encrypted and private")
-                        .font(.caption)
+                        .font(OffRecordTypography.metadata)
                         .foregroundColor(OffRecordColor.textSecondary)
                 }
             }
@@ -623,14 +623,14 @@ struct SettingsView: View {
                             .fill(OffRecordColor.surfacePeach)
                             .frame(width: 36, height: 36)
                         Image(systemName: "square.and.arrow.up")
-                            .font(.subheadline)
+                            .font(OffRecordTypography.bodySmall)
                             .foregroundColor(OffRecordColor.textPeach)
                     }
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Export Data")
-                            .font(.subheadline)
+                            .font(OffRecordTypography.bodySmall)
                         Text("JSON, Text, Markdown, CSV")
-                            .font(.caption)
+                            .font(OffRecordTypography.metadata)
                             .foregroundColor(OffRecordColor.textSecondary)
                     }
                 }
@@ -645,14 +645,14 @@ struct SettingsView: View {
                             .fill(OffRecordColor.surfaceBlue)
                             .frame(width: 36, height: 36)
                         Image(systemName: "square.and.arrow.down")
-                            .font(.subheadline)
+                            .font(OffRecordTypography.bodySmall)
                             .foregroundColor(OffRecordColor.textSky)
                     }
                     VStack(alignment: .leading, spacing: 2) {
                         Text("Import Backup")
-                            .font(.subheadline)
+                            .font(OffRecordTypography.bodySmall)
                         Text("Restore from JSON backup")
-                            .font(.caption)
+                            .font(OffRecordTypography.metadata)
                             .foregroundColor(OffRecordColor.textSecondary)
                     }
                 }
@@ -695,7 +695,7 @@ struct SettingsView: View {
                     calculateStorage()
                 } label: {
                     Image(systemName: "arrow.clockwise")
-                        .font(.caption)
+                        .font(OffRecordTypography.metadata)
                 }
             }
         } footer: {
@@ -938,7 +938,7 @@ struct ThemeButton: View {
                 }
                 
                 Text(theme.rawValue)
-                    .font(.caption)
+                    .font(OffRecordTypography.metadata)
                     .foregroundColor(isSelected ? theme.readableAccentColor : OffRecordColor.textSecondary)
             }
         }
@@ -961,7 +961,7 @@ struct StorageRow: View {
                     .fill(color.opacity(0.15))
                     .frame(width: 32, height: 32)
                 Image(systemName: icon)
-                    .font(.caption)
+                    .font(OffRecordTypography.metadata)
                     .foregroundColor(color)
             }
             Text(label)
@@ -988,15 +988,15 @@ struct PrivacyInfoRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             Image(systemName: icon)
-                .font(.subheadline)
+                .font(OffRecordTypography.bodySmall)
                 .foregroundColor(OffRecordColor.textSage)
                 .frame(width: 20)
 
             VStack(alignment: .leading, spacing: 2) {
                 Text(title)
-                    .font(.subheadline.weight(.medium))
+                    .font(OffRecordTypography.labelMedium)
                 Text(description)
-                    .font(.caption)
+                    .font(OffRecordTypography.metadata)
                     .foregroundColor(OffRecordColor.textSecondary)
             }
         }
