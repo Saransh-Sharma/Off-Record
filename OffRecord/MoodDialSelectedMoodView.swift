@@ -60,7 +60,7 @@ struct MoodDialSelectedMoodView: View {
 
     private var selectedMoodAnimation: Animation? {
         if reduceMotion {
-            return .easeInOut(duration: 0.18)
+            return nil
         }
 
         if isInteractionActive {

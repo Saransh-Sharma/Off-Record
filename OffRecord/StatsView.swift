@@ -28,11 +28,12 @@ struct StatsView: View {
     private var isIPad: Bool { horizontalSizeClass == .regular }
     private var startedEntries: [DiaryEntry] { entries.startedEntries }
     private var entriesSignature: String {
-        entries.map { entry in
-            let updated = entry.updatedAt?.timeIntervalSinceReferenceDate ?? 0
-            return "\(entry.objectID.uriRepresentation().absoluteString):\(updated)"
+        var hasher = Hasher()
+        for entry in entries {
+            hasher.combine(entry.objectID.uriRepresentation().absoluteString)
+            hasher.combine(entry.updatedAt?.timeIntervalSinceReferenceDate ?? 0)
         }
-        .joined(separator: "|")
+        return String(hasher.finalize())
     }
 
     var body: some View {
