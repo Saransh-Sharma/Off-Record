@@ -127,11 +127,11 @@ struct AudioPlayerView: View {
 
                     HStack {
                         Text(formatTime(controller.currentTime))
-                            .font(.caption2.monospacedDigit())
+                            .font(OffRecordTypography.metadata.monospacedDigit())
                             .foregroundColor(OffRecordColor.textSecondary)
                         Spacer()
                         Text(formatTime(controller.duration))
-                            .font(.caption2.monospacedDigit())
+                            .font(OffRecordTypography.metadata.monospacedDigit())
                             .foregroundColor(OffRecordColor.textSecondary)
                     }
                 }
@@ -141,7 +141,7 @@ struct AudioPlayerView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 6) {
                     Text("Speed")
-                        .font(.caption2)
+                        .font(OffRecordTypography.annotation)
                         .foregroundColor(OffRecordColor.textSecondary)
 
                     ForEach(AudioPlaybackController.speedOptions, id: \.self) { speed in
@@ -150,7 +150,7 @@ struct AudioPlayerView: View {
                             HapticManager.shared.selectionChanged()
                         } label: {
                             Text(speedLabel(speed))
-                                .font(.caption2.weight(controller.playbackRate == speed ? .bold : .regular))
+                                .font(controller.playbackRate == speed ? OffRecordTypography.labelSmall : OffRecordTypography.metadata)
                                 .padding(.horizontal, 8)
                                 .padding(.vertical, 4)
                                 .foregroundColor(controller.playbackRate == speed ? OffRecordReadableTintStyle.growth.foreground : OffRecordColor.textSecondary)
@@ -178,7 +178,7 @@ struct AudioPlayerView: View {
         .overlay {
             if let error = loadError {
                 Text(error)
-                    .font(.caption)
+                    .font(OffRecordTypography.metadata)
                     .foregroundColor(OffRecordColor.textCoral)
             }
         }

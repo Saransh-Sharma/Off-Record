@@ -16,11 +16,11 @@ struct LockScreenView: View {
                     .foregroundColor(OffRecordColor.brandSageDark)
 
                 Text("OffRecord AI Journal is Locked")
-                    .font(.title2.bold())
+                    .font(OffRecordTypography.titleMedium)
                     .foregroundColor(OffRecordColor.textHeading)
 
                 Text("Only you can unlock and see your entries.")
-                    .font(.subheadline)
+                    .font(OffRecordTypography.bodySmall)
                     .foregroundColor(OffRecordColor.textSecondary)
                     .multilineTextAlignment(.center)
 
@@ -29,7 +29,7 @@ struct LockScreenView: View {
                         Image(systemName: lockManager.biometricsAvailable ? biometryIcon : "key.fill")
                         Text("Unlock with \(lockManager.biometryTypeName)")
                     }
-                    .font(.headline)
+                    .font(OffRecordTypography.sectionTitle)
                     .padding()
                     .frame(maxWidth: 320)
                     .foregroundColor(OffRecordColor.textInverse)
@@ -38,7 +38,7 @@ struct LockScreenView: View {
 
                 if authFailed {
                     Text("Authentication failed. Please try again.")
-                        .font(.caption)
+                        .font(OffRecordTypography.metadata)
                         .foregroundColor(OffRecordColor.textCoral)
                 }
             }

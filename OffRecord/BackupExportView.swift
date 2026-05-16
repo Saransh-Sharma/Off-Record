@@ -66,10 +66,10 @@ struct BackupExportView: View {
                             
                             VStack(alignment: .leading, spacing: 2) {
                                 Text(format.rawValue)
-                                    .font(.subheadline)
+                                    .font(OffRecordTypography.bodySmall)
                                     .foregroundColor(OffRecordColor.textPrimary)
                                 Text(format.description)
-                                    .font(.caption)
+                                    .font(OffRecordTypography.metadata)
                                     .foregroundColor(OffRecordColor.textSecondary)
                             }
                             
@@ -116,7 +116,7 @@ struct BackupExportView: View {
 
                     if !encryptionPassword.isEmpty && !confirmPassword.isEmpty && encryptionPassword != confirmPassword {
                         Text("Passwords do not match")
-                            .font(.caption)
+                            .font(OffRecordTypography.metadata)
                             .foregroundColor(OffRecordColor.textCoral)
                     }
                 } header: {
@@ -132,9 +132,9 @@ struct BackupExportView: View {
                     HStack(spacing: 8) {
                         Image(systemName: "arrow.triangle.2.circlepath")
                             .foregroundColor(OffRecordColor.textSage)
-                            .font(.caption)
+                            .font(OffRecordTypography.metadata)
                         Text("Can be imported back into OffRecord AI Journal")
-                            .font(.caption)
+                            .font(OffRecordTypography.metadata)
                             .foregroundColor(OffRecordColor.textSecondary)
                     }
                 }
@@ -143,9 +143,9 @@ struct BackupExportView: View {
                     HStack(spacing: 8) {
                         Image(systemName: "lock.shield.fill")
                             .foregroundColor(OffRecordColor.textSage)
-                            .font(.caption)
+                            .font(OffRecordTypography.metadata)
                         Text("AES-256 encrypted with your password")
-                            .font(.caption)
+                            .font(OffRecordTypography.metadata)
                             .foregroundColor(OffRecordColor.textSecondary)
                     }
                 }
@@ -153,9 +153,9 @@ struct BackupExportView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "lock.fill")
                         .foregroundColor(OffRecordColor.textSky)
-                        .font(.caption)
+                        .font(OffRecordTypography.metadata)
                     Text("File saved to your device only")
-                        .font(.caption)
+                        .font(OffRecordTypography.metadata)
                         .foregroundColor(OffRecordColor.textSecondary)
                 }
             } header: {
@@ -294,10 +294,10 @@ struct ImportBackupView: View {
                     }
                     
                     Text("Import JSON Backup")
-                        .font(.headline)
+                        .font(OffRecordTypography.sectionTitle)
                     
                     Text("Select a JSON backup file exported from OffRecord AI Journal to restore your entries.")
-                        .font(.subheadline)
+                        .font(OffRecordTypography.bodySmall)
                         .foregroundColor(OffRecordColor.textSecondary)
                         .multilineTextAlignment(.center)
                 }
@@ -309,27 +309,27 @@ struct ImportBackupView: View {
                 HStack(spacing: 8) {
                     Image(systemName: "checkmark.circle.fill")
                         .foregroundColor(OffRecordColor.textSage)
-                        .font(.caption)
+                        .font(OffRecordTypography.metadata)
                     Text("Duplicate entries are automatically skipped")
-                        .font(.caption)
+                        .font(OffRecordTypography.metadata)
                         .foregroundColor(OffRecordColor.textSecondary)
                 }
                 
                 HStack(spacing: 8) {
                     Image(systemName: "arrow.triangle.merge")
                         .foregroundColor(OffRecordColor.textSky)
-                        .font(.caption)
+                        .font(OffRecordTypography.metadata)
                     Text("Existing entries are preserved")
-                        .font(.caption)
+                        .font(OffRecordTypography.metadata)
                         .foregroundColor(OffRecordColor.textSecondary)
                 }
                 
                 HStack(spacing: 8) {
                     Image(systemName: "icloud.and.arrow.up")
                         .foregroundColor(OffRecordColor.textLavender)
-                        .font(.caption)
+                        .font(OffRecordTypography.metadata)
                     Text("Imported entries sync to iCloud")
-                        .font(.caption)
+                        .font(OffRecordTypography.metadata)
                         .foregroundColor(OffRecordColor.textSecondary)
                 }
             } header: {
