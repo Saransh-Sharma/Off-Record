@@ -1683,7 +1683,7 @@ struct ProactiveReflectionSection: View {
                             HStack(spacing: 8) {
                                 FridayMascotView(pose: .thinking, size: 30)
                                 Text("Friday noticed")
-                                    .font(.headline)
+                                    .font(OffRecordTypography.sectionTitle)
                                     .foregroundColor(OffRecordColor.textHeading)
                                     .accessibilityIdentifier("proactiveReflection.section")
                                 Spacer()
@@ -1736,7 +1736,7 @@ struct ProactiveReflectionSection: View {
             FridayMascotView(pose: .listening, size: 42)
             VStack(alignment: .leading, spacing: 3) {
                 Text("Today with Friday")
-                    .font(.headline)
+                    .font(OffRecordTypography.sectionTitle)
                     .foregroundColor(OffRecordColor.textHeading)
                     .accessibilityIdentifier("proactiveReflection.todayWithFriday")
                 Text(sectionSubtitle)
@@ -1816,12 +1816,12 @@ private struct ReflectionInsightCard: View {
                     }
 
                     Text(insight.title)
-                        .font(isFeatured ? .headline : .subheadline.weight(.semibold))
+                        .font(isFeatured ? OffRecordTypography.sectionTitle : OffRecordTypography.labelMedium)
                         .foregroundColor(OffRecordColor.textPrimary)
                         .fixedSize(horizontal: false, vertical: true)
 
                     Text(insight.message)
-                        .font(.caption)
+                        .font(OffRecordTypography.metadata)
                         .foregroundColor(OffRecordColor.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
@@ -1862,7 +1862,7 @@ private struct ReflectionInsightCard: View {
                     onReflect()
                 } label: {
                     Label("Reflect", systemImage: "square.and.pencil")
-                        .font(.caption.weight(.semibold))
+                        .font(OffRecordTypography.labelSmall)
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
@@ -1870,7 +1870,7 @@ private struct ReflectionInsightCard: View {
 
                 NavigationLink(destination: FridayChatView(initialQuestion: insight.suggestedQuestion ?? insight.prompt)) {
                     Label("Ask Friday", systemImage: "bubble.left.and.bubble.right")
-                        .font(.caption.weight(.semibold))
+                        .font(OffRecordTypography.labelSmall)
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
@@ -1881,7 +1881,7 @@ private struct ReflectionInsightCard: View {
                         onOpenEvidence()
                     } label: {
                         Label("Evidence", systemImage: "quote.bubble")
-                            .font(.caption.weight(.semibold))
+                            .font(OffRecordTypography.labelSmall)
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
@@ -1963,7 +1963,7 @@ private struct ReflectionInsightDetailView: View {
 
                     VStack(alignment: .leading, spacing: 8) {
                         Label("Why this appeared", systemImage: "quote.bubble")
-                            .font(.headline)
+                            .font(OffRecordTypography.sectionTitle)
                             .foregroundColor(OffRecordColor.textHeading)
                         Text(insight.explanation)
                             .font(OffRecordTypography.bodySmall)
@@ -1980,7 +1980,7 @@ private struct ReflectionInsightDetailView: View {
 
                     VStack(alignment: .leading, spacing: 10) {
                         Label("Prompt", systemImage: "sparkles")
-                            .font(.headline)
+                            .font(OffRecordTypography.sectionTitle)
                             .foregroundColor(OffRecordColor.textHeading)
                         Text(insight.prompt)
                             .font(OffRecordTypography.bodyLarge)
@@ -2029,7 +2029,7 @@ private struct ReflectionInsightDetailView: View {
                         Image(systemName: "lock.shield.fill")
                             .foregroundColor(OffRecordColor.textSage)
                         Text(evidenceModeFooter)
-                            .font(.caption)
+                            .font(OffRecordTypography.metadata)
                             .foregroundColor(OffRecordColor.textSage)
                     }
                 }
@@ -2051,7 +2051,7 @@ private struct ReflectionInsightDetailView: View {
         if !evidence.isEmpty {
             VStack(alignment: .leading, spacing: 10) {
                 Label(title, systemImage: "quote.bubble.fill")
-                    .font(.headline)
+                    .font(OffRecordTypography.sectionTitle)
                     .foregroundColor(OffRecordColor.textHeading)
                     .accessibilityIdentifier(title == "Source entry" ? "proactiveReflection.evidence.source" : "proactiveReflection.evidence.baseline")
 
@@ -2167,10 +2167,10 @@ struct ProactiveReflectionPromptCard: View {
 
                         VStack(alignment: .leading, spacing: 5) {
                             Text(prompt.title)
-                                .font(.subheadline.weight(.semibold))
+                                .font(OffRecordTypography.labelMedium)
                                 .foregroundColor(OffRecordColor.textHeading)
                             Text(prompt.prompt)
-                                .font(.caption)
+                                .font(OffRecordTypography.metadata)
                                 .foregroundColor(OffRecordColor.textSecondary)
                                 .fixedSize(horizontal: false, vertical: true)
                             Text("Private • On your device")
@@ -2180,7 +2180,7 @@ struct ProactiveReflectionPromptCard: View {
 
                         Spacer()
                         Image(systemName: "square.and.pencil")
-                            .font(.subheadline.weight(.semibold))
+                            .font(OffRecordTypography.labelMedium)
                             .foregroundColor(OffRecordColor.textLavender)
                     }
                     .padding(16)
@@ -2209,13 +2209,13 @@ struct ProactiveWeeklyReflectionCard: View {
                         Image(systemName: "calendar.badge.clock")
                             .foregroundColor(OffRecordColor.textAqua)
                         Text("Weekly reflection")
-                            .font(.headline)
+                            .font(OffRecordTypography.sectionTitle)
                             .foregroundColor(OffRecordColor.textHeading)
                         Spacer()
                     }
 
                     Text(recap.summary)
-                        .font(.subheadline)
+                        .font(OffRecordTypography.bodySmall)
                         .foregroundColor(OffRecordColor.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
 
