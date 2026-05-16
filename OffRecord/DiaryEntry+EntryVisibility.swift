@@ -29,12 +29,9 @@ extension DiaryEntry {
     }
 
     var hasStartedEntryMood: Bool {
-        guard let moodString = (value(forKey: "mood") as? String)?
-            .trimmingCharacters(in: .whitespacesAndNewlines),
-              let mood = Mood(rawValue: moodString) else {
-            return false
-        }
-        return mood != .none
+        let moodString = (value(forKey: "mood") as? String)?
+            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        return !moodString.isEmpty && moodString != Mood.none.rawValue
     }
 
     var isStartedEntry: Bool {

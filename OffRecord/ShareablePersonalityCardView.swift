@@ -47,7 +47,7 @@ struct PersonalityCardRenderer {
     }
 
     /// Share text to include alongside the image
-    static let shareText = "My Friday personality from OffRecord AI Journal \u{2014} free AI voice journal. saransh-sharma.github.io/Off-Record"
+    static let shareText = "My Friday personality from OffRecord AI Journal \u{2014} free AI voice journal. https://saransh-sharma.github.io/Off-Record"
 }
 
 // MARK: - Story Format Export (1080x1920 at 3x)

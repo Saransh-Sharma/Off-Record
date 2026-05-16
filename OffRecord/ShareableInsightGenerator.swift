@@ -57,6 +57,7 @@ struct ShareableInsight: Identifiable {
 
 // MARK: - Generator
 
+@MainActor
 struct ShareableInsightGenerator {
 
     // MARK: - Main Entry Point
