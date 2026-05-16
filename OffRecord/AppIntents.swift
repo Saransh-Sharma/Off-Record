@@ -4,6 +4,16 @@ import CoreSpotlight
 import Foundation
 
 @available(iOS 17.0, *)
+private struct JournalIntentPersistenceError: LocalizedError {
+    let action: String
+    let underlyingError: Error
+
+    var errorDescription: String? {
+        "OffRecord could not \(action): \(underlyingError.localizedDescription)"
+    }
+}
+
+@available(iOS 17.0, *)
 enum JournalMoodIntentValue: String, AppEnum {
     case happy
     case calm
@@ -175,7 +185,11 @@ struct WriteJournalEntryIntent: AppIntent {
             throw $text.needsValueError("What would you like to add to your journal?")
         }
 
-        await DiaryEntryIntentStore.appendToToday(text: trimmed)
+        do {
+            try await DiaryEntryIntentStore.appendToToday(text: trimmed)
+        } catch {
+            throw JournalIntentPersistenceError(action: "add to today's journal entry", underlyingError: error)
+        }
         return .result(dialog: "Added to today's private journal entry.")
     }
 }
@@ -248,7 +262,11 @@ struct SetTodayMoodIntent: AppIntent {
     }
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        await DiaryEntryIntentStore.setTodayMood(mood.mood)
+        do {
+            try await DiaryEntryIntentStore.setTodayMood(mood.mood)
+        } catch {
+            throw JournalIntentPersistenceError(action: "save today's mood", underlyingError: error)
+        }
         return .result(dialog: "Saved today's mood in OffRecord.")
     }
 }
@@ -270,7 +288,11 @@ struct StarJournalEntryIntent: AppIntent {
     }
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
-        await DiaryEntryIntentStore.setStarred(entryID: entry.id, isStarred: state.boolValue)
+        do {
+            try await DiaryEntryIntentStore.setStarred(entryID: entry.id, isStarred: state.boolValue)
+        } catch {
+            throw JournalIntentPersistenceError(action: state == .starred ? "star the entry" : "unstar the entry", underlyingError: error)
+        }
         return .result(dialog: state == .starred ? "Entry starred." : "Entry unstarred.")
     }
 }
@@ -400,7 +422,7 @@ enum DiaryEntryIntentStore {
         let trimmed = string.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         guard !trimmed.isEmpty else { return suggestedEntities() }
 
-        return suggestedEntities().filter { entity in
+        return allEntities().filter { entity in
             [
                 entity.title,
                 entity.subtitle,
@@ -416,30 +438,40 @@ enum DiaryEntryIntentStore {
     }
 
     @MainActor
-    static func appendToToday(text: String) {
+    private static func allEntities() -> [JournalEntryEntity] {
+        let request: NSFetchRequest<DiaryEntry> = DiaryEntry.fetchRequest()
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \DiaryEntry.updatedAt, ascending: false)]
+        return fetch(request)
+            .startedEntries
+            .compactMap(JournalSpotlightMetadataBuilder.metadata(for:))
+            .map(JournalEntryEntity.init(metadata:))
+    }
+
+    @MainActor
+    static func appendToToday(text: String) throws {
         let context = PersistenceController.shared.container.viewContext
         let entry = todayEntry(in: context)
         let existingText = entry.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         entry.text = existingText.isEmpty ? text : existingText + "\n\n" + text
         entry.updatedAt = Date()
-        save(context)
+        try save(context)
         EntryLearningPipeline.upsertSemanticEntry(entry)
         JournalSpotlightIndexer.shared.upsert(entry: entry)
     }
 
     @MainActor
-    static func setTodayMood(_ mood: Mood) {
+    static func setTodayMood(_ mood: Mood) throws {
         let context = PersistenceController.shared.container.viewContext
         let entry = todayEntry(in: context)
         entry.setValue(mood.rawValue, forKey: "mood")
         entry.updatedAt = Date()
-        save(context)
+        try save(context)
         EntryLearningPipeline.upsertSemanticEntry(entry)
         JournalSpotlightIndexer.shared.upsert(entry: entry)
     }
 
     @MainActor
-    static func setStarred(entryID: UUID, isStarred: Bool) {
+    static func setStarred(entryID: UUID, isStarred: Bool) throws {
         let context = PersistenceController.shared.container.viewContext
         let request: NSFetchRequest<DiaryEntry> = DiaryEntry.fetchRequest()
         request.predicate = NSPredicate(format: "id == %@", entryID as CVarArg)
@@ -447,7 +479,7 @@ enum DiaryEntryIntentStore {
         guard let entry = try? context.fetch(request).first else { return }
         entry.isStarred = isStarred
         entry.updatedAt = Date()
-        save(context)
+        try save(context)
         EntryLearningPipeline.upsertSemanticEntry(entry)
         JournalSpotlightIndexer.shared.upsert(entry: entry)
     }
@@ -492,11 +524,12 @@ enum DiaryEntryIntentStore {
     }
 
     @MainActor
-    private static func save(_ context: NSManagedObjectContext) {
+    private static func save(_ context: NSManagedObjectContext) throws {
         do {
             try context.save()
         } catch {
             context.rollback()
+            throw error
         }
     }
 }

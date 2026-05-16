@@ -81,14 +81,15 @@ final class AudioRecorder: NSObject, ObservableObject {
 
     #if os(iOS)
     private func prepareAudioSessionIfNeeded() throws {
-        guard !audioSessionPrepared else { return }
         let token = PerformanceSignposts.begin("AudioSessionPrepare")
         defer { PerformanceSignposts.end(token) }
 
         let session = AVAudioSession.sharedInstance()
-        try session.setCategory(.playAndRecord, mode: .spokenAudio, options: [.defaultToSpeaker])
+        if !audioSessionPrepared {
+            try session.setCategory(.playAndRecord, mode: .spokenAudio, options: [.defaultToSpeaker])
+            audioSessionPrepared = true
+        }
         try session.setActive(true)
-        audioSessionPrepared = true
     }
     #endif
 
