@@ -76,7 +76,9 @@ final class SpeechTranscriber {
     ///   - completion: Called with the transcription result or error
     func transcribe(from audioURL: URL, completion: @escaping (Result<String, Error>) -> Void) {
         guard SpeechTranscriptionConsent.hasGrantedAppleSpeechProcessing else {
-            completion(.failure(TranscriptionError.appleSpeechConsentRequired))
+            DispatchQueue.main.async {
+                completion(.failure(TranscriptionError.appleSpeechConsentRequired))
+            }
             return
         }
 

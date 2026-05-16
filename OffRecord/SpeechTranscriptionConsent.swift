@@ -34,7 +34,7 @@ enum SpeechTranscriptionConsent {
 }
 
 enum OffRecordExternalLinks {
-    static let privacyPolicyURL = URL(string: "https://saransh-sharma.github.io/Off-Record/privacy.html")!
-    static let supportURL = URL(string: "https://saransh-sharma.github.io/Off-Record/support.html")!
-    static let marketingURL = URL(string: "https://saransh-sharma.github.io/Off-Record/")!
+    static let privacyPolicyURL = URL(string: "https://saransh-sharma.github.io/Off-Record/privacy.html")
+    static let supportURL = URL(string: "https://saransh-sharma.github.io/Off-Record/support.html")
+    static let marketingURL = URL(string: "https://saransh-sharma.github.io/Off-Record/")
 }
