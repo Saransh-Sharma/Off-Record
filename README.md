@@ -5,11 +5,11 @@
 [![Privacy](https://img.shields.io/badge/Privacy-Data%20Not%20Collected-brightgreen?style=for-the-badge&logo=apple)](https://saransh-sharma.github.io/Off-Record/privacy.html)
 [![Website](https://img.shields.io/badge/Website-saransh--sharma.github.io%2FOff--Record-blue?style=for-the-badge)](https://saransh-sharma.github.io/Off-Record/)
 
-OffRecord AI Journal is a **free voice journal app** for iOS that turns your spoken thoughts into a searchable, AI-powered diary — entirely on your device. No accounts, no cloud servers, no data collection. It is the **private journal app** built for people who value both convenience and privacy.
+OffRecord AI Journal is a **free voice journal app** for iOS that turns your spoken thoughts into a searchable, AI-powered diary. Journal text and semantic memory are stored locally and are not sent to developer servers. No accounts, no cloud servers, no data collection. It is the **private journal app** built for people who value both convenience and privacy.
 
-Speak naturally, and OffRecord AI Journal transcribes with Apple Speech after asking your permission. Over time, **Friday** learns your personality, emotional patterns, and the people and topics in your life locally on your device. Semantic Memory helps you find entries by meaning, and Evidence-Based Friday answers with citations from your own journal when there is enough support. Think of it as an **AI diary app** with a private assistant that actually understands you, without sending your journal to developer servers or non-Apple AI services.
+Speak naturally, and OffRecord AI Journal transcribes with Apple Speech after asking your permission; if you opt in, audio transcription may be processed by Apple services. Over time, **Friday** learns your personality, emotional patterns, and the people and topics in your life locally on your device. Semantic Memory helps you find entries by meaning, and Evidence-Based Friday answers with citations from your own journal when there is enough support. Think of it as an **AI diary app** with a private assistant that actually understands you, without sending your journal to developer servers or non-Apple AI services.
 
-**Your thoughts never leave your device. Ever.**
+**Your journal text and semantic memory stay on your device and are not sent to developer servers; opted-in audio transcription may be handled by Apple Speech services.**
 
 [Download OffRecord AI Journal Free](https://apps.apple.com/app/id6766499684) | [Visit Website](https://saransh-sharma.github.io/Off-Record/) | [See Features](https://saransh-sharma.github.io/Off-Record/features.html) | [Privacy](https://saransh-sharma.github.io/Off-Record/privacy.html) | [Support](https://saransh-sharma.github.io/Off-Record/support.html)
 

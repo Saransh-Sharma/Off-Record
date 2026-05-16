@@ -92,6 +92,23 @@ struct SystemDiscoverabilityTests {
         #expect(OffRecordNavigationRouter.route(fromSpotlightIdentifier: "entry:\(id.uuidString)") == .entry(id))
     }
 
+    @Test func storedRouteIsRetainedUntilNavigationRuns() {
+        UserDefaults.standard.removeObject(forKey: OffRecordNavigationRouter.pendingRouteDefaultsKey)
+        OffRecordNavigationRouter.storePendingRoute(.timeline(query: "stress"))
+        let router = OffRecordNavigationRouter.shared
+        router.timelineSearchText = ""
+
+        router.consumeStoredRoute(canNavigate: false)
+
+        #expect(UserDefaults.standard.string(forKey: OffRecordNavigationRouter.pendingRouteDefaultsKey) != nil)
+        #expect(router.timelineSearchText.isEmpty)
+
+        router.consumeStoredRoute(canNavigate: true)
+
+        #expect(UserDefaults.standard.string(forKey: OffRecordNavigationRouter.pendingRouteDefaultsKey) == nil)
+        #expect(router.timelineSearchText == "stress")
+    }
+
     @available(iOS 17.0, *)
     @Test func journalEntityDisplayUsesSafeMetadata() {
         let metadata = JournalSpotlightMetadata(
@@ -192,6 +209,20 @@ struct EntryVisibilityTests {
         let entry = makeEntry(in: context, text: "", mood: Mood.none.rawValue, audioFileName: nil, duration: 0)
 
         #expect(!entry.isStartedEntry)
+    }
+
+    @Test func whitespaceMoodIsNotStarted() {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let entry = makeEntry(in: context, text: "", mood: " \n\t ", audioFileName: nil, duration: 0)
+
+        #expect(!entry.isStartedEntry)
+    }
+
+    @Test func unknownNonEmptyMoodIsStarted() {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let entry = makeEntry(in: context, text: "", mood: "reflective", audioFileName: nil, duration: 0)
+
+        #expect(entry.isStartedEntry)
     }
 
     @Test func photoAttachmentIsStarted() {
