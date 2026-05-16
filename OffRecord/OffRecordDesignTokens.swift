@@ -148,16 +148,38 @@ enum OffRecordRadius {
 }
 
 enum OffRecordTypography {
-    static let displayXL = Font.system(size: 52, weight: .bold, design: .serif)
-    static let screenTitle = Font.system(size: 40, weight: .heavy, design: .default)
-    static let titleLarge = Font.system(size: 28, weight: .bold, design: .default)
-    static let titleMedium = Font.system(size: 22, weight: .bold, design: .default)
-    static let bodyLarge = Font.system(size: 17, weight: .regular, design: .default)
-    static let bodyMedium = Font.system(size: 15, weight: .regular, design: .default)
-    static let bodySmall = Font.system(size: 13, weight: .regular, design: .default)
-    static let labelMedium = Font.system(size: 13, weight: .semibold, design: .default)
-    static let labelSmall = Font.system(size: 11, weight: .semibold, design: .default)
-    static let numberLarge = Font.system(size: 44, weight: .heavy, design: .rounded)
+    static let displayXL = Font.system(.largeTitle, design: .serif, weight: .bold)
+    static let screenTitle = Font.system(.largeTitle, design: .default, weight: .heavy)
+    static let titleLarge = Font.system(.title, design: .default, weight: .bold)
+    static let titleMedium = Font.system(.title2, design: .default, weight: .bold)
+    static let titleSmall = Font.system(.title3, design: .default, weight: .semibold)
+    static let sectionTitle = Font.system(.headline, design: .default, weight: .semibold)
+    static let cardTitle = Font.system(.headline, design: .default, weight: .semibold)
+    static let bodyLarge = Font.system(.body, design: .default, weight: .regular)
+    static let journalBody = Font.system(.body, design: .default, weight: .regular).leading(.loose)
+    static let bodyMedium = Font.system(.callout, design: .default, weight: .regular)
+    static let bodySmall = Font.system(.subheadline, design: .default, weight: .regular)
+    static let labelLarge = Font.system(.callout, design: .default, weight: .semibold)
+    static let labelMedium = Font.system(.subheadline, design: .default, weight: .semibold)
+    static let labelSmall = Font.system(.footnote, design: .default, weight: .semibold)
+    static let metadata = Font.system(.footnote, design: .default, weight: .regular)
+    static let annotation = Font.system(.caption, design: .default, weight: .regular)
+    static let badgeLabel = Font.system(.footnote, design: .rounded, weight: .semibold)
+    static let numberLarge = Font.system(.largeTitle, design: .rounded, weight: .heavy).monospacedDigit()
+    static let numberMedium = Font.system(.title2, design: .rounded, weight: .bold).monospacedDigit()
+    static let numberSmall = Font.system(.headline, design: .rounded, weight: .semibold).monospacedDigit()
+}
+
+enum OffRecordExportTypography {
+    static let brand = Font.system(size: 14, weight: .bold, design: .rounded)
+    static let eyebrow = Font.system(size: 13, weight: .heavy, design: .rounded)
+    static let headline = Font.system(size: 22, weight: .bold, design: .default)
+    static let body = Font.system(size: 15, weight: .regular, design: .default)
+    static let label = Font.system(size: 12, weight: .semibold, design: .rounded)
+    static let metadata = Font.system(size: 12, weight: .medium, design: .default)
+    static let micro = Font.system(size: 10, weight: .medium, design: .default)
+    static let monospaced = Font.system(size: 12, weight: .medium, design: .monospaced)
+    static let microMonospaced = Font.system(size: 10, weight: .medium, design: .monospaced)
 }
 
 enum OffRecordShadow {
@@ -320,7 +342,7 @@ struct OffRecordPrivacyBadge: View {
     var body: some View {
         HStack(spacing: compact ? 5 : 8) {
             Image(systemName: "lock.shield.fill")
-                .font(compact ? .caption : .subheadline)
+                .font(compact ? OffRecordTypography.annotation : OffRecordTypography.bodySmall)
                 .foregroundStyle(OffRecordColor.brandSageDark)
 
             if !compact {
@@ -330,7 +352,7 @@ struct OffRecordPrivacyBadge: View {
                         .foregroundStyle(OffRecordColor.textSage)
                     if let subtitle {
                         Text(subtitle)
-                            .font(.caption2)
+                            .font(OffRecordTypography.annotation)
                             .foregroundStyle(OffRecordColor.textSecondary)
                     }
                 }

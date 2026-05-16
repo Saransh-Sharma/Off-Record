@@ -95,3 +95,15 @@ extension View {
         modifier(OffRecordWidgetBackground())
     }
 }
+
+enum OffRecordWidgetTypography {
+    static let titleLarge = Font.system(.title, design: .rounded, weight: .bold)
+    static let titleMedium = Font.system(.title2, design: .rounded, weight: .bold)
+    static let cardTitle = Font.system(.headline, design: .default, weight: .semibold)
+    static let body = Font.system(.callout, design: .default, weight: .regular)
+    static let bodySmall = Font.system(.subheadline, design: .default, weight: .regular)
+    static let label = Font.system(.footnote, design: .default, weight: .semibold)
+    static let metadata = Font.system(.caption, design: .default, weight: .regular)
+    static let numberLarge = Font.system(.title, design: .rounded, weight: .bold).monospacedDigit()
+    static let numberMedium = Font.system(.title3, design: .rounded, weight: .bold).monospacedDigit()
+}
