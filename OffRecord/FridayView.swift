@@ -171,17 +171,17 @@ struct FridayView: View {
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Talk to Friday")
-                        .font(.subheadline.bold())
+                        .font(OffRecordTypography.labelMedium)
                         .foregroundColor(OffRecordColor.textHeading)
                     Text("Ask what she has noticed in your journal")
-                        .font(.caption)
+                        .font(OffRecordTypography.metadata)
                         .foregroundColor(OffRecordColor.textSecondary)
                 }
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
-                    .font(.caption)
+                    .font(OffRecordTypography.metadata)
                     .foregroundColor(OffRecordColor.textSecondary)
             }
             .padding()
@@ -245,11 +245,11 @@ struct FridayView: View {
 
             HStack {
                 Text("\(assistant.summary.dataPointsCollected) data points")
-                    .font(.caption)
+                    .font(OffRecordTypography.metadata)
                     .foregroundColor(OffRecordColor.textSecondary)
                 Spacer()
                 Text(assistant.summary.maturityLevel.rawValue.capitalized)
-                    .font(.caption.bold())
+                    .font(OffRecordTypography.labelSmall)
                     .foregroundColor(OffRecordColor.textLavender)
             }
         }
@@ -268,7 +268,7 @@ struct FridayView: View {
                         }
                     } label: {
                         Text(section.rawValue)
-                            .font(.subheadline.weight(selectedSection == section ? .bold : .regular))
+                            .font(selectedSection == section ? OffRecordTypography.labelMedium : OffRecordTypography.bodySmall)
                             .foregroundColor(selectedSection == section ? OffRecordReadableTintStyle.friday.foreground : OffRecordColor.textPrimary)
                             .padding(.horizontal, 16)
                             .padding(.vertical, 8)
@@ -369,7 +369,7 @@ struct FridayView: View {
                     FlowLayout(spacing: 8) {
                         ForEach(Array(topWords), id: \.key) { word, count in
                             Text(word)
-                                .font(.caption.weight(count > 3 ? .bold : .regular))
+                                .font(count > 3 ? OffRecordTypography.labelSmall : OffRecordTypography.metadata)
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 5)
                                 .background(OffRecordColor.backgroundLavenderTint)
@@ -408,13 +408,13 @@ struct FridayView: View {
             shareFridayCard()
         } label: {
             HStack(spacing: 10) {
-                Image(systemName: "square.and.arrow.up")
-                    .font(.system(size: 16, weight: .semibold))
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 16, weight: .semibold))
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Share Your Personality Card")
-                        .font(.system(size: 15, weight: .bold))
+                        .font(OffRecordTypography.labelMedium)
                     Text("A snapshot of the patterns Friday has noticed")
-                        .font(.caption)
+                        .font(OffRecordTypography.metadata)
                         .foregroundColor(OffRecordColor.textSecondary)
                 }
                 Spacer()
@@ -461,7 +461,7 @@ struct FridayView: View {
                         Image(systemName: assistant.emotionalSignature.sentimentTrend > 0 ? "arrow.up.right" : "arrow.down.right")
                             .foregroundColor(sentimentTextColor(assistant.emotionalSignature.sentimentTrend))
                         Text("Emotional trajectory is \(assistant.emotionalSignature.sentimentTrend > 0 ? "improving" : "declining")")
-                            .font(.caption)
+                            .font(OffRecordTypography.metadata)
                             .foregroundColor(OffRecordColor.textSecondary)
                     }
                 }
@@ -499,7 +499,7 @@ struct FridayView: View {
                                 opacity: 0.86
                             )
                             Text(mood.capitalized)
-                                .font(.caption)
+                                .font(OffRecordTypography.metadata)
                                 .frame(width: 60, alignment: .leading)
                             GeometryReader { geo in
                                 RoundedRectangle(cornerRadius: 4)
@@ -508,7 +508,7 @@ struct FridayView: View {
                             }
                             .frame(height: 16)
                             Text("\(Int(count))")
-                                .font(.caption)
+                                .font(OffRecordTypography.metadata)
                                 .foregroundColor(OffRecordColor.textSecondary)
                         }
                     }
@@ -524,13 +524,13 @@ struct FridayView: View {
 
                     if !assistant.emotionalSignature.positiveTriggersTopics.isEmpty {
                         Text("Lifts your mood")
-                            .font(.caption.bold())
+                            .font(OffRecordTypography.labelSmall)
                             .foregroundColor(OffRecordColor.textSage)
 
                         FlowLayout(spacing: 6) {
                             ForEach(Array(assistant.emotionalSignature.positiveTriggersTopics.sorted { $0.value > $1.value }.prefix(8)), id: \.key) { topic, _ in
                                 Text(topic.capitalized)
-                                    .font(.caption)
+                                    .font(OffRecordTypography.metadata)
                                     .foregroundColor(OffRecordColor.textSage)
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 4)
@@ -542,14 +542,14 @@ struct FridayView: View {
 
                     if !assistant.emotionalSignature.negativeTriggersTopics.isEmpty {
                         Text("Weighs on you")
-                            .font(.caption.bold())
+                            .font(OffRecordTypography.labelSmall)
                             .foregroundColor(OffRecordColor.textPeach)
                             .padding(.top, 4)
 
                         FlowLayout(spacing: 6) {
                             ForEach(Array(assistant.emotionalSignature.negativeTriggersTopics.sorted { $0.value > $1.value }.prefix(8)), id: \.key) { topic, _ in
                                 Text(topic.capitalized)
-                                    .font(.caption)
+                                    .font(OffRecordTypography.metadata)
                                     .foregroundColor(OffRecordColor.textPeach)
                                     .padding(.horizontal, 8)
                                     .padding(.vertical, 4)
@@ -590,7 +590,7 @@ struct FridayView: View {
                         .font(.system(size: 40))
                         .foregroundColor(OffRecordColor.textLavender)
                     Text("Your world map will build as you journal")
-                        .font(.subheadline)
+                        .font(OffRecordTypography.bodySmall)
                         .foregroundColor(OffRecordColor.textSecondary)
                 }
                 .frame(maxWidth: .infinity)
@@ -621,7 +621,7 @@ struct FridayView: View {
 
                             if hour % 6 == 0 {
                                 Text("\(hour)")
-                                    .font(.system(size: 8))
+                                    .font(OffRecordTypography.annotation)
                                     .foregroundColor(OffRecordColor.textSecondary)
                             }
                         }
@@ -631,7 +631,7 @@ struct FridayView: View {
 
                 if let peak = assistant.behavioralPatterns.peakHour {
                     Text("Peak writing time: \(formatHour(peak))")
-                        .font(.caption)
+                        .font(OffRecordTypography.metadata)
                         .foregroundColor(OffRecordColor.textSecondary)
                 }
             }
@@ -654,7 +654,7 @@ struct FridayView: View {
                                 .frame(height: max(8, 50 * (count / max(1, maxDaily))))
 
                             Text(days[day - 1])
-                                .font(.system(size: 10))
+                                .font(OffRecordTypography.annotation)
                                 .foregroundColor(OffRecordColor.textSecondary)
                         }
                     }
@@ -698,11 +698,11 @@ struct FridayView: View {
                 Image(systemName: icon)
                     .foregroundColor(OffRecordColor.textLavender)
                 Text(title)
-                    .font(.headline)
+                    .font(OffRecordTypography.sectionTitle)
                     .foregroundColor(OffRecordColor.textHeading)
             }
             Text(content)
-                .font(.subheadline)
+                .font(OffRecordTypography.bodySmall)
                 .foregroundColor(OffRecordColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -716,7 +716,7 @@ struct FridayView: View {
             Image(systemName: icon)
                 .foregroundColor(OffRecordColor.textLavender)
             Text(title)
-                .font(.headline)
+                .font(OffRecordTypography.sectionTitle)
                 .foregroundColor(OffRecordColor.textHeading)
         }
     }
@@ -725,7 +725,7 @@ struct FridayView: View {
         VStack(spacing: 4) {
             HStack {
                 Text(label)
-                    .font(.caption)
+                    .font(OffRecordTypography.metadata)
                     .foregroundColor(OffRecordColor.textSecondary)
                 Spacer()
             }
@@ -748,11 +748,11 @@ struct FridayView: View {
             .frame(height: 8)
             HStack {
                 Text(lowLabel)
-                    .font(.system(size: 9))
+                    .font(OffRecordTypography.annotation)
                     .foregroundColor(OffRecordColor.textSecondary)
                 Spacer()
                 Text(highLabel)
-                    .font(.system(size: 9))
+                    .font(OffRecordTypography.annotation)
                     .foregroundColor(OffRecordColor.textSecondary)
             }
         }
@@ -771,13 +771,13 @@ struct FridayView: View {
                     .rotationEffect(.degrees(-90))
 
                 Text(String(format: "%.0f%%", value * 100))
-                    .font(.system(size: isIPad ? 14 : 11, weight: .bold))
+                    .font(OffRecordTypography.numberSmall)
                     .foregroundColor(OffRecordColor.textPrimary)
             }
             .frame(width: meterSize, height: meterSize)
 
             Text(label)
-                .font(.system(size: isIPad ? 12 : 10))
+                .font(OffRecordTypography.annotation)
                 .foregroundColor(OffRecordColor.textSecondary)
         }
     }
@@ -786,14 +786,14 @@ struct FridayView: View {
         VStack(spacing: 6) {
             Image(systemName: icon)
                 .foregroundColor(sentimentColor(sentiment))
-                .font(.title3)
+                .font(OffRecordTypography.titleSmall)
 
             Text(sentimentLabel(sentiment))
-                .font(.system(size: 10, weight: .medium))
+                .font(OffRecordTypography.labelSmall)
                 .foregroundColor(sentimentTextColor(sentiment))
 
             Text(label)
-                .font(.system(size: 9))
+                .font(OffRecordTypography.annotation)
                 .foregroundColor(OffRecordColor.textSecondary)
         }
         .frame(maxWidth: .infinity)
@@ -813,13 +813,13 @@ struct FridayView: View {
                                 .frame(width: 8, height: 8)
 
                             Text(node.label)
-                                .font(.subheadline)
+                                .font(OffRecordTypography.bodySmall)
                                 .foregroundColor(OffRecordColor.textPrimary)
 
                             Spacer()
 
                             Text("\(node.mentions)x")
-                                .font(.caption)
+                                .font(OffRecordTypography.metadata)
                                 .foregroundColor(OffRecordColor.textSecondary)
 
                             // Importance indicator
@@ -842,10 +842,10 @@ struct FridayView: View {
     private func statItem(value: String, label: String) -> some View {
         VStack(spacing: 4) {
             Text(value)
-                .font(.title3.bold())
+                .font(OffRecordTypography.titleSmall)
                 .foregroundColor(OffRecordColor.textLavender)
             Text(label)
-                .font(.system(size: 10))
+                .font(OffRecordTypography.annotation)
                 .foregroundColor(OffRecordColor.textSecondary)
         }
         .frame(maxWidth: .infinity)
@@ -856,11 +856,11 @@ struct FridayView: View {
             FridayMascotView(pose: .wave, size: 92)
 
             Text("Friday is getting to know you")
-                .font(.headline)
+                .font(OffRecordTypography.sectionTitle)
                 .foregroundColor(OffRecordColor.textHeading)
 
             Text("Keep journaling with OffRecord AI Journal. Friday learns from every entry and starts noticing the patterns that matter.")
-                .font(.subheadline)
+                .font(OffRecordTypography.bodySmall)
                 .foregroundColor(OffRecordColor.textSecondary)
                 .multilineTextAlignment(.center)
 
@@ -868,7 +868,7 @@ struct FridayView: View {
                 Label("Voice entries", systemImage: "mic.fill")
                 Label("Written entries", systemImage: "square.and.pencil")
             }
-            .font(.caption)
+            .font(OffRecordTypography.metadata)
             .foregroundColor(OffRecordColor.textLavender)
         }
         .padding(24)
@@ -880,7 +880,7 @@ struct FridayView: View {
             Image(systemName: "lock.shield.fill")
                 .foregroundColor(OffRecordReadableTintStyle.privacy.foreground)
             Text("Friday analysis runs on-device. No non-Apple AI services.")
-                .font(.caption)
+                .font(OffRecordTypography.metadata)
                 .foregroundColor(OffRecordReadableTintStyle.privacy.foreground)
         }
         .padding()
