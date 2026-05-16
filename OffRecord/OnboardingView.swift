@@ -929,7 +929,7 @@ private struct WelcomeStep: View {
             }
 
             Text("Speak freely. OffRecord turns your voice into insights using local AI on your device, even without internet.")
-                .font(.title3.weight(.semibold))
+                .font(OffRecordTypography.titleSmall)
                 .foregroundStyle(OnboardingPalette.secondaryForeground)
                 .multilineTextAlignment(.center)
                 .lineSpacing(4)
@@ -1127,7 +1127,7 @@ private struct FaceIDStep: View {
 
                 if !isAvailable {
                     Text("Biometrics are unavailable on this device, so iOS will use your passcode.")
-                        .font(.footnote.weight(.medium))
+                        .font(OffRecordTypography.metadata)
                         .foregroundStyle(OnboardingPalette.secondaryForeground)
                         .padding()
                         .background(OnboardingPalette.surfaceSubtle)
@@ -1208,14 +1208,14 @@ private struct PreferencesStep: View {
 
                 VStack(alignment: .leading, spacing: 10) {
                     Text("How you feel lately")
-                        .font(.headline)
+                        .font(OffRecordTypography.sectionTitle)
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                         ForEach(MoodChoice.allCases) { item in
                             Button {
                                 response.moodBaseline = item
                             } label: {
                                 Text(item.title)
-                                    .font(.subheadline.weight(.bold))
+                                    .font(OffRecordTypography.labelMedium)
                                     .foregroundStyle(OnboardingPalette.foreground)
                                     .frame(maxWidth: .infinity, minHeight: 46)
                                     .padding(.horizontal, 10)
@@ -1294,7 +1294,7 @@ private struct ProcessingStep: View {
 
             VStack(spacing: 10) {
                 Text("No account lookup. Local AI is preparing your first reflection.")
-                    .font(.subheadline.weight(.medium))
+                    .font(OffRecordTypography.labelMedium)
                     .foregroundStyle(OnboardingPalette.secondaryForeground)
                     .multilineTextAlignment(.center)
             }
@@ -1336,7 +1336,7 @@ private struct FirstEntryStep: View {
 
                 VStack(alignment: .leading, spacing: 10) {
                     Text("Add a starting mood")
-                        .font(.headline)
+                        .font(OffRecordTypography.sectionTitle)
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                         ForEach(Mood.selectableMoods.prefix(6)) { mood in
                             Button {
@@ -1351,7 +1351,7 @@ private struct FirstEntryStep: View {
                                     Text(mood.displayName)
                                     Spacer()
                                 }
-                                .font(.subheadline.weight(.semibold))
+                                .font(OffRecordTypography.labelMedium)
                                 .padding(12)
                                 .foregroundStyle(selectedMood == mood ? mood.readableStyle.foreground : OnboardingPalette.foreground)
                                 .background(selectedMood == mood ? mood.color : OnboardingPalette.surfaceSubtle)
@@ -1385,10 +1385,10 @@ private struct FirstEntryStep: View {
 
                 if isRecording {
                     Text(formatTime(elapsedTime))
-                        .font(.system(size: 34, weight: .light, design: .monospaced))
+                        .font(OffRecordTypography.numberMedium)
                     WaveformMeter(level: level)
                     Text("Tap to stop")
-                        .font(.subheadline.weight(.semibold))
+                        .font(OffRecordTypography.labelMedium)
                         .foregroundStyle(OnboardingPalette.secondaryForeground)
                 } else if isTranscribing {
                     ProgressView("Transcribing on this device...")
@@ -1396,13 +1396,13 @@ private struct FirstEntryStep: View {
                         .foregroundStyle(OnboardingPalette.foreground)
                 } else if entryCreated {
                     Label("First entry saved", systemImage: "checkmark.circle.fill")
-                        .font(.headline)
+                        .font(OffRecordTypography.sectionTitle)
                         .foregroundStyle(OnboardingPalette.foreground)
                 } else {
                     Text("Tap to record privately")
-                        .font(.headline)
+                        .font(OffRecordTypography.sectionTitle)
                     Text("Your recording is stored locally.")
-                        .font(.caption.weight(.medium))
+                        .font(OffRecordTypography.labelSmall)
                         .foregroundStyle(OnboardingPalette.secondaryForeground)
                 }
             }
@@ -1418,7 +1418,7 @@ private struct FirstEntryStep: View {
     private var textFallbackEditor: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Type your first entry")
-                .font(.headline)
+                .font(OffRecordTypography.sectionTitle)
             TextField("Write your first entry...", text: $draft, axis: .vertical)
                 .focused($isTextEditorFocused)
                 .foregroundColor(OffRecordColor.textPrimary)
@@ -1555,7 +1555,7 @@ private struct FinishStep: View {
 
             VStack(spacing: 12) {
                 Text("Record, reflect, and let Friday notice patterns entirely on this device. No internet connection required for the core experience.")
-                    .font(.title3.weight(.semibold))
+                    .font(OffRecordTypography.titleSmall)
                     .foregroundStyle(OnboardingPalette.secondaryForeground)
                     .multilineTextAlignment(.center)
                     .lineSpacing(4)
@@ -1578,7 +1578,7 @@ private struct OnboardingProgressHeader: View {
             HStack(alignment: .center, spacing: 0) {
                 Button(action: onBack) {
                     Image(systemName: "chevron.left")
-                        .font(.headline.weight(.bold))
+                        .font(OffRecordTypography.sectionTitle)
                         .frame(width: 36, height: 36)
                         .background(canGoBack ? OnboardingPalette.surfaceSubtle : OnboardingPalette.surfaceBarelyVisible)
                         .clipShape(Circle())
@@ -1592,7 +1592,7 @@ private struct OnboardingProgressHeader: View {
                     .frame(maxWidth: .infinity)
 
                 Text(step.progressText)
-                    .font(.system(.caption, design: .rounded, weight: .black))
+                    .font(OffRecordTypography.badgeLabel)
                     .foregroundStyle(OnboardingPalette.secondaryForeground)
                     .frame(width: sideWidth, alignment: .trailing)
             }
@@ -1613,7 +1613,7 @@ private struct OnboardingProgressHeader: View {
     @ViewBuilder
     private var headerCenterContent: some View {
         Text(step.pageTitle.uppercased())
-            .font(.system(size: 34, weight: .bold, design: .rounded))
+            .font(OffRecordTypography.screenTitle)
             .foregroundStyle(OnboardingPalette.foreground)
             .lineLimit(3)
             .minimumScaleFactor(0.58)
@@ -1639,7 +1639,7 @@ private struct OnboardingBottomBar: View {
                         Image(systemName: primaryIcon)
                     }
                 }
-                .font(.headline)
+                .font(OffRecordTypography.sectionTitle)
                 .foregroundStyle(OffRecordColor.textPrimary)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, 17)
@@ -1651,7 +1651,7 @@ private struct OnboardingBottomBar: View {
 
             if let secondaryTitle {
                 Button(secondaryTitle, action: onSecondary)
-                    .font(.subheadline.weight(.bold))
+                    .font(OffRecordTypography.labelMedium)
                     .foregroundStyle(OnboardingPalette.secondaryForeground)
                     .buttonStyle(.plain)
             }
@@ -1685,7 +1685,7 @@ private struct OnboardingQuestion<Content: View>: View {
     var body: some View {
         VStack(alignment: .center, spacing: 24) {
             Text(subtitle)
-                .font(.system(.subheadline, design: .rounded, weight: .semibold))
+                .font(OffRecordTypography.labelMedium)
                 .foregroundStyle(OnboardingPalette.secondaryForeground)
                 .multilineTextAlignment(.center)
                 .lineSpacing(3)
@@ -1712,14 +1712,14 @@ private struct ChoiceRow: View {
         Button(action: action) {
             HStack(spacing: 14) {
                 Image(systemName: icon)
-                    .font(.headline)
+                    .font(OffRecordTypography.sectionTitle)
                     .frame(width: 34, height: 34)
                     .foregroundStyle(OnboardingPalette.foreground)
                     .background(isSelected ? OnboardingPalette.surface : OnboardingPalette.surfaceSubtle)
                     .clipShape(Circle())
 
                 Text(title)
-                    .font(.system(.headline, design: .rounded, weight: .bold))
+                    .font(OffRecordTypography.sectionTitle)
                     .foregroundStyle(OnboardingPalette.foreground)
                     .lineLimit(2)
                     .minimumScaleFactor(0.86)
@@ -1729,7 +1729,7 @@ private struct ChoiceRow: View {
                 Spacer()
 
                 Image(systemName: selectedIconName)
-                    .font(.headline.weight(.bold))
+                    .font(OffRecordTypography.sectionTitle)
                     .foregroundStyle(isSelected ? OnboardingPalette.foreground : OnboardingPalette.tertiaryForeground)
             }
             .padding(14)
@@ -1762,10 +1762,10 @@ private struct StatementCard: View {
         Button(action: action) {
             HStack(alignment: .top, spacing: 14) {
                 Image(systemName: isSelected ? "checkmark.circle.fill" : "quote.opening")
-                    .font(.title3.weight(.bold))
+                    .font(OffRecordTypography.titleSmall)
                     .foregroundStyle(OnboardingPalette.foreground)
                 Text(statement)
-                    .font(.system(.title3, design: .rounded, weight: .bold))
+                    .font(OffRecordTypography.titleSmall)
                     .lineSpacing(3)
                 Spacer()
             }
@@ -1790,11 +1790,11 @@ private struct PrivacyComparisonRow: View {
     var body: some View {
         HStack(spacing: 10) {
             Text(label)
-                .font(.subheadline.weight(.bold))
+                .font(OffRecordTypography.labelMedium)
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             Text(offRecord)
-                .font(.caption.weight(.black))
+                .font(OffRecordTypography.labelSmall)
                 .foregroundStyle(OffRecordColor.textPrimary)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 7)
@@ -1802,7 +1802,7 @@ private struct PrivacyComparisonRow: View {
                 .clipShape(Capsule())
 
             Text(other)
-                .font(.caption.weight(.bold))
+                .font(OffRecordTypography.labelSmall)
                 .foregroundStyle(OnboardingPalette.secondaryForeground)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 7)
@@ -1821,7 +1821,7 @@ private struct SolutionRow: View {
     var body: some View {
         HStack(alignment: .top, spacing: 14) {
             Image(systemName: pain.icon)
-                .font(.headline)
+                .font(OffRecordTypography.sectionTitle)
                 .foregroundStyle(OnboardingPalette.foreground)
                 .frame(width: 34, height: 34)
                 .background(OnboardingPalette.surfaceSubtle)
@@ -1829,10 +1829,10 @@ private struct SolutionRow: View {
 
             VStack(alignment: .leading, spacing: 4) {
                 Text(pain.title)
-                    .font(.caption.weight(.bold))
+                    .font(OffRecordTypography.labelSmall)
                     .foregroundStyle(OnboardingPalette.secondaryForeground)
                 Text(pain.solutionTitle)
-                    .font(.headline)
+                    .font(OffRecordTypography.sectionTitle)
                     .foregroundStyle(OnboardingPalette.foreground)
             }
         }
@@ -1867,12 +1867,12 @@ private struct BenefitRow: View {
                     .frame(width: 22)
             } else if let icon {
                 Image(systemName: icon)
-                    .font(.subheadline.weight(.bold))
+                    .font(OffRecordTypography.labelMedium)
                     .foregroundStyle(OnboardingPalette.foreground)
                     .frame(width: 22)
             }
             Text(text)
-                .font(.subheadline.weight(.semibold))
+                .font(OffRecordTypography.labelMedium)
                 .foregroundStyle(OnboardingPalette.secondaryForeground)
                 .fixedSize(horizontal: false, vertical: true)
         }
@@ -1888,14 +1888,14 @@ private struct PreferencePicker<Item: Identifiable & Equatable, Label: View>: Vi
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text(title)
-                .font(.headline)
+                .font(OffRecordTypography.sectionTitle)
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                 ForEach(items) { item in
                     Button {
                         selection = item
                     } label: {
                         label(item)
-                            .font(.subheadline.weight(.bold))
+                            .font(OffRecordTypography.labelMedium)
                             .foregroundStyle(OnboardingPalette.foreground)
                             .frame(maxWidth: .infinity, minHeight: 46)
                             .padding(.horizontal, 10)
@@ -1917,7 +1917,7 @@ private struct LocalAIBadge: View {
             Circle().fill(OnboardingPalette.tertiaryForeground).frame(width: 4, height: 4)
             Text("Core works offline")
         }
-        .font(.caption.weight(.black))
+        .font(OffRecordTypography.labelSmall)
         .foregroundStyle(OffRecordColor.textPrimary)
         .lineLimit(1)
         .minimumScaleFactor(0.78)
@@ -1933,13 +1933,13 @@ private struct JournalPreviewCard: View {
         VStack(alignment: .leading, spacing: 16) {
             HStack {
                 Label("Today", systemImage: "mic.fill")
-                    .font(.headline)
+                    .font(OffRecordTypography.sectionTitle)
                 Spacer()
                 OfflineIndicator()
             }
 
             Text("I finally said the thing I kept editing in my head...")
-                .font(.title3.weight(.bold))
+                .font(OffRecordTypography.titleSmall)
                 .lineSpacing(3)
 
             HStack(spacing: 10) {
@@ -1964,7 +1964,7 @@ private struct PreviewPill: View {
 
     var body: some View {
         Label(text, systemImage: icon)
-            .font(.caption.weight(.bold))
+            .font(OffRecordTypography.labelSmall)
             .foregroundStyle(OnboardingPalette.secondaryForeground)
             .padding(.horizontal, 10)
             .padding(.vertical, 7)
@@ -2008,11 +2008,11 @@ private struct StarterSnapshotCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Label("Friday Starter Snapshot", systemImage: "sparkles")
-                .font(.headline)
+                .font(OffRecordTypography.sectionTitle)
                 .foregroundStyle(OnboardingPalette.foreground)
 
             Text(snapshotText)
-                .font(.title3.weight(.bold))
+                .font(OffRecordTypography.titleSmall)
                 .lineSpacing(4)
 
             VStack(alignment: .leading, spacing: 10) {
@@ -2059,7 +2059,7 @@ private struct TopicGraphCard: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
             Label("Sample People and Topics Graph", systemImage: "point.3.connected.trianglepath.dotted")
-                .font(.headline)
+                .font(OffRecordTypography.sectionTitle)
                 .foregroundStyle(OnboardingPalette.foreground)
 
             ZStack {
@@ -2071,7 +2071,7 @@ private struct TopicGraphCard: View {
             .frame(maxWidth: .infinity)
 
             Text("As you journal, OffRecord connects recurring people, places, moods, and themes locally. This graph stays on this device.")
-                .font(.subheadline.weight(.semibold))
+                .font(OffRecordTypography.labelMedium)
                 .foregroundStyle(OnboardingPalette.secondaryForeground)
         }
         .padding(18)
@@ -2106,7 +2106,7 @@ private struct TopicNode: View {
                 }
 
                 Text(title)
-                    .font(.caption.weight(.black))
+                    .font(OffRecordTypography.labelSmall)
                     .foregroundStyle(OnboardingPalette.foreground)
                     .lineLimit(1)
                     .minimumScaleFactor(0.72)
@@ -2128,12 +2128,12 @@ struct PrivacyBadge: View {
     var body: some View {
         HStack(spacing: 6) {
             Image(systemName: "lock.shield.fill")
-                .font(compact ? .caption : .subheadline)
+                .font(compact ? OffRecordTypography.annotation : OffRecordTypography.bodySmall)
                 .foregroundColor(OffRecordColor.textSage)
 
             if !compact {
                 Text("100% Private")
-                    .font(.caption.weight(.medium))
+                    .font(OffRecordTypography.labelSmall)
                     .foregroundColor(OffRecordColor.textSage)
             }
         }
@@ -2154,7 +2154,7 @@ struct OfflineIndicator: View {
                 .fill(OffRecordColor.brandSageDark)
                 .frame(width: 6, height: 6)
             Text("Offline")
-                .font(.caption.weight(.medium))
+                .font(OffRecordTypography.labelSmall)
                 .foregroundColor(OffRecordColor.textSage)
         }
         .padding(.horizontal, 8)
