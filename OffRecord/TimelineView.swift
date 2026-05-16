@@ -336,7 +336,7 @@ struct TimelineView: View {
                         HapticManager.shared.selectionChanged()
                     } label: {
                         Label(suggestion.text, systemImage: suggestion.icon)
-                            .font(.caption.weight(.medium))
+                            .font(OffRecordTypography.labelSmall)
                             .padding(.horizontal, 12)
                             .padding(.vertical, 8)
                             .foregroundStyle(OffRecordReadableTintStyle.privacy.foreground)
@@ -359,7 +359,7 @@ struct TimelineView: View {
                 ProgressView(value: semanticMemory.progress)
                     .frame(width: 44)
                 Text("Building semantic memory")
-                    .font(.caption.weight(.semibold))
+                    .font(OffRecordTypography.labelSmall)
                     .foregroundColor(OffRecordColor.textSecondary)
                 Spacer()
             }
@@ -370,7 +370,7 @@ struct TimelineView: View {
             .accessibilityIdentifier("semanticMemory.buildingTitle")
         } else if !trimmed.isEmpty, let semanticSearchMessage {
             Text(semanticSearchMessage)
-                .font(.caption)
+                .font(OffRecordTypography.metadata)
                 .foregroundColor(OffRecordColor.textSecondary)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .padding(.horizontal, 14)
@@ -398,9 +398,9 @@ struct TimelineView: View {
                             } label: {
                                 HStack(spacing: 4) {
                                     Image(systemName: node.type == .person ? "person.fill" : "tag.fill")
-                                        .font(.caption2)
+                                        .font(OffRecordTypography.annotation)
                                     Text(node.label)
-                                        .font(.caption)
+                                        .font(OffRecordTypography.metadata)
                                 }
                                 .padding(.horizontal, 10)
                                 .padding(.vertical, 6)
@@ -427,7 +427,7 @@ struct TimelineView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
                     Text("Mood:")
-                        .font(.caption)
+                        .font(OffRecordTypography.metadata)
                         .foregroundColor(OffRecordColor.textSecondary)
 
                     ForEach(Mood.allCases.filter { $0 != .none }, id: \.self) { mood in
@@ -445,7 +445,7 @@ struct TimelineView: View {
                                 )
                                 Text(mood.rawValue)
                             }
-                            .font(.caption)
+                            .font(OffRecordTypography.metadata)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
                             .foregroundColor(selectedMoodFilter == mood ? mood.readableStyle.foreground : OffRecordColor.textSecondary)
@@ -475,7 +475,7 @@ struct TimelineView: View {
                         }
                         HapticManager.shared.buttonTap()
                     }
-                    .font(.caption)
+                    .font(OffRecordTypography.metadata)
                     .foregroundColor(OffRecordColor.textCoral)
                 }
             }
@@ -521,7 +521,7 @@ struct TimelineView: View {
                     Button("Clear All") {
                         clearAllFilters()
                     }
-                    .font(.caption.weight(.medium))
+                    .font(OffRecordTypography.labelSmall)
                     .foregroundColor(OffRecordColor.textCoral)
                     .padding(.leading, 8)
                 }
@@ -561,7 +561,7 @@ struct TimelineView: View {
                 .foregroundColor(OffRecordColor.textSecondary)
 
             Text(semanticMemory.isBuilding ? "Building semantic memory" : "No entries found")
-                .font(.headline)
+                .font(OffRecordTypography.sectionTitle)
                 .foregroundColor(OffRecordColor.textHeading)
                 .accessibilityIdentifier(semanticMemory.isBuilding ? "semanticMemory.buildingTitle" : "timeline.emptyTitle")
 
@@ -569,14 +569,14 @@ struct TimelineView: View {
                 ProgressView(value: semanticMemory.progress)
                     .frame(maxWidth: 220)
                 Text("Friday is indexing your journal locally. Search results will improve as this finishes.")
-                    .font(.caption)
+                    .font(OffRecordTypography.metadata)
                     .foregroundColor(OffRecordColor.textSecondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
                     .accessibilityIdentifier("semanticMemory.buildingMessage")
             } else if let semanticSearchMessage {
                 Text(semanticSearchMessage)
-                    .font(.caption)
+                    .font(OffRecordTypography.metadata)
                     .foregroundColor(OffRecordColor.textSecondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
@@ -587,7 +587,7 @@ struct TimelineView: View {
                 Button("Clear Filters") {
                     clearAllFilters()
                 }
-                .font(.subheadline)
+                .font(OffRecordTypography.bodySmall)
                 .foregroundColor(OffRecordColor.brandPlum)
             }
         }
@@ -893,10 +893,10 @@ struct FilterChip: View {
                 MiniMoodIcon(mood: mood, size: 14, opacity: 0.92)
             } else if let icon {
                 Image(systemName: icon)
-                    .font(.caption2)
+                    .font(OffRecordTypography.annotation)
             }
             Text(label)
-                .font(.caption)
+                .font(OffRecordTypography.metadata)
             Button {
                 withAnimation {
                     onRemove()
@@ -904,7 +904,7 @@ struct FilterChip: View {
                 HapticManager.shared.buttonTap()
             } label: {
                 Image(systemName: "xmark.circle.fill")
-                    .font(.caption)
+                    .font(OffRecordTypography.metadata)
             }
         }
         .padding(.horizontal, 10)
@@ -935,13 +935,13 @@ struct DateRangeButton: View {
         } label: {
             HStack(spacing: 6) {
                 Image(systemName: "calendar")
-                    .font(.caption)
+                    .font(OffRecordTypography.metadata)
                 if let date = date {
                     Text("\(title): \(formatDate(date))")
-                        .font(.caption)
+                        .font(OffRecordTypography.metadata)
                 } else {
                     Text(title)
-                        .font(.caption)
+                        .font(OffRecordTypography.metadata)
                 }
             }
             .padding(.horizontal, 12)

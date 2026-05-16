@@ -25,7 +25,7 @@ struct MonthSummaryCard: View {
             HStack(spacing: 18) {
                 VStack(alignment: .leading, spacing: 16) {
                     Text("This month")
-                        .font(.system(size: 16, weight: .medium))
+                        .font(OffRecordTypography.bodyMedium)
                         .foregroundStyle(OffRecordColor.textBrand.opacity(0.86))
                         .lineLimit(1)
 
@@ -68,12 +68,12 @@ struct MonthSummaryCard: View {
     private func summaryStat(value: String, label: String) -> some View {
         VStack(alignment: .leading, spacing: 5) {
             Text(value)
-                .font(.system(size: 31, weight: .bold, design: .rounded))
+                .font(OffRecordTypography.numberMedium)
                 .foregroundStyle(OffRecordColor.textBrand)
                 .minimumScaleFactor(0.66)
                 .lineLimit(1)
             Text(label)
-                .font(.system(size: 15, weight: .medium))
+                .font(OffRecordTypography.metadata)
                 .foregroundStyle(OffRecordColor.textSecondary)
                 .lineLimit(1)
         }

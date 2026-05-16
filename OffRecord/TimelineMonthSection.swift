@@ -28,13 +28,13 @@ struct TimelineMonthSection: View {
                 CalendarSectionIcon()
 
                 Text(title)
-                    .font(.system(size: 24, weight: .bold))
+                    .font(OffRecordTypography.titleMedium)
                     .foregroundStyle(OffRecordColor.textBrand)
 
                 Spacer()
 
                 Text("\(entries.count) \(entries.count == 1 ? "entry" : "entries")")
-                    .font(.callout.weight(.medium))
+                    .font(OffRecordTypography.labelLarge)
                     .foregroundStyle(OffRecordColor.textBrand.opacity(0.75))
             }
             .padding(.horizontal, 2)
@@ -133,12 +133,12 @@ struct TimelineDateSpine: View {
 
             VStack(spacing: -1) {
                 Text(dayNumber)
-                    .font(.system(size: 21, weight: .bold, design: .rounded))
+                    .font(OffRecordTypography.numberSmall)
                     .foregroundStyle(style.foreground)
                     .lineLimit(1)
                     .minimumScaleFactor(0.72)
                 Text(weekday)
-                    .font(.system(size: 10, weight: .bold))
+                    .font(OffRecordTypography.badgeLabel)
                     .foregroundStyle(style.foreground)
                     .lineLimit(1)
             }

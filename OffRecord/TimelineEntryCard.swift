@@ -41,25 +41,25 @@ struct TimelineEntryCard: View {
                     )
 
                     Text("\(wordCount) words")
-                        .font(.footnote.weight(.medium))
+                        .font(OffRecordTypography.metadata)
                         .foregroundStyle(OffRecordColor.textBrand.opacity(0.76))
                         .lineLimit(1)
 
                     if hasPhotos {
                         Image(systemName: "photo")
-                            .font(.caption2)
+                            .font(OffRecordTypography.annotation)
                             .foregroundStyle(OffRecordColor.textSecondary)
                     }
 
                     if entry.isStarred {
                         Image(systemName: "star.fill")
-                            .font(.caption2)
+                            .font(OffRecordTypography.annotation)
                             .foregroundStyle(OffRecordColor.textYellow)
                     }
                 }
 
                 highlightedText(evidence?.snippet ?? entry.text ?? "")
-                    .font(.subheadline)
+                    .font(OffRecordTypography.bodySmall)
                     .foregroundStyle(OffRecordColor.textPrimary)
                     .lineSpacing(1.5)
                     .lineLimit(2)
@@ -74,7 +74,7 @@ struct TimelineEntryCard: View {
                     Image(systemName: evidence.matchReason == .exact ? "text.magnifyingglass" : "brain.head.profile")
                         .foregroundStyle(OffRecordColor.brandLavenderDark)
                     Text(evidence.matchReason.rawValue)
-                        .font(.caption.weight(.semibold))
+                        .font(OffRecordTypography.labelSmall)
                         .foregroundStyle(OffRecordColor.textLavender)
                         .multilineTextAlignment(.trailing)
                 }

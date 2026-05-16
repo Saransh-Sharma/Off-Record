@@ -38,11 +38,11 @@ struct TimelineSearchField: View {
         #else
         HStack(spacing: 12) {
             Image(systemName: "magnifyingglass")
-                .font(.title3.weight(.medium))
+                .font(OffRecordTypography.titleSmall)
                 .foregroundStyle(OffRecordColor.textBrand)
             TextField("Search entries", text: $text)
                 .textFieldStyle(.plain)
-                .font(.body)
+                .font(OffRecordTypography.bodyLarge)
         }
         .padding(.horizontal, 18)
         .background(Capsule().fill(OffRecordColor.surfacePrimary.opacity(0.58)))
