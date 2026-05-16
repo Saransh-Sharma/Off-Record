@@ -164,11 +164,11 @@ struct EntryDetailView: View {
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(formattedFullDate)
-                        .font(.subheadline.weight(.medium))
+                        .font(OffRecordTypography.labelMedium)
                         .foregroundColor(OffRecordColor.textPrimary)
                     if let updatedAt = entry.updatedAt {
                         Text("Updated \(formattedTime(updatedAt))")
-                            .font(.caption)
+                            .font(OffRecordTypography.metadata)
                             .foregroundColor(OffRecordColor.textSecondary)
                     }
                 }
@@ -178,7 +178,7 @@ struct EntryDetailView: View {
                 Button(action: { showMoodPicker = true }) {
                     if selectedMood == .none {
                         Label("Add mood", systemImage: "plus.circle")
-                            .font(.caption)
+                            .font(OffRecordTypography.metadata)
                             .foregroundColor(OffRecordReadableTintStyle.journal.foreground)
                             .padding(.horizontal, 10)
                             .padding(.vertical, 6)
@@ -192,7 +192,7 @@ struct EntryDetailView: View {
                         HStack(spacing: 6) {
                             MiniMoodIcon(mood: selectedMood, size: 16, opacity: 0.92)
                             Text(selectedMood.displayName)
-                                .font(.caption)
+                                .font(OffRecordTypography.metadata)
                         }
                         .foregroundColor(selectedMood.readableStyle.foreground)
                         .padding(.horizontal, 10)
@@ -212,12 +212,12 @@ struct EntryDetailView: View {
             // Stats row
             HStack(spacing: 20) {
                 Label("\(wordCount) words", systemImage: "text.word.spacing")
-                    .font(.caption)
+                    .font(OffRecordTypography.metadata)
                     .foregroundColor(OffRecordColor.textSecondary)
 
                 if let duration = entry.value(forKey: "duration") as? Double, duration > 0 {
                     Label(formattedDuration(duration), systemImage: "waveform")
-                        .font(.caption)
+                        .font(OffRecordTypography.metadata)
                         .foregroundColor(OffRecordColor.textSecondary)
                 }
 
@@ -228,9 +228,9 @@ struct EntryDetailView: View {
                     // Audio exists but on another device
                         HStack(spacing: 4) {
                             Image(systemName: "icloud")
-                                .font(.caption)
+                                .font(OffRecordTypography.metadata)
                             Text("Audio on original device")
-                                .font(.caption)
+                                .font(OffRecordTypography.metadata)
                         }
                         .foregroundColor(OffRecordColor.textSecondary)
                 }
@@ -254,7 +254,7 @@ struct EntryDetailView: View {
                         ProgressView()
                             .scaleEffect(1.2)
                         Text("Transcribing your recording...")
-                            .font(.subheadline)
+                            .font(OffRecordTypography.bodySmall)
                             .foregroundColor(OffRecordColor.textSecondary)
                     }
                     .frame(maxWidth: .infinity)
@@ -265,12 +265,12 @@ struct EntryDetailView: View {
                             .font(.system(size: 32))
                             .foregroundColor(OffRecordColor.textTertiary)
                         Text("No text yet")
-                            .font(.subheadline)
+                            .font(OffRecordTypography.bodySmall)
                             .foregroundColor(OffRecordColor.textSecondary)
                     Button("Add text") {
                         isEditing = true
                     }
-                    .font(.subheadline.weight(.medium))
+                    .font(OffRecordTypography.labelMedium)
                     .foregroundColor(OffRecordReadableTintStyle.brand.foreground)
                     .padding(.horizontal, 14)
                     .padding(.vertical, 8)
@@ -286,7 +286,7 @@ struct EntryDetailView: View {
                 }
             } else {
                 Text(text)
-                    .font(.body)
+                    .font(OffRecordTypography.journalBody)
                     .foregroundColor(OffRecordColor.textPrimary)
                     .lineSpacing(6)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -322,11 +322,11 @@ struct EntryDetailView: View {
                     Image(systemName: "brain.head.profile")
                         .foregroundColor(OffRecordColor.textLavender)
                     Text("AI Insights")
-                        .font(.subheadline.weight(.medium))
+                        .font(OffRecordTypography.labelMedium)
                         .foregroundColor(OffRecordColor.textHeading)
                     Spacer()
                     Image(systemName: showAIInsights ? "chevron.up" : "chevron.down")
-                        .font(.caption)
+                        .font(OffRecordTypography.metadata)
                         .foregroundColor(OffRecordColor.textSecondary)
                 }
                 .padding()
@@ -348,14 +348,14 @@ struct EntryDetailView: View {
                                 opacity: 0.92
                             )
                             Text(analysis.dominantEmotion.rawValue.capitalized)
-                                .font(.caption)
+                                .font(OffRecordTypography.metadata)
                                 .foregroundColor(OffRecordColor.textSecondary)
                         }
                         .frame(width: 70)
                         
                         VStack(alignment: .leading, spacing: 4) {
                             Text("Sentiment")
-                                .font(.caption)
+                                .font(OffRecordTypography.metadata)
                                 .foregroundColor(OffRecordColor.textSecondary)
                             GeometryReader { geo in
                                 ZStack(alignment: .leading) {
@@ -369,7 +369,7 @@ struct EntryDetailView: View {
                             .frame(height: 8)
                             
                             Text(analysis.sentiment > 0.2 ? "Positive" : (analysis.sentiment < -0.2 ? "Negative" : "Neutral"))
-                                .font(.caption)
+                                .font(OffRecordTypography.metadata)
                                 .foregroundColor(OffRecordColor.textSecondary)
                         }
                     }
@@ -382,10 +382,10 @@ struct EntryDetailView: View {
                             .foregroundColor(OffRecordColor.textSky)
                         VStack(alignment: .leading, spacing: 2) {
                             Text("Intent")
-                                .font(.caption)
+                                .font(OffRecordTypography.metadata)
                                 .foregroundColor(OffRecordColor.textSecondary)
                             Text(analysis.intent.description)
-                                .font(.subheadline)
+                                .font(OffRecordTypography.bodySmall)
                                 .foregroundColor(OffRecordColor.textPrimary)
                         }
                     }
@@ -394,13 +394,13 @@ struct EntryDetailView: View {
                     if !analysis.topics.isEmpty {
                         VStack(alignment: .leading, spacing: 8) {
                             Text("Topics")
-                                .font(.caption)
+                                .font(OffRecordTypography.metadata)
                                 .foregroundColor(OffRecordColor.textSecondary)
                             
                             FlowLayout(spacing: 6) {
                                 ForEach(analysis.topics.prefix(5), id: \.self) { topic in
                                     Text(topic)
-                                        .font(.caption)
+                                        .font(OffRecordTypography.metadata)
                                         .foregroundColor(OffRecordColor.textLavender)
                                         .padding(.horizontal, 8)
                                         .padding(.vertical, 4)
@@ -415,13 +415,13 @@ struct EntryDetailView: View {
                     VStack(alignment: .leading, spacing: 4) {
                         HStack(spacing: 4) {
                             Image(systemName: "bubble.left.and.text.bubble.right")
-                                .font(.caption)
+                                .font(OffRecordTypography.metadata)
                             Text("Reflection")
-                                .font(.caption)
+                                .font(OffRecordTypography.metadata)
                         }
                         .foregroundColor(OffRecordColor.textSecondary)
                         Text(analysis.suggestedResponse)
-                            .font(.caption)
+                            .font(OffRecordTypography.metadata)
                             .foregroundColor(OffRecordColor.textPrimary)
                             .italic()
                     }
@@ -446,7 +446,7 @@ struct EntryDetailView: View {
             if let promptContext, !promptContext.isEmpty {
                 HStack(alignment: .top, spacing: 10) {
                     Image(systemName: "sparkles")
-                        .font(.subheadline.weight(.semibold))
+                        .font(OffRecordTypography.labelMedium)
                         .foregroundStyle(OffRecordColor.textLavender)
                         .padding(.top, 2)
 
@@ -455,7 +455,7 @@ struct EntryDetailView: View {
                             .font(OffRecordTypography.labelSmall)
                             .foregroundStyle(OffRecordColor.textPeach)
                         Text(promptContext)
-                            .font(.subheadline)
+                            .font(OffRecordTypography.bodySmall)
                             .foregroundStyle(OffRecordColor.textPrimary)
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -469,7 +469,7 @@ struct EntryDetailView: View {
             }
 
             TextEditor(text: $text)
-                .font(.body)
+                .font(OffRecordTypography.journalBody)
                 .foregroundColor(OffRecordColor.textPrimary)
                 .lineSpacing(6)
                 .focused($isTextFocused)
@@ -484,7 +484,7 @@ struct EntryDetailView: View {
             if isTextFocused {
                 HStack {
                     Text("\(wordCount) words · \(characterCount) chars")
-                        .font(.caption)
+                        .font(OffRecordTypography.metadata)
                         .foregroundColor(OffRecordColor.textSecondary)
 
                     Spacer()
@@ -493,7 +493,7 @@ struct EntryDetailView: View {
                         isTextFocused = false
                         isEditing = false
                     }
-                    .font(.subheadline.weight(.medium))
+                    .font(OffRecordTypography.labelMedium)
                 }
                 .padding(.horizontal)
                 .padding(.vertical, 8)
@@ -545,9 +545,9 @@ struct EntryDetailView: View {
             ) {
                 HStack(spacing: 6) {
                     Image(systemName: "photo.badge.plus")
-                        .font(.caption)
+                        .font(OffRecordTypography.metadata)
                     Text(photoAttachments.isEmpty ? "Add Photos" : "Add More")
-                        .font(.caption.weight(.medium))
+                        .font(OffRecordTypography.labelSmall)
                 }
                 .foregroundColor(OffRecordReadableTintStyle.journal.foreground)
                 .padding(.horizontal, 10)
@@ -562,7 +562,7 @@ struct EntryDetailView: View {
 
             if !photoAttachments.isEmpty {
                 Text("Photos sync with iCloud")
-                    .font(.caption)
+                    .font(OffRecordTypography.metadata)
                     .foregroundColor(OffRecordColor.textSecondary)
             }
         }
