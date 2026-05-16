@@ -92,9 +92,7 @@ struct TimelineDayRow: View {
             TimelineDateSpine(date: entry.date ?? Date(), index: index, isLast: isLast)
                 .frame(width: TimelineDesign.daySpineWidth)
 
-            NavigationLink {
-                EntryDetailView(entry: entry)
-            } label: {
+            if isEditing {
                 TimelineEntryCard(
                     entry: entry,
                     metrics: metrics,
@@ -103,8 +101,21 @@ struct TimelineDayRow: View {
                     isEditing: isEditing,
                     onDelete: onDelete
                 )
+            } else {
+                NavigationLink {
+                    EntryDetailView(entry: entry)
+                } label: {
+                    TimelineEntryCard(
+                        entry: entry,
+                        metrics: metrics,
+                        searchText: searchText,
+                        evidence: evidence,
+                        isEditing: isEditing,
+                        onDelete: onDelete
+                    )
+                }
+                .buttonStyle(.plain)
             }
-            .buttonStyle(.plain)
         }
     }
 }

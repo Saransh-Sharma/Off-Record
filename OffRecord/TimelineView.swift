@@ -44,6 +44,7 @@ struct TimelineView: View {
     @State private var semanticSearchTask: Task<Void, Never>?
     @State private var isSemanticSearching = false
     @State private var semanticSearchMessage: String?
+    @State private var semanticSearchAvailable = false
     @State private var isSearchFocused = false
     @State private var planterShakeTrigger = 0
     @State private var planterShakeAngle = 0.0
@@ -78,8 +79,13 @@ struct TimelineView: View {
             String(endDate?.timeIntervalSinceReferenceDate ?? 0),
             semanticSearchQuery,
             isSemanticSearching.description,
-            semanticResults.keys.map(\.uuidString).sorted().joined(separator: ",")
+            semanticSearchAvailable.description,
+            effectiveSemanticResults.keys.map(\.uuidString).sorted().joined(separator: ",")
         ].joined(separator: "|")
+    }
+
+    private var effectiveSemanticResults: [UUID: EvidenceReference] {
+        semanticSearchAvailable ? semanticResults : [:]
     }
 
     var body: some View {
@@ -544,7 +550,7 @@ struct TimelineView: View {
                             entries: sectionEntries,
                             metrics: entryMetricsCache,
                             searchText: searchText,
-                            semanticResults: semanticResults,
+                            semanticResults: effectiveSemanticResults,
                             isEditing: isEditingTimeline,
                             onDelete: delete(entry:)
                         )
@@ -634,6 +640,7 @@ struct TimelineView: View {
             searchSuggestions = []
             semanticResults = [:]
             semanticSearchQuery = ""
+            semanticSearchAvailable = false
             semanticSearchTask?.cancel()
             isSemanticSearching = false
             semanticSearchMessage = nil
@@ -712,14 +719,15 @@ struct TimelineView: View {
                         }
                     }
                     semanticResults = bestByEntry
+                    semanticSearchAvailable = !bestByEntry.isEmpty
                     semanticSearchMessage = nil
                     isSemanticSearching = false
                 case .building(_, let message):
-                    semanticResults = [:]
+                    semanticSearchAvailable = false
                     semanticSearchMessage = message
                     isSemanticSearching = true
                 case .unavailable(let message), .failed(let message):
-                    semanticResults = [:]
+                    semanticSearchAvailable = false
                     semanticSearchMessage = message
                     isSemanticSearching = false
                 }
@@ -742,6 +750,7 @@ struct TimelineView: View {
             searchText = ""
             semanticResults = [:]
             semanticSearchQuery = ""
+            semanticSearchAvailable = false
             semanticSearchMessage = nil
             isEditingTimeline = false
         }
@@ -785,7 +794,7 @@ struct TimelineView: View {
 
             let searchTrimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
             if !searchTrimmed.isEmpty {
-                if semanticSearchQuery == searchTrimmed, !isSemanticSearching {
+                if semanticSearchQuery == searchTrimmed, !isSemanticSearching, semanticSearchAvailable, !semanticResults.isEmpty {
                     guard let id = entry.id else { return false }
                     if semanticResults[id] == nil { return false }
                 } else {
