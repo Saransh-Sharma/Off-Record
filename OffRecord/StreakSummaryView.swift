@@ -24,14 +24,14 @@ struct StreakSummaryView: View {
                     .minimumScaleFactor(0.7)
 
                 Text(dayLabel)
-                    .font(.title3)
+                    .font(OffRecordTypography.titleSmall)
                     .foregroundStyle(OffRecordColor.textSecondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.85)
             }
 
             Text(statusMessage)
-                .font(.subheadline)
+                .font(OffRecordTypography.bodySmall)
                 .foregroundStyle(OffRecordColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
         }

@@ -14,13 +14,13 @@ struct StreakMetricColumnView: View {
     var body: some View {
         VStack(alignment: .leading, spacing: OffRecordSpacing.xs) {
             Text(title)
-                .font(.caption)
+                .font(OffRecordTypography.metadata)
                 .foregroundStyle(OffRecordColor.textSecondary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.85)
 
             Text(value)
-                .font(.subheadline.weight(.medium))
+                .font(OffRecordTypography.labelMedium)
                 .foregroundStyle(OffRecordColor.textPrimary)
                 .lineLimit(1)
                 .minimumScaleFactor(0.8)

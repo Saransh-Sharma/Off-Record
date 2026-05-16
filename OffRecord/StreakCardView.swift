@@ -62,13 +62,13 @@ struct StreakCardView: View {
         VStack(alignment: .leading, spacing: OffRecordSpacing.lg) {
             HStack(alignment: .center, spacing: OffRecordSpacing.md) {
                 Text("Writing Streak")
-                    .font(.headline)
+                    .font(OffRecordTypography.sectionTitle)
                     .foregroundStyle(OffRecordColor.textHeading)
 
                 Spacer(minLength: OffRecordSpacing.sm)
 
                 Text(statusTitle)
-                    .font(.subheadline.weight(.semibold))
+                    .font(OffRecordTypography.labelMedium)
                     .foregroundStyle(accentColor)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)

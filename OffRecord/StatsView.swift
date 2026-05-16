@@ -101,11 +101,11 @@ struct StatsView: View {
             }
 
             Text("Insights will appear here")
-                .font(.headline)
+                .font(OffRecordTypography.sectionTitle)
                 .foregroundColor(OffRecordColor.textHeading)
 
             Text("Record a few entries and OffRecord AI Journal will show streaks, mood trends, and gentle summaries of your writing.")
-                .font(.subheadline)
+                .font(OffRecordTypography.bodySmall)
                 .foregroundColor(OffRecordColor.textSecondary)
                 .multilineTextAlignment(.center)
         }
@@ -132,7 +132,7 @@ struct StatsView: View {
     private var weekActivityCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("This Week")
-                .font(.headline)
+                .font(OffRecordTypography.sectionTitle)
                 .foregroundColor(OffRecordColor.textHeading)
 
             HStack(spacing: 8) {
@@ -144,12 +144,12 @@ struct StatsView: View {
                             .overlay {
                                 if day.hasEntry {
                                     Image(systemName: "checkmark")
-                                        .font(.caption.weight(.bold))
+                                        .font(OffRecordTypography.labelSmall)
                                         .foregroundColor(OffRecordColor.textAqua)
                                 }
                             }
                         Text(day.label)
-                            .font(.caption)
+                            .font(OffRecordTypography.metadata)
                             .foregroundColor(OffRecordColor.textSecondary)
                     }
                 }
@@ -165,12 +165,12 @@ struct StatsView: View {
     private var moodTrendsCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Mood Trends")
-                .font(.headline)
+                .font(OffRecordTypography.sectionTitle)
                 .foregroundColor(OffRecordColor.textHeading)
 
             if stats.moodCounts.isEmpty {
                 Text("Record entries with moods to see trends")
-                    .font(.subheadline)
+                    .font(OffRecordTypography.bodySmall)
                     .foregroundColor(OffRecordColor.textSecondary)
                     .frame(maxWidth: .infinity, alignment: .center)
                     .padding(.vertical, 20)
@@ -185,10 +185,10 @@ struct StatsView: View {
                                 opacity: 0.88
                             )
                             Text("\(item.count)")
-                                .font(.subheadline.weight(.medium))
+                                .font(OffRecordTypography.labelMedium)
                                 .foregroundColor(OffRecordColor.textPrimary)
                             Text(item.mood.displayName)
-                                .font(.caption)
+                                .font(OffRecordTypography.metadata)
                                 .foregroundColor(OffRecordColor.textSecondary)
                         }
                         .frame(maxWidth: .infinity)
@@ -248,7 +248,7 @@ struct StatsView: View {
     private var statsSummaryCard: some View {
         VStack(alignment: .leading, spacing: 12) {
             Text("Writing Stats")
-                .font(.headline)
+                .font(OffRecordTypography.sectionTitle)
                 .foregroundColor(OffRecordColor.textHeading)
 
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: isIPad ? 4 : 2), spacing: 16) {
@@ -272,23 +272,23 @@ struct StatsView: View {
                         Image(systemName: "sparkles")
                             .foregroundColor(OffRecordColor.textLavender)
                         Text("AI Insights")
-                            .font(.headline)
+                            .font(OffRecordTypography.sectionTitle)
                             .foregroundColor(OffRecordColor.textHeading)
                     }
 
                     ForEach(stats.insights.prefix(3)) { insight in
                         HStack(alignment: .top, spacing: 12) {
                             Image(systemName: insight.icon)
-                                .font(.title3)
+                                .font(OffRecordTypography.titleSmall)
                                 .foregroundColor(colorFromName(insight.colorName))
                                 .frame(width: 30)
 
                             VStack(alignment: .leading, spacing: 4) {
                                 Text(insight.title)
-                                    .font(.subheadline.weight(.semibold))
+                                    .font(OffRecordTypography.labelMedium)
                                     .foregroundColor(OffRecordColor.textPrimary)
                                 Text(insight.description)
-                                    .font(.caption)
+                                    .font(OffRecordTypography.metadata)
                                     .foregroundColor(OffRecordColor.textSecondary)
                             }
                         }
@@ -309,12 +309,12 @@ struct StatsView: View {
                 Image(systemName: "calendar")
                     .foregroundColor(OffRecordColor.textSky)
                 Text("Weekly reflection")
-                    .font(.headline)
+                    .font(OffRecordTypography.sectionTitle)
                     .foregroundColor(OffRecordColor.textHeading)
             }
 
             Text(stats.weeklySummary)
-                .font(.subheadline)
+                .font(OffRecordTypography.bodySmall)
                 .foregroundColor(OffRecordColor.textSecondary)
         }
         .padding()
@@ -327,14 +327,14 @@ struct StatsView: View {
         VStack(spacing: 16) {
             HStack {
                 Image(systemName: "target")
-                    .font(.title2)
+                    .font(OffRecordTypography.titleMedium)
                     .foregroundColor(OffRecordColor.textAqua)
                 Text("Weekly Goal")
-                    .font(.headline)
+                    .font(OffRecordTypography.sectionTitle)
                     .foregroundColor(OffRecordColor.textHeading)
                 Spacer()
                 Text("\(stats.goal.count)/\(stats.goal.weeklyTarget)")
-                    .font(.subheadline.weight(.medium))
+                    .font(OffRecordTypography.labelMedium)
                     .foregroundColor(OffRecordColor.textAqua)
             }
 
@@ -349,10 +349,10 @@ struct StatsView: View {
 
                 VStack(spacing: 2) {
                     Text("\(Int(stats.goal.progress * 100))%")
-                        .font(.title2.bold())
+                        .font(OffRecordTypography.titleMedium)
                         .foregroundColor(OffRecordColor.textAqua)
                     Text("\(stats.goal.daysRemaining) days left")
-                        .font(.caption)
+                        .font(OffRecordTypography.metadata)
                         .foregroundColor(OffRecordColor.textSecondary)
                 }
             }
@@ -360,7 +360,7 @@ struct StatsView: View {
 
             if stats.goal.progress >= 1.0 {
                 Text("Goal reached! Great work this week.")
-                    .font(.caption)
+                    .font(OffRecordTypography.metadata)
                     .foregroundColor(OffRecordColor.textSage)
             }
         }
@@ -386,15 +386,15 @@ struct StatsView: View {
                     .foregroundColor(OffRecordColor.textYellow)
 
                 Text("Milestone!")
-                    .font(.largeTitle.bold())
+                    .font(OffRecordTypography.screenTitle)
                     .foregroundColor(OffRecordColor.textHeading)
 
                 Text("\(days)-Day Streak")
-                    .font(.title2)
+                    .font(OffRecordTypography.titleMedium)
                     .foregroundColor(OffRecordColor.textPeach)
 
                 Text("You've journaled for \(days) consecutive days. Your dedication to self-reflection is paying off.")
-                    .font(.subheadline)
+                    .font(OffRecordTypography.bodySmall)
                     .foregroundColor(OffRecordColor.textSecondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
@@ -404,7 +404,7 @@ struct StatsView: View {
                         showMilestone = nil
                     }
                 }
-                .font(.headline)
+                .font(OffRecordTypography.sectionTitle)
                 .padding(.horizontal, 32)
                 .padding(.vertical, 12)
                 .foregroundColor(OffRecordReadableTintStyle.journal.foreground)
@@ -495,10 +495,10 @@ struct StatItem: View {
                 Spacer()
             }
             Text(value)
-                .font(.title2.weight(.semibold))
+                .font(OffRecordTypography.titleMedium)
                 .foregroundColor(OffRecordColor.textPrimary)
             Text(title)
-                .font(.caption)
+                .font(OffRecordTypography.metadata)
                 .foregroundColor(OffRecordColor.textSecondary)
         }
         .padding()
