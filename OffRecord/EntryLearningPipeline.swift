@@ -1,24 +1,24 @@
 import Foundation
 
-extension FridayAssistantEngine: @unchecked Sendable {}
-
 private actor FridayLearningWorker {
     static let shared = FridayLearningWorker()
 
-    private let assistant = FridayAssistantEngine.shared
-
-    func processEntry(text: String, mood: String?, date: Date, duration: Double) {
-        assistant.processEntry(text: text, mood: mood, date: date, duration: duration)
+    func processEntry(text: String, mood: String?, date: Date, duration: Double) async {
+        await MainActor.run {
+            FridayAssistantEngine.shared.processEntry(text: text, mood: mood, date: date, duration: duration)
+        }
     }
 
-    func reprocessEditedEntry(oldText: String, newText: String, mood: String?, date: Date, duration: Double) {
-        assistant.reprocessEditedEntry(
-            oldText: oldText,
-            newText: newText,
-            mood: mood,
-            date: date,
-            duration: duration
-        )
+    func reprocessEditedEntry(oldText: String, newText: String, mood: String?, date: Date, duration: Double) async {
+        await MainActor.run {
+            FridayAssistantEngine.shared.reprocessEditedEntry(
+                oldText: oldText,
+                newText: newText,
+                mood: mood,
+                date: date,
+                duration: duration
+            )
+        }
     }
 }
 

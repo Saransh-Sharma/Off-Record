@@ -156,16 +156,15 @@ final class JournalSpotlightIndexer {
             return searchableItem(for: metadata)
         }
 
-        guard !items.isEmpty else {
-            deleteAll()
-            return
-        }
+        deleteAll {
+            guard !items.isEmpty else { return }
 
-        CSSearchableIndex.default().indexSearchableItems(items) { error in
-            if let error {
-                spotlightLogger.error("Failed to rebuild Spotlight index: \(error.localizedDescription, privacy: .public)")
-            } else {
-                spotlightLogger.info("Rebuilt Spotlight metadata for \(items.count, privacy: .public) entries.")
+            CSSearchableIndex.default().indexSearchableItems(items) { error in
+                if let error {
+                    spotlightLogger.error("Failed to rebuild Spotlight index: \(error.localizedDescription, privacy: .public)")
+                } else {
+                    spotlightLogger.info("Rebuilt Spotlight metadata for \(items.count, privacy: .public) entries.")
+                }
             }
         }
     }
@@ -182,10 +181,15 @@ final class JournalSpotlightIndexer {
     }
 
     func deleteAll() {
+        deleteAll(completion: nil)
+    }
+
+    private func deleteAll(completion: (() -> Void)?) {
         CSSearchableIndex.default().deleteSearchableItems(withDomainIdentifiers: [Self.journalEntriesDomainIdentifier]) { error in
             if let error {
                 spotlightLogger.error("Failed to delete Spotlight domain: \(error.localizedDescription, privacy: .public)")
             }
+            completion?()
         }
         NSUserActivity.deleteAllSavedUserActivities {}
     }
