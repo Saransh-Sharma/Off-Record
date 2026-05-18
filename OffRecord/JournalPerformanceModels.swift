@@ -128,6 +128,7 @@ struct JournalStatsSnapshot: Equatable, Sendable {
     let currentStreak: Int
     let longestStreak: Int
     let entriesThisMonth: Int
+    let entriesThisYear: Int
     let daysRecordedThisYear: Int
     let last7Days: [JournalDayActivity]
     let moodCounts: [JournalMoodCount]
@@ -148,6 +149,7 @@ struct JournalStatsSnapshot: Equatable, Sendable {
         currentStreak: 0,
         longestStreak: 0,
         entriesThisMonth: 0,
+        entriesThisYear: 0,
         daysRecordedThisYear: 0,
         last7Days: [],
         moodCounts: [],
@@ -187,6 +189,10 @@ actor JournalAnalyticsWorker {
             guard let date = entry.date else { return false }
             return calendar.isDate(date, equalTo: now, toGranularity: .month)
         }
+        let currentYearEntries = sortedEntries.filter { entry in
+            guard let date = entry.date else { return false }
+            return calendar.component(.year, from: date) == currentYear
+        }
         let totalWords = sortedEntries.reduce(0) { $0 + $1.wordCount }
         let weeklyCount = entriesThisWeek(entries: sortedEntries, calendar: calendar, now: now)
 
@@ -195,6 +201,7 @@ actor JournalAnalyticsWorker {
             currentStreak: currentStreak(days: days, calendar: calendar, today: today),
             longestStreak: longestStreak(days: days, calendar: calendar),
             entriesThisMonth: currentMonthEntries.count,
+            entriesThisYear: currentYearEntries.count,
             daysRecordedThisYear: days.filter { calendar.component(.year, from: $0) == currentYear }.count,
             last7Days: last7Days(days: days, calendar: calendar, today: today),
             moodCounts: moodCounts(from: sortedEntries),

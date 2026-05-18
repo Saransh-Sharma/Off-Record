@@ -1,11 +1,11 @@
-# App Review Response - Guidelines 5.1.1(i) and 5.1.2(i)
+# App Review Response - Guideline 5.1.1(iv)
 
 Hello App Review,
 
-Thank you for the clarification. We found that OffRecord uses Apple's Speech framework for transcription. The app does not integrate OpenAI, Anthropic, Gemini, analytics SDKs, advertising SDKs, or any non-Apple third-party AI service.
+Thank you for the clarification. We updated the Speech Recognition permission flow so the custom explanatory message now uses neutral wording before the system permission request.
 
-We have submitted an updated build that now clearly explains before transcription that voice audio may be processed by Apple Speech when online, identifies Apple as the service provider, and asks the user for permission before transcription begins. If the user does not consent, the recording is saved locally and they can type the entry manually.
+The primary action is now "Continue" instead of "Agree and Transcribe," and the custom message no longer includes a secondary permission-style choice. The user's permission decision is handled by the iOS Speech Recognition permission prompt.
 
-We also updated the in-app privacy disclosures, added an easily accessible Privacy Policy link in Settings, updated the Privacy Policy to describe Apple Speech and optional iCloud Sync, and corrected App Store metadata/review notes so they match the app's actual behavior.
+We also reviewed related Speech Recognition wording in Settings and error states to avoid directive permission language.
 
-Friday insights, mood analysis, Semantic Memory, and journal analysis remain on-device. OffRecord does not send journal data to developer servers or non-Apple AI services.
+If Speech Recognition is denied, OffRecord saves the recording locally and lets the user type manually.
