@@ -22,7 +22,7 @@ enum SpeechTranscriptionConsent {
         UserDefaults.standard.set(false, forKey: appleSpeechProcessingKey)
     }
 
-    static let disclosureTitle = "Allow Apple Speech Transcription?"
+    static let disclosureTitle = "Apple Speech Transcription"
 
     static let disclosureMessage = """
     OffRecord uses Apple Speech to turn your voice into text. When your device is online, your voice audio may be sent to Apple for speech recognition, and Apple returns the transcript. The transcript is saved in your journal.
@@ -30,7 +30,7 @@ enum SpeechTranscriptionConsent {
     OffRecord does not send your journal or audio to developer servers or non-Apple AI services.
     """
 
-    static let settingsDescription = "When enabled, voice audio may be processed by Apple Speech when your device is online. OffRecord stores the returned transcript in your journal and does not send your data to developer servers or non-Apple AI services."
+    static let settingsDescription = "When this is on, voice audio may be processed by Apple Speech when your device is online. OffRecord stores the returned transcript in your journal and does not send your data to developer servers or non-Apple AI services."
 }
 
 enum OffRecordExternalLinks {

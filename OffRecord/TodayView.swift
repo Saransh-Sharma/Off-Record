@@ -214,12 +214,9 @@ struct TodayView: View {
             Text(errorMessage ?? "")
         }
         .alert(SpeechTranscriptionConsent.disclosureTitle, isPresented: $showSpeechConsentPrompt) {
-            Button("Agree and Transcribe") {
+            Button("Continue") {
                 SpeechTranscriptionConsent.grantAppleSpeechProcessing()
                 resumePendingTranscription()
-            }
-            Button("Save Recording Only", role: .cancel) {
-                keepPendingRecordingOnly()
             }
         } message: {
             Text(SpeechTranscriptionConsent.disclosureMessage)
@@ -311,10 +308,10 @@ struct TodayView: View {
                     )
                 }
 
-                if daysRecordedThisYear > 0 {
+                if entriesThisYear > 0 {
                     StatBadge(
                         icon: "calendar",
-                        value: "\(daysRecordedThisYear) this year",
+                        value: "\(entriesThisYear) \(entriesThisYear == 1 ? "entry" : "entries") this year",
                         style: .privacy
                     )
                 }
@@ -1197,11 +1194,6 @@ struct TodayView: View {
         transcribeSavedEntry(entry: entry, audioURL: pendingTranscription.audioURL)
     }
 
-    private func keepPendingRecordingOnly() {
-        pendingTranscription = nil
-        recordingState = .idle
-    }
-
     private func transcribeSavedEntry(entry: DiaryEntry, audioURL: URL) {
         recordingState = .processing
         SpeechTranscriber.shared.transcribe(from: audioURL) { result in
@@ -1283,8 +1275,8 @@ struct TodayView: View {
 
     // MARK: - Stats
 
-    private var daysRecordedThisYear: Int {
-        todayStats.daysRecordedThisYear
+    private var entriesThisYear: Int {
+        todayStats.entriesThisYear
     }
 
     private var streakCount: Int {

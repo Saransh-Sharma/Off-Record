@@ -319,6 +319,9 @@ struct JournalPerformanceModelTests {
         #expect(stats.entryCount == 3)
         #expect(stats.currentStreak == 2)
         #expect(stats.longestStreak == 2)
+        #expect(stats.entriesThisMonth == 2)
+        #expect(stats.entriesThisYear == 2)
+        #expect(stats.daysRecordedThisYear == 2)
         #expect(stats.totalWords == 6)
         #expect(stats.avgWordsPerEntry == 2)
         #expect(stats.starredCount == 1)
@@ -326,6 +329,42 @@ struct JournalPerformanceModelTests {
         #expect(stats.availableYears == [2025, 2026])
         #expect(stats.goal.count == 2)
         #expect(stats.goal.progress == 2.0 / 3.0)
+    }
+
+    @Test func analyticsWorkerSeparatesYearlyEntriesFromRecordedDays() async {
+        let calendar = Calendar(identifier: .gregorian)
+        let now = calendar.date(from: DateComponents(year: 2026, month: 5, day: 20, hour: 12))!
+        let dates = [
+            DateComponents(year: 2026, month: 5, day: 20, hour: 9),
+            DateComponents(year: 2026, month: 5, day: 20, hour: 18),
+            DateComponents(year: 2026, month: 5, day: 19, hour: 9),
+            DateComponents(year: 2026, month: 5, day: 18, hour: 9),
+            DateComponents(year: 2026, month: 5, day: 17, hour: 9),
+            DateComponents(year: 2026, month: 5, day: 16, hour: 9),
+            DateComponents(year: 2026, month: 5, day: 15, hour: 9),
+            DateComponents(year: 2026, month: 5, day: 14, hour: 9),
+            DateComponents(year: 2026, month: 5, day: 13, hour: 9),
+            DateComponents(year: 2026, month: 5, day: 13, hour: 18)
+        ]
+        let entries = dates.enumerated().map { index, components in
+            makeSnapshot(
+                id: "may-\(index)",
+                date: calendar.date(from: components)!,
+                text: "entry \(index)",
+                mood: .happy
+            )
+        }
+
+        let stats = await JournalAnalyticsWorker.shared.makeStats(
+            from: entries,
+            now: now,
+            weeklyTarget: 3,
+            goalEnabled: false
+        )
+
+        #expect(stats.entriesThisYear == 10)
+        #expect(stats.daysRecordedThisYear == 8)
+        #expect(stats.entriesThisMonth == 10)
     }
 
     #if canImport(UIKit)

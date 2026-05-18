@@ -46,8 +46,15 @@ struct OnboardingView: View {
     @State private var firstEntryAudioEntryID: NSManagedObjectID?
     @State private var pendingTranscription: PendingOnboardingTranscription?
     @State private var showSpeechConsentPrompt = false
+    @State private var isWelcomeNameFieldFocused = false
 
     private var isIPad: Bool { horizontalSizeClass == .regular }
+    private var isWelcomeKeyboardLiftActive: Bool {
+        step == .welcome && isWelcomeNameFieldFocused
+    }
+    private var isHeaderCompact: Bool {
+        isWelcomeKeyboardLiftActive || step == .privacyProof
+    }
 
     var body: some View {
         ZStack {
@@ -67,10 +74,13 @@ struct OnboardingView: View {
             OnboardingProgressHeader(
                 step: step,
                 canGoBack: step.canGoBack,
+                isCompact: isHeaderCompact,
                 onBack: goBack
             )
             .padding(.horizontal, isIPad ? 44 : 20)
             .padding(.top, 14)
+            .offset(y: isWelcomeKeyboardLiftActive ? headerKeyboardLiftOffset : 0)
+            .animation(.easeInOut(duration: 0.25), value: isWelcomeKeyboardLiftActive)
         }
         .foregroundStyle(OffRecordColor.textBrand)
         .onAppear {
@@ -84,6 +94,9 @@ struct OnboardingView: View {
             store.save(newValue)
         }
         .onChange(of: step) { _, newStep in
+            if newStep != .welcome {
+                isWelcomeNameFieldFocused = false
+            }
             guard newStep == .processing else { return }
             DispatchQueue.main.asyncAfter(deadline: .now() + (reduceMotion ? 0.25 : 1.45)) {
                 if step == .processing {
@@ -105,12 +118,9 @@ struct OnboardingView: View {
             Text("You can enable reminders later in Settings. OffRecord still works fully offline.")
         }
         .alert(SpeechTranscriptionConsent.disclosureTitle, isPresented: $showSpeechConsentPrompt) {
-            Button("Agree and Transcribe") {
+            Button("Continue") {
                 SpeechTranscriptionConsent.grantAppleSpeechProcessing()
                 resumePendingTranscription()
-            }
-            Button("Save Recording Only", role: .cancel) {
-                keepPendingRecordingOnly()
             }
         } message: {
             Text(SpeechTranscriptionConsent.disclosureMessage)
@@ -136,6 +146,7 @@ struct OnboardingView: View {
                         isIPad: isIPad,
                         isKeyboardAdaptive: step == .welcome,
                         scrollTargetID: step == .welcome ? OnboardingScrollTarget.welcomeNameField : nil,
+                        onTextInputFocusChange: step == .welcome ? { isWelcomeNameFieldFocused = $0 } : nil
                     ) {
                         currentStepContent(for: step)
                     }
@@ -143,6 +154,10 @@ struct OnboardingView: View {
                 background: step.backgroundColor
             )
         }
+    }
+
+    private var headerKeyboardLiftOffset: CGFloat {
+        isIPad ? -12 : -8
     }
 
     @ViewBuilder
@@ -415,13 +430,6 @@ struct OnboardingView: View {
         transcribeFirstEntry(entry: entry, audioURL: pendingTranscription.audioURL)
     }
 
-    private func keepPendingRecordingOnly() {
-        pendingTranscription = nil
-        isTranscribing = false
-        firstEntryMode = .textFallback
-        entryCreated = true
-    }
-
     private func transcribeFirstEntry(entry: DiaryEntry, audioURL: URL) {
         isTranscribing = true
         SpeechTranscriber.shared.transcribe(from: audioURL) { result in
@@ -556,7 +564,7 @@ enum OnboardingStep: Int, CaseIterable, Identifiable {
         case .welcome: return "Understand yourself, privately."
         case .goal: return "What do you want your journal to help with?"
         case .painPoints: return "What usually stops you from journaling honestly?"
-        case .privacyProof: return "Local by design. Clear when Apple Speech is used."
+        case .privacyProof: return "Your journal stays on your iPhone."
         case .faceID: return "Protect your journal before you write."
         case .relatable: return "Which statements sound like you?"
         case .solution: return "A smarter way to reflect, built around you."
@@ -727,7 +735,7 @@ enum OnboardingPainPoint: String, CaseIterable, Codable, Identifiable {
         switch self {
         case .typingSlow: return "Speak naturally and let OffRecord transcribe."
         case .detailsFade: return "Capture the honest version while it is fresh."
-        case .privacyWorry: return "Local AI means Friday analysis stays on this device."
+        case .privacyWorry: return "Friday works on this device, not a developer server."
         case .blankPage: return "Private prompts make the first sentence easier."
         case .manualMood: return "Mood trends emerge from entries over time."
         case .hardToSearch: return "Friday connects people, topics, and themes."
@@ -840,6 +848,7 @@ private struct ConcentricOnboardingPage<Content: View>: View {
     let isIPad: Bool
     let isKeyboardAdaptive: Bool
     let scrollTargetID: String?
+    let onTextInputFocusChange: ((Bool) -> Void)?
     let content: Content
     @State private var isTextInputFocused = false
 
@@ -847,11 +856,13 @@ private struct ConcentricOnboardingPage<Content: View>: View {
         isIPad: Bool,
         isKeyboardAdaptive: Bool = false,
         scrollTargetID: String? = nil,
+        onTextInputFocusChange: ((Bool) -> Void)? = nil,
         @ViewBuilder content: () -> Content
     ) {
         self.isIPad = isIPad
         self.isKeyboardAdaptive = isKeyboardAdaptive
         self.scrollTargetID = scrollTargetID
+        self.onTextInputFocusChange = onTextInputFocusChange
         self.content = content()
     }
 
@@ -877,10 +888,12 @@ private struct ConcentricOnboardingPage<Content: View>: View {
                 .onReceive(NotificationCenter.default.publisher(for: UITextField.textDidBeginEditingNotification)) { _ in
                     guard isKeyboardAdaptive else { return }
                     isTextInputFocused = true
+                    onTextInputFocusChange?(true)
                 }
                 .onReceive(NotificationCenter.default.publisher(for: UITextField.textDidEndEditingNotification)) { _ in
                     guard isKeyboardAdaptive else { return }
                     isTextInputFocused = false
+                    onTextInputFocusChange?(false)
                 }
                 .onChange(of: isTextInputFocused) { _, isFocused in
                     guard isKeyboardAdaptive, isFocused, let scrollTargetID else { return }
@@ -895,7 +908,7 @@ private struct ConcentricOnboardingPage<Content: View>: View {
     }
 
     private var contentTopPadding: CGFloat {
-        isFocusActive ? (isIPad ? 132 : 112) : 220
+        isFocusActive ? (isIPad ? 170 : 160) : 220
     }
 
     private var contentBottomPadding: CGFloat {
@@ -930,7 +943,7 @@ private struct WelcomeStep: View {
                 FridayMascotView(pose: .wave, size: 104)
             }
 
-            Text("Speak freely. OffRecord turns your voice into insights using local AI on your device, even without internet.")
+            Text("Speak freely. OffRecord turns your thoughts into a private journal and helps you spot patterns.")
                 .font(OffRecordTypography.titleSmall)
                 .foregroundStyle(OnboardingPalette.secondaryForeground)
                 .multilineTextAlignment(.center)
@@ -1085,13 +1098,14 @@ private struct PrivacyProofStep: View {
     var body: some View {
         OnboardingQuestion(
             eyebrow: "Privacy proof",
-            title: "Local by design. Clear when Apple Speech is used.",
-            subtitle: "Your journal is stored on your iPhone. Friday insights, mood analysis, Semantic Memory, and your private graph use on-device Apple frameworks."
+            title: "Your journal stays on your iPhone.",
+            subtitle: "OffRecord keeps your entries and Friday's insights on this device. Voice transcription is separate, and you approve it first.",
+            contentSpacing: 8
         ) {
-            VStack(spacing: 12) {
-                PrivacyComparisonRow(label: "Journal text", offRecord: "On device", other: "Often uploaded")
-                PrivacyComparisonRow(label: "Voice transcription", offRecord: "Apple Speech", other: "Cloud AI")
-                PrivacyComparisonRow(label: "AI insights", offRecord: "Local AI", other: "Cloud AI")
+            VStack(spacing: 8) {
+                PrivacyComparisonRow(label: "Entries", offRecord: "On device", other: "Often uploaded")
+                PrivacyComparisonRow(label: "Voice transcription", offRecord: "Apple Speech", other: "Often uploaded")
+                PrivacyComparisonRow(label: "Friday insights", offRecord: "On device", other: "Often uploaded")
                 PrivacyComparisonRow(label: "Account", offRecord: "Not needed", other: "Usually required")
                 PrivacyComparisonRow(label: "Analytics", offRecord: "None", other: "Common")
                 PrivacyComparisonRow(label: "Offline use", offRecord: "Core app works", other: "Often limited")
@@ -1295,7 +1309,7 @@ private struct ProcessingStep: View {
             }
 
             VStack(spacing: 10) {
-                Text("No account lookup. Local AI is preparing your first reflection.")
+                Text("No account needed. OffRecord is preparing your first reflection.")
                     .font(OffRecordTypography.labelMedium)
                     .foregroundStyle(OnboardingPalette.secondaryForeground)
                     .multilineTextAlignment(.center)
@@ -1572,6 +1586,7 @@ private struct FinishStep: View {
 private struct OnboardingProgressHeader: View {
     let step: OnboardingStep
     let canGoBack: Bool
+    let isCompact: Bool
     let onBack: () -> Void
     private let sideWidth: CGFloat = 54
 
@@ -1615,7 +1630,7 @@ private struct OnboardingProgressHeader: View {
     @ViewBuilder
     private var headerCenterContent: some View {
         Text(step.pageTitle.uppercased())
-            .font(OffRecordTypography.screenTitle)
+            .font(isCompact ? OffRecordTypography.titleMedium : OffRecordTypography.screenTitle)
             .foregroundStyle(OnboardingPalette.foreground)
             .lineLimit(3)
             .minimumScaleFactor(0.58)
@@ -1672,20 +1687,23 @@ private struct OnboardingBottomBar: View {
 
 private struct OnboardingQuestion<Content: View>: View {
     let subtitle: String
+    let contentSpacing: CGFloat
     let content: Content
 
     init(
         eyebrow _: String,
         title _: String,
         subtitle: String,
+        contentSpacing: CGFloat = 24,
         @ViewBuilder content: () -> Content
     ) {
         self.subtitle = subtitle
+        self.contentSpacing = contentSpacing
         self.content = content()
     }
 
     var body: some View {
-        VStack(alignment: .center, spacing: 24) {
+        VStack(alignment: .center, spacing: contentSpacing) {
             Text(subtitle)
                 .font(OffRecordTypography.labelMedium)
                 .foregroundStyle(OnboardingPalette.secondaryForeground)
@@ -1799,7 +1817,7 @@ private struct PrivacyComparisonRow: View {
                 .font(OffRecordTypography.labelSmall)
                 .foregroundStyle(OffRecordColor.textPrimary)
                 .padding(.horizontal, 10)
-                .padding(.vertical, 7)
+                .padding(.vertical, 6)
                 .background(OnboardingPalette.surface)
                 .clipShape(Capsule())
 
@@ -1807,11 +1825,12 @@ private struct PrivacyComparisonRow: View {
                 .font(OffRecordTypography.labelSmall)
                 .foregroundStyle(OnboardingPalette.secondaryForeground)
                 .padding(.horizontal, 10)
-                .padding(.vertical, 7)
+                .padding(.vertical, 6)
                 .background(OnboardingPalette.surfaceSubtle)
                 .clipShape(Capsule())
         }
-        .padding(14)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 10)
         .background(OnboardingPalette.surfaceBarelyVisible)
         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
     }
@@ -1915,7 +1934,7 @@ private struct LocalAIBadge: View {
     var body: some View {
         HStack(spacing: 8) {
             Image(systemName: "cpu.fill")
-            Text("Local AI")
+            Text("On device")
             Circle().fill(OnboardingPalette.tertiaryForeground).frame(width: 4, height: 4)
             Text("Core works offline")
         }
@@ -2060,7 +2079,7 @@ private struct TopicGraphCard: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Label("Sample People and Topics Graph", systemImage: "point.3.connected.trianglepath.dotted")
+            Label("Sample People and Topics", systemImage: "point.3.connected.trianglepath.dotted")
                 .font(OffRecordTypography.sectionTitle)
                 .foregroundStyle(OnboardingPalette.foreground)
 
@@ -2072,7 +2091,7 @@ private struct TopicGraphCard: View {
             .frame(height: 210)
             .frame(maxWidth: .infinity)
 
-            Text("As you journal, OffRecord connects recurring people, places, moods, and themes locally. This graph stays on this device.")
+            Text("As you journal, OffRecord connects recurring people, places, moods, and themes locally. These connections stay on this device.")
                 .font(OffRecordTypography.labelMedium)
                 .foregroundStyle(OnboardingPalette.secondaryForeground)
         }

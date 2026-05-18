@@ -47,7 +47,7 @@ final class SpeechTranscriber {
             case .offlineNoTranscription:
                 return "You're offline. Your recording is saved—tap Edit to add text manually, or transcription will happen when you're back online."
             case .appleSpeechConsentRequired:
-                return "Your recording is saved. Allow Apple Speech transcription before OffRecord turns voice into text."
+                return "Speech transcription needs iOS permission. Your recording is saved, and you can type manually."
             }
         }
     }

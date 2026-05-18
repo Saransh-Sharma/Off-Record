@@ -157,11 +157,10 @@ struct TimelineView: View {
             }
         }
         .alert(SpeechTranscriptionConsent.disclosureTitle, isPresented: $showSpeechConsentPrompt) {
-            Button("Agree and Transcribe") {
+            Button("Continue") {
                 SpeechTranscriptionConsent.grantAppleSpeechProcessing()
                 startVoiceSearch()
             }
-            Button("Not Now", role: .cancel) { }
         } message: {
             Text(SpeechTranscriptionConsent.disclosureMessage)
         }

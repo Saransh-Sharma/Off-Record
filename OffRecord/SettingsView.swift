@@ -306,7 +306,7 @@ struct SettingsView: View {
                     description: "No accounts, analytics, tracking, developer AI servers, or non-Apple AI services."
                 )
 
-                Toggle("Allow Apple Speech transcription", isOn: $appleSpeechProcessingConsentGranted)
+                Toggle("Apple Speech transcription", isOn: $appleSpeechProcessingConsentGranted)
                     .accessibilityIdentifier("settings.privacy.appleSpeechConsentToggle")
 
                 Text(SpeechTranscriptionConsent.settingsDescription)
