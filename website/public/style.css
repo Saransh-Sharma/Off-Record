@@ -836,7 +836,7 @@ nav .container {
 }
 
 .article-cta::before {
-  content: '[ offrecord.example.com ]';
+  content: '[ saransh-sharma.github.io/Off-Record ]';
   position: absolute;
   top: 14px;
   right: 18px;

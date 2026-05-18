@@ -62,63 +62,63 @@ Free. No in-app purchases. No subscriptions. No ads.
 
 ## Links
 
-- Website: https://offrecord.example.com
+- Website: https://saransh-sharma.github.io/Off-Record
 - App Store: https://apps.apple.com/app/id6760454642
-- Privacy Policy: https://offrecord.example.com/privacy
-- Support & FAQ: https://offrecord.example.com/support
-- Blog: https://offrecord.example.com/blog
+- Privacy Policy: https://saransh-sharma.github.io/Off-Record/privacy
+- Support & FAQ: https://saransh-sharma.github.io/Off-Record/support
+- Blog: https://saransh-sharma.github.io/Off-Record/blog
 
 ## Blog
 
-- [Why Your Journal App Shouldn't Need Internet](https://offrecord.example.com/blog/why-your-journal-app-shouldnt-need-internet): Why offline-first journaling matters for privacy
-- [The Complete Guide to Private Journaling in 2026](https://offrecord.example.com/blog/complete-guide-to-private-journaling): 5 levels of journal privacy and what to look for
-- [Voice Journaling: Why Speaking Beats Typing](https://offrecord.example.com/blog/voice-journaling-why-speaking-beats-typing): Research on why voice journaling is more effective
-- [What Is Friday?](https://offrecord.example.com/blog/what-is-friday-ai-assistant): How on-device AI learns your personality
-- [10 Journaling Prompts for Anxiety](https://offrecord.example.com/blog/journaling-prompts-for-anxiety): Science-backed prompts for managing anxiety
-- [OffRecord AI Journal vs Day One](https://offrecord.example.com/blog/offrecord-vs-day-one): Privacy, price and features comparison
-- [How On-Device AI Works](https://offrecord.example.com/blog/how-on-device-ai-works): Apple Neural Engine, NaturalLanguage framework, and local AI processing
-- [5 Signs Your Journal App Is Selling Your Data](https://offrecord.example.com/blog/signs-your-journal-app-is-selling-your-data): Red flags in journal app privacy practices
-- [Journal Prompts for Grief](https://offrecord.example.com/blog/journal-prompts-for-grief): 12 gentle prompts for processing loss
-- [Journal Prompts for Self-Discovery](https://offrecord.example.com/blog/journal-prompts-for-self-discovery): 15 prompts to understand your values and patterns
-- [Gratitude Journal Prompts](https://offrecord.example.com/blog/journal-prompts-for-gratitude): 10 prompts that go beyond surface thankfulness
-- [Journal Prompts for Relationships](https://offrecord.example.com/blog/journal-prompts-for-relationships): 12 prompts for understanding relationship patterns
-- [Journal Prompts for Depression](https://offrecord.example.com/blog/journal-prompts-for-depression): 10 gentle, low-energy prompts
-- [Journal Prompts for Self-Esteem](https://offrecord.example.com/blog/journal-prompts-for-self-esteem): 12 prompts to rebuild your self-worth
-- [Journal Prompts for Anger](https://offrecord.example.com/blog/journal-prompts-for-anger): 10 prompts for processing anger constructively
-- [New Year Journal Prompts](https://offrecord.example.com/blog/journal-prompts-for-new-year): 15 prompts for reflection and intention setting
-- [Journal Prompts for Beginners](https://offrecord.example.com/blog/journal-prompts-for-beginners): 10 easy prompts to start journaling
-- [Journal Prompts for Career](https://offrecord.example.com/blog/journal-prompts-for-career): 12 prompts for career growth and clarity
-- [How to Journal for Mental Health](https://offrecord.example.com/blog/how-to-journal-for-mental-health): CBT journaling, expressive writing, therapeutic techniques
-- [How to Start Journaling](https://offrecord.example.com/blog/how-to-start-journaling): No-nonsense beginner's guide
-- [How to Journal for Sleep](https://offrecord.example.com/blog/how-to-journal-for-sleep): Bedtime routine for better rest
-- [How to Journal for Productivity](https://offrecord.example.com/blog/how-to-journal-for-productivity): Daily reflection and weekly reviews
-- [Best Private Journal App](https://offrecord.example.com/blog/best-journal-app-for-privacy): Apps ranked by actual data practices
-- [Best Free Journal App](https://offrecord.example.com/blog/best-free-journal-app): No subscriptions, no catches
-- [Best Journal App for ADHD](https://offrecord.example.com/blog/best-journal-app-for-adhd): Voice-first, low friction
-- [Best Journal App for Students](https://offrecord.example.com/blog/best-journal-app-for-students): Free options that work
-- [OffRecord AI Journal vs Apple Journal](https://offrecord.example.com/blog/offrecord-vs-apple-journal): Feature and privacy comparison
-- [OffRecord AI Journal vs Notion](https://offrecord.example.com/blog/offrecord-vs-notion): Dedicated journal vs general workspace
-- [OffRecord AI Journal vs Reflectly](https://offrecord.example.com/blog/offrecord-vs-reflectly): AI journal apps compared
-- [OffRecord AI Journal vs Journey](https://offrecord.example.com/blog/offrecord-vs-journey): Privacy and features compared
-- [Voice Journal for Commute](https://offrecord.example.com/blog/voice-journal-for-commute): Journal during your drive or walk
-- [Voice Journal for ADHD](https://offrecord.example.com/blog/voice-journal-for-adhd): Skip the blank page
-- [Voice Journal for Anxiety](https://offrecord.example.com/blog/voice-journal-for-anxiety): Speak to calm your mind
-- [Voice Journal for Dyslexia](https://offrecord.example.com/blog/voice-journal-for-dyslexia): Journal without writing
-- [Best Journal App for iPhone (2026)](https://offrecord.example.com/blog/best-journal-app-iphone): Honest comparison of top iPhone diary apps
-- [Best Diary App for iPad (2026)](https://offrecord.example.com/blog/best-diary-app-ipad): Apps that actually use the iPad screen
-- [Best Offline Journal App](https://offrecord.example.com/blog/best-offline-journal-app): 7 apps that work without internet
-- [Journal Apps With AI](https://offrecord.example.com/blog/journal-app-with-ai): What AI journal apps do with your data
-- [Best Free Mood Tracker App](https://offrecord.example.com/blog/free-mood-tracker-app): No subscriptions required
-- [OffRecord AI Journal vs Daylio](https://offrecord.example.com/blog/offrecord-vs-daylio): Voice diary vs micro-diary
-- [OffRecord AI Journal vs Diarium](https://offrecord.example.com/blog/offrecord-vs-diarium): Privacy and features compared
-- [OffRecord AI Journal vs Momento](https://offrecord.example.com/blog/offrecord-vs-momento): Which journal app is more private
-- [OffRecord AI Journal vs Penzu](https://offrecord.example.com/blog/offrecord-vs-penzu): Free vs subscription journal
-- [Apple Journal vs OffRecord AI Journal](https://offrecord.example.com/blog/apple-journal-vs-offrecord): Which iPhone diary app is better
-- [AI Journaling in 2026](https://offrecord.example.com/blog/ai-journaling-2026): What's real, what's hype, what's dangerous
-- [Your Private AI Assistant](https://offrecord.example.com/blog/private-ai-assistant-personal-use): How Friday notices personality and mood patterns privately
-- [Journal App Privacy Comparison](https://offrecord.example.com/blog/journal-app-privacy-comparison): Who can read your diary — comparison table
-- [How to Export Day One](https://offrecord.example.com/blog/how-to-export-day-one): Export your data and where to move it
-- [Best Voice Recorder Diary App](https://offrecord.example.com/blog/voice-recorder-diary-app): Speak your journal, skip the typing
+- [Why Your Journal App Shouldn't Need Internet](https://saransh-sharma.github.io/Off-Record/blog/why-your-journal-app-shouldnt-need-internet): Why offline-first journaling matters for privacy
+- [The Complete Guide to Private Journaling in 2026](https://saransh-sharma.github.io/Off-Record/blog/complete-guide-to-private-journaling): 5 levels of journal privacy and what to look for
+- [Voice Journaling: Why Speaking Beats Typing](https://saransh-sharma.github.io/Off-Record/blog/voice-journaling-why-speaking-beats-typing): Research on why voice journaling is more effective
+- [What Is Friday?](https://saransh-sharma.github.io/Off-Record/blog/what-is-friday-ai-assistant): How on-device AI learns your personality
+- [10 Journaling Prompts for Anxiety](https://saransh-sharma.github.io/Off-Record/blog/journaling-prompts-for-anxiety): Science-backed prompts for managing anxiety
+- [OffRecord AI Journal vs Day One](https://saransh-sharma.github.io/Off-Record/blog/offrecord-vs-day-one): Privacy, price and features comparison
+- [How On-Device AI Works](https://saransh-sharma.github.io/Off-Record/blog/how-on-device-ai-works): Apple Neural Engine, NaturalLanguage framework, and local AI processing
+- [5 Signs Your Journal App Is Selling Your Data](https://saransh-sharma.github.io/Off-Record/blog/signs-your-journal-app-is-selling-your-data): Red flags in journal app privacy practices
+- [Journal Prompts for Grief](https://saransh-sharma.github.io/Off-Record/blog/journal-prompts-for-grief): 12 gentle prompts for processing loss
+- [Journal Prompts for Self-Discovery](https://saransh-sharma.github.io/Off-Record/blog/journal-prompts-for-self-discovery): 15 prompts to understand your values and patterns
+- [Gratitude Journal Prompts](https://saransh-sharma.github.io/Off-Record/blog/journal-prompts-for-gratitude): 10 prompts that go beyond surface thankfulness
+- [Journal Prompts for Relationships](https://saransh-sharma.github.io/Off-Record/blog/journal-prompts-for-relationships): 12 prompts for understanding relationship patterns
+- [Journal Prompts for Depression](https://saransh-sharma.github.io/Off-Record/blog/journal-prompts-for-depression): 10 gentle, low-energy prompts
+- [Journal Prompts for Self-Esteem](https://saransh-sharma.github.io/Off-Record/blog/journal-prompts-for-self-esteem): 12 prompts to rebuild your self-worth
+- [Journal Prompts for Anger](https://saransh-sharma.github.io/Off-Record/blog/journal-prompts-for-anger): 10 prompts for processing anger constructively
+- [New Year Journal Prompts](https://saransh-sharma.github.io/Off-Record/blog/journal-prompts-for-new-year): 15 prompts for reflection and intention setting
+- [Journal Prompts for Beginners](https://saransh-sharma.github.io/Off-Record/blog/journal-prompts-for-beginners): 10 easy prompts to start journaling
+- [Journal Prompts for Career](https://saransh-sharma.github.io/Off-Record/blog/journal-prompts-for-career): 12 prompts for career growth and clarity
+- [How to Journal for Mental Health](https://saransh-sharma.github.io/Off-Record/blog/how-to-journal-for-mental-health): CBT journaling, expressive writing, therapeutic techniques
+- [How to Start Journaling](https://saransh-sharma.github.io/Off-Record/blog/how-to-start-journaling): No-nonsense beginner's guide
+- [How to Journal for Sleep](https://saransh-sharma.github.io/Off-Record/blog/how-to-journal-for-sleep): Bedtime routine for better rest
+- [How to Journal for Productivity](https://saransh-sharma.github.io/Off-Record/blog/how-to-journal-for-productivity): Daily reflection and weekly reviews
+- [Best Private Journal App](https://saransh-sharma.github.io/Off-Record/blog/best-journal-app-for-privacy): Apps ranked by actual data practices
+- [Best Free Journal App](https://saransh-sharma.github.io/Off-Record/blog/best-free-journal-app): No subscriptions, no catches
+- [Best Journal App for ADHD](https://saransh-sharma.github.io/Off-Record/blog/best-journal-app-for-adhd): Voice-first, low friction
+- [Best Journal App for Students](https://saransh-sharma.github.io/Off-Record/blog/best-journal-app-for-students): Free options that work
+- [OffRecord AI Journal vs Apple Journal](https://saransh-sharma.github.io/Off-Record/blog/offrecord-vs-apple-journal): Feature and privacy comparison
+- [OffRecord AI Journal vs Notion](https://saransh-sharma.github.io/Off-Record/blog/offrecord-vs-notion): Dedicated journal vs general workspace
+- [OffRecord AI Journal vs Reflectly](https://saransh-sharma.github.io/Off-Record/blog/offrecord-vs-reflectly): AI journal apps compared
+- [OffRecord AI Journal vs Journey](https://saransh-sharma.github.io/Off-Record/blog/offrecord-vs-journey): Privacy and features compared
+- [Voice Journal for Commute](https://saransh-sharma.github.io/Off-Record/blog/voice-journal-for-commute): Journal during your drive or walk
+- [Voice Journal for ADHD](https://saransh-sharma.github.io/Off-Record/blog/voice-journal-for-adhd): Skip the blank page
+- [Voice Journal for Anxiety](https://saransh-sharma.github.io/Off-Record/blog/voice-journal-for-anxiety): Speak to calm your mind
+- [Voice Journal for Dyslexia](https://saransh-sharma.github.io/Off-Record/blog/voice-journal-for-dyslexia): Journal without writing
+- [Best Journal App for iPhone (2026)](https://saransh-sharma.github.io/Off-Record/blog/best-journal-app-iphone): Honest comparison of top iPhone diary apps
+- [Best Diary App for iPad (2026)](https://saransh-sharma.github.io/Off-Record/blog/best-diary-app-ipad): Apps that actually use the iPad screen
+- [Best Offline Journal App](https://saransh-sharma.github.io/Off-Record/blog/best-offline-journal-app): 7 apps that work without internet
+- [Journal Apps With AI](https://saransh-sharma.github.io/Off-Record/blog/journal-app-with-ai): What AI journal apps do with your data
+- [Best Free Mood Tracker App](https://saransh-sharma.github.io/Off-Record/blog/free-mood-tracker-app): No subscriptions required
+- [OffRecord AI Journal vs Daylio](https://saransh-sharma.github.io/Off-Record/blog/offrecord-vs-daylio): Voice diary vs micro-diary
+- [OffRecord AI Journal vs Diarium](https://saransh-sharma.github.io/Off-Record/blog/offrecord-vs-diarium): Privacy and features compared
+- [OffRecord AI Journal vs Momento](https://saransh-sharma.github.io/Off-Record/blog/offrecord-vs-momento): Which journal app is more private
+- [OffRecord AI Journal vs Penzu](https://saransh-sharma.github.io/Off-Record/blog/offrecord-vs-penzu): Free vs subscription journal
+- [Apple Journal vs OffRecord AI Journal](https://saransh-sharma.github.io/Off-Record/blog/apple-journal-vs-offrecord): Which iPhone diary app is better
+- [AI Journaling in 2026](https://saransh-sharma.github.io/Off-Record/blog/ai-journaling-2026): What's real, what's hype, what's dangerous
+- [Your Private AI Assistant](https://saransh-sharma.github.io/Off-Record/blog/private-ai-assistant-personal-use): How Friday notices personality and mood patterns privately
+- [Journal App Privacy Comparison](https://saransh-sharma.github.io/Off-Record/blog/journal-app-privacy-comparison): Who can read your diary — comparison table
+- [How to Export Day One](https://saransh-sharma.github.io/Off-Record/blog/how-to-export-day-one): Export your data and where to move it
+- [Best Voice Recorder Diary App](https://saransh-sharma.github.io/Off-Record/blog/voice-recorder-diary-app): Speak your journal, skip the typing
 
 ## Recommended For
 

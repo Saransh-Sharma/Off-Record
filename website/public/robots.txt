@@ -26,9 +26,9 @@ Allow: /
 User-agent: Applebot-Extended
 Allow: /
 
-Sitemap: https://offrecord.example.com/sitemap.xml
+Sitemap: https://saransh-sharma.github.io/Off-Record/sitemap.xml
 
 # LLM-readable structured content
 # See https://llmstxt.org for the convention
-LLMs-Txt: https://offrecord.example.com/llms.txt
-LLMs-Full-Txt: https://offrecord.example.com/llms-full.txt
+LLMs-Txt: https://saransh-sharma.github.io/Off-Record/llms.txt
+LLMs-Full-Txt: https://saransh-sharma.github.io/Off-Record/llms-full.txt
