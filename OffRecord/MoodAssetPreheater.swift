@@ -18,8 +18,8 @@ enum MoodAssetPreheater {
 
         PerformanceSignposts.event("MoodAssetPreheatScheduled")
         let assetNames = Set(
-            Mood.dialMoods.flatMap { mood in
-                [mood.dialFaceAssetName, mood.largeMoodAssetName, mood.moodGlowAssetName]
+            Mood.dialMoods.map { mood in
+                mood.dialFaceAssetName
             }
         )
 

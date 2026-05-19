@@ -66,6 +66,7 @@ final class AudioRecorder: NSObject, ObservableObject {
         level = 0
 
         timer?.invalidate()
+        timer = nil
         timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
             guard let self, let recorder = self.recorder else { return }
             recorder.updateMeters()
@@ -105,6 +106,17 @@ final class AudioRecorder: NSObject, ObservableObject {
         let duration = recorder.currentTime
         self.recorder = nil
         return (url, duration)
+    }
+
+    deinit {
+        timer?.invalidate()
+        timer = nil
+        recorder?.stop()
+        recorder = nil
+        Self.activeRecording = false
+        #if os(iOS)
+        try? AVAudioSession.sharedInstance().setActive(false, options: .notifyOthersOnDeactivation)
+        #endif
     }
 
     // MARK: - File Management

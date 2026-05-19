@@ -22,6 +22,7 @@ final class AudioPlaybackController: NSObject, ObservableObject, AVAudioPlayerDe
     static let speedOptions: [Float] = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0]
 
     func load(url: URL) throws {
+        stop()
         let player = try AVAudioPlayer(contentsOf: url)
         player.enableRate = true
         player.delegate = self
@@ -59,6 +60,7 @@ final class AudioPlaybackController: NSObject, ObservableObject, AVAudioPlayerDe
     // MARK: - Timer
 
     private func startTimer() {
+        stopTimer()
         timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
             guard let self, let player = self.audioPlayer else { return }
             self.currentTime = player.currentTime
@@ -80,9 +82,17 @@ final class AudioPlaybackController: NSObject, ObservableObject, AVAudioPlayerDe
         }
     }
 
-    deinit {
+    func stop() {
         stopTimer()
         audioPlayer?.stop()
+        audioPlayer = nil
+        isPlaying = false
+        currentTime = 0
+        duration = 0
+    }
+
+    deinit {
+        stop()
     }
 }
 
@@ -174,6 +184,9 @@ struct AudioPlayerView: View {
             } catch {
                 loadError = "Unable to load audio."
             }
+        }
+        .onDisappear {
+            controller.stop()
         }
         .overlay {
             if let error = loadError {

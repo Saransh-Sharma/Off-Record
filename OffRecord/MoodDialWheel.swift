@@ -221,11 +221,22 @@ enum MoodDialWheelGeometryCache {
         return geometry
     }
 
-    #if DEBUG
-    static func resetForTesting() {
+    static func clear() {
         lock.lock()
         cache = [:]
         lock.unlock()
+    }
+
+    #if DEBUG
+    static func resetForTesting() {
+        clear()
+    }
+
+    static var cachedGeometryCount: Int {
+        lock.lock()
+        let count = cache.count
+        lock.unlock()
+        return count
     }
     #endif
 

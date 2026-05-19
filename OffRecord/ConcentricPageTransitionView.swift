@@ -12,6 +12,16 @@ private enum ConcentricPageDirection {
     case backward
 }
 
+private enum ConcentricAnimationStage {
+    case idle
+    case growing
+    case shrinking
+}
+
+private final class ConcentricActionGate: ObservableObject {
+    @Published var isLocked = false
+}
+
 struct ConcentricPageTransitionView<Content: View>: View {
     typealias PageContent = (view: Content, background: Color)
 
@@ -26,11 +36,13 @@ struct ConcentricPageTransitionView<Content: View>: View {
     let onSecondaryAction: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @StateObject private var actionGate = ConcentricActionGate()
 
     @State private var displayedIndex: Int
     @State private var incomingIndex: Int
     @State private var progress: Double = 0
     @State private var direction: ConcentricPageDirection = .forward
+    @State private var animationStage: ConcentricAnimationStage = .idle
     @State private var isAnimating = false
     @State private var backgroundColor: Color
     @State private var circleColor: Color
@@ -75,10 +87,11 @@ struct ConcentricPageTransitionView<Content: View>: View {
         GeometryReader { proxy in
             ZStack {
                 backgroundColor
-                    .ignoresSafeArea()
+                    .ignoresSafeArea(.container)
 
                 if pages.indices.contains(displayedIndex) {
                     pages[displayedIndex].view
+                        .id(displayedIndex)
                         .scaleEffect(isAnimating ? 2 / 3 : 1)
                         .offset(
                             x: isAnimating ? outgoingOffset(in: proxy.size) : 0,
@@ -90,6 +103,7 @@ struct ConcentricPageTransitionView<Content: View>: View {
 
                 if pages.indices.contains(incomingIndex), incomingIndex != displayedIndex {
                     pages[incomingIndex].view
+                        .id(incomingIndex)
                         .scaleEffect(isAnimating ? 1 : 2 / 3)
                         .offset(
                             x: isAnimating ? 0 : incomingOffset(in: proxy.size),
@@ -106,6 +120,7 @@ struct ConcentricPageTransitionView<Content: View>: View {
                     direction: direction
                 )
                 .fill(circleColor)
+                .opacity(isCTADisabled && !isAnimating ? 0.42 : 1)
                 .allowsHitTesting(false)
                 .onAnimationCompleted(for: progress) {
                     animationCompleted()
@@ -113,11 +128,11 @@ struct ConcentricPageTransitionView<Content: View>: View {
             }
             .overlay(alignment: .bottom) {
                 bottomControls
-                    .padding(.bottom, 52)
+                    .padding(.horizontal, 24)
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
         }
-        .ignoresSafeArea()
+        .ignoresSafeArea(.container)
         .onAppear {
             syncToCurrentIndex(animated: false)
         }
@@ -135,6 +150,7 @@ struct ConcentricPageTransitionView<Content: View>: View {
             backgroundColor = pages[currentIndex].background
             circleColor = pages[incomingIndex].background
             progress = 0
+            animationStage = .idle
             isAnimating = false
             return
         }
@@ -142,6 +158,7 @@ struct ConcentricPageTransitionView<Content: View>: View {
         direction = currentIndex > displayedIndex ? .forward : .backward
         incomingIndex = currentIndex
         isAnimating = true
+        animationStage = .growing
         backgroundColor = pages[displayedIndex].background
         circleColor = pages[incomingIndex].background
         progress = 0
@@ -149,23 +166,42 @@ struct ConcentricPageTransitionView<Content: View>: View {
         withAnimation(inAnimation) {
             progress = limit
         }
+        scheduleAnimationFallback(for: .growing)
     }
 
     private func animationCompleted() {
-        if progress == limit {
-            progress += 0.001
+        advanceAnimationStageIfNeeded()
+    }
+
+    private func advanceAnimationStageIfNeeded() {
+        switch animationStage {
+        case .idle:
+            return
+        case .growing:
+            animationStage = .shrinking
+            progress = limit + 0.001
             backgroundColor = pages.indices.contains(incomingIndex) ? pages[incomingIndex].background : backgroundColor
             circleColor = pages.indices.contains(displayedIndex) ? pages[displayedIndex].background : circleColor
             withAnimation(outAnimation) {
                 progress = 2 * limit
             }
-        } else if progress == 2 * limit {
+            scheduleAnimationFallback(for: .shrinking)
+        case .shrinking:
+            animationStage = .idle
             displayedIndex = incomingIndex
             incomingIndex = nextIndex(after: displayedIndex)
             isAnimating = false
             progress = 0
             backgroundColor = pages.indices.contains(displayedIndex) ? pages[displayedIndex].background : backgroundColor
             circleColor = pages.indices.contains(incomingIndex) ? pages[incomingIndex].background : circleColor
+        }
+    }
+
+    private func scheduleAnimationFallback(for stage: ConcentricAnimationStage) {
+        let delay = max(0.05, duration / 2 + 0.08)
+        DispatchQueue.main.asyncAfter(deadline: .now() + delay) {
+            guard isAnimating, animationStage == stage else { return }
+            advanceAnimationStageIfNeeded()
         }
     }
 
@@ -182,13 +218,8 @@ struct ConcentricPageTransitionView<Content: View>: View {
         direction == .forward ? size.width : -size.width
     }
 
-    private var isTerminalPage: Bool {
-        guard let lastIndex = pages.indices.last else { return false }
-        return displayedIndex == lastIndex && incomingIndex == displayedIndex
-    }
-
     private var bottomControls: some View {
-        VStack(spacing: 12) {
+        ZStack(alignment: .bottom) {
             if let secondaryTitle {
                 Button(secondaryTitle, action: onSecondaryAction)
                     .font(OffRecordTypography.labelMedium)
@@ -196,57 +227,35 @@ struct ConcentricPageTransitionView<Content: View>: View {
                     .buttonStyle(.plain)
                     .disabled(isAnimating)
                     .opacity(isAnimating ? 0.55 : 1)
+                    .padding(.bottom, 124)
             }
 
-            if isTerminalPage {
-                terminalPrimaryButton
-            } else {
-                primaryButton
-            }
+            primaryButton
+                .padding(.bottom, 52)
         }
     }
 
     private var primaryButton: some View {
-        Button(action: onPrimaryAction) {
-            ZStack {
-                Circle()
-                    .fill(isAnimating ? .clear : circleColor)
-                    .frame(width: 2 * radius, height: 2 * radius)
-                Image(systemName: ctaIcon ?? "chevron.forward")
-                    .font(.system(size: 20, weight: .black, design: .rounded))
-                    .foregroundStyle(OffRecordColor.textBrand)
+        Button(action: triggerPrimaryAction) {
+            Image(systemName: ctaIcon ?? "chevron.forward")
+                .font(.system(size: 20, weight: .black, design: .rounded))
+                .foregroundStyle(backgroundColor)
+                .frame(width: 2 * radius, height: 2 * radius)
+                .contentShape(Circle())
             }
-            .frame(width: 2 * radius, height: 2 * radius)
-            .contentShape(Circle())
-        }
         .buttonStyle(.plain)
-        .disabled(isAnimating || isCTADisabled)
-        .opacity(isCTADisabled ? 0.42 : 1)
+        .disabled(isAnimating || isCTADisabled || actionGate.isLocked)
+        .opacity(isAnimating || actionGate.isLocked ? 0.55 : (isCTADisabled ? 0.42 : 1))
         .accessibilityLabel(ctaTitle)
     }
 
-    private var terminalPrimaryButton: some View {
-        Button(action: onPrimaryAction) {
-            HStack(spacing: 8) {
-                Text(ctaTitle)
-                if let ctaIcon {
-                    Image(systemName: ctaIcon)
-                }
-            }
-            .font(OffRecordTypography.sectionTitle)
-            .foregroundStyle(OffRecordColor.textBrand)
-            .frame(maxWidth: 360)
-            .padding(.horizontal, 22)
-            .padding(.vertical, 17)
-            .background(OffRecordColor.surfacePrimary)
-            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-            .shadow(color: .black.opacity(0.10), radius: 18, y: 8)
+    private func triggerPrimaryAction() {
+        guard !isAnimating, !isCTADisabled, !actionGate.isLocked else { return }
+        actionGate.isLocked = true
+        onPrimaryAction()
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
+            actionGate.isLocked = false
         }
-        .buttonStyle(.plain)
-        .disabled(isAnimating || isCTADisabled)
-        .opacity(isCTADisabled ? 0.42 : 1)
-        .padding(.horizontal, 28)
-        .accessibilityLabel(ctaTitle)
     }
 }
 
@@ -338,7 +347,8 @@ private struct AnimationCompletionObserverModifier<Value: VectorArithmetic>: Ani
     }
 
     private func notifyCompletion() {
-        if animatableData == targetValue {
+        let difference = animatableData - targetValue
+        if difference.magnitudeSquared < 0.0001 {
             DispatchQueue.main.async {
                 completion()
             }

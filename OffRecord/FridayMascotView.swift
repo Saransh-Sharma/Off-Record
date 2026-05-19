@@ -151,6 +151,16 @@ private final class FridaySpriteCache {
         shared.image(for: frame)
     }
 
+    static func clear() {
+        shared.clear()
+    }
+
+    #if DEBUG
+    static var cachedFrameCount: Int {
+        shared.cachedFrameCount
+    }
+    #endif
+
     private func image(for frame: FridaySpriteFrame) -> UIImage? {
         lock.lock()
         if let cached = frameCache[frame] {
@@ -202,6 +212,34 @@ private final class FridaySpriteCache {
         lock.unlock()
         return decodedSheet
     }
+
+    private func clear() {
+        lock.lock()
+        sheetCache = nil
+        frameCache = [:]
+        lock.unlock()
+    }
+
+    #if DEBUG
+    private var cachedFrameCount: Int {
+        lock.lock()
+        let count = frameCache.count
+        lock.unlock()
+        return count
+    }
+    #endif
+}
+
+enum FridaySpriteMemoryCache {
+    static func clear() {
+        FridaySpriteCache.clear()
+    }
+
+    #if DEBUG
+    static var cachedFrameCount: Int {
+        FridaySpriteCache.cachedFrameCount
+    }
+    #endif
 }
 
 #Preview {
