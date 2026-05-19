@@ -23,6 +23,12 @@ private enum TodayDateFormatters {
         return formatter
     }()
 
+    static let heroDate: DateFormatter = {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "EEEE,\nMMMM d"
+        return formatter
+    }()
+
     static let time: DateFormatter = {
         let formatter = DateFormatter()
         formatter.dateStyle = .none
@@ -53,6 +59,7 @@ enum RecordingState: Equatable {
 struct TodayView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.scenePhase) private var scenePhase
     @AppStorage("authorName") private var authorName: String = ""
     @ObservedObject private var proactiveReflection = ProactiveReflectionController.shared
     @ObservedObject private var navigationRouter = OffRecordNavigationRouter.shared
@@ -80,6 +87,7 @@ struct TodayView: View {
     @State private var todayStats: JournalStatsSnapshot = .empty
     @State private var pendingTranscription: PendingTodayTranscription?
     @State private var showSpeechConsentPrompt = false
+    @State private var isShowingPrivacyExplanation = false
 
     @FetchRequest private var todayEntries: FetchedResults<DiaryEntry>
 
@@ -165,26 +173,60 @@ struct TodayView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .bottom) {
-            OffRecordColor.appBackgroundGradient
+        GeometryReader { proxy in
+            ZStack(alignment: .bottom) {
+                OffRecordColor.backgroundPrimary
                 .ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                ScrollView {
-                    VStack(alignment: .leading, spacing: 20) {
-                        // Header
-                        headerSection
-
-                        // Entry Card
-                        entryCardSection
-
-                        // Show prompts whenever the recorder is ready.
-                        if recordingState == .idle {
-                            promptsSection
+                ScrollView(showsIndicators: false) {
+                    VStack(spacing: 0) {
+                        if let hero = currentHero {
+                            TodayFullBleedHeroView(
+                                hero: hero,
+                                greeting: greeting,
+                                dateText: formattedHeroDate,
+                                entriesThisYear: entriesThisYear,
+                                todayEntry: effectiveLatestEntry,
+                                height: todayHeroHeight(
+                                    for: proxy.size,
+                                    hasEntryToday: effectiveLatestEntry != nil
+                                ) + todayHeroTopBleed(for: proxy.safeAreaInsets.top),
+                                topSafeAreaInset: proxy.safeAreaInsets.top,
+                                isRecording: heroRecordingPromptID == hero.prompt.id && recordingState == .recording,
+                                isProcessing: heroRecordingPromptID == hero.prompt.id && recordingState == .processing,
+                                currentTime: recorder.currentTime,
+                                level: Double(recorder.level),
+                                onPrivacy: { isShowingPrivacyExplanation = true }
+                            )
+                            .padding(.top, -todayHeroTopBleed(for: proxy.safeAreaInsets.top))
+                        } else {
+                            Color.clear
+                                .frame(
+                                    height: todayHeroHeight(
+                                        for: proxy.size,
+                                        hasEntryToday: effectiveLatestEntry != nil
+                                    ) + todayHeroTopBleed(for: proxy.safeAreaInsets.top)
+                                )
+                                .padding(.top, -todayHeroTopBleed(for: proxy.safeAreaInsets.top))
                         }
+
+                        if recordingState == .idle {
+                            ProactiveReflectionPromptCard(
+                                entries: startedEntries,
+                                hasEntryToday: effectiveLatestEntry != nil
+                            ) { insight in
+                                startTypedNote(promptContext: insight.prompt, heroPromptID: nil)
+                            }
+                            .padding(.horizontal, OffRecordSpacing.screenX)
+                            .padding(.top, postHeroTopPadding(hasEntryToday: effectiveLatestEntry != nil))
+
+                            TodayNudgeSection(prompts: EntryPrompt.defaultPrompts) { prompt in
+                                startTypedNote(promptContext: prompt.detail, heroPromptID: nil)
+                            }
+                            .padding(.horizontal, OffRecordSpacing.screenX)
+                            .padding(.top, postHeroTopPadding(hasEntryToday: effectiveLatestEntry != nil))
+	                        }
                     }
-                    .padding(.horizontal, OffRecordSpacing.screenX)
-                    .padding(.top, OffRecordSpacing.screenY)
                     .padding(.bottom, compactTabSelection == nil ? OffRecordSpacing.xl : OffRecordCompactTabBarLayout.todayDockScrollContentBottomPadding)
                     .frame(maxWidth: isIPad ? 700 : .infinity)
                     .frame(maxWidth: .infinity)
@@ -196,13 +238,13 @@ struct TodayView: View {
                     // Recording controls at bottom
                     recordingSection
                 }
-            }
 
-            if let compactTabSelection {
-                compactBottomDock(
-                    selectedTab: compactTabSelection,
-                    bottomSafeAreaInset: compactBottomSafeAreaInset
-                )
+                if let compactTabSelection {
+                    compactBottomDock(
+                        selectedTab: compactTabSelection,
+                        bottomSafeAreaInset: compactBottomSafeAreaInset
+                    )
+                }
             }
         }
         .alert("Recording Error", isPresented: Binding(
@@ -220,6 +262,10 @@ struct TodayView: View {
             }
         } message: {
             Text(SpeechTranscriptionConsent.disclosureMessage)
+        }
+        .sheet(isPresented: $isShowingPrivacyExplanation) {
+            HomePrivacyExplanationView()
+                .presentationDetents([.medium])
         }
         .onReceive(NotificationCenter.default.publisher(for: .startRecordingFromSiri)) { _ in
             // Auto-start recording when triggered from Siri shortcut
@@ -275,9 +321,39 @@ struct TodayView: View {
                 refreshHero(recordExposure: false)
             }
         }
+        .onChange(of: scenePhase) { _, newPhase in
+            switch newPhase {
+            case .background:
+                historicalEntries = []
+            case .active:
+                Task {
+                    await refreshHistoricalEntryCache(recordHeroExposure: false)
+                }
+            default:
+                break
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .offRecordWillReleaseTransientMemory)) { _ in
+            historicalEntries = []
+        }
         .task(id: todayEntriesSignature) {
             await refreshHistoricalEntryCache(recordHeroExposure: true)
         }
+    }
+
+    private func todayHeroHeight(for size: CGSize, hasEntryToday: Bool) -> CGFloat {
+        let compactHeight = max(640, size.height * 0.76)
+        let regularHeight = max(620, size.height * 0.66)
+        let entryExtension: CGFloat = hasEntryToday ? (isIPad ? 80 : 110) : 0
+        return (isIPad ? regularHeight : compactHeight) + entryExtension
+    }
+
+    private func todayHeroTopBleed(for safeAreaTop: CGFloat) -> CGFloat {
+        min(max(safeAreaTop + 32, 72), 112)
+    }
+
+    private func postHeroTopPadding(hasEntryToday: Bool) -> CGFloat {
+        hasEntryToday ? 30 : 18
     }
 
     // MARK: - Header Section
@@ -468,7 +544,7 @@ struct TodayView: View {
                     }
                 } else {
                     VStack(alignment: .leading, spacing: 8) {
-                        if recordingState == .processing {
+                        if entry.shouldShowTranscriptionSpinner(displayText: entry.text) && recordingState == .processing {
                             HStack(spacing: 10) {
                                 ProgressView()
                                     .scaleEffect(0.8)
@@ -560,14 +636,14 @@ struct TodayView: View {
         .padding(.horizontal, 36)
         .frame(maxWidth: 340)
         .frame(height: 92)
-        .background(
-            RoundedRectangle(cornerRadius: OffRecordRadius.xxl, style: .continuous)
-                .fill(OffRecordColor.surfacePrimary.opacity(0.94))
-                .overlay(
-                    RoundedRectangle(cornerRadius: OffRecordRadius.xxl, style: .continuous)
-                        .stroke(OffRecordColor.borderSoft, lineWidth: 1)
-                )
-                .shadow(color: Color.black.opacity(0.08), radius: 24, x: 0, y: 8)
+        .offRecordClearGlassSurface(
+            in: RoundedRectangle(cornerRadius: OffRecordRadius.xxl, style: .continuous),
+            fallbackFill: OffRecordColor.surfacePrimary,
+            clearFill: OffRecordColor.surfacePrimary.opacity(0.20),
+            stroke: Color.white.opacity(0.58),
+            shadowColor: Color.black.opacity(0.08),
+            shadowRadius: 24,
+            shadowY: 8
         )
         .padding(.horizontal, 24)
     }
@@ -603,14 +679,17 @@ struct TodayView: View {
 
     private func compactSideActionButton(systemImage: String) -> some View {
         ZStack {
-            Circle()
-                .fill(OffRecordColor.backgroundSageTint)
-
             Image(systemName: systemImage)
                 .font(.system(size: 22, weight: .semibold))
                 .foregroundColor(OffRecordColor.brandSageDark)
         }
         .frame(width: 60, height: 60)
+        .offRecordClearGlassControl(
+            in: Circle(),
+            fallbackFill: OffRecordColor.backgroundSageTint,
+            clearFill: OffRecordColor.surfacePrimary.opacity(0.20),
+            stroke: Color.white.opacity(0.56)
+        )
         .contentShape(Circle())
     }
 
@@ -733,14 +812,14 @@ struct TodayView: View {
         .padding(.vertical, 20)
         .padding(.horizontal, 20)
         .frame(maxWidth: isIPad ? 560 : .infinity)
-        .background(
-            RoundedRectangle(cornerRadius: OffRecordRadius.xxl, style: .continuous)
-                .fill(OffRecordColor.todayCaptureGradient)
-                .overlay(
-                    RoundedRectangle(cornerRadius: OffRecordRadius.xxl, style: .continuous)
-                        .stroke(OffRecordColor.borderWarm, lineWidth: 1)
-                )
-                .shadow(color: OffRecordShadow.floatingColor, radius: 24, x: 0, y: 10)
+        .offRecordClearGlassSurface(
+            in: RoundedRectangle(cornerRadius: OffRecordRadius.xxl, style: .continuous),
+            fallbackFill: OffRecordColor.surfaceWarm,
+            clearFill: OffRecordColor.surfaceWarm.opacity(0.24),
+            stroke: Color.white.opacity(0.58),
+            shadowColor: OffRecordShadow.floatingColor,
+            shadowRadius: 24,
+            shadowY: 10
         )
         .padding(.horizontal)
         .padding(.bottom, 8)
@@ -781,7 +860,12 @@ struct TodayView: View {
                 .foregroundColor(sideActionIconColor)
         }
         .frame(width: sideActionButtonSize, height: sideActionButtonSize)
-        .offRecordReadableGlassControl(.brand, in: Circle())
+        .offRecordClearGlassControl(
+            in: Circle(),
+            fallbackFill: OffRecordReadableTintStyle.brand.fill,
+            clearFill: OffRecordColor.surfacePrimary.opacity(0.20),
+            stroke: Color.white.opacity(0.56)
+        )
     }
 
     private var recordButton: some View {
@@ -929,6 +1013,7 @@ struct TodayView: View {
     }
 
     private func startTypedNote(from hero: SelectedDaypartHero) {
+        selectedHero = hero
         startTypedNote(promptContext: hero.prompt.prompt, heroPromptID: hero.prompt.id)
     }
 
@@ -947,9 +1032,18 @@ struct TodayView: View {
 
     private func startHeroRecording(_ hero: SelectedDaypartHero) {
         guard recordingState == .idle else { return }
+        selectedHero = hero
         activeHeroPromptID = hero.prompt.id
         heroRecordingPromptID = hero.prompt.id
         startRecording()
+    }
+
+    private func handleHeroPrimaryAction(_ hero: SelectedDaypartHero) {
+        if heroRecordingPromptID == hero.prompt.id && recordingState == .recording {
+            stopHeroRecording()
+        } else {
+            startHeroRecording(hero)
+        }
     }
 
     private func stopHeroRecording() {
@@ -1148,6 +1242,10 @@ struct TodayView: View {
         entry.setValue(audioURL.lastPathComponent, forKey: "audioFileName")
         let existingDuration = entry.value(forKey: "duration") as? Double ?? 0
         entry.setValue(existingDuration + duration, forKey: "duration")
+        entry.entryTranscriptionStatus = .processing
+        let fileExists = FileManager.default.fileExists(atPath: audioURL.path)
+        let byteCount = ((try? FileManager.default.attributesOfItem(atPath: audioURL.path)[.size]) as? NSNumber)?.int64Value ?? -1
+        logger.info("Recorded audio saved entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) duration=\(duration, privacy: .public) fileExists=\(fileExists, privacy: .public) bytes=\(byteCount, privacy: .public) transcriptionStatus=processing")
 
         do {
             try viewContext.save()
@@ -1170,6 +1268,9 @@ struct TodayView: View {
     private func beginTranscription(entry: DiaryEntry, audioURL: URL) {
         guard SpeechTranscriptionConsent.hasGrantedAppleSpeechProcessing else {
             pendingTranscription = PendingTodayTranscription(entryObjectID: entry.objectID, audioURL: audioURL)
+            entry.entryTranscriptionStatus = .none
+            try? viewContext.save()
+            logger.info("Speech consent required before transcription entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) transcriptionStatus=none")
             recordingState = .idle
             showSpeechConsentPrompt = true
             return
@@ -1186,16 +1287,23 @@ struct TodayView: View {
 
         self.pendingTranscription = nil
         guard let entry = try? viewContext.existingObject(with: pendingTranscription.entryObjectID) as? DiaryEntry else {
+            logger.error("Unable to resume pending transcription because entry no longer exists")
             recordingState = .idle
             return
         }
 
+        logger.info("Resuming pending transcription entryID=\(entry.id?.uuidString ?? "missing", privacy: .public)")
         recordingState = .processing
         transcribeSavedEntry(entry: entry, audioURL: pendingTranscription.audioURL)
     }
 
     private func transcribeSavedEntry(entry: DiaryEntry, audioURL: URL) {
         recordingState = .processing
+        entry.entryTranscriptionStatus = .processing
+        try? viewContext.save()
+        let fileExists = FileManager.default.fileExists(atPath: audioURL.path)
+        let byteCount = ((try? FileManager.default.attributesOfItem(atPath: audioURL.path)[.size]) as? NSNumber)?.int64Value ?? -1
+        logger.info("Starting transcription for saved entry entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) fileExists=\(fileExists, privacy: .public) bytes=\(byteCount, privacy: .public) transcriptionStatus=processing")
         SpeechTranscriber.shared.transcribe(from: audioURL) { result in
             DispatchQueue.main.async {
                 PerformanceSignposts.event("TranscriptionCompleted")
@@ -1208,8 +1316,10 @@ struct TodayView: View {
                         entry.text = existingText + "\n\n" + textSegment
                     }
                     entry.updatedAt = Date()
+                    entry.entryTranscriptionStatus = .completed
                     do {
                         try viewContext.save()
+                        logger.info("Transcript saved entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) chars=\(textSegment.count, privacy: .public) transcriptionStatus=completed")
                         heroStore.recordPromptResponse(
                             promptID: activeHeroPromptID,
                             wordCount: wordCount(for: textSegment)
@@ -1227,11 +1337,15 @@ struct TodayView: View {
                         EntryLearningPipeline.upsertSemanticEntry(entry)
                         JournalSpotlightIndexer.shared.upsert(entry: entry)
                     } catch {
-                        logger.error("Failed to update entry with transcription: \(error.localizedDescription)")
+                        logger.error("Failed to update entry with transcription entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) error=\(error.localizedDescription, privacy: .public)")
                         recordingState = .idle
                     }
                 case .failure(let error):
-                    logger.error("Transcription failed: \(error.localizedDescription)")
+                    let nsError = error as NSError
+                    logger.error("Transcription failed entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) domain=\(nsError.domain, privacy: .public) code=\(nsError.code, privacy: .public)")
+                    entry.entryTranscriptionStatus = .failed
+                    entry.updatedAt = Date()
+                    try? viewContext.save()
                     // Show user-friendly message for offline/transcription errors
                     if let transcriptionError = error as? SpeechTranscriber.TranscriptionError {
                         self.errorMessage = transcriptionError.errorDescription
@@ -1248,6 +1362,10 @@ struct TodayView: View {
 
     private var formattedToday: String {
         TodayDateFormatters.today.string(from: Date())
+    }
+
+    private var formattedHeroDate: String {
+        TodayDateFormatters.heroDate.string(from: Date())
     }
 
     private func formattedTime(_ date: Date) -> String {
