@@ -9,6 +9,9 @@
 import SwiftUI
 import AVFoundation
 import PhotosUI
+import os.log
+
+private let entryDetailLogger = Logger(subsystem: "com.singularity.offrecord", category: "EntryDetail")
 
 private enum EntryDetailDateFormatters {
     static let shortDate: DateFormatter = {
@@ -41,18 +44,44 @@ private enum EntryDetailDateFormatters {
     }()
 }
 
+struct EntryDetailSaveDecision: Equatable {
+    let shouldSave: Bool
+    let shouldSaveText: Bool
+    let skippedStaleTextOverwrite: Bool
+
+    static func evaluate(
+        localText: String,
+        persistedText: String,
+        hasEditedText: Bool,
+        moodChanged: Bool
+    ) -> EntryDetailSaveDecision {
+        let trimmedLocalText = localText.trimmingCharacters(in: .whitespacesAndNewlines)
+        let persistedHasText = !persistedText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let textChanged = trimmedLocalText != persistedText
+        let skippedStaleTextOverwrite = !hasEditedText && textChanged && persistedHasText
+
+        return EntryDetailSaveDecision(
+            shouldSave: (hasEditedText && textChanged) || moodChanged,
+            shouldSaveText: hasEditedText && textChanged,
+            skippedStaleTextOverwrite: skippedStaleTextOverwrite
+        )
+    }
+}
+
 /// Detail view for a single diary entry.
 /// Allows viewing, editing text, setting mood, playing back audio, and attaching photos.
 struct EntryDetailView: View {
     @ObservedObject var entry: DiaryEntry
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.scenePhase) private var scenePhase
     @FocusState private var isTextFocused: Bool
 
     @State private var text: String
     @State private var selectedMood: Mood
     @State private var showMoodPicker = false
     @State private var isEditing = false
+    @State private var hasEditedText = false
     @State private var showAIInsights = false
     @State private var aiAnalysis: AIAnalysisResult?
     private let deleteEmptyDraftOnDisappear: Bool
@@ -135,7 +164,7 @@ struct EntryDetailView: View {
                             .foregroundColor(entry.isStarred ? OffRecordColor.textYellow : OffRecordColor.textSecondary)
                     }
 
-                    Button(action: { isEditing.toggle() }) {
+                    Button(action: toggleEditingMode) {
                         Text(isEditing ? "Done" : "Edit")
                     }
                 }
@@ -146,20 +175,34 @@ struct EntryDetailView: View {
             deleteEmptyDraftIfNeeded()
             currentActivity?.resignCurrent()
             currentActivity = nil
+            clearPhotoThumbnails()
         }
         .onAppear {
             loadPhotos()
             startEntryActivity()
+            syncTextFromEntry(reason: "appear")
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            switch newPhase {
+            case .background:
+                clearPhotoThumbnails()
+            case .active:
+                loadPhotos()
+            default:
+                break
+            }
         }
         .onChange(of: selectedPhotos) { _, newItems in
             handlePhotoSelection(newItems)
         }
         .onChange(of: entry.text) { _, newValue in
-            // Update local text when entry.text changes (e.g., after transcription completes)
-            // Only update if not currently editing to avoid overwriting user edits
-            if !isEditing && !isTextFocused {
-                text = newValue ?? ""
-            }
+            syncTextFromEntry(reason: "textChanged", incomingText: newValue)
+        }
+        .onChange(of: entry.updatedAt) { _, _ in
+            syncTextFromEntry(reason: "updatedAtChanged")
+        }
+        .onChange(of: entry.entryTranscriptionStatus) { _, _ in
+            syncTextFromEntry(reason: "transcriptionStatusChanged")
         }
         .fullScreenCover(isPresented: $showMoodPicker) {
             MoodDialSheet(selectedMood: $selectedMood, onSave: saveMood)
@@ -253,7 +296,7 @@ struct EntryDetailView: View {
     // MARK: - Reading View
 
     private var isTranscribing: Bool {
-        text.isEmpty && hasAudioReference
+        entry.shouldShowTranscriptionSpinner(displayText: text)
     }
 
     private var readingView: some View {
@@ -478,7 +521,7 @@ struct EntryDetailView: View {
                 .padding(.top, 8)
             }
 
-            TextEditor(text: $text)
+            TextEditor(text: editableTextBinding)
                 .font(OffRecordTypography.journalBody)
                 .foregroundColor(OffRecordColor.textPrimary)
                 .lineSpacing(6)
@@ -500,8 +543,7 @@ struct EntryDetailView: View {
                     Spacer()
 
                     Button("Done") {
-                        isTextFocused = false
-                        isEditing = false
+                        finishEditing()
                     }
                     .font(OffRecordTypography.labelMedium)
                 }
@@ -584,7 +626,13 @@ struct EntryDetailView: View {
         }
         photoAttachments = PhotoStorageManager.shared.attachments(for: entry)
         #if canImport(UIKit)
-        photoImages = PhotoStorageManager.shared.images(for: entry)
+        photoImages = PhotoStorageManager.shared.thumbnailImages(for: entry)
+        #endif
+    }
+
+    private func clearPhotoThumbnails() {
+        #if canImport(UIKit)
+        photoImages = []
         #endif
     }
 
@@ -600,7 +648,7 @@ struct EntryDetailView: View {
 
                 Task { @MainActor in
                     guard let jpegData = await PhotoAttachmentProcessor.shared.preparedJPEGData(from: data),
-                          let image = UIImage(data: jpegData) else {
+                          let image = PhotoStorageManager.thumbnailImage(from: jpegData) else {
                         PerformanceSignposts.end(token)
                         return
                     }
@@ -647,6 +695,18 @@ struct EntryDetailView: View {
 
     private var characterCount: Int {
         text.count
+    }
+
+    private var editableTextBinding: Binding<String> {
+        Binding(
+            get: { text },
+            set: { newValue in
+                if text != newValue {
+                    text = newValue
+                    hasEditedText = true
+                }
+            }
+        )
     }
 
     private var formattedShortDate: String {
@@ -708,23 +768,71 @@ struct EntryDetailView: View {
         }
     }
 
+    private func toggleEditingMode() {
+        if isEditing {
+            finishEditing()
+        } else {
+            beginEditing()
+        }
+    }
+
+    private func beginEditing() {
+        text = entry.text ?? ""
+        hasEditedText = false
+        isEditing = true
+    }
+
+    private func finishEditing() {
+        isTextFocused = false
+        saveIfNeeded()
+        hasEditedText = false
+        isEditing = false
+    }
+
+    private func syncTextFromEntry(reason: String, incomingText: String? = nil) {
+        let persistedText = incomingText ?? entry.text ?? ""
+        guard !isEditing && !isTextFocused else {
+            entryDetailLogger.info("Skipped text sync entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) reason=\(reason, privacy: .public) localChars=\(text.count, privacy: .public) persistedChars=\(persistedText.count, privacy: .public) isEditing=\(isEditing, privacy: .public) status=\(entry.entryTranscriptionStatus.rawValue, privacy: .public)")
+            return
+        }
+
+        guard text != persistedText else { return }
+
+        entryDetailLogger.info("Synced text from entry entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) reason=\(reason, privacy: .public) localChars=\(text.count, privacy: .public) persistedChars=\(persistedText.count, privacy: .public) status=\(entry.entryTranscriptionStatus.rawValue, privacy: .public)")
+        text = persistedText
+        hasEditedText = false
+    }
+
     private func saveIfNeeded() {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         let currentMood = entry.value(forKey: "mood") as? String ?? ""
         let oldText = entry.text ?? ""
-        let needsSave = trimmed != oldText || selectedMood.rawValue != currentMood
+        let moodChanged = selectedMood.rawValue != currentMood
+        let decision = EntryDetailSaveDecision.evaluate(
+            localText: text,
+            persistedText: oldText,
+            hasEditedText: hasEditedText,
+            moodChanged: moodChanged
+        )
 
-        if needsSave {
-            entry.text = trimmed
+        if decision.skippedStaleTextOverwrite {
+            entryDetailLogger.warning("Skipped stale text overwrite entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) localChars=\(trimmed.count, privacy: .public) persistedChars=\(oldText.count, privacy: .public) isEditing=\(isEditing, privacy: .public) status=\(entry.entryTranscriptionStatus.rawValue, privacy: .public)")
+        }
+
+        if decision.shouldSave {
+            if decision.shouldSaveText {
+                entry.text = trimmed
+            }
             entry.setValue(selectedMood.rawValue, forKey: "mood")
             entry.updatedAt = Date()
             do {
                 try viewContext.save()
                 EntryLearningPipeline.upsertSemanticEntry(entry)
                 JournalSpotlightIndexer.shared.upsert(entry: entry)
+                entryDetailLogger.info("Saved entry detail changes entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) savedText=\(decision.shouldSaveText, privacy: .public) localChars=\(trimmed.count, privacy: .public) persistedChars=\(oldText.count, privacy: .public) status=\(entry.entryTranscriptionStatus.rawValue, privacy: .public)")
 
                 // Feed into Friday — use reprocess if text was edited
-                if !trimmed.isEmpty {
+                if decision.shouldSaveText && !trimmed.isEmpty {
                     DaypartHeroStore().recordPromptResponse(
                         promptID: heroPromptID,
                         wordCount: wordCount

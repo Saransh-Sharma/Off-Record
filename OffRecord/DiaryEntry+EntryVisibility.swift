@@ -1,6 +1,13 @@
 import CoreData
 import Foundation
 
+enum DiaryEntryTranscriptionStatus: String {
+    case none
+    case processing
+    case completed
+    case failed
+}
+
 extension DiaryEntry {
     static var startedEntryPredicate: NSPredicate {
         NSCompoundPredicate(orPredicateWithSubpredicates: [
@@ -32,6 +39,26 @@ extension DiaryEntry {
         let moodString = (value(forKey: "mood") as? String)?
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         return !moodString.isEmpty && moodString != Mood.none.rawValue
+    }
+
+    var entryTranscriptionStatus: DiaryEntryTranscriptionStatus {
+        get {
+            let rawStatus = (value(forKey: "transcriptionStatus") as? String)?
+                .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+            return DiaryEntryTranscriptionStatus(rawValue: rawStatus) ?? .none
+        }
+        set {
+            setValue(newValue == .none ? nil : newValue.rawValue, forKey: "transcriptionStatus")
+        }
+    }
+
+    var isTranscriptionProcessing: Bool {
+        entryTranscriptionStatus == .processing
+    }
+
+    func shouldShowTranscriptionSpinner(displayText: String?) -> Bool {
+        let trimmedText = (displayText ?? text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedText.isEmpty && isTranscriptionProcessing
     }
 
     var isStartedEntry: Bool {
