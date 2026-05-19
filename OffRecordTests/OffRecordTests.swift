@@ -190,6 +190,84 @@ struct EntryVisibilityTests {
         #expect(entry.isStartedEntry)
     }
 
+    @Test func missingTranscriptionStatusDefaultsToNotProcessing() {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let entry = makeEntry(in: context, text: "", mood: "", audioFileName: "recording.m4a", duration: 12)
+
+        #expect(entry.entryTranscriptionStatus == .none)
+        #expect(!entry.isTranscriptionProcessing)
+        #expect(!entry.shouldShowTranscriptionSpinner(displayText: ""))
+    }
+
+    @Test func processingTranscriptionStatusShowsSpinnerForEmptyText() {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let entry = makeEntry(in: context, text: "", mood: "", audioFileName: "recording.m4a", duration: 12)
+
+        entry.entryTranscriptionStatus = .processing
+
+        #expect(entry.isTranscriptionProcessing)
+        #expect(entry.shouldShowTranscriptionSpinner(displayText: ""))
+    }
+
+    @Test func completedAndFailedTranscriptionStatusesDoNotShowSpinner() {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let entry = makeEntry(in: context, text: "", mood: "", audioFileName: "recording.m4a", duration: 12)
+
+        entry.entryTranscriptionStatus = .completed
+        #expect(!entry.shouldShowTranscriptionSpinner(displayText: ""))
+
+        entry.entryTranscriptionStatus = .failed
+        #expect(!entry.shouldShowTranscriptionSpinner(displayText: ""))
+    }
+
+    @Test func processingStatusDoesNotShowSpinnerWhenTextExists() {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let entry = makeEntry(in: context, text: "Finished transcript", mood: "", audioFileName: "recording.m4a", duration: 12)
+
+        entry.entryTranscriptionStatus = .processing
+
+        #expect(!entry.shouldShowTranscriptionSpinner(displayText: entry.text))
+    }
+
+    @Test func staleEmptyDetailTextDoesNotOverwritePersistedTranscript() {
+        let decision = EntryDetailSaveDecision.evaluate(
+            localText: "",
+            persistedText: "Saved transcript from speech.",
+            hasEditedText: false,
+            moodChanged: false
+        )
+
+        #expect(!decision.shouldSave)
+        #expect(!decision.shouldSaveText)
+        #expect(decision.skippedStaleTextOverwrite)
+    }
+
+    @Test func explicitUserEditToEmptyTextCanBeSaved() {
+        let decision = EntryDetailSaveDecision.evaluate(
+            localText: "",
+            persistedText: "Saved transcript from speech.",
+            hasEditedText: true,
+            moodChanged: false
+        )
+
+        #expect(decision.shouldSave)
+        #expect(decision.shouldSaveText)
+        #expect(!decision.skippedStaleTextOverwrite)
+    }
+
+    @Test func moodOnlyChangeDoesNotSaveStaleText() {
+        let decision = EntryDetailSaveDecision.evaluate(
+            localText: "",
+            persistedText: "Saved transcript from speech.",
+            hasEditedText: false,
+            moodChanged: true
+        )
+
+        #expect(decision.shouldSave)
+        #expect(!decision.shouldSaveText)
+        #expect(decision.skippedStaleTextOverwrite)
+    }
+
     @Test func positiveAudioDurationIsStarted() {
         let context = PersistenceController(inMemory: true).container.viewContext
         let entry = makeEntry(in: context, text: "", mood: "", audioFileName: nil, duration: 0.5)
@@ -379,6 +457,46 @@ struct JournalPerformanceModelTests {
 
         #expect(jpegData != nil)
         #expect(UIImage(data: jpegData ?? Data()) != nil)
+    }
+
+    @Test func photoStorageThumbnailIsDownsampledAndKeepsStoredData() {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let entry = makeEntry(
+            in: context,
+            text: "Photo entry",
+            mood: Mood.calm.rawValue,
+            audioFileName: nil,
+            duration: 0,
+            isStarred: false
+        )
+        let image = UIGraphicsImageRenderer(size: CGSize(width: 1_024, height: 768)).image { context in
+            UIColor.systemPurple.setFill()
+            context.fill(CGRect(x: 0, y: 0, width: 1_024, height: 768))
+        }
+        let storedData = image.jpegData(compressionQuality: 0.95)!
+
+        let attachment = PhotoStorageManager.shared.addPhotoData(storedData, to: entry, in: context)
+        let thumbnail = attachment.flatMap {
+            PhotoStorageManager.shared.thumbnailImage(for: $0, maxPixelDimension: 128)
+        }
+
+        #expect(attachment?.imageData == storedData)
+        #expect(thumbnail != nil)
+        #expect((thumbnail?.cgImage?.width ?? 0) <= 128)
+        #expect((thumbnail?.cgImage?.height ?? 0) <= 128)
+    }
+    #endif
+
+    #if DEBUG
+    @Test func moodDialGeometryCacheCanBeCleared() {
+        MoodDialWheelGeometryCache.resetForTesting()
+        _ = MoodDialWheelGeometryCache.geometry(for: MoodDialWheelMetrics(size: CGSize(width: 390, height: 844)))
+
+        #expect(MoodDialWheelGeometryCache.cachedGeometryCount == 1)
+
+        MoodDialWheelGeometryCache.clear()
+
+        #expect(MoodDialWheelGeometryCache.cachedGeometryCount == 0)
     }
     #endif
 
