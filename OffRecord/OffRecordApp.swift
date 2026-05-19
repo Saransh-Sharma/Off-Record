@@ -32,6 +32,8 @@ struct OffRecordApp: App {
     @State private var isShowingSplash = true
 
     init() {
+        MemoryFootprintManager.shared.configure(viewContext: persistenceController.container.viewContext)
+        AppMetricsSubscriber.shared.start()
         UNUserNotificationCenter.current().delegate = OffRecordNotificationDelegate.shared
         ScreenshotDataSeeder.seedIfNeeded(context: persistenceController.container.viewContext)
         UITestDataSeeder.seedIfNeeded(context: persistenceController.container.viewContext)
@@ -104,6 +106,7 @@ struct OffRecordApp: App {
                     // Refresh widgets when app goes to background
                     WidgetCenter.shared.reloadAllTimelines()
                     runAudioCleanup()
+                    MemoryFootprintManager.shared.prepareForBackground()
                 case .active:
                     consumeLegacyAndStoredRoutes()
                     resumeDeferredRoutesIfPossible()
@@ -146,13 +149,13 @@ struct OffRecordApp: App {
 
         context.perform {
             do {
-                let fetchRequest: NSFetchRequest<DiaryEntry> = DiaryEntry.fetchRequest()
+                let fetchRequest = NSFetchRequest<NSDictionary>(entityName: "DiaryEntry")
                 fetchRequest.propertiesToFetch = ["audioFileName"]
-                fetchRequest.returnsObjectsAsFaults = false
+                fetchRequest.resultType = .dictionaryResultType
 
                 let results = try context.fetch(fetchRequest)
-                let fileNames = results.compactMap { entry in
-                    entry.value(forKey: "audioFileName") as? String
+                let fileNames = results.compactMap { row in
+                    row["audioFileName"] as? String
                 }.filter { !$0.isEmpty }
 
                 let fileManager = FileManager.default
