@@ -19,6 +19,7 @@ struct TimelineView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
     @ObservedObject private var semanticMemory = SemanticMemoryIndexController.shared
     @ObservedObject private var navigationRouter = OffRecordNavigationRouter.shared
 
@@ -197,6 +198,19 @@ struct TimelineView: View {
         .onDisappear {
             currentSearchActivity?.resignCurrent()
             currentSearchActivity = nil
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            switch newPhase {
+            case .background:
+                clearTimelineCache()
+            case .active:
+                refreshTimelineCache()
+            default:
+                break
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .offRecordWillReleaseTransientMemory)) { _ in
+            clearTimelineCache()
         }
         .task(id: cacheSignature) {
             refreshTimelineCache()
@@ -835,6 +849,14 @@ struct TimelineView: View {
         summaryEntriesCache = summaryEntries
         entryMetricsCache = metrics
         PerformanceSignposts.end(token)
+    }
+
+    private func clearTimelineCache() {
+        filteredEntriesCache = []
+        groupedEntriesCache = [:]
+        sectionKeysCache = []
+        summaryEntriesCache = []
+        entryMetricsCache = [:]
     }
 
     private func sectionTitle(for key: SectionKey) -> String {
