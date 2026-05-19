@@ -16,6 +16,7 @@
         <attribute name="mood" optional="YES" attributeType="String"/>
         <attribute name="photoFileNames" optional="YES" attributeType="String"/>
         <attribute name="text" optional="YES" attributeType="String"/>
+        <attribute name="transcriptionStatus" optional="YES" attributeType="String"/>
         <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
         <relationship name="photos" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="PhotoAttachment" inverseName="entry" inverseEntity="PhotoAttachment"/>
     </entity>

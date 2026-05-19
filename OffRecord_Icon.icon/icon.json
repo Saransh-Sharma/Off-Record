@@ -3,7 +3,7 @@
     {
       "value" : {
         "linear-gradient" : [
-          "extended-srgb:0.00000,0.75294,0.90980,1.00000",
+          "display-p3:0.64455,1.00000,0.98312,1.00000",
           "display-p3:0.04546,0.11219,0.08898,1.00000"
         ],
         "orientation" : {
@@ -54,7 +54,7 @@
               "value" : "none"
             }
           ],
-          "glass" : false,
+          "glass" : true,
           "hidden" : false,
           "image-name" : "ChatGPT Image May 6 2026 from App Store Connect.png",
           "name" : "ChatGPT Image May 6 2026 from App Store Connect",
