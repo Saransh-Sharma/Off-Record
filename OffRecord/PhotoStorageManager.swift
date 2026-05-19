@@ -9,6 +9,7 @@
 import Foundation
 import CoreData
 #if canImport(UIKit)
+import ImageIO
 import UIKit
 #endif
 
@@ -67,6 +68,39 @@ final class PhotoStorageManager {
         attachments(for: entry).compactMap { attachment in
             guard let data = attachment.imageData else { return nil }
             return UIImage(data: data)
+        }
+    }
+
+    func thumbnailImage(for attachment: PhotoAttachment, maxPixelDimension: CGFloat = 240) -> UIImage? {
+        guard let data = attachment.imageData else { return nil }
+        return Self.thumbnailImage(from: data, maxPixelDimension: maxPixelDimension)
+    }
+
+    func thumbnailImages(for entry: DiaryEntry, maxPixelDimension: CGFloat = 240) -> [UIImage] {
+        attachments(for: entry).compactMap {
+            thumbnailImage(for: $0, maxPixelDimension: maxPixelDimension)
+        }
+    }
+
+    static func thumbnailImage(from data: Data, maxPixelDimension: CGFloat = 240) -> UIImage? {
+        autoreleasepool {
+            let sourceOptions = [
+                kCGImageSourceShouldCache: false
+            ] as CFDictionary
+            guard let source = CGImageSourceCreateWithData(data as CFData, sourceOptions) else {
+                return nil
+            }
+
+            let thumbnailOptions = [
+                kCGImageSourceCreateThumbnailFromImageAlways: true,
+                kCGImageSourceCreateThumbnailWithTransform: true,
+                kCGImageSourceShouldCacheImmediately: true,
+                kCGImageSourceThumbnailMaxPixelSize: maxPixelDimension
+            ] as CFDictionary
+            guard let thumbnail = CGImageSourceCreateThumbnailAtIndex(source, 0, thumbnailOptions) else {
+                return nil
+            }
+            return UIImage(cgImage: thumbnail)
         }
     }
     #endif

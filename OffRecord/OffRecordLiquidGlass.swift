@@ -33,7 +33,105 @@ struct OffRecordGlassControlGroup<Content: View>: View {
     }
 }
 
+private struct OffRecordClearGlassModifier<S: Shape>: ViewModifier {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    let shape: S
+    let fallbackFill: Color
+    let clearFill: Color
+    let dimmingOpacity: Double
+    let stroke: Color
+    let lineWidth: CGFloat
+    let shadowColor: Color
+    let shadowRadius: CGFloat
+    let shadowY: CGFloat
+
+    func body(content: Content) -> some View {
+        content
+            .background {
+                if reduceTransparency {
+                    shape
+                        .fill(fallbackFill.opacity(0.97))
+                        .overlay {
+                            shape.stroke(stroke.opacity(0.9), lineWidth: lineWidth)
+                        }
+                } else if #available(iOS 26.0, *) {
+                    shape
+                        .fill(.clear)
+                        .glassEffect(.clear, in: shape)
+                        .overlay {
+                            shape.fill(clearFill)
+                        }
+                        .overlay {
+                            shape.fill(Color.black.opacity(dimmingOpacity))
+                        }
+                        .overlay {
+                            shape.stroke(stroke, lineWidth: lineWidth)
+                        }
+                        .shadow(color: shadowColor, radius: shadowRadius, x: 0, y: shadowY)
+                } else {
+                    shape
+                        .fill(.ultraThinMaterial)
+                        .overlay {
+                            shape.fill(clearFill)
+                        }
+                        .overlay {
+                            shape.fill(Color.black.opacity(dimmingOpacity * 0.8))
+                        }
+                        .overlay {
+                            shape.stroke(stroke, lineWidth: lineWidth)
+                        }
+                        .shadow(color: shadowColor, radius: shadowRadius, x: 0, y: shadowY)
+                }
+            }
+    }
+}
+
 extension View {
+    func offRecordClearGlassSurface<S: Shape>(
+        in shape: S,
+        fallbackFill: Color = OffRecordColor.surfacePrimary,
+        clearFill: Color = OffRecordColor.surfacePrimary.opacity(0.22),
+        dimmingOpacity: Double = 0.055,
+        stroke: Color = Color.white.opacity(0.58),
+        lineWidth: CGFloat = 1,
+        shadowColor: Color = OffRecordShadow.floatingColor,
+        shadowRadius: CGFloat = 24,
+        shadowY: CGFloat = 10
+    ) -> some View {
+        modifier(
+            OffRecordClearGlassModifier(
+                shape: shape,
+                fallbackFill: fallbackFill,
+                clearFill: clearFill,
+                dimmingOpacity: dimmingOpacity,
+                stroke: stroke,
+                lineWidth: lineWidth,
+                shadowColor: shadowColor,
+                shadowRadius: shadowRadius,
+                shadowY: shadowY
+            )
+        )
+    }
+
+    func offRecordClearGlassControl<S: Shape>(
+        in shape: S,
+        fallbackFill: Color = OffRecordColor.surfaceWarm,
+        clearFill: Color = OffRecordColor.surfacePrimary.opacity(0.18),
+        stroke: Color = Color.white.opacity(0.54)
+    ) -> some View {
+        offRecordClearGlassSurface(
+            in: shape,
+            fallbackFill: fallbackFill,
+            clearFill: clearFill,
+            dimmingOpacity: 0.045,
+            stroke: stroke,
+            shadowColor: Color.black.opacity(0.07),
+            shadowRadius: 14,
+            shadowY: 6
+        )
+    }
+
     @ViewBuilder
     func offRecordGlassControl<S: Shape>(
         tint: Color? = nil,
