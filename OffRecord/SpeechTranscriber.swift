@@ -13,6 +13,9 @@
 import Foundation
 import Speech
 import Network
+import os.log
+
+private let transcriptionLogger = Logger(subsystem: "com.singularity.offrecord", category: "SpeechTranscription")
 
 /// Transcribes audio recordings to text using Apple's Speech framework.
 /// Requires explicit consent because online recognition may be processed by Apple Speech.
@@ -26,6 +29,10 @@ final class SpeechTranscriber {
     
     private let networkMonitor = NWPathMonitor()
     private var isOnline = true
+    private var activeTranscriptionID: UUID?
+    private var recognitionTask: SFSpeechRecognitionTask?
+    private var timeoutWorkItem: DispatchWorkItem?
+    private let transcriptionTimeout: TimeInterval = 180
     
     // MARK: - Error Types
 
@@ -61,6 +68,8 @@ final class SpeechTranscriber {
 
     deinit {
         networkMonitor.cancel()
+        timeoutWorkItem?.cancel()
+        recognitionTask?.cancel()
     }
 
     var hasNetworkConnection: Bool {
@@ -77,67 +86,213 @@ final class SpeechTranscriber {
     func transcribe(from audioURL: URL, completion: @escaping (Result<String, Error>) -> Void) {
         guard SpeechTranscriptionConsent.hasGrantedAppleSpeechProcessing else {
             DispatchQueue.main.async {
+                transcriptionLogger.warning("Transcription blocked because Apple Speech consent is missing")
                 completion(.failure(TranscriptionError.appleSpeechConsentRequired))
             }
             return
         }
 
-        SFSpeechRecognizer.requestAuthorization { status in
+        let transcriptionID = UUID()
+        DispatchQueue.main.async { [weak self] in
+            self?.startTranscription(id: transcriptionID, audioURL: audioURL, completion: completion)
+        }
+    }
+
+    private func startTranscription(
+        id transcriptionID: UUID,
+        audioURL: URL,
+        completion: @escaping (Result<String, Error>) -> Void
+    ) {
+        cancelCurrentTranscription()
+        activeTranscriptionID = transcriptionID
+
+        let fileExists = FileManager.default.fileExists(atPath: audioURL.path)
+        let byteCount = ((try? FileManager.default.attributesOfItem(atPath: audioURL.path)[.size]) as? NSNumber)?.int64Value ?? -1
+        transcriptionLogger.info("Transcription request started id=\(transcriptionID.uuidString, privacy: .public) fileExists=\(fileExists, privacy: .public) bytes=\(byteCount, privacy: .public)")
+
+        SFSpeechRecognizer.requestAuthorization { [weak self] status in
             DispatchQueue.main.async {
-                guard status == .authorized else {
-                    completion(.failure(TranscriptionError.notAuthorized))
-                    return
-                }
-
-                guard let recognizer = SFSpeechRecognizer() else {
-                    completion(.failure(TranscriptionError.recognizerUnavailable))
-                    return
-                }
-
-                guard recognizer.isAvailable else {
-                    completion(.failure(TranscriptionError.recognizerUnavailable))
-                    return
-                }
-
-                let request = SFSpeechURLRecognitionRequest(url: audioURL)
-                request.shouldReportPartialResults = false
-
-                // When online, Apple Speech may process audio and return a transcript.
-                // OffRecord gates this path behind explicit user consent.
-                if recognizer.supportsOnDeviceRecognition && !self.isOnline {
-                    request.requiresOnDeviceRecognition = true
-                } else {
-                    request.addsPunctuation = true
-                }
-
-                _ = recognizer.recognitionTask(with: request) { result, error in
-                    DispatchQueue.main.async {
-                        if let error = error {
-                            // Check if it's a network error
-                            let nsError = error as NSError
-                            if nsError.domain == "kAFAssistantErrorDomain" || !self.isOnline {
-                                // Offline or network error - inform user
-                                completion(.failure(TranscriptionError.offlineNoTranscription))
-                            } else {
-                                completion(.failure(error))
-                            }
-                            return
-                        }
-
-                        if let result = result, result.isFinal {
-                            var text = result.bestTranscription.formattedString
-
-                            // If offline transcription (no punctuation), add basic sentence ending
-                            if !text.isEmpty && !text.hasSuffix(".") && !text.hasSuffix("?") && !text.hasSuffix("!") {
-                                text += "."
-                            }
-
-                            completion(.success(text))
-                        }
-                    }
-                }
+                self?.handleAuthorization(
+                    status,
+                    transcriptionID: transcriptionID,
+                    audioURL: audioURL,
+                    completion: completion
+                )
             }
         }
+    }
+
+    private func handleAuthorization(
+        _ status: SFSpeechRecognizerAuthorizationStatus,
+        transcriptionID: UUID,
+        audioURL: URL,
+        completion: @escaping (Result<String, Error>) -> Void
+    ) {
+        guard activeTranscriptionID == transcriptionID else {
+            transcriptionLogger.debug("Ignoring authorization callback for stale transcription id=\(transcriptionID.uuidString, privacy: .public)")
+            return
+        }
+
+        transcriptionLogger.info("Speech authorization returned id=\(transcriptionID.uuidString, privacy: .public) status=\(String(describing: status), privacy: .public)")
+        guard status == .authorized else {
+            completeTranscription(
+                id: transcriptionID,
+                result: .failure(TranscriptionError.notAuthorized),
+                completion: completion
+            )
+            return
+        }
+
+        guard let recognizer = SFSpeechRecognizer() else {
+            transcriptionLogger.error("Speech recognizer unavailable id=\(transcriptionID.uuidString, privacy: .public) reason=nilRecognizer")
+            completeTranscription(
+                id: transcriptionID,
+                result: .failure(TranscriptionError.recognizerUnavailable),
+                completion: completion
+            )
+            return
+        }
+
+        transcriptionLogger.info("Speech recognizer checked id=\(transcriptionID.uuidString, privacy: .public) available=\(recognizer.isAvailable, privacy: .public) supportsOnDevice=\(recognizer.supportsOnDeviceRecognition, privacy: .public)")
+        guard recognizer.isAvailable else {
+            completeTranscription(
+                id: transcriptionID,
+                result: .failure(TranscriptionError.recognizerUnavailable),
+                completion: completion
+            )
+            return
+        }
+
+        let request = SFSpeechURLRecognitionRequest(url: audioURL)
+        request.shouldReportPartialResults = false
+
+        let usesOnDeviceRecognition = recognizer.supportsOnDeviceRecognition && !isOnline
+        if usesOnDeviceRecognition {
+            request.requiresOnDeviceRecognition = true
+        } else {
+            request.addsPunctuation = true
+        }
+        transcriptionLogger.info("Speech request configured id=\(transcriptionID.uuidString, privacy: .public) onDevice=\(usesOnDeviceRecognition, privacy: .public) online=\(self.isOnline, privacy: .public)")
+
+        let timeoutWorkItem = DispatchWorkItem { [weak self] in
+            guard let self, self.activeTranscriptionID == transcriptionID else { return }
+            transcriptionLogger.error("Speech transcription timed out id=\(transcriptionID.uuidString, privacy: .public) seconds=\(self.transcriptionTimeout, privacy: .public)")
+            self.completeTranscription(
+                id: transcriptionID,
+                result: .failure(TranscriptionError.noFinalResult),
+                cancelTask: true,
+                completion: completion
+            )
+        }
+        self.timeoutWorkItem = timeoutWorkItem
+        DispatchQueue.main.asyncAfter(deadline: .now() + transcriptionTimeout, execute: timeoutWorkItem)
+
+        recognitionTask = recognizer.recognitionTask(with: request) { [weak self] result, error in
+            DispatchQueue.main.async {
+                self?.handleRecognitionCallback(
+                    result: result,
+                    error: error,
+                    transcriptionID: transcriptionID,
+                    completion: completion
+                )
+            }
+        }
+    }
+
+    private func handleRecognitionCallback(
+        result: SFSpeechRecognitionResult?,
+        error: Error?,
+        transcriptionID: UUID,
+        completion: @escaping (Result<String, Error>) -> Void
+    ) {
+        guard activeTranscriptionID == transcriptionID else {
+            transcriptionLogger.debug("Ignoring recognition callback for stale transcription id=\(transcriptionID.uuidString, privacy: .public)")
+            return
+        }
+
+        if let error {
+            let nsError = error as NSError
+            transcriptionLogger.error("Speech recognition error id=\(transcriptionID.uuidString, privacy: .public) domain=\(nsError.domain, privacy: .public) code=\(nsError.code, privacy: .public)")
+            if nsError.domain == "kAFAssistantErrorDomain" || !isOnline {
+                completeTranscription(
+                    id: transcriptionID,
+                    result: .failure(TranscriptionError.offlineNoTranscription),
+                    completion: completion
+                )
+            } else {
+                completeTranscription(id: transcriptionID, result: .failure(error), completion: completion)
+            }
+            return
+        }
+
+        guard let result else {
+            transcriptionLogger.debug("Speech recognition callback without result id=\(transcriptionID.uuidString, privacy: .public)")
+            return
+        }
+
+        let segmentCount = result.bestTranscription.segments.count
+        let rawCharacterCount = result.bestTranscription.formattedString.count
+        transcriptionLogger.info("Speech recognition callback id=\(transcriptionID.uuidString, privacy: .public) isFinal=\(result.isFinal, privacy: .public) chars=\(rawCharacterCount, privacy: .public) segments=\(segmentCount, privacy: .public)")
+
+        guard result.isFinal else { return }
+
+        var text = result.bestTranscription.formattedString
+        if !text.isEmpty && !text.hasSuffix(".") && !text.hasSuffix("?") && !text.hasSuffix("!") {
+            text += "."
+        }
+
+        if text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            completeTranscription(
+                id: transcriptionID,
+                result: .failure(TranscriptionError.noFinalResult),
+                completion: completion
+            )
+        } else {
+            completeTranscription(id: transcriptionID, result: .success(text), completion: completion)
+        }
+    }
+
+    @discardableResult
+    private func completeTranscription(
+        id transcriptionID: UUID,
+        result: Result<String, Error>,
+        cancelTask: Bool = false,
+        completion: @escaping (Result<String, Error>) -> Void
+    ) -> Bool {
+        guard activeTranscriptionID == transcriptionID else {
+            transcriptionLogger.debug("Ignoring completion for stale transcription id=\(transcriptionID.uuidString, privacy: .public)")
+            return false
+        }
+
+        activeTranscriptionID = nil
+        timeoutWorkItem?.cancel()
+        timeoutWorkItem = nil
+        if cancelTask {
+            recognitionTask?.cancel()
+        }
+        recognitionTask = nil
+
+        switch result {
+        case .success(let text):
+            transcriptionLogger.info("Speech transcription completed id=\(transcriptionID.uuidString, privacy: .public) chars=\(text.count, privacy: .public)")
+        case .failure(let error):
+            let nsError = error as NSError
+            transcriptionLogger.error("Speech transcription completed with failure id=\(transcriptionID.uuidString, privacy: .public) domain=\(nsError.domain, privacy: .public) code=\(nsError.code, privacy: .public)")
+        }
+
+        completion(result)
+        return true
+    }
+
+    private func cancelCurrentTranscription() {
+        if let activeTranscriptionID {
+            transcriptionLogger.info("Cancelling existing transcription id=\(activeTranscriptionID.uuidString, privacy: .public)")
+        }
+        activeTranscriptionID = nil
+        timeoutWorkItem?.cancel()
+        timeoutWorkItem = nil
+        recognitionTask?.cancel()
+        recognitionTask = nil
     }
 }
 #endif
