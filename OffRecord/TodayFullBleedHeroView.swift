@@ -7,6 +7,7 @@ struct TodayFullBleedHeroView: View {
     let entriesThisYear: Int
     let todayEntry: DiaryEntry?
     let height: CGFloat
+    let contentHeight: CGFloat
     let topSafeAreaInset: CGFloat
     let isRecording: Bool
     let isProcessing: Bool
@@ -39,6 +40,8 @@ struct TodayFullBleedHeroView: View {
                     .padding(.horizontal, OffRecordSpacing.screenX)
                     .padding(.bottom, heroContentBottomPadding)
             }
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+            .frame(height: contentHeight, alignment: .topLeading)
         }
         .frame(maxWidth: .infinity)
         .frame(height: height)
@@ -205,7 +208,7 @@ struct TodayFullBleedHeroView: View {
     }
 
     private var topPadding: CGFloat {
-        max(128, topSafeAreaInset + 96)
+        max(148, topSafeAreaInset + 112)
     }
 
     private var heroContentBottomPadding: CGFloat {
