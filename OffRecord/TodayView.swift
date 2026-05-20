@@ -180,6 +180,13 @@ struct TodayView: View {
 
                 ScrollView(showsIndicators: false) {
                     VStack(spacing: 0) {
+                        let heroTopBleed = todayHeroTopBleed(for: proxy.safeAreaInsets.top)
+                        let heroContentHeight = todayHeroHeight(
+                            for: proxy.size,
+                            hasEntryToday: effectiveLatestEntry != nil
+                        ) + heroTopBleed
+                        let heroHeight = heroContentHeight + proactivePromptHeroExtension
+
                         if let hero = currentHero {
                             TodayFullBleedHeroView(
                                 hero: hero,
@@ -187,10 +194,8 @@ struct TodayView: View {
                                 dateText: formattedHeroDate,
                                 entriesThisYear: entriesThisYear,
                                 todayEntry: effectiveLatestEntry,
-                                height: todayHeroHeight(
-                                    for: proxy.size,
-                                    hasEntryToday: effectiveLatestEntry != nil
-                                ) + todayHeroTopBleed(for: proxy.safeAreaInsets.top),
+                                height: heroHeight,
+                                contentHeight: heroContentHeight,
                                 topSafeAreaInset: proxy.safeAreaInsets.top,
                                 isRecording: heroRecordingPromptID == hero.prompt.id && recordingState == .recording,
                                 isProcessing: heroRecordingPromptID == hero.prompt.id && recordingState == .processing,
@@ -198,34 +203,23 @@ struct TodayView: View {
                                 level: Double(recorder.level),
                                 onPrivacy: { isShowingPrivacyExplanation = true }
                             )
-                            .padding(.top, -todayHeroTopBleed(for: proxy.safeAreaInsets.top))
+                            .overlay(alignment: .bottom) {
+                                proactiveHeroPrompt
+                            }
+                            .padding(.top, -heroTopBleed)
                         } else {
                             Color.clear
-                                .frame(
-                                    height: todayHeroHeight(
-                                        for: proxy.size,
-                                        hasEntryToday: effectiveLatestEntry != nil
-                                    ) + todayHeroTopBleed(for: proxy.safeAreaInsets.top)
-                                )
-                                .padding(.top, -todayHeroTopBleed(for: proxy.safeAreaInsets.top))
+                                .frame(height: heroHeight)
+                                .padding(.top, -heroTopBleed)
                         }
 
                         if recordingState == .idle {
-                            ProactiveReflectionPromptCard(
-                                entries: startedEntries,
-                                hasEntryToday: effectiveLatestEntry != nil
-                            ) { insight in
-                                startTypedNote(promptContext: insight.prompt, heroPromptID: nil)
-                            }
-                            .padding(.horizontal, OffRecordSpacing.screenX)
-                            .padding(.top, postHeroTopPadding(hasEntryToday: effectiveLatestEntry != nil))
-
                             TodayNudgeSection(prompts: EntryPrompt.defaultPrompts) { prompt in
                                 startTypedNote(promptContext: prompt.detail, heroPromptID: nil)
                             }
                             .padding(.horizontal, OffRecordSpacing.screenX)
                             .padding(.top, postHeroTopPadding(hasEntryToday: effectiveLatestEntry != nil))
-	                        }
+                        }
                     }
                     .padding(.bottom, compactTabSelection == nil ? OffRecordSpacing.xl : OffRecordCompactTabBarLayout.todayDockScrollContentBottomPadding)
                     .frame(maxWidth: isIPad ? 700 : .infinity)
@@ -354,6 +348,30 @@ struct TodayView: View {
 
     private func postHeroTopPadding(hasEntryToday: Bool) -> CGFloat {
         hasEntryToday ? 30 : 18
+    }
+
+    private var shouldShowProactiveHeroPrompt: Bool {
+        recordingState == .idle
+            && effectiveLatestEntry == nil
+            && proactiveReflection.selectedPrompt?.priority == .high
+    }
+
+    private var proactivePromptHeroExtension: CGFloat {
+        shouldShowProactiveHeroPrompt ? 150 : 0
+    }
+
+    @ViewBuilder
+    private var proactiveHeroPrompt: some View {
+        if shouldShowProactiveHeroPrompt {
+            ProactiveReflectionPromptCard(
+                entries: startedEntries,
+                hasEntryToday: effectiveLatestEntry != nil
+            ) { insight in
+                startTypedNote(promptContext: insight.prompt, heroPromptID: nil)
+            }
+            .padding(.horizontal, OffRecordSpacing.screenX)
+            .padding(.bottom, 18)
+        }
     }
 
     // MARK: - Header Section
