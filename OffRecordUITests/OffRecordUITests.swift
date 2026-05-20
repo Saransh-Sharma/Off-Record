@@ -228,6 +228,32 @@ final class OffRecordUITests: XCTestCase {
     }
 
     @MainActor
+    func testHomeHeroChromeAndProactivePromptRespectHeroSurface() throws {
+        let app = XCUIApplication()
+        app.launchArguments = ["-UITesting", "-ProactiveReflectionUITest"]
+        app.launch()
+
+        XCTAssertTrue(app.otherElements["homeHero.fullBleed"].waitForExistence(timeout: 8))
+
+        let entriesChip = app.descendants(matching: .any)["homeHero.entriesThisYear"].firstMatch
+        let privacyButton = app.descendants(matching: .any)["homeHero.privacy"].firstMatch
+        XCTAssertTrue(entriesChip.waitForExistence(timeout: 4))
+        XCTAssertTrue(privacyButton.waitForExistence(timeout: 4))
+        for _ in 0..<4 where entriesChip.frame.minY < 64 || privacyButton.frame.minY < 64 {
+            app.swipeDown()
+        }
+        XCTAssertGreaterThanOrEqual(entriesChip.frame.minY, 64)
+        XCTAssertGreaterThanOrEqual(privacyButton.frame.minY, 64)
+
+        let proactivePrompt = app.descendants(matching: .any)["proactiveReflection.todayPrompt"].firstMatch
+        let nudgeSection = app.descendants(matching: .any)["today.nudgeSection"].firstMatch
+        XCTAssertTrue(proactivePrompt.waitForExistence(timeout: 10))
+        XCTAssertTrue(nudgeSection.waitForExistence(timeout: 4))
+        XCTAssertLessThan(proactivePrompt.frame.minY, nudgeSection.frame.minY)
+        XCTAssertGreaterThanOrEqual(nudgeSection.frame.minY, proactivePrompt.frame.maxY + 14)
+    }
+
+    @MainActor
     func testBottomDockShowsRecordingAndWriteCTAs() throws {
         let app = launchHeroNudgeApp(arguments: ["-HeroNudgeEmptyToday"])
         XCTAssertTrue(app.otherElements["homeHero.fullBleed"].waitForExistence(timeout: 8))
@@ -297,9 +323,13 @@ final class OffRecordUITests: XCTestCase {
         for _ in 0..<5 where nudge.exists && !nudge.isHittable {
             app.swipeUp()
         }
+        let dockRecordButton = app.descendants(matching: .any)["todayDock.record"].firstMatch
+        for _ in 0..<5 where nudge.exists && dockRecordButton.exists && nudge.frame.maxY > dockRecordButton.frame.minY - 12 {
+            app.swipeUp()
+        }
         XCTAssertTrue(nudge.waitForExistence(timeout: 4))
         XCTAssertTrue(nudge.isHittable)
-        nudge.coordinate(withNormalizedOffset: CGVector(dx: 0.50, dy: 0.18)).tap()
+        nudge.coordinate(withNormalizedOffset: CGVector(dx: 0.50, dy: 0.50)).tap()
 
         XCTAssertTrue(app.staticTexts["Writing prompt"].waitForExistence(timeout: 6))
     }
