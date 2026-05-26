@@ -32,6 +32,7 @@ struct ConcentricPageTransitionView<Content: View>: View {
     let ctaIcon: String?
     let isCTADisabled: Bool
     let secondaryTitle: String?
+    let playsPrimaryHaptic: Bool
     let onPrimaryAction: () -> Void
     let onSecondaryAction: () -> Void
 
@@ -46,6 +47,7 @@ struct ConcentricPageTransitionView<Content: View>: View {
     @State private var isAnimating = false
     @State private var backgroundColor: Color
     @State private var circleColor: Color
+    @State private var keyboardHeight: CGFloat = 0
 
     private let radius: Double = 30
     private let limit: Double = 15
@@ -62,6 +64,7 @@ struct ConcentricPageTransitionView<Content: View>: View {
         ctaIcon: String? = nil,
         isCTADisabled: Bool = false,
         secondaryTitle: String? = nil,
+        playsPrimaryHaptic: Bool = true,
         onPrimaryAction: @escaping () -> Void,
         onSecondaryAction: @escaping () -> Void = { }
     ) {
@@ -72,6 +75,7 @@ struct ConcentricPageTransitionView<Content: View>: View {
         self.ctaIcon = ctaIcon
         self.isCTADisabled = isCTADisabled
         self.secondaryTitle = secondaryTitle
+        self.playsPrimaryHaptic = playsPrimaryHaptic
         self.onPrimaryAction = onPrimaryAction
         self.onSecondaryAction = onSecondaryAction
 
@@ -80,14 +84,23 @@ struct ConcentricPageTransitionView<Content: View>: View {
         self._displayedIndex = State(initialValue: safeIndex)
         self._incomingIndex = State(initialValue: nextIndex)
         self._backgroundColor = State(initialValue: pages.indices.contains(safeIndex) ? pages[safeIndex].background : .clear)
-        self._circleColor = State(initialValue: pages.indices.contains(nextIndex) ? pages[nextIndex].background : .clear)
+        let initialCircleColor: Color
+        if safeIndex == pages.count - 1 {
+            initialCircleColor = OffRecordColor.brandPlum
+        } else {
+            initialCircleColor = pages.indices.contains(nextIndex) ? pages[nextIndex].background : .clear
+        }
+        self._circleColor = State(initialValue: initialCircleColor)
     }
 
     var body: some View {
         GeometryReader { proxy in
+            let bottomPad = max(28, proxy.safeAreaInsets.bottom + 18)
+            let buttonCenterY = proxy.size.height - bottomPad - radius
+
             ZStack {
                 backgroundColor
-                    .ignoresSafeArea(.container)
+                    .ignoresSafeArea([.container, .keyboard])
 
                 if pages.indices.contains(displayedIndex) {
                     pages[displayedIndex].view
@@ -117,27 +130,39 @@ struct ConcentricPageTransitionView<Content: View>: View {
                     progress: progress,
                     radius: radius,
                     limit: limit,
-                    direction: direction
+                    direction: direction,
+                    buttonCenterY: buttonCenterY
                 )
                 .fill(circleColor)
-                .opacity(isCTADisabled && !isAnimating ? 0.42 : 1)
+                .opacity(isAnimating ? 1 : 0)
                 .allowsHitTesting(false)
                 .onAnimationCompleted(for: progress) {
                     animationCompleted()
                 }
             }
             .overlay(alignment: .bottom) {
-                bottomControls
-                    .padding(.horizontal, 24)
+                bottomControls(bottomInset: proxy.safeAreaInsets.bottom)
             }
             .frame(width: proxy.size.width, height: proxy.size.height)
         }
-        .ignoresSafeArea(.container)
+        .ignoresSafeArea([.container, .keyboard])
         .onAppear {
             syncToCurrentIndex(animated: false)
         }
         .onChange(of: currentIndex) { _, _ in
             syncToCurrentIndex(animated: !reduceMotion)
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { notification in
+            if let frame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect {
+                withAnimation(.easeOut(duration: 0.25)) {
+                    keyboardHeight = frame.height
+                }
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            withAnimation(.easeOut(duration: 0.25)) {
+                keyboardHeight = 0
+            }
         }
     }
 
@@ -149,6 +174,7 @@ struct ConcentricPageTransitionView<Content: View>: View {
             incomingIndex = nextIndex(after: currentIndex)
             backgroundColor = pages[currentIndex].background
             circleColor = pages[incomingIndex].background
+            applyLastPageCircleOverride()
             progress = 0
             animationStage = .idle
             isAnimating = false
@@ -194,6 +220,7 @@ struct ConcentricPageTransitionView<Content: View>: View {
             progress = 0
             backgroundColor = pages.indices.contains(displayedIndex) ? pages[displayedIndex].background : backgroundColor
             circleColor = pages.indices.contains(incomingIndex) ? pages[incomingIndex].background : circleColor
+            applyLastPageCircleOverride()
         }
     }
 
@@ -210,6 +237,12 @@ struct ConcentricPageTransitionView<Content: View>: View {
         return index + 1 < pages.count ? index + 1 : index
     }
 
+    private func applyLastPageCircleOverride() {
+        if displayedIndex == pages.count - 1 {
+            circleColor = OffRecordColor.brandPlum
+        }
+    }
+
     private func outgoingOffset(in size: CGSize) -> CGFloat {
         direction == .forward ? -size.width : size.width
     }
@@ -218,43 +251,119 @@ struct ConcentricPageTransitionView<Content: View>: View {
         direction == .forward ? size.width : -size.width
     }
 
-    private var bottomControls: some View {
-        ZStack(alignment: .bottom) {
+    private func bottomControls(bottomInset: CGFloat) -> some View {
+        VStack(spacing: 14) {
+            ConcentricCircleButton(
+                icon: ctaIcon ?? "chevron.forward",
+                circleColor: effectiveCircleColor,
+                foregroundColor: backgroundColor,
+                isDisabled: isAnimating || isCTADisabled || actionGate.isLocked,
+                isAnimating: isAnimating,
+                action: triggerPrimaryAction
+            )
+
             if let secondaryTitle {
-                Button(secondaryTitle, action: onSecondaryAction)
+                Button(secondaryTitle, action: triggerSecondaryAction)
                     .font(OffRecordTypography.labelMedium)
                     .foregroundStyle(OffRecordColor.textBrand.opacity(0.78))
                     .buttonStyle(.plain)
-                    .disabled(isAnimating)
-                    .opacity(isAnimating ? 0.55 : 1)
-                    .padding(.bottom, 124)
+                    .disabled(isAnimating || actionGate.isLocked)
+                    .opacity(isAnimating || actionGate.isLocked ? 0.55 : 1)
+                    .frame(minHeight: 32)
             }
-
-            primaryButton
-                .padding(.bottom, 52)
         }
+        .padding(.bottom, keyboardHeight > 0 ? keyboardHeight - bottomInset + 12 : max(28, bottomInset + 18))
+        .animation(.easeOut(duration: 0.25), value: keyboardHeight)
     }
 
-    private var primaryButton: some View {
-        Button(action: triggerPrimaryAction) {
-            Image(systemName: ctaIcon ?? "chevron.forward")
-                .font(.system(size: 20, weight: .black, design: .rounded))
-                .foregroundStyle(backgroundColor)
-                .frame(width: 2 * radius, height: 2 * radius)
-                .contentShape(Circle())
-            }
-        .buttonStyle(.plain)
-        .disabled(isAnimating || isCTADisabled || actionGate.isLocked)
-        .opacity(isAnimating || actionGate.isLocked ? 0.55 : (isCTADisabled ? 0.42 : 1))
-        .accessibilityLabel(ctaTitle)
+    private var effectiveCircleColor: Color {
+        if displayedIndex == pages.count - 1 {
+            return OffRecordColor.brandPlum
+        }
+        return circleColor
     }
 
     private func triggerPrimaryAction() {
         guard !isAnimating, !isCTADisabled, !actionGate.isLocked else { return }
         actionGate.isLocked = true
+        if playsPrimaryHaptic {
+            HapticManager.shared.buttonTap()
+        }
         onPrimaryAction()
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
             actionGate.isLocked = false
+        }
+    }
+
+    private func triggerSecondaryAction() {
+        guard !isAnimating, !actionGate.isLocked else { return }
+        HapticManager.shared.buttonTap()
+        onSecondaryAction()
+    }
+}
+
+private struct ConcentricCircleButton: View {
+    let icon: String
+    let circleColor: Color
+    let foregroundColor: Color
+    let isDisabled: Bool
+    let isAnimating: Bool
+    let action: () -> Void
+
+    private let size: CGFloat = 60
+    @State private var glowPulse = false
+
+    private var isGlowActive: Bool { !isDisabled && !isAnimating }
+
+    private var iconColor: Color {
+        foregroundColor == circleColor ? OffRecordColor.textBrand : foregroundColor
+    }
+
+    var body: some View {
+        Button(action: action) {
+            ZStack {
+                Circle()
+                    .fill(isDisabled ? circleColor.opacity(0.35) : circleColor)
+                    .frame(width: size, height: size)
+                    .shadow(
+                        color: .black.opacity(isDisabled ? 0 : 0.22),
+                        radius: 14,
+                        x: 0,
+                        y: 6
+                    )
+                    .overlay(
+                        Circle()
+                            .stroke(circleColor.opacity(isGlowActive ? 0.5 : 0), lineWidth: 3)
+                            .frame(width: size + 10, height: size + 10)
+                            .scaleEffect(glowPulse ? 1.18 : 1.0)
+                            .opacity(glowPulse ? 0.0 : 0.7)
+                            .animation(
+                                isGlowActive
+                                    ? .easeInOut(duration: 1.5).repeatForever(autoreverses: false)
+                                    : .default,
+                                value: glowPulse
+                            )
+                    )
+                    .shadow(
+                        color: circleColor.opacity(isGlowActive ? 0.45 : 0),
+                        radius: isGlowActive ? 16 : 0,
+                        x: 0, y: 0
+                    )
+                Image(systemName: icon)
+                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .symbolRenderingMode(.monochrome)
+                    .foregroundStyle(iconColor)
+            }
+        }
+        .buttonStyle(.plain)
+        .disabled(isDisabled)
+        .opacity(isAnimating ? 0 : (isDisabled ? 0.55 : 1))
+        .animation(.easeInOut(duration: 0.15), value: isAnimating)
+        .accessibilityLabel("Next")
+        .accessibilityIdentifier("onboarding.primaryCTA")
+        .onAppear { glowPulse = true }
+        .onChange(of: isGlowActive) { _, active in
+            glowPulse = active
         }
     }
 }
@@ -264,6 +373,7 @@ private struct ConcentricRevealShape: Shape {
     let radius: Double
     let limit: Double
     let direction: ConcentricPageDirection
+    let buttonCenterY: CGFloat
 
     var animatableData: CGFloat {
         get { CGFloat(progress) }
@@ -282,14 +392,14 @@ private struct ConcentricRevealShape: Shape {
             delta = CGFloat((1 - localProgress / limit) * radius)
             center = CGPoint(
                 x: rect.midX + circleRadius - delta - 2,
-                y: rect.maxY - 82
+                y: buttonCenterY
             )
         } else {
             circleRadius = CGFloat(radius + pow(2, limit - localProgress))
             delta = CGFloat((localProgress / limit) * radius)
             center = CGPoint(
                 x: rect.midX - circleRadius + delta,
-                y: rect.maxY - 82
+                y: buttonCenterY
             )
         }
 
