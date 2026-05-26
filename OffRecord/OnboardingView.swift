@@ -73,12 +73,14 @@ struct OnboardingView: View {
                 ctaIcon: primaryIcon ?? "chevron.forward",
                 isCTADisabled: isPrimaryDisabled || transitionGate.isLocked,
                 secondaryTitle: secondaryTitle,
+                playsPrimaryHaptic: step != .firstReflection,
                 onPrimaryAction: primaryAction,
                 onSecondaryAction: secondaryAction
             )
         }
         .foregroundStyle(OffRecordColor.textBrand)
         .onAppear {
+            response = response.normalizedForCurrentOnboarding()
             nameDraft = authorName
             firstEntryDraft = response.firstEntryText
             if response.microphoneChoice == .denied {
@@ -245,9 +247,33 @@ struct OnboardingView: View {
         switch step {
         case .welcome: return "Continue"
         case .intent, .privacy, .tuneFriday, .snapshot: return "Continue"
-        case .lock: return lockManager.isEnabled ? "Lock is on" : "Enable lock"
-        case .firstReflection: return entryCreated ? "Continue" : "Save entry"
-        case .habit: return "Enter OffRecord"
+        case .lock: return lockManager.isEnabled ? "Continue" : lockPrimaryTitle
+        case .firstReflection: return firstReflectionPrimaryTitle
+        case .habit: return "Start journaling"
+        }
+    }
+
+    private var lockPrimaryTitle: String {
+        switch lockManager.biometryTypeName {
+        case "Face ID":
+            return "Enable Face ID"
+        case "Touch ID":
+            return "Enable Touch ID"
+        case "Passcode":
+            return "Enable Passcode Lock"
+        default:
+            return "Enable \(lockManager.biometryTypeName)"
+        }
+    }
+
+    private var firstReflectionPrimaryTitle: String {
+        if isTranscribing { return "Transcribing..." }
+        if entryCreated { return "Continue" }
+        switch firstEntryMode {
+        case .voice:
+            return isRecording ? "Stop recording" : "Record privately"
+        case .textFallback:
+            return "Save entry"
         }
     }
 
@@ -256,9 +282,16 @@ struct OnboardingView: View {
         case .welcome, .intent, .privacy, .tuneFriday, .snapshot, .habit:
             return "arrow.right"
         case .lock:
-            return lockManager.isEnabled ? "checkmark" : "faceid"
+            return lockManager.isEnabled ? "arrow.right" : "lock.shield.fill"
         case .firstReflection:
-            return entryCreated ? "sparkles" : "checkmark"
+            if isTranscribing { return "hourglass" }
+            if entryCreated { return "arrow.right" }
+            switch firstEntryMode {
+            case .voice:
+                return isRecording ? "stop.fill" : "mic.fill"
+            case .textFallback:
+                return "checkmark"
+            }
         }
     }
 
@@ -267,9 +300,9 @@ struct OnboardingView: View {
         case .lock:
             return lockManager.isEnabled ? nil : "Not now"
         case .firstReflection:
-            return isRecording ? nil : "Skip first entry"
+            return (isRecording || isTranscribing) ? nil : "Skip first entry"
         case .habit:
-            return "Skip setup"
+            return "Skip reminders"
         default:
             return nil
         }
@@ -277,10 +310,19 @@ struct OnboardingView: View {
 
     private var isPrimaryDisabled: Bool {
         switch step {
+        case .intent:
+            return response.painPoints.isEmpty
         case .tuneFriday:
-            return response.reflectionFocus == nil || response.promptStyle == nil
+            return false
         case .firstReflection:
-            return isRecording || isTranscribing || (!entryCreated && firstEntryDraft.trimmed.isEmpty)
+            if isTranscribing { return true }
+            if entryCreated { return false }
+            switch firstEntryMode {
+            case .voice:
+                return false
+            case .textFallback:
+                return firstEntryDraft.trimmed.isEmpty
+            }
         default:
             return false
         }
@@ -302,6 +344,8 @@ struct OnboardingView: View {
             if entryCreated {
                 response.firstEntryText = firstEntryDraft.trimmed
                 goForward()
+            } else if firstEntryMode == .voice {
+                toggleRecording()
             } else {
                 saveTypedEntryIfNeeded()
             }
@@ -636,15 +680,22 @@ struct OnboardingResponse: Codable, Equatable {
     var goal: OnboardingGoal?
     var painPoints: Set<OnboardingPainPoint> = []
     var relatableStatements: Set<RelatableStatement> = []
-    var reflectionFocus: ReflectionFocus?
-    var promptStyle: PromptStyle?
-    var moodBaseline: MoodChoice = .calm
+    var reflectionFocus: ReflectionFocus? = .emotions
+    var promptStyle: PromptStyle? = .gentle
+    var moodBaseline: MoodChoice = .mixed
     var firstEntryText: String = ""
     var firstEntrySkipped: Bool = false
     var faceIDChoice: PermissionChoice = .notAsked
     var microphoneChoice: PermissionChoice = .notAsked
     var speechChoice: PermissionChoice = .notAsked
     var completedAt: Date?
+
+    func normalizedForCurrentOnboarding() -> OnboardingResponse {
+        var response = self
+        response.reflectionFocus = response.reflectionFocus ?? .emotions
+        response.promptStyle = response.promptStyle ?? .gentle
+        return response
+    }
 }
 
 struct OnboardingStore {
@@ -658,9 +709,9 @@ struct OnboardingStore {
     static func load() -> OnboardingResponse {
         guard let data = UserDefaults.standard.data(forKey: responseKey),
               let response = try? JSONDecoder().decode(OnboardingResponse.self, from: data) else {
-            return OnboardingResponse()
+            return OnboardingResponse().normalizedForCurrentOnboarding()
         }
-        return response
+        return response.normalizedForCurrentOnboarding()
     }
 }
 
@@ -688,11 +739,11 @@ private enum OnboardingPalette {
     static let secondaryForeground = OffRecordColor.textBrand.opacity(0.74)
     static let tertiaryForeground = OffRecordColor.textBrand.opacity(0.54)
     static let surface = OffRecordColor.surfacePrimary
-    static let surfaceSoft = OffRecordColor.surfacePrimary.opacity(0.56)
+    static let surfaceSoft = OffRecordColor.surfacePrimary.opacity(0.72)
     static let surfaceSubtle = OffRecordColor.surfacePrimary.opacity(0.28)
     static let surfaceBarelyVisible = OffRecordColor.surfacePrimary.opacity(0.16)
     static let border = OffRecordColor.textBrand.opacity(0.14)
-    static let selectedBorder = OffRecordColor.textBrand.opacity(0.28)
+    static let selectedBorder = OffRecordColor.textBrand.opacity(0.78)
 }
 
 enum OnboardingGoal: String, CaseIterable, Codable, Identifiable {
@@ -964,6 +1015,7 @@ private struct ConcentricOnboardingPage<Content: View>: View {
                     .padding(.top, contentTopPadding)
                     .padding(.bottom, contentBottomPadding)
                 }
+                .scrollDismissesKeyboard(.interactively)
                 .animation(.easeInOut(duration: 0.25), value: isTextInputFocused)
                 .onReceive(NotificationCenter.default.publisher(for: UITextField.textDidBeginEditingNotification)) { _ in
                     setTextInputFocused(true)
@@ -996,20 +1048,20 @@ private struct ConcentricOnboardingPage<Content: View>: View {
     }
 
     private var contentTopPadding: CGFloat {
-        isFocusActive ? (isIPad ? 138 : 128) : (isIPad ? 190 : 176)
+        isFocusActive ? (isIPad ? 126 : 118) : (isIPad ? 164 : 150)
     }
 
     private var contentBottomPadding: CGFloat {
-        let baseBottomPadding: CGFloat = 142
+        let baseBottomPadding: CGFloat = 164
         guard isFocusActive else { return baseBottomPadding }
-        return baseBottomPadding + (isIPad ? 260 : 320)
+        return baseBottomPadding + (isIPad ? 250 : 300)
     }
 
     private func minContentHeight(for availableHeight: CGFloat) -> CGFloat {
         if isFocusActive {
             return max(availableHeight - 120, 420)
         }
-        return max(availableHeight - 280, 520)
+        return max(availableHeight - 250, 520)
     }
 
     private var isFocusActive: Bool {
@@ -1029,13 +1081,13 @@ private struct WelcomeStep: View {
                 ZStack {
                     Circle()
                         .fill(OnboardingPalette.surfaceSubtle)
-                        .frame(width: 116, height: 116)
-                    FridayMascotView(pose: .wave, size: 82)
+                        .frame(width: 196, height: 196)
+                    FridayMascotView(pose: .wave, size: 146)
                 }
                 .accessibilityHidden(true)
             }
 
-            Text("Speak or write freely. OffRecord helps you notice patterns without sending your journal to developer servers.")
+            Text("Speak or write freely. Your journal stays on this device.")
                 .font(OffRecordTypography.bodyMedium)
                 .foregroundStyle(OnboardingPalette.secondaryForeground)
                 .multilineTextAlignment(.center)
@@ -1164,7 +1216,7 @@ private struct IntentStep: View {
         OnboardingQuestion(
             eyebrow: "Intent",
             title: "What brings you here?",
-            subtitle: "Pick what matters most. Friday will shape your first prompts around it.",
+            subtitle: "Pick what matters most. Choose one or more.",
             contentSpacing: 18
         ) {
             VStack(spacing: 10) {
@@ -1192,13 +1244,13 @@ private struct PrivacyProofStep: View {
         OnboardingQuestion(
             eyebrow: "Privacy proof",
             title: "Private by design",
-            subtitle: "Your entries and Friday insights stay on this device. Voice transcription uses Apple Speech only after you allow it.",
+            subtitle: "Your journal stays on this device. Voice transcription only starts after you allow it.",
             contentSpacing: 16
         ) {
             VStack(spacing: 10) {
                 PrivacyProofRow(icon: "person.crop.circle.badge.xmark", title: "No account required", detail: "Start journaling without a cloud profile.")
-                PrivacyProofRow(icon: "server.rack", title: "No developer-server journal processing", detail: "Entries and Friday insights stay in OffRecord.")
-                PrivacyProofRow(icon: "chart.bar.xaxis", title: "No analytics or ads", detail: "Your reflections are not used for tracking.")
+                PrivacyProofRow(icon: "server.rack", title: "No server journal processing", detail: "Entries and Friday insights stay in OffRecord.")
+                PrivacyProofRow(icon: "chart.bar.xaxis", title: "No ads or tracking", detail: "Your reflections are not used for ads.")
             }
         }
     }
@@ -1221,7 +1273,7 @@ private struct FaceIDStep: View {
                     Circle()
                         .fill(OffRecordColor.backgroundSageTint.opacity(0.28))
                         .frame(width: 132, height: 132)
-                    Image(systemName: isEnabled ? "checkmark.shield.fill" : "faceid")
+                    Image(systemName: isEnabled ? "checkmark.shield.fill" : lockIcon)
                         .font(.system(size: 54, weight: .semibold))
                         .foregroundStyle(OnboardingPalette.foreground)
                 }
@@ -1240,6 +1292,17 @@ private struct FaceIDStep: View {
                         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
             }
+        }
+    }
+
+    private var lockIcon: String {
+        switch biometryName {
+        case "Face ID":
+            return "faceid"
+        case "Touch ID":
+            return "touchid"
+        default:
+            return "lock.shield.fill"
         }
     }
 }
@@ -1319,15 +1382,13 @@ private struct PreferencesStep: View {
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                         ForEach(MoodChoice.allCases) { item in
                             Button {
+                                HapticManager.shared.selectionChanged()
                                 response.moodBaseline = item
                             } label: {
-                                Text(item.title)
-                                    .font(OffRecordTypography.labelMedium)
-                                    .foregroundStyle(OnboardingPalette.foreground)
-                                    .frame(maxWidth: .infinity, minHeight: 46)
-                                    .padding(.horizontal, 10)
-                                    .background(response.moodBaseline == item ? OnboardingPalette.surface : OnboardingPalette.surfaceSubtle)
-                                    .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                                OnboardingPreferenceChip(isSelected: response.moodBaseline == item) {
+                                    Text(item.title)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                }
                             }
                             .buttonStyle(.plain)
                         }
@@ -1445,23 +1506,29 @@ private struct FirstEntryStep: View {
                         .font(OffRecordTypography.sectionTitle)
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                         ForEach(Mood.selectableMoods.prefix(6)) { mood in
+                            let isSelected = selectedMood == mood
                             Button {
+                                HapticManager.shared.moodSelected()
                                 selectedMood = mood
                             } label: {
-                                HStack {
-                                    MiniMoodIcon(
-                                        mood: mood,
-                                        size: 20,
-                                        opacity: selectedMood == mood ? 0.92 : 0.72
-                                    )
-                                    Text(mood.displayName)
-                                    Spacer()
+                                OnboardingSelectableContainer(isSelected: isSelected, cornerRadius: 14, padding: 12) {
+                                    HStack(spacing: 10) {
+                                        MiniMoodIcon(
+                                            mood: mood,
+                                            size: 20,
+                                            opacity: isSelected ? 1 : 0.72
+                                        )
+                                        Text(mood.displayName)
+                                            .font(isSelected ? OffRecordTypography.labelLarge : OffRecordTypography.labelMedium)
+                                            .foregroundStyle(OnboardingPalette.foreground)
+                                        Spacer()
+                                        if isSelected {
+                                            Image(systemName: "checkmark.circle.fill")
+                                                .font(OffRecordTypography.labelMedium)
+                                                .foregroundStyle(OnboardingPalette.foreground)
+                                        }
+                                    }
                                 }
-                                .font(OffRecordTypography.labelMedium)
-                                .padding(12)
-                                .foregroundStyle(selectedMood == mood ? mood.readableStyle.foreground : OnboardingPalette.foreground)
-                                .background(selectedMood == mood ? mood.color : OnboardingPalette.surfaceSubtle)
-                                .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                             }
                             .buttonStyle(.plain)
                         }
@@ -1514,7 +1581,11 @@ private struct FirstEntryStep: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 22)
-            .background(OnboardingPalette.surfaceSubtle)
+            .background(OnboardingPalette.surfaceSoft)
+            .overlay(
+                RoundedRectangle(cornerRadius: 24, style: .continuous)
+                    .stroke(isRecording ? OffRecordColor.textCoral : OnboardingPalette.border, lineWidth: isRecording ? 2 : 1)
+            )
             .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
         }
         .buttonStyle(.plain)
@@ -1590,7 +1661,7 @@ private struct HabitSetupStep: View {
         OnboardingQuestion(
             eyebrow: "Build the habit",
             title: "Make reflection easy to repeat.",
-            subtitle: "Optional reminders and a weekly goal help you build the habit. Everything works without them.",
+            subtitle: "Optional reminders and a weekly goal can help you build the habit. You can change these anytime.",
             contentSpacing: 18
         ) {
             VStack(spacing: 16) {
@@ -1741,49 +1812,76 @@ private struct OnboardingProgressHeader: View {
     }
 }
 
-private struct OnboardingBottomBar: View {
-    let primaryTitle: String
-    let primaryIcon: String?
-    let secondaryTitle: String?
-    let isPrimaryDisabled: Bool
-    let onPrimary: () -> Void
-    let onSecondary: () -> Void
+private struct OnboardingSelectableContainer<Content: View>: View {
+    let isSelected: Bool
+    var cornerRadius: CGFloat = 18
+    var padding: CGFloat = 14
+    let content: Content
+
+    init(
+        isSelected: Bool,
+        cornerRadius: CGFloat = 18,
+        padding: CGFloat = 14,
+        @ViewBuilder content: () -> Content
+    ) {
+        self.isSelected = isSelected
+        self.cornerRadius = cornerRadius
+        self.padding = padding
+        self.content = content()
+    }
 
     var body: some View {
-        VStack(spacing: 12) {
-            Button(action: onPrimary) {
-                HStack(spacing: 8) {
-                    Text(primaryTitle)
-                    if let primaryIcon {
-                        Image(systemName: primaryIcon)
-                    }
-                }
-                .font(OffRecordTypography.sectionTitle)
-                .foregroundStyle(OffRecordColor.textPrimary)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 17)
-                .background(isPrimaryDisabled ? OnboardingPalette.surfaceSoft : OnboardingPalette.surface)
-                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-            }
-            .buttonStyle(.plain)
-            .disabled(isPrimaryDisabled)
-
-            if let secondaryTitle {
-                Button(secondaryTitle, action: onSecondary)
-                    .font(OffRecordTypography.labelMedium)
-                    .foregroundStyle(OnboardingPalette.secondaryForeground)
-                    .buttonStyle(.plain)
-            }
-        }
-        .padding(.top, 16)
-        .background(
-            LinearGradient(
-                colors: [.clear, OnboardingPalette.surfaceSoft],
-                startPoint: .top,
-                endPoint: .bottom
+        content
+            .padding(padding)
+            .background(isSelected ? OnboardingPalette.surface : OnboardingPalette.surfaceSubtle)
+            .overlay(
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .stroke(isSelected ? OnboardingPalette.selectedBorder : OnboardingPalette.border, lineWidth: isSelected ? 2 : 1)
             )
-            .ignoresSafeArea()
-        )
+            .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+            .modifier(OnboardingSelectedAccessibility(isSelected: isSelected))
+    }
+}
+
+private struct OnboardingSelectedAccessibility: ViewModifier {
+    let isSelected: Bool
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if isSelected {
+            content.accessibilityAddTraits(.isSelected)
+        } else {
+            content
+        }
+    }
+}
+
+private struct OnboardingPreferenceChip<Content: View>: View {
+    let isSelected: Bool
+    let content: Content
+
+    init(isSelected: Bool, @ViewBuilder content: () -> Content) {
+        self.isSelected = isSelected
+        self.content = content()
+    }
+
+    var body: some View {
+        OnboardingSelectableContainer(isSelected: isSelected, cornerRadius: 14, padding: 10) {
+            HStack(spacing: 8) {
+                content
+                    .font(isSelected ? OffRecordTypography.labelLarge : OffRecordTypography.labelMedium)
+                    .foregroundStyle(OnboardingPalette.foreground)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.82)
+
+                if isSelected {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(OffRecordTypography.labelMedium)
+                        .foregroundStyle(OnboardingPalette.foreground)
+                }
+            }
+            .frame(maxWidth: .infinity, minHeight: 46)
+        }
     }
 }
 
@@ -1831,36 +1929,34 @@ private struct ChoiceRow: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            HStack(spacing: 14) {
-                Image(systemName: icon)
-                    .font(OffRecordTypography.sectionTitle)
-                    .frame(width: 34, height: 34)
-                    .foregroundStyle(OnboardingPalette.foreground)
-                    .background(isSelected ? OnboardingPalette.surface : OnboardingPalette.surfaceSubtle)
-                    .clipShape(Circle())
+        Button {
+            HapticManager.shared.selectionChanged()
+            action()
+        } label: {
+            OnboardingSelectableContainer(isSelected: isSelected) {
+                HStack(spacing: 14) {
+                    Image(systemName: icon)
+                        .font(OffRecordTypography.sectionTitle)
+                        .frame(width: 34, height: 34)
+                        .foregroundStyle(OnboardingPalette.foreground)
+                        .background(isSelected ? OnboardingPalette.surfaceSoft : OnboardingPalette.surfaceSubtle)
+                        .clipShape(Circle())
 
-                Text(title)
-                    .font(OffRecordTypography.sectionTitle)
-                    .foregroundStyle(OnboardingPalette.foreground)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.86)
-                    .multilineTextAlignment(.leading)
-                    .layoutPriority(1)
+                    Text(title)
+                        .font(isSelected ? OffRecordTypography.sectionTitle : OffRecordTypography.labelLarge)
+                        .foregroundStyle(OnboardingPalette.foreground)
+                        .lineLimit(2)
+                        .minimumScaleFactor(0.86)
+                        .multilineTextAlignment(.leading)
+                        .layoutPriority(1)
 
-                Spacer()
+                    Spacer()
 
-                Image(systemName: selectedIconName)
-                    .font(OffRecordTypography.sectionTitle)
-                    .foregroundStyle(isSelected ? OnboardingPalette.foreground : OnboardingPalette.tertiaryForeground)
+                    Image(systemName: selectedIconName)
+                        .font(OffRecordTypography.sectionTitle)
+                        .foregroundStyle(isSelected ? OnboardingPalette.foreground : OnboardingPalette.tertiaryForeground)
+                }
             }
-            .padding(14)
-            .background(isSelected ? OnboardingPalette.surfaceSoft : OnboardingPalette.surfaceSubtle)
-            .overlay(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .stroke(isSelected ? OnboardingPalette.selectedBorder : OnboardingPalette.border, lineWidth: 1.5)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
         }
         .buttonStyle(.plain)
     }
@@ -1881,24 +1977,22 @@ private struct StatementCard: View {
     let action: () -> Void
 
     var body: some View {
-        Button(action: action) {
-            HStack(alignment: .top, spacing: 14) {
-                Image(systemName: isSelected ? "checkmark.circle.fill" : "quote.opening")
-                    .font(OffRecordTypography.titleSmall)
-                    .foregroundStyle(OnboardingPalette.foreground)
-                Text(statement)
-                    .font(OffRecordTypography.titleSmall)
-                    .lineSpacing(3)
-                Spacer()
+        Button {
+            HapticManager.shared.selectionChanged()
+            action()
+        } label: {
+            OnboardingSelectableContainer(isSelected: isSelected, cornerRadius: 20, padding: 18) {
+                HStack(alignment: .top, spacing: 14) {
+                    Image(systemName: isSelected ? "checkmark.circle.fill" : "quote.opening")
+                        .font(OffRecordTypography.titleSmall)
+                        .foregroundStyle(OnboardingPalette.foreground)
+                    Text(statement)
+                        .font(isSelected ? OffRecordTypography.titleSmall : OffRecordTypography.labelLarge)
+                        .lineSpacing(3)
+                    Spacer()
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
             }
-            .padding(18)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(isSelected ? OnboardingPalette.surfaceSoft : OnboardingPalette.surfaceSubtle)
-            .overlay(
-                RoundedRectangle(cornerRadius: 20, style: .continuous)
-                    .stroke(isSelected ? OnboardingPalette.selectedBorder : OnboardingPalette.border, lineWidth: 1.5)
-            )
-            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         }
         .buttonStyle(.plain)
     }
@@ -1966,7 +2060,7 @@ private struct PrivacyProofRow: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(OnboardingPalette.surfaceBarelyVisible)
+        .background(OnboardingPalette.surfaceSoft)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 }
@@ -2048,15 +2142,13 @@ private struct PreferencePicker<Item: Identifiable & Equatable, Label: View>: Vi
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                 ForEach(items) { item in
                     Button {
+                        HapticManager.shared.selectionChanged()
                         selection = item
                     } label: {
-                        label(item)
-                            .font(OffRecordTypography.labelMedium)
-                            .foregroundStyle(OnboardingPalette.foreground)
-                            .frame(maxWidth: .infinity, minHeight: 46)
-                            .padding(.horizontal, 10)
-                            .background(selection == item ? OnboardingPalette.surface : OnboardingPalette.surfaceSubtle)
-                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                        OnboardingPreferenceChip(isSelected: selection == item) {
+                            label(item)
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
                     }
                     .buttonStyle(.plain)
                 }
