@@ -38,13 +38,17 @@ struct FridayView: View {
         case personality = "Personality"
         case emotions = "Emotions"
         case world = "My World"
-        case patterns = "Patterns"
     }
 
     var body: some View {
         ScrollView {
             VStack(spacing: 24) {
                 fridayHeader
+                    .scrollTransition { content, phase in
+                        content
+                            .opacity(phase.isIdentity ? 1 : 0.6)
+                            .scaleEffect(phase.isIdentity ? 1 : 0.92)
+                    }
 
                 talkToFridayButton
 
@@ -64,14 +68,13 @@ struct FridayView: View {
                     emotionsSection
                 case .world:
                     worldSection
-                case .patterns:
-                    patternsSection
                 }
 
                 // Privacy badge
                 privacyBadge
             }
-            .padding()
+            .padding(.horizontal, OffRecordSpacing.screenX)
+            .padding(.vertical, 16)
             .frame(maxWidth: isIPad ? 700 : .infinity)
             .frame(maxWidth: .infinity)
         }
@@ -136,7 +139,7 @@ struct FridayView: View {
                     .frame(width: 200, height: 200)
                     .scaleEffect(animateMascot ? 1.04 : 0.98)
 
-                FridayMascotView(pose: .idle, size: 132)
+                FridayMascotView(pose: .idle, size: isIPad ? 132 : 110)
                     .shadow(color: orbColor.opacity(0.28), radius: 18, y: 8)
             }
 
@@ -280,6 +283,8 @@ struct FridayView: View {
                                 border: selectedSection == section ? OffRecordReadableTintStyle.friday.border : OffRecordReadableTintStyle.neutral.border
                             )
                     }
+                    .accessibilityLabel("\(section.rawValue) section")
+                    .accessibilityAddTraits(selectedSection == section ? .isSelected : [])
                 }
             }
             .padding(.horizontal)
@@ -757,6 +762,9 @@ struct FridayView: View {
                     .foregroundColor(OffRecordColor.textSecondary)
             }
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(label): \(Int(value * 100)) percent, between \(lowLabel) and \(highLabel)")
+        .accessibilityValue("\(Int(value * 100)) percent")
     }
 
     private func emotionMeter(label: String, value: Double, color: Color) -> some View {
@@ -781,6 +789,8 @@ struct FridayView: View {
                 .font(OffRecordTypography.annotation)
                 .foregroundColor(OffRecordColor.textSecondary)
         }
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(label): \(Int(value * 100)) percent")
     }
 
     private func moodTimeBlock(label: String, sentiment: Double, icon: String) -> some View {
@@ -853,27 +863,8 @@ struct FridayView: View {
     }
 
     private var emptyStateCard: some View {
-        VStack(spacing: 16) {
-            FridayMascotView(pose: .wave, size: 92)
-
-            Text("Friday is getting to know you")
-                .font(OffRecordTypography.sectionTitle)
-                .foregroundColor(OffRecordColor.textHeading)
-
-            Text("Keep journaling with OffRecord AI Journal. Friday learns from every entry and starts noticing the patterns that matter.")
-                .font(OffRecordTypography.bodySmall)
-                .foregroundColor(OffRecordColor.textSecondary)
-                .multilineTextAlignment(.center)
-
-            HStack(spacing: 16) {
-                Label("Voice entries", systemImage: "mic.fill")
-                Label("Written entries", systemImage: "square.and.pencil")
-            }
-            .font(OffRecordTypography.metadata)
-            .foregroundColor(OffRecordColor.textLavender)
-        }
-        .padding(24)
-        .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceSage)
+        EmptyStateView.fridayGettingToKnow
+            .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceSage)
     }
 
     private var privacyBadge: some View {
