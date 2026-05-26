@@ -617,16 +617,7 @@ struct TodayView: View {
     @ViewBuilder
     private var compactRecordingFeedback: some View {
         if recordingState == .processing && !isHeroRecordingActive {
-            HStack(spacing: 10) {
-                ProgressView()
-                    .scaleEffect(0.9)
-                Text("Transcribing your thoughts...")
-                    .font(OffRecordTypography.labelMedium)
-                    .foregroundColor(OffRecordColor.textSecondary)
-            }
-            .padding(.vertical, 12)
-            .padding(.horizontal, 20)
-            .background(OffRecordColor.surfacePrimary.opacity(0.94), in: Capsule())
+            OffRecordLoadingView(message: "Transcribing your thoughts...")
             .overlay(Capsule().stroke(OffRecordColor.borderSoft, lineWidth: 1))
             .shadow(color: OffRecordShadow.floatingColor, radius: 18, x: 0, y: 8)
             .transition(.scale.combined(with: .opacity))
@@ -1206,7 +1197,7 @@ struct TodayView: View {
                         HapticManager.shared.error()
                     }
                 } else {
-                    self.errorMessage = "OffRecord AI Journal needs microphone access to record your diary."
+                    self.errorMessage = "OffRecord needs microphone access to record your diary."
                     self.recordingState = .idle
                     self.heroRecordingPromptID = nil
                     self.activeHeroPromptID = nil
@@ -1535,5 +1526,7 @@ struct PromptChip: View {
             )
         }
         .buttonStyle(.plain)
+        .accessibilityLabel("\(prompt.title): \(prompt.detail)")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }

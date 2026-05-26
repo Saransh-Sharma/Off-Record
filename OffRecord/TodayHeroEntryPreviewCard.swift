@@ -42,11 +42,7 @@ struct TodayHeroEntryPreviewCard: View {
             .padding(.horizontal, 16)
             .padding(.vertical, 15)
             .frame(maxWidth: .infinity, minHeight: 98, alignment: .leading)
-            .background(cardFill, in: RoundedRectangle(cornerRadius: 24))
-            .overlay(
-                RoundedRectangle(cornerRadius: 24)
-                    .stroke(cardBorder, lineWidth: 1)
-            )
+            .offRecordContentCard(cornerRadius: 24, fill: cardFill, useGlass: true)
             .contentShape(RoundedRectangle(cornerRadius: 24))
         }
         .buttonStyle(.plain)
