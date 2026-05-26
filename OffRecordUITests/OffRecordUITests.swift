@@ -87,10 +87,15 @@ final class OffRecordUITests: XCTestCase {
 
         entryField.tap()
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 4))
+
+        let saveButton = onboardingPrimaryCTA(in: app)
+        XCTAssertTrue(saveButton.waitForExistence(timeout: 4))
+        XCTAssertEqual(saveButton.label, "Save entry")
+        XCTAssertFalse(saveButton.isEnabled)
+
         entryField.typeText("Today I need to say this honestly.")
 
-        let saveButton = app.buttons["Save entry"].firstMatch
-        XCTAssertTrue(saveButton.waitForExistence(timeout: 4))
+        XCTAssertTrue(waitForButton(saveButton, toBeEnabled: true))
         XCTAssertTrue(saveButton.isHittable)
 
         let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
@@ -115,23 +120,28 @@ final class OffRecordUITests: XCTestCase {
         let app = launchOnboardingApp()
 
         XCTAssertTrue(app.staticTexts["Your private voice journal"].waitForExistence(timeout: 8))
+        XCTAssertTrue(onboardingPrimaryCTA(in: app).waitForExistence(timeout: 4))
+        XCTAssertTrue(onboardingPrimaryCTA(in: app).isHittable)
         attachScreenshot(named: "OnboardingWelcome", app: app)
-        app.buttons["Continue"].firstMatch.tap()
+        onboardingPrimaryCTA(in: app).tap()
 
         XCTAssertTrue(app.staticTexts["What brings you here?"].waitForExistence(timeout: 4))
+        XCTAssertTrue(onboardingPrimaryCTA(in: app).waitForExistence(timeout: 4))
+        XCTAssertFalse(onboardingPrimaryCTA(in: app).isEnabled)
         app.buttons["Clear my head"].firstMatch.tap()
-        app.buttons["Continue"].firstMatch.tap()
+        XCTAssertTrue(waitForButton(onboardingPrimaryCTA(in: app), toBeEnabled: true))
+        onboardingPrimaryCTA(in: app).tap()
 
         XCTAssertTrue(app.staticTexts["Private by design"].waitForExistence(timeout: 4))
-        app.buttons["Continue"].firstMatch.tap()
+        XCTAssertTrue(onboardingPrimaryCTA(in: app).isHittable)
+        onboardingPrimaryCTA(in: app).tap()
 
         XCTAssertTrue(app.staticTexts["Lock your journal"].waitForExistence(timeout: 4))
         app.buttons["Not now"].firstMatch.tap()
 
         XCTAssertTrue(app.staticTexts["Tune Friday"].waitForExistence(timeout: 4))
-        app.buttons["Emotions"].firstMatch.tap()
-        app.buttons["Gentle check-ins"].firstMatch.tap()
-        app.buttons["Continue"].firstMatch.tap()
+        XCTAssertTrue(onboardingPrimaryCTA(in: app).isHittable)
+        onboardingPrimaryCTA(in: app).tap()
 
         XCTAssertTrue(app.staticTexts["Start with one honest thought"].waitForExistence(timeout: 4))
         XCTAssertFalse(app.buttons["Type instead"].exists)
@@ -140,11 +150,13 @@ final class OffRecordUITests: XCTestCase {
 
         XCTAssertTrue(app.staticTexts["Your first snapshot is ready"].waitForExistence(timeout: 4))
         attachScreenshot(named: "OnboardingSnapshot", app: app)
-        app.buttons["Continue"].firstMatch.tap()
+        XCTAssertTrue(onboardingPrimaryCTA(in: app).isHittable)
+        onboardingPrimaryCTA(in: app).tap()
 
         XCTAssertTrue(app.staticTexts["Make reflection easy to repeat"].waitForExistence(timeout: 4))
         attachScreenshot(named: "OnboardingHabit", app: app)
-        app.buttons["Enter OffRecord"].firstMatch.tap()
+        XCTAssertEqual(onboardingPrimaryCTA(in: app).label, "Start journaling")
+        onboardingPrimaryCTA(in: app).tap()
 
         XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 8) || app.buttons["Today"].firstMatch.waitForExistence(timeout: 8))
     }
@@ -410,6 +422,16 @@ final class OffRecordUITests: XCTestCase {
         app.launchArguments = ["-UITesting", "-OnboardingUITest"] + arguments
         app.launch()
         return app
+    }
+
+    private func onboardingPrimaryCTA(in app: XCUIApplication) -> XCUIElement {
+        app.buttons["onboarding.primaryCTA"].firstMatch
+    }
+
+    private func waitForButton(_ button: XCUIElement, toBeEnabled enabled: Bool, timeout: TimeInterval = 4) -> Bool {
+        let predicate = NSPredicate(format: "isEnabled == %@", NSNumber(value: enabled))
+        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: button)
+        return XCTWaiter().wait(for: [expectation], timeout: timeout) == .completed
     }
 
     private func launchHeroNudgeApp(arguments: [String]) -> XCUIApplication {

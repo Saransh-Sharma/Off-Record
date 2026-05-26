@@ -387,6 +387,8 @@ struct TodayView: View {
                     Text(formattedToday)
                         .font(OffRecordTypography.screenTitle)
                         .foregroundColor(OffRecordColor.textHeading)
+                        .lineLimit(2)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 Spacer()
                 OffRecordPrivacyBadge(compact: true)

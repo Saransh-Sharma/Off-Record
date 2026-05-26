@@ -1522,14 +1522,15 @@ struct MoodTests {
 
 struct OnboardingResponseTests {
 
-    @Test func defaultResponseStartsUnanswered() {
+    @Test func defaultResponseUsesWarmPreferenceDefaults() {
         let response = OnboardingResponse()
 
         #expect(response.goal == nil)
         #expect(response.painPoints.isEmpty)
         #expect(response.relatableStatements.isEmpty)
-        #expect(response.reflectionFocus == nil)
-        #expect(response.promptStyle == nil)
+        #expect(response.reflectionFocus == .emotions)
+        #expect(response.moodBaseline == .mixed)
+        #expect(response.promptStyle == .gentle)
         #expect(response.faceIDChoice == .notAsked)
         #expect(response.microphoneChoice == .notAsked)
         #expect(response.speechChoice == .notAsked)
