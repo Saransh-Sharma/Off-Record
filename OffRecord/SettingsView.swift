@@ -70,22 +70,29 @@ struct SettingsView: View {
     }
 
     var body: some View {
-        Form {
-            exportSection
-            appearanceSection
-            journalingGoalSection
-            securitySection
-            localAIPrivacySection
-            semanticMemorySection
-            systemSearchSection
-            dailyReminderSection
-            storageSection
-            iCloudSection
-            privacySection
-            backupSection
-            aboutSection
+        ScrollView {
+            let columns = horizontalSizeClass == .regular
+                ? [GridItem(.flexible(), spacing: OffRecordSpacing.lg), GridItem(.flexible(), spacing: OffRecordSpacing.lg)]
+                : [GridItem(.flexible())]
+
+            LazyVGrid(columns: columns, spacing: OffRecordSpacing.lg) {
+                settingsSection(tint: OffRecordColor.surfacePeach) { exportSection }
+                settingsSection(tint: OffRecordColor.surfaceLavender) { appearanceSection }
+                settingsSection(tint: OffRecordColor.surfaceMint) { journalingGoalSection }
+                settingsSection(tint: OffRecordColor.surfaceSage) { securitySection }
+                settingsSection(tint: OffRecordColor.surfaceLavender) { localAIPrivacySection }
+                settingsSection(tint: OffRecordColor.surfaceMint) { semanticMemorySection }
+                settingsSection(tint: OffRecordColor.surfacePrimary) { systemSearchSection }
+                settingsSection(tint: OffRecordColor.surfacePeach) { dailyReminderSection }
+                settingsSection(tint: OffRecordColor.surfacePrimary) { storageSection }
+                settingsSection(tint: OffRecordColor.surfaceMint) { iCloudSection }
+                settingsSection(tint: OffRecordColor.surfaceSage) { privacySection }
+                settingsSection(tint: OffRecordColor.surfacePrimary) { backupSection }
+                settingsSection(tint: OffRecordColor.surfacePrimary) { aboutSection }
+            }
+            .padding(.horizontal, OffRecordSpacing.screenX)
+            .padding(.vertical, 16)
         }
-        .scrollContentBackground(.hidden)
         .background(OffRecordColor.appBackgroundGradient)
         .onAppear {
             calculateStorage()
@@ -104,7 +111,7 @@ struct SettingsView: View {
             #endif
             Button("OK", role: .cancel) { }
         } message: {
-            Text("Please enable notifications for OffRecord AI Journal in Settings to receive daily reminders.")
+            Text("Please enable notifications for OffRecord in Settings to receive daily reminders.")
         }
         .alert("Export error", isPresented: Binding(
             get: { exportError != nil },
@@ -117,7 +124,7 @@ struct SettingsView: View {
         .alert("Restart Required", isPresented: $showCloudSyncRestartAlert) {
             Button("OK", role: .cancel) { }
         } message: {
-            Text("Restart OffRecord AI Journal for the iCloud sync change to take effect.")
+            Text("Restart OffRecord for the iCloud sync change to take effect.")
         }
         .alert("Delete Semantic Memory Index?", isPresented: $showDeleteSemanticIndexConfirm) {
             Button("Delete Local Index", role: .destructive) {
@@ -147,6 +154,14 @@ struct SettingsView: View {
     }
 
     // MARK: - Sections
+
+    private func settingsSection<Content: View>(tint: Color, @ViewBuilder content: () -> Content) -> some View {
+        VStack(alignment: .leading, spacing: 0) {
+            content()
+        }
+        .padding(OffRecordSpacing.md)
+        .offRecordContentCard(cornerRadius: OffRecordRadius.xl, fill: tint)
+    }
 
     @ViewBuilder
     private var exportSection: some View {
@@ -244,9 +259,9 @@ struct SettingsView: View {
             }
             .padding(.vertical, 8)
         } header: {
-            Text("Appearance")
+            Text("Accent Color")
         } footer: {
-            Text("Choose a soft color theme that suits your style.")
+            Text("Choose an accent color. This tints buttons and highlights throughout the app.")
         }
     }
 
@@ -477,7 +492,7 @@ struct SettingsView: View {
         } header: {
             Text("Daily Reminder")
         } footer: {
-            Text("OffRecord AI Journal sends one gentle notification each day at your chosen time.")
+            Text("OffRecord sends one notification each day at your chosen time.")
         }
     }
 
