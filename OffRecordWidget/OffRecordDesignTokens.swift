@@ -2,7 +2,10 @@
 //  OffRecordDesignTokens.swift
 //  OffRecordWidget
 //
-//  Widget-safe pastel design tokens derived from OffRecord Design.md.
+//  CANONICAL SOURCE: OffRecord/OffRecordDesignTokens.swift
+//  Keep color values in sync with the main app target.
+//  Widget-only additions (OffRecordWidgetBackground, OffRecordWidgetTypography)
+//  remain here.
 //
 
 import SwiftUI
@@ -52,6 +55,7 @@ enum OffRecordColor {
     static let textHeading = Color(hex: 0x241730)
     static let textBrand = Color(hex: 0x342044)
     static let textSecondary = Color(hex: 0x716A75)
+    static let textOnTinted = Color(hex: 0x554E58)
     static let textInverse = Color(hex: 0xFFFFFF)
     static let textAqua = Color(hex: 0x2D7168)
     static let textBlush = Color(hex: 0x9B4357)
@@ -77,6 +81,8 @@ enum OffRecordColor {
         endPoint: .bottomTrailing
     )
 }
+
+// MARK: - Widget-Only Modifiers
 
 struct OffRecordWidgetBackground: ViewModifier {
     func body(content: Content) -> some View {

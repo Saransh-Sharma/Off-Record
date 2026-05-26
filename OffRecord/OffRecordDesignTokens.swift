@@ -64,6 +64,7 @@ enum OffRecordColor {
     static let textHeading = Color(hex: 0x241730)
     static let textBrand = Color(hex: 0x342044)
     static let textSecondary = Color(hex: 0x716A75)
+    static let textOnTinted = Color(hex: 0x554E58)
     static let textTertiary = Color(hex: 0x9B949E)
     static let textInverse = Color(hex: 0xFFFFFF)
     static let textSage = Color(hex: 0x5F806B)
@@ -314,6 +315,20 @@ extension View {
         foreground: Color = OffRecordColor.textInverse
     ) -> some View {
         modifier(OffRecordPillButtonModifier(fill: fill, foreground: foreground))
+    }
+
+    func offRecordFridayButton() -> some View {
+        modifier(OffRecordPillButtonModifier(
+            fill: OffRecordColor.brandLavenderDark,
+            foreground: OffRecordColor.textInverse
+        ))
+    }
+
+    func offRecordPrivacyButton() -> some View {
+        modifier(OffRecordPillButtonModifier(
+            fill: OffRecordColor.brandSageDark,
+            foreground: OffRecordColor.textInverse
+        ))
     }
 
     func offRecordScreenBackground() -> some View {
