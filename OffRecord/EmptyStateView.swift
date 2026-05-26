@@ -54,15 +54,12 @@ struct EmptyStateView: View {
             if let actionTitle = actionTitle, let action = action {
                 Button(action: action) {
                     Text(actionTitle)
-                        .font(OffRecordTypography.labelMedium)
-                        .foregroundColor(OffRecordColor.textInverse)
-                        .padding(.horizontal, 24)
-                        .padding(.vertical, 12)
-                        .background(OffRecordColor.brandPlum, in: Capsule())
+                        .offRecordPillButton()
                 }
             }
         }
         .padding()
+        .accessibilityElement(children: .combine)
     }
 }
 
@@ -98,6 +95,22 @@ extension EmptyStateView {
             icon: "chart.line.uptrend.xyaxis",
             title: "Insights Coming Soon",
             subtitle: "Keep journaling to unlock personalized insights about your writing patterns"
+        )
+    }
+
+    static var fridayGettingToKnow: EmptyStateView {
+        EmptyStateView(
+            icon: "sparkles",
+            title: "Getting to Know You",
+            subtitle: "Friday learns your personality, emotions, and patterns as you journal. Keep recording to unlock deeper insights."
+        )
+    }
+
+    static var noTimelineEntries: EmptyStateView {
+        EmptyStateView(
+            icon: "book.closed",
+            title: "Your Timeline",
+            subtitle: "Entries will appear here as you record them. Start by tapping the microphone on the Today tab."
         )
     }
 }
@@ -160,10 +173,35 @@ struct FeatureRow: View {
     }
 }
 
+// MARK: - Loading View
+
+struct OffRecordLoadingView: View {
+    let message: String
+    var tint: Color = OffRecordColor.brandLavenderDark
+
+    var body: some View {
+        HStack(spacing: 12) {
+            ProgressView()
+                .tint(tint)
+                .scaleEffect(0.9)
+            Text(message)
+                .font(OffRecordTypography.labelSmall)
+                .foregroundStyle(OffRecordColor.textSecondary)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(
+            OffRecordColor.surfaceWarm,
+            in: RoundedRectangle(cornerRadius: OffRecordRadius.lg, style: .continuous)
+        )
+        .accessibilityElement(children: .combine)
+    }
+}
+
 #Preview {
     VStack(spacing: 40) {
         EmptyStateView.noEntries
-        WelcomeCard()
-            .padding()
+        OffRecordLoadingView(message: "Transcribing your thoughts...")
     }
 }
