@@ -186,8 +186,15 @@ extension View {
 
     func offRecordContentCard(
         cornerRadius: CGFloat = OffRecordRadius.xl,
-        fill: Color = OffRecordColor.surfacePrimary
+        fill: Color = OffRecordColor.surfacePrimary,
+        useGlass: Bool = false
     ) -> some View {
-        offRecordCard(cornerRadius: cornerRadius, fill: fill)
+        Group {
+            if useGlass {
+                offRecordGlassBar(cornerRadius: cornerRadius, fallbackFill: fill)
+            } else {
+                offRecordCard(cornerRadius: cornerRadius, fill: fill)
+            }
+        }
     }
 }
