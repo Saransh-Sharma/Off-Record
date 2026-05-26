@@ -190,9 +190,36 @@ struct AudioPlayerView: View {
         }
         .overlay {
             if let error = loadError {
-                Text(error)
-                    .font(OffRecordTypography.metadata)
-                    .foregroundColor(OffRecordColor.textCoral)
+                HStack(spacing: 10) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(OffRecordColor.brandCoral)
+                        .font(.system(size: 14, weight: .semibold))
+                    Text(error)
+                        .font(OffRecordTypography.labelSmall)
+                        .foregroundStyle(OffRecordColor.textCoral)
+                    Spacer()
+                    Button {
+                        loadError = nil
+                        Task {
+                            do {
+                                try controller.load(url: audioURL)
+                            } catch {
+                                loadError = "Unable to load audio."
+                            }
+                        }
+                    } label: {
+                        Text("Retry")
+                            .font(OffRecordTypography.labelSmall)
+                            .foregroundStyle(OffRecordColor.textCoral)
+                    }
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(
+                    OffRecordColor.surfacePeach,
+                    in: RoundedRectangle(cornerRadius: OffRecordRadius.lg, style: .continuous)
+                )
+                .padding(8)
             }
         }
     }
