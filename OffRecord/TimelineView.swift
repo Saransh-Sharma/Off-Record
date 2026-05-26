@@ -110,6 +110,10 @@ struct TimelineView: View {
 
                     semanticSearchStatusBanner
 
+                    #if os(iOS)
+                    voiceSearchErrorBanner
+                    #endif
+
                     if !filteredEntriesCache.isEmpty {
                         MonthSummaryCard(entries: summaryEntriesCache)
                     }
@@ -117,7 +121,7 @@ struct TimelineView: View {
                     timelineContent
                 }
                 .frame(maxWidth: TimelineDesign.maxContentWidth)
-                .padding(.horizontal, 8)
+                .padding(.horizontal, OffRecordSpacing.screenX)
                 .padding(.top, 8)
                 .padding(.bottom, 28)
                 .frame(maxWidth: .infinity)
@@ -398,6 +402,42 @@ struct TimelineView: View {
                 .accessibilityIdentifier("semanticMemory.searchMessage")
         }
     }
+
+    // MARK: - Voice Search Error
+
+    #if os(iOS)
+    @ViewBuilder
+    private var voiceSearchErrorBanner: some View {
+        if let error = voiceSearch.errorMessage {
+            HStack(spacing: 10) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(OffRecordColor.brandCoral)
+                    .font(.system(size: 14, weight: .semibold))
+                Text(error)
+                    .font(OffRecordTypography.labelSmall)
+                    .foregroundStyle(OffRecordColor.textSecondary)
+                Spacer()
+                Button {
+                    voiceSearch.errorMessage = nil
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(OffRecordColor.textTertiary)
+                }
+                .accessibilityLabel("Dismiss voice search error")
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(
+                OffRecordColor.surfacePeach,
+                in: RoundedRectangle(cornerRadius: OffRecordRadius.lg, style: .continuous)
+            )
+            .transition(.opacity.combined(with: .move(edge: .top)))
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("voiceSearch.errorBanner")
+        }
+    }
+    #endif
 
     // MARK: - Quick Filter Chips
 

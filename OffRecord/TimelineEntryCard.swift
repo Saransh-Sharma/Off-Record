@@ -102,15 +102,7 @@ struct TimelineEntryCard: View {
         .padding(.trailing, 10)
         .padding(.vertical, 14)
         .frame(minHeight: TimelineDesign.entryRowMinHeight)
-        .background(
-            RoundedRectangle(cornerRadius: 20)
-                .fill(OffRecordColor.surfacePrimary.opacity(0.91))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20)
-                        .stroke(OffRecordColor.borderWarm.opacity(0.78), lineWidth: 1)
-                )
-                .shadow(color: Color.black.opacity(0.044), radius: 17, x: 0, y: 8)
-        )
+        .offRecordContentCard(cornerRadius: 20, fill: OffRecordColor.surfacePrimary, useGlass: true)
         .contentShape(RoundedRectangle(cornerRadius: 20))
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("timeline.entryRow")

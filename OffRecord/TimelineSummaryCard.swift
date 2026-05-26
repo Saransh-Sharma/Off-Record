@@ -54,15 +54,7 @@ struct MonthSummaryCard: View {
             .frame(width: proxy.size.width, height: proxy.size.height, alignment: .center)
         }
         .frame(height: TimelineDesign.summaryCardHeight)
-        .background(
-            RoundedRectangle(cornerRadius: 28)
-                .fill(OffRecordColor.surfacePrimary.opacity(0.9))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 28)
-                        .stroke(OffRecordColor.borderWarm.opacity(0.84), lineWidth: 1)
-                )
-                .shadow(color: Color.black.opacity(0.052), radius: 22, x: 0, y: 11)
-        )
+        .offRecordContentCard(cornerRadius: 28, fill: OffRecordColor.surfacePrimary, useGlass: true)
     }
 
     private func summaryStat(value: String, label: String) -> some View {
