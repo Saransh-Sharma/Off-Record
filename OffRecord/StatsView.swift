@@ -12,6 +12,7 @@ import Charts
 struct StatsView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ObservedObject private var goalManager = GoalManager.shared
     @ObservedObject private var proactiveReflection = ProactiveReflectionController.shared
 
@@ -22,6 +23,7 @@ struct StatsView: View {
     private var entries: FetchedResults<DiaryEntry>
 
     @State private var showMilestone: Int? = nil
+    @State private var showDeepDive: Bool = false
     @State private var stats: JournalStatsSnapshot = .empty
     @State private var startedEntriesForCards: [DiaryEntry] = []
 
@@ -42,37 +44,35 @@ struct StatsView: View {
                 if stats.isEmpty && startedEntriesForCards.isEmpty {
                     emptyStateCard
                 } else {
-                    // Shareable Weekly Insights
-                    WeeklyInsightsSection(entries: startedEntriesForCards)
-
-                    // Proactive weekly reflection
-                    ProactiveWeeklyReflectionCard(entries: startedEntriesForCards)
-
-                    // AI Insights
-                    aiInsightsCard
-
-                    // Streak Card
+                    // TIER 1: Hero — streak + goal
                     streakCard
-
-                    // Goal Progress Card
                     if goalManager.isEnabled {
                         goalProgressCard
                     }
 
-                    // This Week Activity
+                    // TIER 2: This Week — activity + unified reflection
                     weekActivityCard
+                    WeeklyInsightsSection(entries: startedEntriesForCards)
+                    ProactiveWeeklyReflectionCard(entries: startedEntriesForCards)
 
-                    // Mood Trends
-                    moodTrendsCard
-
-                    // Stats Summary
-                    statsSummaryCard
-
-                    // Weekly Summary
-                    weeklySummaryCard
+                    // TIER 3: Deep Dive — collapsible
+                    DisclosureGroup(isExpanded: $showDeepDive) {
+                        VStack(spacing: 20) {
+                            aiInsightsCard
+                            moodTrendsCard
+                            statsSummaryCard
+                            weeklySummaryCard
+                        }
+                    } label: {
+                        Label("Deep Dive", systemImage: "chart.bar.doc.horizontal")
+                            .font(OffRecordTypography.sectionTitle)
+                            .foregroundColor(OffRecordColor.textHeading)
+                    }
+                    .tint(OffRecordColor.textSecondary)
                 }
             }
-            .padding()
+            .padding(.horizontal, OffRecordSpacing.screenX)
+            .padding(.vertical, 16)
             .frame(maxWidth: isIPad ? 700 : .infinity)
             .frame(maxWidth: .infinity)
         }
@@ -91,29 +91,9 @@ struct StatsView: View {
     // MARK: - Empty State
 
     private var emptyStateCard: some View {
-        VStack(spacing: 16) {
-            ZStack {
-                Circle()
-                    .fill(OffRecordColor.surfaceLavender)
-                    .frame(width: 80, height: 80)
-                Image(systemName: "chart.bar.xaxis")
-                    .font(.system(size: 32))
-                    .foregroundColor(OffRecordColor.textLavender)
-            }
-
-            Text("Insights will appear here")
-                .font(OffRecordTypography.sectionTitle)
-                .foregroundColor(OffRecordColor.textHeading)
-
-            Text("Record a few entries and OffRecord AI Journal will show streaks, mood trends, and gentle summaries of your writing.")
-                .font(OffRecordTypography.bodySmall)
-                .foregroundColor(OffRecordColor.textSecondary)
-                .multilineTextAlignment(.center)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 32)
-        .padding(.horizontal, 16)
-        .offRecordContentCard()
+        EmptyStateView.noInsights
+            .frame(maxWidth: .infinity)
+            .offRecordContentCard()
     }
 
     // MARK: - Streak Card
@@ -346,7 +326,7 @@ struct StatsView: View {
                     .trim(from: 0, to: stats.goal.progress)
                     .stroke(OffRecordColor.brandAqua, style: StrokeStyle(lineWidth: 8, lineCap: .round))
                     .rotationEffect(.degrees(-90))
-                    .animation(.spring(response: 0.6), value: stats.goal.progress)
+                    .animation(reduceMotion ? .none : .spring(response: 0.6), value: stats.goal.progress)
 
                 VStack(spacing: 2) {
                     Text("\(Int(stats.goal.progress * 100))%")
@@ -354,10 +334,12 @@ struct StatsView: View {
                         .foregroundColor(OffRecordColor.textAqua)
                     Text("\(stats.goal.daysRemaining) days left")
                         .font(OffRecordTypography.metadata)
-                        .foregroundColor(OffRecordColor.textSecondary)
+                        .foregroundColor(OffRecordColor.textOnTinted)
                 }
             }
             .frame(width: 100, height: 100)
+            .accessibilityElement(children: .combine)
+            .accessibilityLabel("Weekly goal progress: \(Int(stats.goal.progress * 100)) percent, \(stats.goal.count) of \(stats.goal.weeklyTarget) entries, \(stats.goal.daysRemaining) days remaining")
 
             if stats.goal.progress >= 1.0 {
                 Text("Goal reached! Great work this week.")
@@ -394,33 +376,30 @@ struct StatsView: View {
                     .font(OffRecordTypography.titleMedium)
                     .foregroundColor(OffRecordColor.textPeach)
 
-                Text("You've journaled for \(days) consecutive days. Your dedication to self-reflection is paying off.")
+                Text("You've journaled for \(days) days in a row. That's real momentum.")
                     .font(OffRecordTypography.bodySmall)
                     .foregroundColor(OffRecordColor.textSecondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal)
 
-                Button("Keep Going") {
+                Button {
                     withAnimation {
                         showMilestone = nil
                     }
+                } label: {
+                    Text("Continue")
+                        .offRecordPillButton()
                 }
-                .font(OffRecordTypography.sectionTitle)
-                .padding(.horizontal, 32)
-                .padding(.vertical, 12)
-                .foregroundColor(OffRecordReadableTintStyle.journal.foreground)
-                .offRecordGlassControl(
-                    tint: OffRecordReadableTintStyle.journal.tint,
-                    in: Capsule(),
-                    fallbackFill: OffRecordReadableTintStyle.journal.fill,
-                    border: OffRecordReadableTintStyle.journal.border
-                )
+                .accessibilityLabel("Dismiss milestone celebration")
             }
             .padding(32)
             .offRecordGlassBar(cornerRadius: 24, fallbackFill: OffRecordColor.surfaceWarm)
             .shadow(radius: 20)
             .padding(40)
             .transition(.scale.combined(with: .opacity))
+            .accessibilityAction(.escape) {
+                withAnimation { showMilestone = nil }
+            }
         }
     }
 
@@ -472,8 +451,12 @@ struct StatsView: View {
         proactiveReflection.refreshIfNeeded(entries: currentEntries)
         if let milestone = goalManager.checkMilestone(currentStreak: nextStats.currentStreak) {
             HapticManager.shared.streakMilestone()
-            withAnimation(.spring(response: 0.5)) {
+            if reduceMotion {
                 showMilestone = milestone
+            } else {
+                withAnimation(.spring(response: 0.5)) {
+                    showMilestone = milestone
+                }
             }
         }
         PerformanceSignposts.end(token)
@@ -496,7 +479,7 @@ struct StatItem: View {
                 Spacer()
             }
             Text(value)
-                .font(OffRecordTypography.titleMedium)
+                .font(OffRecordTypography.numberSmall)
                 .foregroundColor(OffRecordColor.textPrimary)
             Text(title)
                 .font(OffRecordTypography.metadata)
@@ -504,6 +487,8 @@ struct StatItem: View {
         }
         .padding()
         .offRecordContentCard(cornerRadius: OffRecordRadius.md, fill: OffRecordColor.surfacePrimary)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title): \(value)")
     }
 }
 
