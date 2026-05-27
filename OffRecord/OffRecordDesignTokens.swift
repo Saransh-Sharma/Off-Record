@@ -64,6 +64,7 @@ enum OffRecordColor {
     static let textHeading = Color(hex: 0x241730)
     static let textBrand = Color(hex: 0x342044)
     static let textSecondary = Color(hex: 0x716A75)
+    static let textSecondaryDark = Color(hex: 0xA8A0AC)
     static let textOnTinted = Color(hex: 0x554E58)
     static let textTertiary = Color(hex: 0x9B949E)
     static let textInverse = Color(hex: 0xFFFFFF)
@@ -84,6 +85,7 @@ enum OffRecordColor {
     static let borderSoft = Color(hex: 0xEEE7EF)
     static let borderWarm = Color(hex: 0xF2E2D5)
     static let borderSage = Color(hex: 0xD8E6DC)
+    static let borderDark = Color(hex: 0x4A3A5A)
     static let divider = Color(hex: 0xE8E1E8)
     static let hairline = Color(hex: 0xF0ECF1)
 

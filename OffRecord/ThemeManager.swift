@@ -131,7 +131,7 @@ final class ThemeManager: ObservableObject {
     }
 
     var secondaryTextColor: Color {
-        isDark ? Color(hex: 0xA8A0AC) : OffRecordColor.textSecondary
+        isDark ? OffRecordColor.textSecondaryDark : OffRecordColor.textSecondary
     }
 
     var cardBackgroundColor: Color {
@@ -157,7 +157,7 @@ final class ThemeManager: ObservableObject {
     }
 
     var borderColor: Color {
-        isDark ? Color(hex: 0x4A3A5A) : OffRecordColor.borderSoft
+        isDark ? OffRecordColor.borderDark : OffRecordColor.borderSoft
     }
 
     var privacyColor: Color {
