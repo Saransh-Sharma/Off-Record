@@ -58,7 +58,7 @@ struct TodayHeroActionRow: View {
     }
 
     private var primarySymbolName: String {
-        isRecording ? "stop.fill" : "mic.fill"
+        isRecording ? "stop.fill" : "waveform"
     }
 
     private var primaryFill: Color {

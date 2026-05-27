@@ -68,7 +68,8 @@ struct TodayHeroEntryPreviewCard: View {
     private var metadataText: String {
         let updatedAt = entry.updatedAt ?? entry.date ?? Date()
         let time = updatedAt.formatted(date: .omitted, time: .shortened)
-        let words = previewText.split { $0.isWhitespace || $0.isNewline }.count
+        let text = entry.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let words = text.isEmpty ? 0 : text.split { $0.isWhitespace || $0.isNewline }.count
         return "\(time) - \(words) \(words == 1 ? "word" : "words")"
     }
 

@@ -1469,32 +1469,49 @@ struct StatBadge: View {
 }
 
 struct EntryPrompt: Identifiable, Equatable {
+    enum Kind: Equatable {
+        case dailyReflection
+        case gratitude
+        case energyCheck
+        case lettingGo
+        case selfKindness
+        case tomorrow
+        case custom
+    }
+
     let id = UUID()
+    let kind: Kind
     let title: String
     let detail: String
 
     static let defaultPrompts: [EntryPrompt] = [
         EntryPrompt(
+            kind: .dailyReflection,
             title: "Daily reflection",
             detail: "What is one moment from today that you want to remember?"
         ),
         EntryPrompt(
+            kind: .gratitude,
             title: "Gratitude",
             detail: "What are three small things you feel grateful for right now?"
         ),
         EntryPrompt(
+            kind: .energyCheck,
             title: "Energy check",
             detail: "How does your body feel today - tense, tired, or calm?"
         ),
         EntryPrompt(
+            kind: .lettingGo,
             title: "Letting go",
             detail: "What is one worry you can gently put down for tonight?"
         ),
         EntryPrompt(
+            kind: .selfKindness,
             title: "Self-kindness",
             detail: "If you spoke to yourself like a friend, what would you say?"
         ),
         EntryPrompt(
+            kind: .tomorrow,
             title: "Tomorrow",
             detail: "What is one gentle intention you have for tomorrow?"
         )

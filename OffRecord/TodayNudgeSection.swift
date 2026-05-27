@@ -68,55 +68,60 @@ struct TodayNudgeSection: View {
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(prompt.title)
+        .accessibilityLabel(accessibilityLabel(for: prompt))
         .accessibilityIdentifier("today.nudge.\(index)")
     }
 
+    private func accessibilityLabel(for prompt: EntryPrompt) -> String {
+        let detail = prompt.detail.trimmingCharacters(in: .whitespacesAndNewlines)
+        return detail.isEmpty ? prompt.title : "\(prompt.title): \(detail)"
+    }
+
     private func nudgeStyle(for prompt: EntryPrompt) -> TodayNudgeCardStyle {
-        switch prompt.title {
-        case "Daily reflection":
+        switch prompt.kind {
+        case .dailyReflection:
             return TodayNudgeCardStyle(
                 systemImage: "sparkles",
                 tint: OffRecordColor.brandLavenderDark,
                 fill: OffRecordColor.surfaceLavender,
                 border: OffRecordColor.borderSoft
             )
-        case "Gratitude":
+        case .gratitude:
             return TodayNudgeCardStyle(
                 systemImage: "heart.fill",
                 tint: OffRecordColor.brandCoral,
                 fill: OffRecordColor.surfacePeach,
                 border: OffRecordColor.borderWarm
             )
-        case "Energy check":
+        case .energyCheck:
             return TodayNudgeCardStyle(
                 systemImage: "bolt.heart.fill",
                 tint: OffRecordColor.textAqua,
                 fill: OffRecordColor.surfaceMint,
                 border: OffRecordColor.borderSage
             )
-        case "Letting go":
+        case .lettingGo:
             return TodayNudgeCardStyle(
                 systemImage: "leaf.fill",
                 tint: OffRecordColor.brandSageDark,
                 fill: OffRecordColor.backgroundSageTint,
                 border: OffRecordColor.borderSage
             )
-        case "Self-kindness":
+        case .selfKindness:
             return TodayNudgeCardStyle(
                 systemImage: "person.fill.checkmark",
                 tint: OffRecordColor.brandLavenderDark,
                 fill: OffRecordColor.surfaceLavender,
                 border: OffRecordColor.borderSoft
             )
-        case "Tomorrow":
+        case .tomorrow:
             return TodayNudgeCardStyle(
                 systemImage: "sunrise.fill",
                 tint: OffRecordColor.textPeach,
                 fill: OffRecordColor.surfacePeach,
                 border: OffRecordColor.borderWarm
             )
-        default:
+        case .custom:
             return TodayNudgeCardStyle(
                 systemImage: "square.and.pencil",
                 tint: OffRecordColor.textBrand,
