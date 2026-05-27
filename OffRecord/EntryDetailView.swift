@@ -171,6 +171,10 @@ struct EntryDetailView: View {
 
                     journalTimelineView
 
+                    photoSection
+                        .padding(.horizontal)
+                        .padding(.vertical, 8)
+
                     if isComposingTextBlock {
                         newTextBlockComposer
                     }

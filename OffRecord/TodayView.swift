@@ -1026,7 +1026,7 @@ struct TodayView: View {
         guard !items.isEmpty else { return }
 
         let capturedAt = captureTimestamp()
-        let entry = getOrCreateCaptureEntry(capturedAt: capturedAt)
+        guard let entry = getOrCreateCaptureEntry(capturedAt: capturedAt) else { return }
         let entryObjectID = entry.objectID
 
         for item in items {
@@ -1081,7 +1081,7 @@ struct TodayView: View {
 
         let capturedAt = captureTimestamp()
         let hadEntry = existingCaptureEntry(on: capturedAt)?.isStartedEntry == true
-        let entry = getOrCreateCaptureEntry(capturedAt: capturedAt)
+        guard let entry = getOrCreateCaptureEntry(capturedAt: capturedAt) else { return }
         noteEntry = entry
         notePromptContext = promptContext
         noteHeroPromptID = heroPromptID
@@ -1138,19 +1138,22 @@ struct TodayView: View {
         }
     }
 
-    private func getOrCreateTodayEntry() -> DiaryEntry {
+    private func getOrCreateTodayEntry() -> DiaryEntry? {
         getOrCreateCaptureEntry(capturedAt: Date())
     }
 
-    private func getOrCreateCaptureEntry(capturedAt: Date? = nil) -> DiaryEntry {
+    private func getOrCreateCaptureEntry(capturedAt: Date? = nil) -> DiaryEntry? {
         let now = capturedAt ?? captureTimestamp()
         do {
             let entry = try DiaryEntryDailyStore.getOrCreateEntry(on: now, in: viewContext)
             try viewContext.save()
             return entry
         } catch {
-            if let existing = existingCaptureEntry(on: now) ?? latestDraftOrStartedEntry {
+            if let existing = existingCaptureEntry(on: now) {
                 return existing
+            }
+            if let draft = latestDraftOrStartedEntry, entry(draft, isOnSameDayAs: now) {
+                return draft
             }
             let entry = DiaryEntry(context: viewContext)
             entry.id = UUID()
@@ -1159,13 +1162,24 @@ struct TodayView: View {
             entry.text = ""
             entry.isStarred = false
             entry.updatedAt = now
-            try? viewContext.save()
-            return entry
+            do {
+                try viewContext.save()
+                return entry
+            } catch {
+                viewContext.rollback()
+                errorMessage = "Could not create today's entry. Please try again."
+                return nil
+            }
         }
     }
 
     private func existingCaptureEntry(on date: Date) -> DiaryEntry? {
         (try? DiaryEntryDailyStore.entries(on: date, in: viewContext).first)
+    }
+
+    private func entry(_ entry: DiaryEntry, isOnSameDayAs date: Date) -> Bool {
+        guard let entryDate = entry.date else { return false }
+        return Calendar.current.isDate(entryDate, inSameDayAs: date)
     }
 
     private func captureTimestamp(clock: Date = Date()) -> Date {

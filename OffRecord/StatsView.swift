@@ -94,7 +94,7 @@ struct StatsView: View {
             await refreshStats()
         }
         .navigationDestination(item: $selectedWeeklyReflection) { report in
-            WeeklyReflectionReportView(report: report, entries: startedEntriesForCards)
+            WeeklyReflectionReportView(report: report, entries: weeklyReflectionRouteEntries)
         }
         .onChange(of: navigationRouter.shouldOpenCurrentWeeklyReflection) { _, shouldOpen in
             guard shouldOpen else { return }

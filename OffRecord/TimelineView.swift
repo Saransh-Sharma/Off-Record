@@ -54,6 +54,7 @@ struct TimelineView: View {
     @State private var sectionKeysCache: [SectionKey] = []
     @State private var summaryEntriesCache: [DiaryEntry] = []
     @State private var entryMetricsCache: [NSManagedObjectID: TimelineEntryPresentation] = [:]
+    @State private var cachedEntriesSignature = ""
     @State private var routedEntry: DiaryEntry?
     @State private var currentSearchActivity: NSUserActivity?
     @State private var showSpeechConsentPrompt = false
@@ -217,6 +218,10 @@ struct TimelineView: View {
             clearTimelineCache()
         }
         .task(id: cacheSignature) {
+            if cachedEntriesSignature != entriesSignature {
+                normalizeDuplicateDaysIfNeeded()
+                cachedEntriesSignature = entriesSignature
+            }
             refreshTimelineCache()
         }
     }
@@ -826,7 +831,6 @@ struct TimelineView: View {
     @MainActor
     private func refreshTimelineCache() {
         let token = PerformanceSignposts.begin("TimelineFilterAndGroup")
-        normalizeDuplicateDaysIfNeeded()
         let filteredEntries = entries.startedEntries.filter { entry in
             guard !entry.isDeleted else { return false }
             guard let entryDate = entry.date else { return false }
