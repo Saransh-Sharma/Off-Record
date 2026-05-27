@@ -35,6 +35,55 @@ struct ExportablePhotoAttachment: Codable, Identifiable {
     }
 }
 
+/// Represents an audio attachment record for export/import.
+struct ExportableAudioAttachment: Codable, Identifiable {
+    let id: UUID
+    let fileName: String
+    let createdAt: Date
+    let duration: TimeInterval
+    let sourceCaptureID: UUID?
+    let byteCount: Int64
+    let codec: String?
+
+    init(from attachment: NSManagedObject) {
+        self.id = attachment.value(forKey: "id") as? UUID ?? UUID()
+        self.fileName = attachment.value(forKey: "fileName") as? String ?? ""
+        self.createdAt = attachment.value(forKey: "createdAt") as? Date ?? Date()
+        self.duration = attachment.value(forKey: "duration") as? TimeInterval ?? 0
+        self.sourceCaptureID = attachment.value(forKey: "sourceCaptureID") as? UUID
+        self.byteCount = attachment.value(forKey: "byteCount") as? Int64 ?? 0
+        self.codec = attachment.value(forKey: "codec") as? String
+    }
+}
+
+struct ExportableJournalBlock: Codable, Identifiable {
+    let id: UUID
+    let kind: String
+    let createdAt: Date
+    let updatedAt: Date
+    let sortOrder: Int32
+    let text: String?
+    let mood: String?
+    let duration: Double
+    let sourceCaptureID: UUID?
+    let audioAttachmentID: UUID?
+    let photoAttachmentID: UUID?
+
+    init(from block: JournalBlock) {
+        self.id = block.blockID
+        self.kind = block.blockKind?.rawValue ?? ""
+        self.createdAt = block.blockCreatedAt == .distantPast ? Date() : block.blockCreatedAt
+        self.updatedAt = block.blockUpdatedAt
+        self.sortOrder = block.blockSortOrder
+        self.text = block.textValue.isEmpty ? nil : block.textValue
+        self.mood = block.moodValue.isEmpty ? nil : block.moodValue
+        self.duration = block.durationValue
+        self.sourceCaptureID = block.sourceCaptureIDValue
+        self.audioAttachmentID = block.audioAttachmentIDValue
+        self.photoAttachmentID = block.photoAttachmentIDValue
+    }
+}
+
 /// Represents a single diary entry for export/import
 struct ExportableEntry: Codable, Identifiable {
     let id: UUID
@@ -45,6 +94,9 @@ struct ExportableEntry: Codable, Identifiable {
     let createdAt: Date
     let updatedAt: Date
     let audioFileName: String?
+    let duration: TimeInterval?
+    let audioAttachments: [ExportableAudioAttachment]?
+    let blocks: [ExportableJournalBlock]?
     let photoFileNames: String?
     let photos: [ExportablePhotoAttachment]
 
@@ -57,6 +109,21 @@ struct ExportableEntry: Codable, Identifiable {
         self.createdAt = entry.createdAt ?? Date()
         self.updatedAt = entry.updatedAt ?? Date()
         self.audioFileName = entry.audioFileName
+        self.duration = entry.duration
+        let audioRows = ((entry.value(forKey: "audioAttachments") as? Set<NSManagedObject>) ?? [])
+            .map { ExportableAudioAttachment(from: $0) }
+            .filter { !$0.fileName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty }
+            .sorted { $0.createdAt < $1.createdAt }
+        self.audioAttachments = audioRows.isEmpty ? nil : audioRows
+        let blockRows = (((entry.value(forKey: "blocks") as? Set<JournalBlock>) ?? [])
+            .filter { !$0.isDeleted }
+            .sorted {
+                if $0.blockCreatedAt != $1.blockCreatedAt { return $0.blockCreatedAt < $1.blockCreatedAt }
+                if $0.blockSortOrder != $1.blockSortOrder { return $0.blockSortOrder < $1.blockSortOrder }
+                return $0.blockID.uuidString < $1.blockID.uuidString
+            })
+            .map { ExportableJournalBlock(from: $0) }
+        self.blocks = blockRows.isEmpty ? nil : blockRows
         self.photoFileNames = entry.value(forKey: "photoFileNames") as? String
         self.photos = PhotoStorageManager.shared.attachments(for: entry).map { ExportablePhotoAttachment(from: $0) }
     }
@@ -85,6 +152,7 @@ struct BackupData: Codable {
 
 // MARK: - Backup Service
 
+@MainActor
 final class BackupService {
     static let shared = BackupService()
     
@@ -162,8 +230,14 @@ final class BackupService {
                 newEntry.createdAt = exportedEntry.createdAt
                 newEntry.updatedAt = exportedEntry.updatedAt
                 newEntry.audioFileName = exportedEntry.audioFileName
+                newEntry.duration = exportedEntry.duration ?? 0
                 newEntry.setValue(exportedEntry.photoFileNames, forKey: "photoFileNames")
+                importAudioAttachments(exportedEntry.audioAttachments ?? [], into: newEntry, context: context)
                 importPhotos(exportedEntry.photos, into: newEntry, context: context)
+                importJournalBlocks(exportedEntry.blocks ?? [], into: newEntry, context: context)
+                JournalBlockTimelineStore.backfillBlocksIfNeeded(for: newEntry, in: context)
+                JournalBlockTimelineStore.recomposeLegacyFields(for: newEntry, touchUpdatedAt: false)
+                newEntry.updatedAt = exportedEntry.updatedAt
 
                 importedCount += 1
             }
@@ -406,8 +480,14 @@ final class BackupService {
                 newEntry.createdAt = exportedEntry.createdAt
                 newEntry.updatedAt = exportedEntry.updatedAt
                 newEntry.audioFileName = exportedEntry.audioFileName
+                newEntry.duration = exportedEntry.duration ?? 0
                 newEntry.setValue(exportedEntry.photoFileNames, forKey: "photoFileNames")
+                importAudioAttachments(exportedEntry.audioAttachments ?? [], into: newEntry, context: context)
                 importPhotos(exportedEntry.photos, into: newEntry, context: context)
+                importJournalBlocks(exportedEntry.blocks ?? [], into: newEntry, context: context)
+                JournalBlockTimelineStore.backfillBlocksIfNeeded(for: newEntry, in: context)
+                JournalBlockTimelineStore.recomposeLegacyFields(for: newEntry, touchUpdatedAt: false)
+                newEntry.updatedAt = exportedEntry.updatedAt
 
                 importedCount += 1
             }
@@ -422,6 +502,24 @@ final class BackupService {
 
     // MARK: - Helpers
 
+    private func importAudioAttachments(_ attachments: [ExportableAudioAttachment], into entry: DiaryEntry, context: NSManagedObjectContext) {
+        guard NSEntityDescription.entity(forEntityName: "AudioAttachment", in: context) != nil else {
+            return
+        }
+
+        for audio in attachments where !audio.fileName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            let attachment = NSEntityDescription.insertNewObject(forEntityName: "AudioAttachment", into: context)
+            attachment.setValue(audio.id, forKey: "id")
+            attachment.setValue(audio.fileName, forKey: "fileName")
+            attachment.setValue(audio.createdAt, forKey: "createdAt")
+            attachment.setValue(audio.duration, forKey: "duration")
+            attachment.setValue(audio.sourceCaptureID, forKey: "sourceCaptureID")
+            attachment.setValue(audio.byteCount, forKey: "byteCount")
+            attachment.setValue(audio.codec, forKey: "codec")
+            attachment.setValue(entry, forKey: "entry")
+        }
+    }
+
     private func importPhotos(_ photos: [ExportablePhotoAttachment], into entry: DiaryEntry, context: NSManagedObjectContext) {
         for photo in photos where !photo.imageData.isEmpty {
             let attachment = PhotoAttachment(context: context)
@@ -432,6 +530,30 @@ final class BackupService {
             attachment.fileName = photo.fileName
             attachment.mimeType = photo.mimeType ?? "image/jpeg"
             attachment.entry = entry
+        }
+    }
+
+    private func importJournalBlocks(_ blocks: [ExportableJournalBlock], into entry: DiaryEntry, context: NSManagedObjectContext) {
+        guard NSEntityDescription.entity(forEntityName: "JournalBlock", in: context) != nil else {
+            return
+        }
+
+        let existingIDs = Set(JournalBlockTimelineStore.blocks(for: entry).map(\.blockID))
+        for block in blocks {
+            guard !existingIDs.contains(block.id) else { continue }
+            let imported = NSEntityDescription.insertNewObject(forEntityName: "JournalBlock", into: context) as! JournalBlock
+            imported.blockID = block.id
+            imported.blockKind = JournalBlockKind(rawValue: block.kind)
+            imported.blockCreatedAt = block.createdAt
+            imported.blockUpdatedAt = block.updatedAt
+            imported.blockSortOrder = block.sortOrder
+            imported.textValue = block.text ?? ""
+            imported.moodValue = block.mood ?? ""
+            imported.durationValue = block.duration
+            imported.sourceCaptureIDValue = block.sourceCaptureID
+            imported.audioAttachmentIDValue = block.audioAttachmentID
+            imported.photoAttachmentIDValue = block.photoAttachmentID
+            imported.diaryEntry = entry
         }
     }
 

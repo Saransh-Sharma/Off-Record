@@ -205,7 +205,7 @@ struct BackupExportView: View {
         isExporting = true
         HapticManager.shared.buttonTap()
         
-        DispatchQueue.global(qos: .userInitiated).async {
+        Task { @MainActor in
             do {
                 let url: URL
                 
@@ -244,18 +244,14 @@ struct BackupExportView: View {
                     return
                 }
                 
-                DispatchQueue.main.async {
-                    isExporting = false
-                    exportURL = url
-                    HapticManager.shared.entrySaved()
-                }
+                isExporting = false
+                exportURL = url
+                HapticManager.shared.entrySaved()
             } catch {
-                DispatchQueue.main.async {
-                    isExporting = false
-                    errorMessage = error.localizedDescription
-                    showError = true
-                    HapticManager.shared.error()
-                }
+                isExporting = false
+                errorMessage = error.localizedDescription
+                showError = true
+                HapticManager.shared.error()
             }
         }
     }
@@ -450,24 +446,20 @@ struct ImportBackupView: View {
 
     private func importEncryptedBackup(from url: URL) {
         isImporting = true
-        defer { url.stopAccessingSecurityScopedResource() }
 
-        DispatchQueue.global(qos: .userInitiated).async {
+        Task { @MainActor in
+            defer { url.stopAccessingSecurityScopedResource() }
             do {
                 let count = try BackupService.shared.importEncrypted(url: url, password: importPassword, context: viewContext)
-                DispatchQueue.main.async {
-                    isImporting = false
-                    importResult = .success(count)
-                    showResult = true
-                    HapticManager.shared.entrySaved()
-                }
+                isImporting = false
+                importResult = .success(count)
+                showResult = true
+                HapticManager.shared.entrySaved()
             } catch {
-                DispatchQueue.main.async {
-                    isImporting = false
-                    importResult = .error("Failed to import: \(error.localizedDescription)")
-                    showResult = true
-                    HapticManager.shared.error()
-                }
+                isImporting = false
+                importResult = .error("Failed to import: \(error.localizedDescription)")
+                showResult = true
+                HapticManager.shared.error()
             }
         }
     }
@@ -483,27 +475,21 @@ struct ImportBackupView: View {
             return
         }
         
-        defer {
-            url.stopAccessingSecurityScopedResource()
-        }
-        
-        DispatchQueue.global(qos: .userInitiated).async {
+        Task { @MainActor in
+            defer {
+                url.stopAccessingSecurityScopedResource()
+            }
             do {
                 let count = try BackupService.shared.importFromJSON(url: url, context: viewContext)
-                
-                DispatchQueue.main.async {
-                    isImporting = false
-                    importResult = .success(count)
-                    showResult = true
-                    HapticManager.shared.entrySaved()
-                }
+                isImporting = false
+                importResult = .success(count)
+                showResult = true
+                HapticManager.shared.entrySaved()
             } catch {
-                DispatchQueue.main.async {
-                    isImporting = false
-                    importResult = .error("Failed to import: \(error.localizedDescription)")
-                    showResult = true
-                    HapticManager.shared.error()
-                }
+                isImporting = false
+                importResult = .error("Failed to import: \(error.localizedDescription)")
+                showResult = true
+                HapticManager.shared.error()
             }
         }
     }
