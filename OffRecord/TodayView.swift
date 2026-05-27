@@ -40,6 +40,7 @@ private enum TodayDateFormatters {
 private struct PendingTodayTranscription {
     let entryObjectID: NSManagedObjectID
     let audioURL: URL
+    let capturedAt: Date
 }
 
 // MARK: - Recording State
@@ -88,6 +89,7 @@ struct TodayView: View {
     @State private var pendingTranscription: PendingTodayTranscription?
     @State private var showSpeechConsentPrompt = false
     @State private var isShowingPrivacyExplanation = false
+    @State private var captureDate = Date()
 
     @FetchRequest private var todayEntries: FetchedResults<DiaryEntry>
 
@@ -214,11 +216,17 @@ struct TodayView: View {
                         }
 
                         if recordingState == .idle {
+                            WeeklyReflectionHomeCard(entries: startedEntries) {
+                                startTypedNote(promptContext: nil, heroPromptID: nil)
+                            }
+                            .padding(.horizontal, OffRecordSpacing.screenX)
+                            .padding(.top, postHeroTopPadding(hasEntryToday: effectiveLatestEntry != nil))
+
                             TodayNudgeSection(prompts: EntryPrompt.defaultPrompts) { prompt in
                                 startTypedNote(promptContext: prompt.detail, heroPromptID: nil)
                             }
                             .padding(.horizontal, OffRecordSpacing.screenX)
-                            .padding(.top, postHeroTopPadding(hasEntryToday: effectiveLatestEntry != nil))
+                            .padding(.top, 18)
                         }
                     }
                     .padding(.bottom, compactTabSelection == nil ? OffRecordSpacing.xl : OffRecordCompactTabBarLayout.todayDockScrollContentBottomPadding)
@@ -594,6 +602,24 @@ struct TodayView: View {
         bottomSafeAreaInset: CGFloat
     ) -> some View {
         VStack(spacing: OffRecordCompactTabBarLayout.todayDockRecordingFeedbackClearance) {
+            if recordingState == .idle {
+                DatePicker(
+                    "Journal date",
+                    selection: $captureDate,
+                    in: ...Date(),
+                    displayedComponents: .date
+                )
+                .labelsHidden()
+                .datePickerStyle(.compact)
+                .offRecordGlassControl(
+                    tint: OffRecordReadableTintStyle.journal.tint,
+                    in: Capsule(),
+                    fallbackFill: OffRecordReadableTintStyle.journal.fill,
+                    border: OffRecordReadableTintStyle.journal.border
+                )
+                .accessibilityLabel("Journal date")
+            }
+
             compactRecordingFeedback
                 .zIndex(4)
 
@@ -799,6 +825,16 @@ struct TodayView: View {
             // Status text (only when idle)
             if recordingState == .idle {
                 VStack(spacing: 6) {
+                    DatePicker(
+                        "Journal date",
+                        selection: $captureDate,
+                        in: ...Date(),
+                        displayedComponents: .date
+                    )
+                    .labelsHidden()
+                    .datePickerStyle(.compact)
+                    .accessibilityLabel("Journal date")
+
                     Text(statusText)
                         .font(OffRecordTypography.labelMedium)
                         .foregroundColor(OffRecordColor.textBrand)
@@ -989,8 +1025,9 @@ struct TodayView: View {
     private func handlePhotoPickerSelection(_ items: [PhotosPickerItem]) {
         guard !items.isEmpty else { return }
 
-        // Get or create today's entry
-        let entry = getOrCreateTodayEntry()
+        let capturedAt = captureTimestamp()
+        let entry = getOrCreateCaptureEntry(capturedAt: capturedAt)
+        let entryObjectID = entry.objectID
 
         for item in items {
             let token = PerformanceSignposts.begin("PhotoImport")
@@ -1006,7 +1043,18 @@ struct TodayView: View {
                         return
                     }
 
-                    if PhotoStorageManager.shared.addPhotoData(jpegData, to: entry, in: viewContext) != nil {
+                    guard let entry = try? viewContext.existingObject(with: entryObjectID) as? DiaryEntry else {
+                        PerformanceSignposts.end(token)
+                        return
+                    }
+
+                    if let attachment = PhotoStorageManager.shared.addPhotoData(jpegData, to: entry, in: viewContext) {
+                        JournalBlockTimelineStore.appendPhotoBlock(
+                            attachment: attachment,
+                            createdAt: capturedAt,
+                            to: entry,
+                            in: viewContext
+                        )
                         entry.updatedAt = Date()
                         try? viewContext.save()
                         JournalSpotlightIndexer.shared.upsert(entry: entry)
@@ -1031,8 +1079,9 @@ struct TodayView: View {
     private func startTypedNote(promptContext: String?, heroPromptID: String?) {
         guard recordingState == .idle else { return }
 
-        let hadEntry = latestEntry != nil
-        let entry = getOrCreateTodayEntry()
+        let capturedAt = captureTimestamp()
+        let hadEntry = existingCaptureEntry(on: capturedAt)?.isStartedEntry == true
+        let entry = getOrCreateCaptureEntry(capturedAt: capturedAt)
         noteEntry = entry
         notePromptContext = promptContext
         noteHeroPromptID = heroPromptID
@@ -1090,19 +1139,49 @@ struct TodayView: View {
     }
 
     private func getOrCreateTodayEntry() -> DiaryEntry {
-        if let existing = latestDraftOrStartedEntry {
-            return existing
+        getOrCreateCaptureEntry(capturedAt: Date())
+    }
+
+    private func getOrCreateCaptureEntry(capturedAt: Date? = nil) -> DiaryEntry {
+        let now = capturedAt ?? captureTimestamp()
+        do {
+            let entry = try DiaryEntryDailyStore.getOrCreateEntry(on: now, in: viewContext)
+            try viewContext.save()
+            return entry
+        } catch {
+            if let existing = existingCaptureEntry(on: now) ?? latestDraftOrStartedEntry {
+                return existing
+            }
+            let entry = DiaryEntry(context: viewContext)
+            entry.id = UUID()
+            entry.date = now
+            entry.createdAt = now
+            entry.text = ""
+            entry.isStarred = false
+            entry.updatedAt = now
+            try? viewContext.save()
+            return entry
         }
-        let now = Date()
-        let entry = DiaryEntry(context: viewContext)
-        entry.id = UUID()
-        entry.date = now
-        entry.createdAt = now
-        entry.text = ""
-        entry.isStarred = false
-        entry.updatedAt = now
-        try? viewContext.save()
-        return entry
+    }
+
+    private func existingCaptureEntry(on date: Date) -> DiaryEntry? {
+        (try? DiaryEntryDailyStore.entries(on: date, in: viewContext).first)
+    }
+
+    private func captureTimestamp(clock: Date = Date()) -> Date {
+        let calendar = Calendar.current
+        let day = calendar.dateComponents([.year, .month, .day], from: captureDate)
+        let time = calendar.dateComponents([.hour, .minute, .second, .nanosecond], from: clock)
+        var components = DateComponents()
+        components.calendar = calendar
+        components.year = day.year
+        components.month = day.month
+        components.day = day.day
+        components.hour = time.hour
+        components.minute = time.minute
+        components.second = time.second
+        components.nanosecond = time.nanosecond
+        return calendar.date(from: components) ?? clock
     }
 
     private func startTodayPredictionActivity() {
@@ -1153,7 +1232,7 @@ struct TodayView: View {
     }
 
     private func hasAudioReference(_ entry: DiaryEntry) -> Bool {
-        (entry.value(forKey: "audioFileName") as? String)?.isEmpty == false
+        entry.hasStartedEntryAudio
     }
 
     private func entryHasNoContent(_ entry: DiaryEntry) -> Bool {
@@ -1185,7 +1264,7 @@ struct TodayView: View {
 
         #if os(iOS)
         AVAudioApplication.requestRecordPermission { granted in
-            DispatchQueue.main.async {
+            Task { @MainActor in
                 if granted {
                     do {
                         try self.recorder.startRecording()
@@ -1227,20 +1306,11 @@ struct TodayView: View {
     }
 
     private func saveEntry(audioURL: URL, duration: TimeInterval) {
-        let now = Date()
-        let calendar = Calendar.current
-        let startOfDay = calendar.startOfDay(for: now)
-        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? now
-
-        let fetchRequest: NSFetchRequest<DiaryEntry> = DiaryEntry.fetchRequest()
-        fetchRequest.predicate = NSPredicate(format: "date >= %@ AND date < %@", startOfDay as NSDate, endOfDay as NSDate)
-        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "date", ascending: false)]
-        fetchRequest.fetchLimit = 1
-
+        let now = captureTimestamp()
         let entry: DiaryEntry
-        if let existing = (try? viewContext.fetch(fetchRequest))?.first {
-            entry = existing
-        } else {
+        do {
+            entry = try DiaryEntryDailyStore.getOrCreateEntry(on: now, in: viewContext)
+        } catch {
             entry = DiaryEntry(context: viewContext)
             entry.id = UUID()
             entry.date = now
@@ -1249,13 +1319,26 @@ struct TodayView: View {
             entry.isStarred = false
         }
 
-        entry.updatedAt = now
-        entry.setValue(audioURL.lastPathComponent, forKey: "audioFileName")
-        let existingDuration = entry.value(forKey: "duration") as? Double ?? 0
-        entry.setValue(existingDuration + duration, forKey: "duration")
+        let byteCount = ((try? FileManager.default.attributesOfItem(atPath: audioURL.path)[.size]) as? NSNumber)?.int64Value ?? -1
+        let attachment = AudioAttachmentStore.attachAudio(
+            fileName: audioURL.lastPathComponent,
+            duration: duration,
+            createdAt: now,
+            sourceCaptureID: nil,
+            byteCount: byteCount,
+            codec: "aac-lc",
+            to: entry,
+            in: viewContext
+        )
+        JournalBlockTimelineStore.appendAudioBlock(
+            attachment: attachment,
+            createdAt: now,
+            sourceCaptureID: nil,
+            to: entry,
+            in: viewContext
+        )
         entry.entryTranscriptionStatus = .processing
         let fileExists = FileManager.default.fileExists(atPath: audioURL.path)
-        let byteCount = ((try? FileManager.default.attributesOfItem(atPath: audioURL.path)[.size]) as? NSNumber)?.int64Value ?? -1
         logger.info("Recorded audio saved entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) duration=\(duration, privacy: .public) fileExists=\(fileExists, privacy: .public) bytes=\(byteCount, privacy: .public) transcriptionStatus=processing")
 
         do {
@@ -1270,15 +1353,20 @@ struct TodayView: View {
         }
 
         #if os(iOS)
-        beginTranscription(entry: entry, audioURL: audioURL)
+        beginTranscription(entryObjectID: entry.objectID, audioURL: audioURL, capturedAt: now)
         #else
         recordingState = .idle
         #endif
     }
 
-    private func beginTranscription(entry: DiaryEntry, audioURL: URL) {
+    private func beginTranscription(entryObjectID: NSManagedObjectID, audioURL: URL, capturedAt: Date) {
+        guard let entry = try? viewContext.existingObject(with: entryObjectID) as? DiaryEntry else {
+            recordingState = .idle
+            return
+        }
+
         guard SpeechTranscriptionConsent.hasGrantedAppleSpeechProcessing else {
-            pendingTranscription = PendingTodayTranscription(entryObjectID: entry.objectID, audioURL: audioURL)
+            pendingTranscription = PendingTodayTranscription(entryObjectID: entryObjectID, audioURL: audioURL, capturedAt: capturedAt)
             entry.entryTranscriptionStatus = .none
             try? viewContext.save()
             logger.info("Speech consent required before transcription entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) transcriptionStatus=none")
@@ -1287,7 +1375,7 @@ struct TodayView: View {
             return
         }
 
-        transcribeSavedEntry(entry: entry, audioURL: audioURL)
+        transcribeSavedEntry(entryObjectID: entryObjectID, audioURL: audioURL, capturedAt: capturedAt)
     }
 
     private func resumePendingTranscription() {
@@ -1305,10 +1393,14 @@ struct TodayView: View {
 
         logger.info("Resuming pending transcription entryID=\(entry.id?.uuidString ?? "missing", privacy: .public)")
         recordingState = .processing
-        transcribeSavedEntry(entry: entry, audioURL: pendingTranscription.audioURL)
+        transcribeSavedEntry(entryObjectID: entry.objectID, audioURL: pendingTranscription.audioURL, capturedAt: pendingTranscription.capturedAt)
     }
 
-    private func transcribeSavedEntry(entry: DiaryEntry, audioURL: URL) {
+    private func transcribeSavedEntry(entryObjectID: NSManagedObjectID, audioURL: URL, capturedAt: Date) {
+        guard let entry = try? viewContext.existingObject(with: entryObjectID) as? DiaryEntry else {
+            recordingState = .idle
+            return
+        }
         recordingState = .processing
         entry.entryTranscriptionStatus = .processing
         try? viewContext.save()
@@ -1316,16 +1408,21 @@ struct TodayView: View {
         let byteCount = ((try? FileManager.default.attributesOfItem(atPath: audioURL.path)[.size]) as? NSNumber)?.int64Value ?? -1
         logger.info("Starting transcription for saved entry entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) fileExists=\(fileExists, privacy: .public) bytes=\(byteCount, privacy: .public) transcriptionStatus=processing")
         SpeechTranscriber.shared.transcribe(from: audioURL) { result in
-            DispatchQueue.main.async {
+            Task { @MainActor in
+                guard let entry = try? viewContext.existingObject(with: entryObjectID) as? DiaryEntry else {
+                    logger.info("Skipped transcription result because entry was deleted.")
+                    recordingState = .idle
+                    return
+                }
                 PerformanceSignposts.event("TranscriptionCompleted")
                 switch result {
                 case .success(let textSegment):
-                    let existingText = entry.text ?? ""
-                    if existingText.isEmpty {
-                        entry.text = textSegment
-                    } else {
-                        entry.text = existingText + "\n\n" + textSegment
-                    }
+                    JournalBlockTimelineStore.appendTextBlock(
+                        text: textSegment,
+                        createdAt: capturedAt,
+                        to: entry,
+                        in: viewContext
+                    )
                     entry.updatedAt = Date()
                     entry.entryTranscriptionStatus = .completed
                     do {
