@@ -19,6 +19,7 @@ final class WatchAudioRecorder: NSObject, ObservableObject {
     private var recorder: AVAudioRecorder?
     private var timer: Timer?
     private var interruptionObserver: NSObjectProtocol?
+    private var isStarting = false
 
     static let softDurationLimit: TimeInterval = 5 * 60
     static let hardDurationLimit: TimeInterval = 10 * 60
@@ -54,18 +55,24 @@ final class WatchAudioRecorder: NSObject, ObservableObject {
     }
 
     func start() {
+        guard !isStarting, !isRecording, recorder == nil else { return }
+        isStarting = true
         errorMessage = nil
         AVAudioApplication.requestRecordPermission { [weak self] granted in
             Task { @MainActor in
                 guard let self else { return }
+                guard self.isStarting else { return }
                 guard granted else {
+                    self.isStarting = false
                     self.errorMessage = "Microphone access is off."
                     WatchHaptics.warning()
                     return
                 }
                 do {
                     try self.startRecording()
+                    self.isStarting = false
                 } catch {
+                    self.isStarting = false
                     self.errorMessage = "Could not start recording."
                     watchAudioLogger.error("Watch recording start failed: \(error.localizedDescription, privacy: .public)")
                     WatchHaptics.error()
@@ -82,6 +89,7 @@ final class WatchAudioRecorder: NSObject, ObservableObject {
         timer?.invalidate()
         timer = nil
         self.recorder = nil
+        isStarting = false
         isRecording = false
         isPaused = false
         level = 0
@@ -113,6 +121,7 @@ final class WatchAudioRecorder: NSObject, ObservableObject {
         timer?.invalidate()
         timer = nil
         self.recorder = nil
+        isStarting = false
         isRecording = false
         isPaused = false
         level = 0
@@ -129,7 +138,16 @@ final class WatchAudioRecorder: NSObject, ObservableObject {
         let url = Self.recordingsDirectory().appendingPathComponent(UUID().uuidString + ".m4a")
         let recorder = try AVAudioRecorder(url: url, settings: settings)
         recorder.isMeteringEnabled = true
-        recorder.record()
+        let didStart = recorder.record()
+        guard didStart else {
+            try? FileManager.default.removeItem(at: url)
+            try? session.setActive(false, options: .notifyOthersOnDeactivation)
+            throw NSError(
+                domain: "WatchAudioRecorder",
+                code: 1,
+                userInfo: [NSLocalizedDescriptionKey: "AVAudioRecorder did not start recording."]
+            )
+        }
         self.recorder = recorder
         isRecording = true
         isPaused = false

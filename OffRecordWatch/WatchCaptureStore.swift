@@ -266,9 +266,22 @@ final class WatchCaptureStore: ObservableObject {
         for (index, file) in retained.enumerated() {
             totalBytes += file.size
             if index >= Self.audioFileRetentionLimit || totalBytes > Self.audioByteRetentionLimit {
+                let removalError: String?
+                do {
+                    try FileManager.default.removeItem(at: file.url)
+                    totalBytes -= file.size
+                    removalError = nil
+                } catch {
+                    watchStoreLogger.warning("Could not remove watch audio over retention limit: \(error.localizedDescription, privacy: .public)")
+                    removalError = error.localizedDescription
+                }
                 if let captureIndex = outbox.firstIndex(where: { $0.envelope.audioManifest?.fileName == file.url.lastPathComponent }) {
                     outbox[captureIndex].syncState = .failed
-                    outbox[captureIndex].lastError = "Storage limit reached."
+                    if let removalError {
+                        outbox[captureIndex].lastError = "Storage limit reached; audio file could not be removed: \(removalError)"
+                    } else {
+                        outbox[captureIndex].lastError = "Storage limit reached; audio file removed."
+                    }
                     outbox[captureIndex].updatedAtUTC = Date()
                 }
             }

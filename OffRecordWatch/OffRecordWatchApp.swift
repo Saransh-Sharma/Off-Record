@@ -219,6 +219,7 @@ struct WatchMoodDialView: View {
     @FocusState private var crownFocused: Bool
     @State private var index = 4.0
     @State private var saved = false
+    @State private var isSaving = false
 
     private var selectedMood: WatchMoodValue {
         WatchMoodValue.dialOrder[min(max(Int(index.rounded()), 0), WatchMoodValue.dialOrder.count - 1)]
@@ -272,6 +273,8 @@ struct WatchMoodDialView: View {
                     .minimumScaleFactor(0.72)
 
                 Button {
+                    guard !isSaving, !saved else { return }
+                    isSaving = true
                     store.saveMood(selectedMood, source: source)
                     saved = true
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.55) {
@@ -281,6 +284,7 @@ struct WatchMoodDialView: View {
                     Label(saved ? "Saved" : "Save", systemImage: saved ? "checkmark.circle.fill" : "heart.circle.fill")
                 }
                 .tint(selectedMood.color)
+                .disabled(isSaving || saved)
             }
             .padding(.horizontal, 8)
         }
@@ -334,6 +338,7 @@ struct WatchSpeakCaptureView: View {
     @FocusState private var textFocused: Bool
     @State private var text = ""
     @State private var saved = false
+    @State private var isSaving = false
     @State private var isListening = false
 
     var body: some View {
@@ -375,13 +380,15 @@ struct WatchSpeakCaptureView: View {
                 }
                     .buttonStyle(.borderless)
                 Button(saved ? "Saved" : "Save") {
+                    guard !isSaving, !saved else { return }
+                    isSaving = true
                     store.saveSpeakText(text, source: source)
                     saved = true
                     DispatchQueue.main.asyncAfter(deadline: .now() + 0.45) {
                         dismiss()
                     }
                 }
-                .disabled(text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                .disabled(isSaving || saved || text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
             }
 
             NavigationLink {
@@ -420,6 +427,7 @@ struct WatchRecordCaptureView: View {
     @StateObject private var recorder = WatchAudioRecorder()
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var saved = false
+    @State private var isSaving = false
 
     var body: some View {
         VStack(spacing: 9) {
@@ -478,14 +486,17 @@ struct WatchRecordCaptureView: View {
                         Label(saved ? "Saved" : "Finish", systemImage: saved ? "checkmark.circle.fill" : "stop.fill")
                     }
                     .tint(WatchPalette.peach)
+                    .disabled(isSaving || saved)
                 }
             } else {
                 Button {
+                    guard !isSaving, !saved else { return }
                     recorder.start()
                 } label: {
                     Label(saved ? "Saved" : "Record", systemImage: saved ? "checkmark.circle.fill" : "record.circle")
                 }
                 .tint(WatchPalette.peach)
+                .disabled(isSaving || saved)
             }
         }
         .padding(.horizontal, 8)
@@ -499,6 +510,8 @@ struct WatchRecordCaptureView: View {
         }
         .onAppear {
             recorder.onHardLimitReached = { result in
+                guard !isSaving, !saved else { return }
+                isSaving = true
                 store.saveAudio(fileURL: result.url, duration: result.duration, source: source)
                 saved = true
                 dismiss()
@@ -525,7 +538,9 @@ struct WatchRecordCaptureView: View {
     }
 
     private func finishRecording() {
+        guard !isSaving, !saved else { return }
         if let result = recorder.stop() {
+            isSaving = true
             store.saveAudio(fileURL: result.url, duration: result.duration, source: source)
             saved = true
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.55) {
