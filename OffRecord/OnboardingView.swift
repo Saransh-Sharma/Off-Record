@@ -606,7 +606,9 @@ struct OnboardingView: View {
             )
         }
         entry.entryTranscriptionStatus = .none
-        JournalBlockTimelineStore.appendMoodBlock(mood: selectedMood, createdAt: now, to: entry, in: viewContext)
+        if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            JournalBlockTimelineStore.appendMoodBlock(mood: selectedMood, createdAt: now, to: entry, in: viewContext)
+        }
         try? viewContext.save()
         return entry
     }

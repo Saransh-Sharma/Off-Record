@@ -111,9 +111,11 @@ final class OffRecordNavigationRouter: ObservableObject {
             fridayQuestion = question
         case .weeklyReflectionCurrent:
             selectedTab = .insights
+            routedWeeklyReflectionID = nil
             shouldOpenCurrentWeeklyReflection = true
         case .weeklyReflection(let id):
             selectedTab = .insights
+            shouldOpenCurrentWeeklyReflection = false
             routedWeeklyReflectionID = id
         }
     }
@@ -149,7 +151,7 @@ final class OffRecordNavigationRouter: ObservableObject {
                 return .weeklyReflectionCurrent
             }
             guard let rawID = pathComponents.first, let id = UUID(uuidString: rawID) else {
-                return .weeklyReflectionCurrent
+                return nil
             }
             return .weeklyReflection(id)
         default:

@@ -157,8 +157,7 @@ struct OffRecordApp: App {
 
             let fileManager = FileManager.default
             guard let base = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
-                appLogger.warning("Audio cleanup could not resolve Application Support directory; falling back to empty keep list.")
-                AudioRecorder.cleanupOrphanedRecordings(keepURLs: [])
+                appLogger.warning("Audio cleanup could not resolve Application Support directory; skipping cleanup.")
                 return
             }
 
