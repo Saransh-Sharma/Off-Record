@@ -16,7 +16,7 @@ final class ProactiveReflectionUITests: XCTestCase {
     func testFridayShowsProactiveReflectionSection() throws {
         let app = launchProactiveReflectionApp()
 
-        app.buttons["tab.friday"].tap()
+        tapTab("friday", in: app)
 
         XCTAssertTrue(app.descendants(matching: .any)["proactiveReflection.todayWithFriday"].firstMatch.waitForExistence(timeout: 8))
         XCTAssertTrue(app.descendants(matching: .any)["proactiveReflection.leadCard"].firstMatch.exists)
@@ -38,7 +38,7 @@ final class ProactiveReflectionUITests: XCTestCase {
     func testFridayOverviewCardActionsOpenPromptAndEvidence() throws {
         let app = launchProactiveReflectionApp()
 
-        app.buttons["tab.friday"].tap()
+        tapTab("friday", in: app)
 
         let reflectPredicate = NSPredicate(format: "identifier BEGINSWITH %@", "proactiveReflection.reflect.")
         let reflect = app.buttons.matching(reflectPredicate).firstMatch
@@ -48,7 +48,7 @@ final class ProactiveReflectionUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Writing prompt"].waitForExistence(timeout: 4))
 
         app.navigationBars.buttons.firstMatch.tap()
-        app.buttons["tab.friday"].tap()
+        tapTab("friday", in: app)
 
         let evidencePredicate = NSPredicate(format: "identifier BEGINSWITH %@", "proactiveReflection.openEvidence.")
         let evidence = app.buttons.matching(evidencePredicate).firstMatch
@@ -67,7 +67,7 @@ final class ProactiveReflectionUITests: XCTestCase {
     func testFridayOverviewAskFridayPrefillsSuggestedQuestion() throws {
         let app = launchProactiveReflectionApp()
 
-        app.buttons["tab.friday"].tap()
+        tapTab("friday", in: app)
 
         let askPredicate = NSPredicate(format: "identifier BEGINSWITH %@", "proactiveReflection.askFriday.")
         let askFriday = app.buttons.matching(askPredicate).firstMatch
@@ -85,7 +85,7 @@ final class ProactiveReflectionUITests: XCTestCase {
     func testTodayShowsContextAwareReflectionPrompt() throws {
         let app = launchProactiveReflectionApp()
 
-        app.buttons["tab.today"].tap()
+        tapTab("today", in: app)
 
         let prompt = app.descendants(matching: .any)["proactiveReflection.todayPrompt"].firstMatch
         XCTAssertTrue(prompt.waitForExistence(timeout: 8))
@@ -96,7 +96,7 @@ final class ProactiveReflectionUITests: XCTestCase {
     func testTodayDoesNotShowPromptAfterCurrentDayEntryExists() throws {
         let app = launchProactiveReflectionApp(extraArguments: ["-ProactiveReflectionHasToday"])
 
-        app.buttons["tab.today"].tap()
+        tapTab("today", in: app)
 
         let prompt = app.descendants(matching: .any)["proactiveReflection.todayPrompt"].firstMatch
         XCTAssertFalse(prompt.waitForExistence(timeout: 3))
@@ -105,7 +105,7 @@ final class ProactiveReflectionUITests: XCTestCase {
     func testFridayDecisionDetailExposesMarkReflected() throws {
         let app = launchProactiveReflectionApp()
 
-        app.buttons["tab.friday"].tap()
+        tapTab("friday", in: app)
 
         let decisionCard = app.descendants(matching: .any)["proactiveReflection.card.decision"].firstMatch
         scrollUntilExists(decisionCard, in: app)
@@ -118,7 +118,7 @@ final class ProactiveReflectionUITests: XCTestCase {
     func testSettingsShowsSmartReminderToggle() throws {
         let app = launchProactiveReflectionApp()
 
-        app.buttons["tab.settings"].tap()
+        tapTab("settings", in: app)
         let toggle = app.switches["proactiveReflection.smartReminderToggle"].firstMatch
         scrollUntilExists(toggle, in: app)
 
@@ -132,8 +132,14 @@ final class ProactiveReflectionUITests: XCTestCase {
             "-ProactiveReflectionUITest"
         ] + extraArguments
         app.launch()
-        XCTAssertTrue(app.buttons["tab.today"].waitForExistence(timeout: 10))
+        XCTAssertTrue(app.buttons["tab.today"].firstMatch.waitForExistence(timeout: 10))
         return app
+    }
+
+    private func tapTab(_ id: String, in app: XCUIApplication) {
+        let tab = app.buttons["tab.\(id)"].firstMatch
+        XCTAssertTrue(tab.waitForExistence(timeout: 8))
+        tab.tap()
     }
 
     private func scrollUntilExists(_ element: XCUIElement, in app: XCUIApplication, maxSwipes: Int = 8) {
