@@ -8,6 +8,7 @@
 
 import SwiftUI
 import AVFoundation
+import CoreData
 import PhotosUI
 import os.log
 
@@ -68,6 +69,34 @@ struct EntryDetailSaveDecision: Equatable {
     }
 }
 
+private struct JournalBlockTimelineItem: Identifiable {
+    let id: NSManagedObjectID
+    let blockID: UUID
+    let kind: JournalBlockKind
+    let createdAt: Date
+    let timestamp: String
+    let text: String
+    let mood: Mood
+    let duration: TimeInterval
+    let audioURL: URL?
+    let audioExists: Bool
+    let photoAttachmentID: UUID?
+
+    var accessibilityLabel: String {
+        switch kind {
+        case .text:
+            return "Text entry, \(timestamp)"
+        case .audio:
+            let seconds = Int(duration.rounded())
+            return "Audio recording, \(seconds) seconds, \(timestamp)"
+        case .mood:
+            return "Mood check-in, \(mood.displayName), \(timestamp)"
+        case .photo:
+            return "Photo, \(timestamp)"
+        }
+    }
+}
+
 /// Detail view for a single diary entry.
 /// Allows viewing, editing text, setting mood, playing back audio, and attaching photos.
 struct EntryDetailView: View {
@@ -75,15 +104,26 @@ struct EntryDetailView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @FocusState private var isTextFocused: Bool
 
     @State private var text: String
     @State private var selectedMood: Mood
     @State private var showMoodPicker = false
-    @State private var isEditing = false
     @State private var hasEditedText = false
     @State private var showAIInsights = false
     @State private var aiAnalysis: AIAnalysisResult?
+    @State private var journalBlocks: [JournalBlock] = []
+    @State private var timelineItems: [JournalBlockTimelineItem] = []
+    @State private var editingBlockObjectID: NSManagedObjectID?
+    @State private var editingBlockText = ""
+    @State private var blockEditError: String?
+    @State private var isComposingTextBlock = false
+    @State private var newTextBlockText = ""
+    @State private var newTextBlockError: String?
+    @State private var showDeleteDayConfirm = false
+    @State private var isDeletingDay = false
     private let deleteEmptyDraftOnDisappear: Bool
     private let promptContext: String?
     private let heroPromptID: String?
@@ -92,8 +132,10 @@ struct EntryDetailView: View {
     // Photo state
     @State private var selectedPhotos: [PhotosPickerItem] = []
     @State private var photoAttachments: [PhotoAttachment] = []
+    @State private var photoAttachmentByID: [UUID: PhotoAttachment] = [:]
     #if canImport(UIKit)
     @State private var photoImages: [UIImage] = []
+    @State private var photoThumbnailByID: [UUID: UIImage] = [:]
     #endif
 
     private var isIPad: Bool { horizontalSizeClass == .regular }
@@ -110,7 +152,7 @@ struct EntryDetailView: View {
         self.promptContext = promptContext
         self.heroPromptID = heroPromptID
         _text = State(initialValue: entry.text ?? "")
-        _isEditing = State(initialValue: startEditing)
+        _isComposingTextBlock = State(initialValue: startEditing)
         let moodString = entry.value(forKey: "mood") as? String ?? ""
         _selectedMood = State(initialValue: Mood(rawValue: moodString) ?? .none)
     }
@@ -127,27 +169,14 @@ struct EntryDetailView: View {
                         .padding(.horizontal)
                         .padding(.top, 8)
 
-                    // Audio player (when audio exists locally)
-                    if hasAudio, let url = audioURL() {
-                        AudioPlayerView(audioURL: url)
-                            .padding(.horizontal)
-                            .padding(.top, 4)
+                    journalTimelineView
+
+                    if isComposingTextBlock {
+                        newTextBlockComposer
                     }
 
-                    // Photo section
-                    photoSection
-                        .padding(.horizontal)
-                        .padding(.top, 4)
-
-                    // Main content area
-                    if isEditing {
-                        editingView
-                    } else {
-                        readingView
-
-                        if !text.isEmpty {
-                            aiInsightsSection
-                        }
+                    if !text.isEmpty {
+                        aiInsightsSection
                     }
                 }
             }
@@ -164,21 +193,42 @@ struct EntryDetailView: View {
                             .foregroundColor(entry.isStarred ? OffRecordColor.textYellow : OffRecordColor.textSecondary)
                     }
 
-                    Button(action: toggleEditingMode) {
-                        Text(isEditing ? "Done" : "Edit")
+                    Menu {
+                        Button(role: .destructive) {
+                            showDeleteDayConfirm = true
+                        } label: {
+                            Label("Delete Day", systemImage: "trash")
+                        }
+                    } label: {
+                        Image(systemName: "ellipsis.circle")
                     }
                 }
             }
         }
+        .confirmationDialog(
+            "Delete this day?",
+            isPresented: $showDeleteDayConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Delete Day", role: .destructive) {
+                deleteWholeDay()
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This removes all text, audio, moods, and photos for this date.")
+        }
         .onDisappear {
-            saveIfNeeded()
-            deleteEmptyDraftIfNeeded()
+            if !isDeletingDay {
+                saveIfNeeded()
+                deleteEmptyDraftIfNeeded()
+            }
             currentActivity?.resignCurrent()
             currentActivity = nil
             clearPhotoThumbnails()
         }
         .onAppear {
             loadPhotos()
+            loadBlocks(backfill: true)
             startEntryActivity()
             syncTextFromEntry(reason: "appear")
         }
@@ -200,6 +250,7 @@ struct EntryDetailView: View {
         }
         .onChange(of: entry.updatedAt) { _, _ in
             syncTextFromEntry(reason: "updatedAtChanged")
+            loadBlocks(backfill: false)
         }
         .onChange(of: entry.entryTranscriptionStatus) { _, _ in
             syncTextFromEntry(reason: "transcriptionStatusChanged")
@@ -299,6 +350,306 @@ struct EntryDetailView: View {
         entry.shouldShowTranscriptionSpinner(displayText: text)
     }
 
+    private var journalTimelineView: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if timelineItems.isEmpty {
+                if isTranscribing {
+                    VStack(spacing: 12) {
+                        ProgressView()
+                            .scaleEffect(1.2)
+                        Text("Transcribing your recording...")
+                            .font(OffRecordTypography.bodySmall)
+                            .foregroundColor(OffRecordColor.textSecondary)
+                    }
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, 60)
+                    .offRecordContentCard(cornerRadius: 12)
+                } else {
+                    emptyTimelineView
+                }
+            } else {
+                ForEach(timelineItems) { item in
+                    journalBlockRow(item)
+                        .transition(reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .top)))
+                        .contextMenu {
+                            if item.kind == .text {
+                                Button {
+                                    beginEditingBlock(item)
+                                } label: {
+                                    Label("Edit Block", systemImage: "pencil")
+                                }
+                            }
+                            Button(role: .destructive) {
+                                deleteBlock(item)
+                            } label: {
+                                Label("Delete Block", systemImage: "trash")
+                            }
+                        }
+                }
+
+                addTextButton
+            }
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+        .animation(reduceMotion ? .easeOut(duration: 0.01) : .easeOut(duration: 0.22), value: timelineItems.map(\.id))
+    }
+
+    private var emptyTimelineView: some View {
+        VStack(spacing: 12) {
+            Image(systemName: "text.cursor")
+                .font(.system(size: 32))
+                .foregroundColor(OffRecordColor.textTertiary)
+            Text("No blocks yet")
+                .font(OffRecordTypography.bodySmall)
+                .foregroundColor(OffRecordColor.textSecondary)
+            addTextButton
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 60)
+        .offRecordContentCard(cornerRadius: 12)
+    }
+
+    private var addTextButton: some View {
+        Button("Add text") {
+            beginNewTextBlock()
+        }
+        .font(OffRecordTypography.labelMedium)
+        .foregroundColor(OffRecordReadableTintStyle.brand.foreground)
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .offRecordGlassControl(
+            tint: OffRecordReadableTintStyle.brand.tint,
+            in: Capsule(),
+            fallbackFill: OffRecordReadableTintStyle.brand.fill,
+            border: OffRecordReadableTintStyle.brand.border
+        )
+    }
+
+    @ViewBuilder
+    private func journalBlockRow(_ item: JournalBlockTimelineItem) -> some View {
+        switch item.kind {
+        case .text:
+            textBlockRow(item)
+        case .audio:
+            audioBlockRow(item)
+        case .mood:
+            moodBlockRow(item)
+        case .photo:
+            photoBlockRow(item)
+        }
+    }
+
+    private func textBlockRow(_ item: JournalBlockTimelineItem) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            blockHeader(item: item, systemImage: "text.alignleft", canEdit: true)
+
+            if editingBlockObjectID == item.id {
+                TextEditor(text: $editingBlockText)
+                    .font(OffRecordTypography.journalBody)
+                    .foregroundColor(OffRecordColor.textPrimary)
+                    .scrollContentBackground(.hidden)
+                    .frame(minHeight: 140)
+
+                if let blockEditError {
+                    Text(blockEditError)
+                        .font(OffRecordTypography.metadata)
+                        .foregroundColor(OffRecordColor.brandCoral)
+                }
+
+                HStack {
+                    Spacer()
+                    Button("Cancel") {
+                        editingBlockObjectID = nil
+                        editingBlockText = ""
+                        blockEditError = nil
+                    }
+                    .font(OffRecordTypography.labelSmall)
+
+                    Button("Done") {
+                        finishEditingBlock(item)
+                    }
+                    .font(OffRecordTypography.labelSmall)
+                }
+            } else {
+                Text(item.text)
+                    .font(OffRecordTypography.journalBody)
+                    .foregroundColor(OffRecordColor.textPrimary)
+                    .lineSpacing(6)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .textSelection(.enabled)
+                    .onTapGesture {
+                        beginEditingBlock(item)
+                    }
+            }
+        }
+        .padding()
+        .offRecordContentCard(cornerRadius: 12)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(item.accessibilityLabel)
+    }
+
+    private func audioBlockRow(_ item: JournalBlockTimelineItem) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            blockHeader(item: item, systemImage: "waveform")
+            if let url = item.audioURL, item.audioExists {
+                AudioPlayerView(audioURL: url)
+            } else {
+                HStack(spacing: 6) {
+                    Image(systemName: "icloud")
+                    Text("Audio on original device")
+                }
+                .font(OffRecordTypography.metadata)
+                .foregroundColor(OffRecordColor.textSecondary)
+            }
+        }
+        .padding()
+        .offRecordContentCard(cornerRadius: 12)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(item.accessibilityLabel)
+    }
+
+    private func moodBlockRow(_ item: JournalBlockTimelineItem) -> some View {
+        HStack(spacing: 12) {
+            MiniMoodIcon(mood: item.mood, size: 26, opacity: 0.94)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(item.timestamp)
+                    .font(OffRecordTypography.metadata)
+                    .foregroundColor(OffRecordColor.textSecondary)
+                Text(item.mood.displayName)
+                    .font(OffRecordTypography.labelMedium)
+                    .foregroundColor(OffRecordColor.textPrimary)
+            }
+            Spacer()
+            blockOverflowMenu(item, canEdit: false)
+        }
+        .padding()
+        .offRecordContentCard(cornerRadius: 12)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(item.accessibilityLabel)
+    }
+
+    @ViewBuilder
+    private func photoBlockRow(_ item: JournalBlockTimelineItem) -> some View {
+        VStack(alignment: .leading, spacing: 10) {
+            blockHeader(item: item, systemImage: "photo")
+            #if canImport(UIKit)
+            if let id = item.photoAttachmentID,
+               let image = photoThumbnailByID[id] {
+                Image(uiImage: image)
+                    .resizable()
+                    .scaledToFit()
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            }
+            #endif
+        }
+        .padding()
+        .offRecordContentCard(cornerRadius: 12)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(item.accessibilityLabel)
+    }
+
+    private func blockHeader(item: JournalBlockTimelineItem, systemImage: String, canEdit: Bool = false) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: systemImage)
+            Text(item.timestamp)
+            Spacer()
+            blockOverflowMenu(item, canEdit: canEdit)
+        }
+        .font(OffRecordTypography.metadata)
+        .foregroundColor(OffRecordColor.textSecondary)
+    }
+
+    private func blockOverflowMenu(_ item: JournalBlockTimelineItem, canEdit: Bool) -> some View {
+        Menu {
+            if canEdit {
+                Button {
+                    beginEditingBlock(item)
+                } label: {
+                    Label("Edit Block", systemImage: "pencil")
+                }
+            }
+            Button(role: .destructive) {
+                deleteBlock(item)
+            } label: {
+                Label("Delete Block", systemImage: "trash")
+            }
+        } label: {
+            Image(systemName: "ellipsis.circle")
+                .font(OffRecordTypography.labelSmall)
+                .foregroundColor(OffRecordColor.textSecondary)
+        }
+        .accessibilityLabel("Block actions")
+    }
+
+    private var newTextBlockComposer: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            if let promptContext, !promptContext.isEmpty {
+                HStack(alignment: .top, spacing: 10) {
+                    Image(systemName: "sparkles")
+                        .font(OffRecordTypography.labelMedium)
+                        .foregroundStyle(OffRecordColor.textLavender)
+                        .padding(.top, 2)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text("Writing prompt")
+                            .font(OffRecordTypography.labelSmall)
+                            .foregroundStyle(OffRecordColor.textPeach)
+                        Text(promptContext)
+                            .font(OffRecordTypography.bodySmall)
+                            .foregroundStyle(OffRecordColor.textPrimary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+
+                    Spacer(minLength: 0)
+                }
+                .padding(14)
+                .offRecordContentCard(cornerRadius: 14, fill: OffRecordColor.surfaceLavender)
+            }
+
+            TextEditor(text: $newTextBlockText)
+                .font(OffRecordTypography.journalBody)
+                .foregroundColor(OffRecordColor.textPrimary)
+                .lineSpacing(6)
+                .focused($isTextFocused)
+                .scrollContentBackground(.hidden)
+                .frame(minHeight: 180)
+                .padding()
+                .offRecordContentCard(cornerRadius: 12)
+                .accessibilityLabel("New text block")
+
+            if let newTextBlockError {
+                Text(newTextBlockError)
+                    .font(OffRecordTypography.metadata)
+                    .foregroundColor(OffRecordColor.brandCoral)
+            }
+
+            HStack {
+                Text("\(newTextBlockText.split { $0.isWhitespace || $0.isNewline }.count) words")
+                    .font(OffRecordTypography.metadata)
+                    .foregroundColor(OffRecordColor.textSecondary)
+
+                Spacer()
+
+                Button("Cancel") {
+                    cancelNewTextBlock()
+                }
+                .font(OffRecordTypography.labelMedium)
+
+                Button("Save") {
+                    saveNewTextBlock()
+                }
+                .font(OffRecordTypography.labelMedium)
+                .disabled(newTextBlockText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+            }
+        }
+        .padding(.horizontal)
+        .padding(.vertical, 8)
+        .onAppear {
+            isTextFocused = true
+        }
+    }
+
     private var readingView: some View {
         VStack(alignment: .leading, spacing: 0) {
             if text.isEmpty {
@@ -321,7 +672,7 @@ struct EntryDetailView: View {
                             .font(OffRecordTypography.bodySmall)
                             .foregroundColor(OffRecordColor.textSecondary)
                     Button("Add text") {
-                        isEditing = true
+                        beginNewTextBlock()
                     }
                     .font(OffRecordTypography.labelMedium)
                     .foregroundColor(OffRecordReadableTintStyle.brand.foreground)
@@ -354,7 +705,7 @@ struct EntryDetailView: View {
         .padding(.vertical, 8)
         .onTapGesture {
             if !isTranscribing {
-                isEditing = true
+                beginNewTextBlock()
             }
         }
     }
@@ -543,7 +894,7 @@ struct EntryDetailView: View {
                     Spacer()
 
                     Button("Done") {
-                        finishEditing()
+                        saveNewTextBlock()
                     }
                     .font(OffRecordTypography.labelMedium)
                 }
@@ -625,19 +976,80 @@ struct EntryDetailView: View {
             try? viewContext.save()
         }
         photoAttachments = PhotoStorageManager.shared.attachments(for: entry)
+        photoAttachmentByID = Dictionary(uniqueKeysWithValues: photoAttachments.compactMap { attachment in
+            guard let id = attachment.id else { return nil }
+            return (id, attachment)
+        })
         #if canImport(UIKit)
         photoImages = PhotoStorageManager.shared.thumbnailImages(for: entry)
+        var thumbnails: [UUID: UIImage] = [:]
+        for attachment in photoAttachments {
+            guard let id = attachment.id,
+                  let image = PhotoStorageManager.shared.thumbnailImage(for: attachment, maxPixelDimension: 720) else { continue }
+            thumbnails[id] = image
+        }
+        photoThumbnailByID = thumbnails
         #endif
+    }
+
+    private func loadBlocks(backfill: Bool) {
+        if backfill, JournalBlockTimelineStore.backfillBlocksIfNeeded(for: entry, in: viewContext) {
+            try? viewContext.save()
+        }
+        journalBlocks = JournalBlockTimelineStore.blocks(for: entry)
+        timelineItems = makeTimelineItems(from: journalBlocks)
+        text = entry.text ?? ""
+        selectedMood = Mood(rawValue: entry.value(forKey: "mood") as? String ?? "") ?? .none
+    }
+
+    private func makeTimelineItems(from blocks: [JournalBlock]) -> [JournalBlockTimelineItem] {
+        let audioAttachments = Dictionary(uniqueKeysWithValues: AudioAttachmentStore.audioAttachments(for: entry).compactMap { attachment -> (UUID, NSManagedObject)? in
+            guard let id = attachment.value(forKey: "id") as? UUID else { return nil }
+            return (id, attachment)
+        })
+
+        return blocks.compactMap { block in
+            guard let kind = block.blockKind else { return nil }
+            let createdAt = block.blockCreatedAt == .distantPast ? (entry.date ?? Date()) : block.blockCreatedAt
+            let timestamp = JournalBlockTimelinePresentation.label(for: createdAt)
+            let mood = Mood(rawValue: block.moodValue) ?? .none
+            var audioURL: URL?
+            if let id = block.audioAttachmentIDValue,
+               let attachment = audioAttachments[id] {
+                audioURL = AudioAttachmentStore.audioURL(for: attachment)
+            } else if kind == .audio {
+                let legacyFileName = block.textValue.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !legacyFileName.isEmpty {
+                    audioURL = try? AudioAttachmentStore.destinationURL(for: legacyFileName)
+                }
+            }
+
+            return JournalBlockTimelineItem(
+                id: block.objectID,
+                blockID: block.blockID,
+                kind: kind,
+                createdAt: createdAt,
+                timestamp: timestamp,
+                text: block.textValue,
+                mood: mood,
+                duration: block.durationValue,
+                audioURL: audioURL,
+                audioExists: audioURL.map { FileManager.default.fileExists(atPath: $0.path) } ?? false,
+                photoAttachmentID: block.photoAttachmentIDValue
+            )
+        }
     }
 
     private func clearPhotoThumbnails() {
         #if canImport(UIKit)
         photoImages = []
+        photoThumbnailByID = [:]
         #endif
     }
 
     private func handlePhotoSelection(_ items: [PhotosPickerItem]) {
         #if canImport(UIKit)
+        let entryObjectID = entry.objectID
         for item in items {
             let token = PerformanceSignposts.begin("PhotoImport")
             item.loadTransferable(type: Data.self) { result in
@@ -653,10 +1065,21 @@ struct EntryDetailView: View {
                         return
                     }
 
+                    guard let entry = try? viewContext.existingObject(with: entryObjectID) as? DiaryEntry else {
+                        PerformanceSignposts.end(token)
+                        return
+                    }
+
                     if let attachment = PhotoStorageManager.shared.addPhotoData(jpegData, to: entry, in: viewContext) {
-                            photoAttachments.append(attachment)
-                            photoImages.append(image)
-                            savePhotos()
+                        JournalBlockTimelineStore.appendPhotoBlock(
+                            attachment: attachment,
+                            createdAt: entryTimestampNow(),
+                            to: entry,
+                            in: viewContext
+                        )
+                        photoAttachments.append(attachment)
+                        photoImages.append(image)
+                        savePhotos()
                     }
                     PerformanceSignposts.end(token)
                 }
@@ -684,6 +1107,7 @@ struct EntryDetailView: View {
         entry.updatedAt = Date()
         try? viewContext.save()
         photoAttachments = PhotoStorageManager.shared.attachments(for: entry)
+        loadBlocks(backfill: false)
         JournalSpotlightIndexer.shared.upsert(entry: entry)
     }
 
@@ -723,13 +1147,12 @@ struct EntryDetailView: View {
 
     /// Entry has an audio filename stored (may have been recorded on another device)
     private var hasAudioReference: Bool {
-        (entry.value(forKey: "audioFileName") as? String)?.isEmpty == false
+        !audioURLs().isEmpty
     }
 
     /// Audio file exists locally on this device
     private var hasAudio: Bool {
-        guard let url = audioURL() else { return false }
-        return FileManager.default.fileExists(atPath: url.path)
+        audioURLs().contains { FileManager.default.fileExists(atPath: $0.path) }
     }
 
     /// Audio was recorded but file is on another device (synced via iCloud)
@@ -747,13 +1170,49 @@ struct EntryDetailView: View {
     }
 
     private func audioURL() -> URL? {
-        guard let fileName = entry.value(forKey: "audioFileName") as? String, !fileName.isEmpty else { return nil }
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let recordingsDir = base.appendingPathComponent("Recordings", isDirectory: true)
-        return recordingsDir.appendingPathComponent(fileName)
+        audioURLs().first
+    }
+
+    private func audioURLs() -> [URL] {
+        AudioAttachmentStore.audioURLs(for: entry)
+    }
+
+    private func blockKind(_ block: NSManagedObject) -> JournalBlockKind? {
+        JournalBlockKind(rawValue: block.value(forKey: "kind") as? String ?? "")
+    }
+
+    private func audioURL(for block: NSManagedObject) -> URL? {
+        if let id = block.value(forKey: "audioAttachmentID") as? UUID,
+           let attachment = AudioAttachmentStore.audioAttachment(id: id, in: viewContext) {
+            return AudioAttachmentStore.audioURL(for: attachment)
+        }
+        if let legacyFileName = (block.value(forKey: "text") as? String)?.trimmingCharacters(in: .whitespacesAndNewlines),
+           !legacyFileName.isEmpty {
+            return try? AudioAttachmentStore.destinationURL(for: legacyFileName)
+        }
+        return nil
+    }
+
+    private func photoAttachment(for block: NSManagedObject) -> PhotoAttachment? {
+        guard let id = block.value(forKey: "photoAttachmentID") as? UUID else { return nil }
+        return PhotoStorageManager.shared.attachments(for: entry).first { $0.id == id }
+    }
+
+    private func block(for item: JournalBlockTimelineItem) -> JournalBlock? {
+        try? viewContext.existingObject(with: item.id) as? JournalBlock
+    }
+
+    private func wordCount(for value: String) -> Int {
+        value.split { $0.isWhitespace || $0.isNewline }.count
     }
 
     // MARK: - Actions
+
+    private func removeFilesAfterSuccessfulSave(_ urls: [URL]) {
+        for url in urls where FileManager.default.fileExists(atPath: url.path) {
+            try? FileManager.default.removeItem(at: url)
+        }
+    }
 
     private func toggleStar() {
         entry.isStarred.toggle()
@@ -769,30 +1228,126 @@ struct EntryDetailView: View {
     }
 
     private func toggleEditingMode() {
-        if isEditing {
-            finishEditing()
+        if isComposingTextBlock {
+            cancelNewTextBlock()
         } else {
-            beginEditing()
+            beginNewTextBlock()
         }
     }
 
-    private func beginEditing() {
-        text = entry.text ?? ""
-        hasEditedText = false
-        isEditing = true
+    private func beginNewTextBlock() {
+        newTextBlockText = ""
+        newTextBlockError = nil
+        isComposingTextBlock = true
+        isTextFocused = true
+        HapticManager.shared.selectionChanged()
     }
 
-    private func finishEditing() {
+    private func cancelNewTextBlock() {
         isTextFocused = false
-        saveIfNeeded()
-        hasEditedText = false
-        isEditing = false
+        isComposingTextBlock = false
+        newTextBlockText = ""
+        newTextBlockError = nil
+    }
+
+    private func saveNewTextBlock() {
+        let trimmed = newTextBlockText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else {
+            newTextBlockError = "Write something before saving this block."
+            return
+        }
+
+        JournalBlockTimelineStore.appendTextBlock(
+            text: trimmed,
+            createdAt: entryTimestampNow(),
+            to: entry,
+            in: viewContext
+        )
+        do {
+            try viewContext.save()
+            EntryLearningPipeline.processSavedEntry(
+                text: trimmed,
+                mood: selectedMood.rawValue,
+                date: entry.date ?? Date(),
+                duration: entry.duration
+            )
+            EntryLearningPipeline.upsertSemanticEntry(entry)
+            JournalSpotlightIndexer.shared.upsert(entry: entry)
+            DaypartHeroStore().recordPromptResponse(promptID: heroPromptID, wordCount: wordCount(for: trimmed))
+            HapticManager.shared.entrySaved()
+            cancelNewTextBlock()
+            loadBlocks(backfill: false)
+        } catch {
+            viewContext.rollback()
+            newTextBlockError = "Could not save this block. Please try again."
+        }
+    }
+
+    private func beginEditingBlock(_ item: JournalBlockTimelineItem) {
+        editingBlockObjectID = item.id
+        editingBlockText = item.text
+        blockEditError = nil
+        HapticManager.shared.selectionChanged()
+    }
+
+    private func finishEditingBlock(_ item: JournalBlockTimelineItem) {
+        guard let block = block(for: item) else { return }
+        guard JournalBlockTimelineStore.updateTextBlock(block, text: editingBlockText) else {
+            blockEditError = "Text blocks cannot be empty. Delete the block if you no longer need it."
+            return
+        }
+        do {
+            try viewContext.save()
+            EntryLearningPipeline.upsertSemanticEntry(entry)
+            JournalSpotlightIndexer.shared.upsert(entry: entry)
+            HapticManager.shared.entrySaved()
+        } catch {
+            viewContext.rollback()
+        }
+        editingBlockObjectID = nil
+        editingBlockText = ""
+        blockEditError = nil
+        loadBlocks(backfill: false)
+    }
+
+    private func deleteBlock(_ item: JournalBlockTimelineItem) {
+        guard let block = block(for: item) else { return }
+        let plan = JournalBlockTimelineStore.deleteBlock(block, in: viewContext)
+        do {
+            try viewContext.save()
+            removeFilesAfterSuccessfulSave(plan.fileURLsToRemoveAfterSave)
+            EntryLearningPipeline.upsertSemanticEntry(entry)
+            JournalSpotlightIndexer.shared.upsert(entry: entry)
+            HapticManager.shared.entryDeleted()
+        } catch {
+            viewContext.rollback()
+        }
+        loadPhotos()
+        loadBlocks(backfill: false)
+    }
+
+    private func deleteWholeDay() {
+        isDeletingDay = true
+        let plan = JournalBlockTimelineStore.prepareDeleteWholeDay(entry, in: viewContext)
+        do {
+            try viewContext.save()
+            removeFilesAfterSuccessfulSave(plan.fileURLsToRemoveAfterSave)
+            if let id = plan.entryID {
+                SemanticMemoryIndexController.shared.deleteEntry(id: id)
+                JournalSpotlightIndexer.shared.delete(entryID: id)
+            }
+            HapticManager.shared.entryDeleted()
+            dismiss()
+        } catch {
+            isDeletingDay = false
+            viewContext.rollback()
+        }
     }
 
     private func syncTextFromEntry(reason: String, incomingText: String? = nil) {
         let persistedText = incomingText ?? entry.text ?? ""
-        guard !isEditing && !isTextFocused else {
-            entryDetailLogger.info("Skipped text sync entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) reason=\(reason, privacy: .public) localChars=\(text.count, privacy: .public) persistedChars=\(persistedText.count, privacy: .public) isEditing=\(isEditing, privacy: .public) status=\(entry.entryTranscriptionStatus.rawValue, privacy: .public)")
+        guard !isComposingTextBlock && editingBlockObjectID == nil && !isTextFocused else {
+            entryDetailLogger.info("Skipped text sync entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) reason=\(reason, privacy: .public) localChars=\(text.count, privacy: .public) persistedChars=\(persistedText.count, privacy: .public) composing=\(isComposingTextBlock, privacy: .public) status=\(entry.entryTranscriptionStatus.rawValue, privacy: .public)")
             return
         }
 
@@ -804,59 +1359,24 @@ struct EntryDetailView: View {
     }
 
     private func saveIfNeeded() {
-        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !isDeletingDay else { return }
         let currentMood = entry.value(forKey: "mood") as? String ?? ""
-        let oldText = entry.text ?? ""
         let moodChanged = selectedMood.rawValue != currentMood
-        let decision = EntryDetailSaveDecision.evaluate(
-            localText: text,
-            persistedText: oldText,
-            hasEditedText: hasEditedText,
-            moodChanged: moodChanged
-        )
-
-        if decision.skippedStaleTextOverwrite {
-            entryDetailLogger.warning("Skipped stale text overwrite entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) localChars=\(trimmed.count, privacy: .public) persistedChars=\(oldText.count, privacy: .public) isEditing=\(isEditing, privacy: .public) status=\(entry.entryTranscriptionStatus.rawValue, privacy: .public)")
-        }
-
-        if decision.shouldSave {
-            if decision.shouldSaveText {
-                entry.text = trimmed
-            }
-            entry.setValue(selectedMood.rawValue, forKey: "mood")
+        if moodChanged, selectedMood != .none {
+            JournalBlockTimelineStore.appendMoodBlock(
+                mood: selectedMood,
+                createdAt: entryTimestampNow(),
+                to: entry,
+                in: viewContext
+            )
             entry.updatedAt = Date()
             do {
                 try viewContext.save()
                 EntryLearningPipeline.upsertSemanticEntry(entry)
                 JournalSpotlightIndexer.shared.upsert(entry: entry)
-                entryDetailLogger.info("Saved entry detail changes entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) savedText=\(decision.shouldSaveText, privacy: .public) localChars=\(trimmed.count, privacy: .public) persistedChars=\(oldText.count, privacy: .public) status=\(entry.entryTranscriptionStatus.rawValue, privacy: .public)")
-
-                // Feed into Friday — use reprocess if text was edited
-                if decision.shouldSaveText && !trimmed.isEmpty {
-                    DaypartHeroStore().recordPromptResponse(
-                        promptID: heroPromptID,
-                        wordCount: wordCount
-                    )
-
-                    if !oldText.isEmpty && trimmed != oldText {
-                        EntryLearningPipeline.reprocessEditedEntry(
-                            oldText: oldText,
-                            newText: trimmed,
-                            mood: selectedMood.rawValue,
-                            date: entry.date ?? Date(),
-                            duration: entry.duration
-                        )
-                    } else {
-                        EntryLearningPipeline.processSavedEntry(
-                            text: trimmed,
-                            mood: selectedMood.rawValue,
-                            date: entry.date ?? Date(),
-                            duration: entry.duration
-                        )
-                    }
-                }
+                loadBlocks(backfill: false)
             } catch {
-                // ignore
+                viewContext.rollback()
             }
         }
     }
@@ -880,23 +1400,31 @@ struct EntryDetailView: View {
         let persistedText = entry.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let duration = entry.value(forKey: "duration") as? Double ?? 0
         let photoCount = entry.photos?.count ?? 0
+        let blockCount = journalBlocks.count
         let hasSelectedMood = selectedMood != .none || entry.hasStartedEntryMood
         return trimmed.isEmpty
             && persistedText.isEmpty
             && !hasAudioReference
             && duration <= 0
             && photoCount == 0
+            && blockCount == 0
             && !hasSelectedMood
     }
 
     private func saveMood() {
-        entry.setValue(selectedMood.rawValue, forKey: "mood")
+        JournalBlockTimelineStore.appendMoodBlock(
+            mood: selectedMood,
+            createdAt: entryTimestampNow(),
+            to: entry,
+            in: viewContext
+        )
         entry.updatedAt = Date()
         HapticManager.shared.moodSelected()
         do {
             try viewContext.save()
             EntryLearningPipeline.upsertSemanticEntry(entry)
             JournalSpotlightIndexer.shared.upsert(entry: entry)
+            loadBlocks(backfill: false)
         } catch {
             // ignore
         }
@@ -906,5 +1434,22 @@ struct EntryDetailView: View {
         currentActivity?.resignCurrent()
         currentActivity = JournalSpotlightIndexer.shared.activity(for: entry)
         currentActivity?.becomeCurrent()
+    }
+
+    private func entryTimestampNow(clock: Date = Date()) -> Date {
+        let calendar = Calendar.current
+        let base = entry.date ?? clock
+        let day = calendar.dateComponents([.year, .month, .day], from: base)
+        let time = calendar.dateComponents([.hour, .minute, .second, .nanosecond], from: clock)
+        var components = DateComponents()
+        components.calendar = calendar
+        components.year = day.year
+        components.month = day.month
+        components.day = day.day
+        components.hour = time.hour
+        components.minute = time.minute
+        components.second = time.second
+        components.nanosecond = time.nanosecond
+        return calendar.date(from: components) ?? clock
     }
 }
