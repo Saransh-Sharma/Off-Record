@@ -51,8 +51,6 @@ struct JournalEntrySnapshot: Identifiable, Equatable, @unchecked Sendable {
     init(entry: DiaryEntry) {
         let uuid = entry.id
         let text = (entry.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
-        let audioFileName = (entry.value(forKey: "audioFileName") as? String)?
-            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let moodString = (entry.value(forKey: "mood") as? String) ?? ""
         let mood = Mood(rawValue: moodString) ?? .none
         let photoCount = entry.photos?.count ?? 0
@@ -66,7 +64,7 @@ struct JournalEntrySnapshot: Identifiable, Equatable, @unchecked Sendable {
         self.wordCount = text.split { $0.isWhitespace || $0.isNewline }.count
         self.duration = entry.duration
         self.isStarred = entry.isStarred
-        self.hasAudio = !audioFileName.isEmpty || entry.duration > 0
+        self.hasAudio = entry.hasStartedEntryAudio
         self.photoCount = photoCount
     }
 }

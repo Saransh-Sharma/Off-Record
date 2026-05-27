@@ -105,8 +105,6 @@ struct JournalSpotlightMetadata: Equatable, Sendable {
 enum JournalSpotlightMetadataBuilder {
     static func metadata(for entry: DiaryEntry) -> JournalSpotlightMetadata? {
         guard entry.isStartedEntry, let id = entry.id else { return nil }
-        let audioFileName = (entry.value(forKey: "audioFileName") as? String)?
-            .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         return JournalSpotlightMetadata(
             id: id,
             date: entry.date ?? entry.createdAt ?? Date(),
@@ -114,7 +112,7 @@ enum JournalSpotlightMetadataBuilder {
             mood: (entry.value(forKey: "mood") as? String)?.trimmingCharacters(in: .whitespacesAndNewlines),
             wordCount: entry.startedEntryWordCount,
             isStarred: entry.isStarred,
-            hasAudio: !audioFileName.isEmpty || entry.duration > 0,
+            hasAudio: entry.hasStartedEntryAudio,
             hasPhotos: entry.photos?.count ?? 0 > 0
         )
     }
