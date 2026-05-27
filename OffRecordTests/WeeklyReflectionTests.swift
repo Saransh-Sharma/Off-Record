@@ -125,7 +125,10 @@ struct WeeklyReflectionTests {
 
     @Test func exportExcludesQuotesUnlessRequested() {
         var report = makeReport()
-        let included = try! #require(report.includedEntryIds.first)
+        guard let included = report.includedEntryIds.first else {
+            Issue.record("Expected report to include at least one entry id.")
+            return
+        }
         report.themes = [
             WeeklyReflectionTheme(
                 id: UUID(),

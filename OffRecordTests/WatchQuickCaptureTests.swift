@@ -231,9 +231,15 @@ struct WatchQuickCaptureTests {
         entry.createdAt = entry.date
         entry.updatedAt = entry.date
         entry.text = "Voice day"
+        let firstFileName = "backup-first-\(UUID().uuidString).m4a"
+        let secondFileName = "backup-second-\(UUID().uuidString).m4a"
+        let firstURL = try AudioAttachmentStore.destinationURL(for: firstFileName)
+        let secondURL = try AudioAttachmentStore.destinationURL(for: secondFileName)
+        try Data([1, 2, 3, 4]).write(to: firstURL)
+        try Data([5, 6, 7, 8, 9]).write(to: secondURL)
 
         AudioAttachmentStore.attachAudio(
-            fileName: "first.m4a",
+            fileName: firstFileName,
             duration: 4,
             createdAt: entry.date ?? Date(),
             sourceCaptureID: UUID(),
@@ -243,7 +249,7 @@ struct WatchQuickCaptureTests {
             in: sourceContext
         )
         AudioAttachmentStore.attachAudio(
-            fileName: "second.m4a",
+            fileName: secondFileName,
             duration: 5,
             createdAt: (entry.date ?? Date()).addingTimeInterval(60),
             sourceCaptureID: UUID(),
@@ -256,6 +262,8 @@ struct WatchQuickCaptureTests {
         try sourceContext.save()
 
         let backupURL = try BackupService.shared.exportToJSON(entries: [entry])
+        try FileManager.default.removeItem(at: firstURL)
+        try FileManager.default.removeItem(at: secondURL)
 
         let restoreController = PersistenceController(inMemory: true)
         let restoreContext = restoreController.container.viewContext
@@ -269,6 +277,10 @@ struct WatchQuickCaptureTests {
         #expect(blocks(for: restored, kind: .audio).count == 2)
         #expect(restored.duration == 9)
         #expect(restored.hasStartedEntryAudio)
+        let restoredFirstURL = try AudioAttachmentStore.destinationURL(for: firstFileName)
+        let restoredSecondURL = try AudioAttachmentStore.destinationURL(for: secondFileName)
+        #expect((try? Data(contentsOf: restoredFirstURL)) == Data([1, 2, 3, 4]))
+        #expect((try? Data(contentsOf: restoredSecondURL)) == Data([5, 6, 7, 8, 9]))
     }
 
     private func blocks(for entry: DiaryEntry, kind: JournalBlockKind) -> [JournalBlock] {

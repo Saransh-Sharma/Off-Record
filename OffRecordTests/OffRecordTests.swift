@@ -89,6 +89,9 @@ struct SystemDiscoverabilityTests {
 
         let id = UUID()
         #expect(OffRecordNavigationRouter.route(from: URL(string: "offrecord://entry/\(id.uuidString)")!) == .entry(id))
+        #expect(OffRecordNavigationRouter.route(from: URL(string: "offrecord://weekly-reflection/current")!) == .weeklyReflectionCurrent)
+        #expect(OffRecordNavigationRouter.route(from: URL(string: "offrecord://weekly-reflection/\(id.uuidString)")!) == .weeklyReflection(id))
+        #expect(OffRecordNavigationRouter.route(from: URL(string: "offrecord://weekly-reflection/not-a-uuid")!) == nil)
         #expect(OffRecordNavigationRouter.route(fromSpotlightIdentifier: "entry:\(id.uuidString)") == .entry(id))
     }
 
@@ -352,19 +355,45 @@ struct EntryVisibilityTests {
 @MainActor
 @Suite(.serialized)
 struct DiaryEntryDailyStoreTests {
-    @Test func journalBlockTimestampUsesHumanAndExactTime() {
+    @Test func journalBlockTimestampUsesHumanAndExactTime() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
         var components = DateComponents()
-        components.calendar = Calendar.current
+        components.calendar = calendar
+        components.timeZone = calendar.timeZone
         components.year = 2036
         components.month = 5
         components.day = 24
         components.hour = 18
         components.minute = 42
-        let date = components.date ?? Date()
+        let date = try #require(components.date)
         let label = JournalBlockTimelinePresentation.label(for: date)
 
         #expect(label.contains("Evening"))
-        #expect(label.contains("6:42"))
+        #expect(label.contains("6:42") || label.contains("18:42"))
+    }
+
+    @Test func audioAttachmentDestinationRejectsPathTraversal() throws {
+        #expect(throws: Error.self) {
+            _ = try AudioAttachmentStore.destinationURL(for: "../outside.m4a")
+        }
+        #expect(throws: Error.self) {
+            _ = try AudioAttachmentStore.destinationURL(for: "nested/outside.m4a")
+        }
+    }
+
+    @Test func recomposingLegacyTextOmitsTimelineLabels() throws {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let date = makeDate(day: 24, hour: 18)
+        let entry = makeEntry(in: context, date: date, text: nil)
+
+        JournalBlockTimelineStore.appendTextBlock(text: "Dinner with friends", createdAt: date, to: entry, in: context)
+        try context.save()
+
+        JournalBlockTimelineStore.recomposeLegacyFields(for: entry, touchUpdatedAt: false)
+        #expect(entry.text == "Dinner with friends")
+        #expect(entry.text?.contains("[") == false)
+        #expect(entry.text?.contains("Evening") == false)
     }
 
     @Test func appendingTextUsesExistingEntryForSameDay() throws {
