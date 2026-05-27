@@ -5,6 +5,14 @@ struct WeeklyReflectionHomeCard: View {
     let entries: [DiaryEntry]
     var onWrite: (() -> Void)?
     @ObservedObject private var controller = WeeklyReflectionController.shared
+    private var entriesSignature: String {
+        entries.map { entry in
+            let id = entry.id?.uuidString ?? entry.objectID.uriRepresentation().absoluteString
+            let updated = entry.updatedAt?.timeIntervalSinceReferenceDate ?? 0
+            return "\(id):\(updated)"
+        }
+        .joined(separator: "|")
+    }
 
     var body: some View {
         VStack(spacing: 0) {
@@ -16,7 +24,7 @@ struct WeeklyReflectionHomeCard: View {
             }
         }
         .onAppear { controller.refreshIfNeeded(entries: entries) }
-        .onChange(of: entries.count) { _, _ in controller.refreshIfNeeded(entries: entries) }
+        .onChange(of: entriesSignature) { _, _ in controller.refreshIfNeeded(entries: entries) }
     }
 
     @ViewBuilder

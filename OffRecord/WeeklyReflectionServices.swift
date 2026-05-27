@@ -401,9 +401,10 @@ enum WeeklyReflectionGenerationService {
         var counts: [String: Int] = [:]
         let tokenizer = NLTokenizer(unit: .word)
         for entry in entries {
-            tokenizer.string = entry.text.lowercased()
-            tokenizer.enumerateTokens(in: entry.text.startIndex..<entry.text.endIndex) { range, _ in
-                let token = String(entry.text[range]).lowercased()
+            let text = entry.text.lowercased()
+            tokenizer.string = text
+            tokenizer.enumerateTokens(in: text.startIndex..<text.endIndex) { range, _ in
+                let token = String(text[range])
                     .trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
                 guard token.count >= 4, !stopWords.contains(token), token.rangeOfCharacter(from: .decimalDigits) == nil else {
                     return true
