@@ -298,6 +298,7 @@ final class OffRecordUITests: XCTestCase {
         let primaryCTA = app.descendants(matching: .any)["todayDock.record"].firstMatch
         XCTAssertTrue(primaryCTA.waitForExistence(timeout: 4))
         primaryCTA.tap()
+        app.tap()
 
         let recordingMeter = app.descendants(matching: .any)["daypartHero.recordingMeter"].firstMatch
         XCTAssertTrue(recordingMeter.waitForExistence(timeout: 8))
