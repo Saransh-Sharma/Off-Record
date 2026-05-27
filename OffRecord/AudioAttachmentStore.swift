@@ -7,6 +7,19 @@ private let audioAttachmentLogger = Logger(subsystem: "com.singularity.offrecord
 enum AudioAttachmentStore {
     static let recordingsFolderName = "Recordings"
 
+    static func validatedFileName(_ fileName: String) throws -> String {
+        let trimmed = fileName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let safeName = URL(fileURLWithPath: trimmed).lastPathComponent
+        guard !safeName.isEmpty, safeName == trimmed else {
+            throw NSError(
+                domain: "AudioAttachmentStore",
+                code: 2,
+                userInfo: [NSLocalizedDescriptionKey: "Invalid audio attachment filename."]
+            )
+        }
+        return safeName
+    }
+
     static func recordingsDirectory() throws -> URL {
         let fileManager = FileManager.default
         guard let base = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
@@ -24,7 +37,8 @@ enum AudioAttachmentStore {
     }
 
     static func destinationURL(for fileName: String) throws -> URL {
-        try recordingsDirectory().appendingPathComponent(fileName)
+        let safeName = try validatedFileName(fileName)
+        return try recordingsDirectory().appendingPathComponent(safeName)
     }
 
     @discardableResult
@@ -89,11 +103,12 @@ enum AudioAttachmentStore {
     }
 
     static func audioURL(for attachment: NSManagedObject) -> URL? {
-        guard let fileName = attachment.value(forKey: "fileName") as? String, !fileName.isEmpty,
+        guard let fileName = attachment.value(forKey: "fileName") as? String,
+              let safeName = try? validatedFileName(fileName),
               let directory = try? recordingsDirectory() else {
             return nil
         }
-        return directory.appendingPathComponent(fileName)
+        return directory.appendingPathComponent(safeName)
     }
 
     static func attachmentExists(sourceCaptureID: UUID, in context: NSManagedObjectContext) throws -> Bool {
@@ -115,8 +130,9 @@ enum AudioAttachmentStore {
         entryRequest.resultType = .dictionaryResultType
         if let rows = try? context.fetch(entryRequest) {
             for row in rows {
-                if let name = row["audioFileName"] as? String, !name.isEmpty {
-                    names.insert(name)
+                if let name = row["audioFileName"] as? String,
+                   let safeName = try? validatedFileName(name) {
+                    names.insert(safeName)
                 }
             }
         }
@@ -131,8 +147,9 @@ enum AudioAttachmentStore {
         do {
             let rows = try context.fetch(attachmentRequest)
             for row in rows {
-                if let name = row["fileName"] as? String, !name.isEmpty {
-                    names.insert(name)
+                if let name = row["fileName"] as? String,
+                   let safeName = try? validatedFileName(name) {
+                    names.insert(safeName)
                 }
             }
         } catch {
@@ -160,6 +177,9 @@ enum AudioAttachmentStore {
         guard let directory = try? recordingsDirectory() else { return [] }
         return rows
             .sorted { $0.date < $1.date }
-            .map { directory.appendingPathComponent($0.fileName) }
+            .compactMap { row in
+                guard let safeName = try? validatedFileName(row.fileName) else { return nil }
+                return directory.appendingPathComponent(safeName)
+            }
     }
 }

@@ -83,6 +83,7 @@ final class WatchCaptureImporter: NSObject {
         }
 
         let entry = try DiaryEntryDailyStore.getOrCreateEntry(on: envelope.createdAtUTC, in: context)
+        var importedAudioURL: URL?
         switch envelope.kind {
         case .mood:
             if let rawMood = envelope.moodValue, let mood = Mood(rawValue: rawMood), mood != .none {
@@ -104,7 +105,7 @@ final class WatchCaptureImporter: NSObject {
                 )
             }
         case .audio:
-            try importAudio(envelope: envelope, audioFileURL: audioFileURL, into: entry, in: context)
+            importedAudioURL = try importAudio(envelope: envelope, audioFileURL: audioFileURL, into: entry, in: context)
         }
 
         let entryID = ensureEntryID(entry)
@@ -116,8 +117,8 @@ final class WatchCaptureImporter: NSObject {
         JournalSpotlightIndexer.shared.upsert(entry: entry)
         sendReceipt(captureID: envelope.captureID, importedEntryID: entryID, kind: envelope.kind)
 
-        if envelope.kind == .audio, SpeechTranscriptionConsent.hasGrantedAppleSpeechProcessing, let audioFileURL {
-            transcribeImportedAudio(audioFileURL, entryObjectID: entry.objectID, envelope: envelope, context: context)
+        if envelope.kind == .audio, SpeechTranscriptionConsent.hasGrantedAppleSpeechProcessing, let importedAudioURL {
+            transcribeImportedAudio(importedAudioURL, entryObjectID: entry.objectID, envelope: envelope, context: context)
         }
 
         watchCaptureLogger.info("Imported watch capture kind=\(envelope.kind.rawValue, privacy: .public) captureID=\(envelope.captureID.uuidString, privacy: .public)")
@@ -129,12 +130,13 @@ final class WatchCaptureImporter: NSObject {
         audioFileURL: URL?,
         into entry: DiaryEntry,
         in context: NSManagedObjectContext
-    ) throws {
+    ) throws -> URL? {
         guard let manifest = envelope.audioManifest else {
-            return
+            return nil
         }
 
         if try AudioAttachmentStore.attachmentExists(sourceCaptureID: envelope.captureID, in: context) {
+            var existingURL: URL?
             if let existingAttachment = AudioAttachmentStore.audioAttachment(sourceCaptureID: envelope.captureID, in: context) {
                 JournalBlockTimelineStore.appendAudioBlock(
                     attachment: existingAttachment,
@@ -143,11 +145,12 @@ final class WatchCaptureImporter: NSObject {
                     to: entry,
                     in: context
                 )
+                existingURL = AudioAttachmentStore.audioURL(for: existingAttachment)
             }
             if let audioFileURL {
                 try? FileManager.default.removeItem(at: audioFileURL)
             }
-            return
+            return existingURL
         }
 
         guard let audioFileURL,
@@ -185,6 +188,7 @@ final class WatchCaptureImporter: NSObject {
         if !SpeechTranscriptionConsent.hasGrantedAppleSpeechProcessing {
             entry.entryTranscriptionStatus = .none
         }
+        return finalURL
     }
 
     private func transcribeImportedAudio(

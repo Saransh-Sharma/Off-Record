@@ -330,8 +330,7 @@ enum JournalBlockTimelineStore {
         let composedText = textBlocks.compactMap { block -> String? in
             let text = block.textValue.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !text.isEmpty else { return nil }
-            let date = block.blockCreatedAt == .distantPast ? (entry.date ?? Date()) : block.blockCreatedAt
-            return "[\(JournalBlockTimelinePresentation.label(for: date))]\n\(text)"
+            return text
         }.joined(separator: "\n\n")
         entry.text = composedText
 
