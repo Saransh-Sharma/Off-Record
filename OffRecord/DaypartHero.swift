@@ -80,8 +80,15 @@ struct DaypartHeroAsset: Identifiable, Equatable, Codable {
     }
 
     init?(imageName: String) {
-        guard let prefix = imageName.split(separator: "_").first,
-              let dayPart = DayPart(rawValue: String(prefix)) else {
+        let components = imageName.split(separator: "_").map(String.init)
+        let dayPartName: String?
+        if components.count >= 3, components[0] == "home", components[1] == "bg" {
+            dayPartName = components[2]
+        } else {
+            dayPartName = components.first
+        }
+        guard let dayPartName,
+              let dayPart = DayPart(rawValue: dayPartName) else {
             return nil
         }
         self.init(dayPart: dayPart, imageName: imageName)
@@ -171,23 +178,18 @@ final class DaypartHeroStore {
 
 enum DaypartHeroLibrary {
     static let assets: [DaypartHeroAsset] = [
-        "morning_01_moon_starry_clouds",
-        "morning_01_sunrise_meadow_path",
-        "morning_04_sunlit_window_coffee",
-        "morning_05_sunrise_hills_path",
-        "afternoon_01_lavender_stones_water",
-        "afternoon_02_rain_cloud_heart",
-        "afternoon_03_lakeside_hammock_daylight",
-        "afternoon_04_park_path_trees",
-        "afternoon_06_midday_cloud_hills",
-        "evening_01_pink_valley_river",
-        "evening_02_rainy_window_coffee",
-        "evening_02_shooting_star_hills",
-        "evening_03_lakeside_hammock_sunset",
-        "evening_04_sunset_lake_mountains",
-        "evening_05_workspace_laptop_coffee",
-        "night_02_sunny_flower_meadow",
-        "night_03_moon_candle_window"
+        "home_bg_morning_01",
+        "home_bg_morning_02",
+        "home_bg_morning_03",
+        "home_bg_afternoon_01",
+        "home_bg_afternoon_02",
+        "home_bg_afternoon_03",
+        "home_bg_evening_01",
+        "home_bg_evening_02",
+        "home_bg_evening_03",
+        "home_bg_night_01",
+        "home_bg_night_02",
+        "home_bg_night_03"
     ].compactMap(DaypartHeroAsset.init(imageName:))
 
     static let prompts: [HeroPromptVariant] = [

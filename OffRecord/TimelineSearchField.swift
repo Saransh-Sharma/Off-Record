@@ -80,7 +80,6 @@ struct TimelineUIKitSearchField: UIViewRepresentable {
         searchField.accessibilityLabel = "Search entries"
         searchField.accessibilityIdentifier = "timeline.searchField"
         searchField.accessibilityTraits.insert(.searchField)
-        searchField.heightAnchor.constraint(equalToConstant: 34).isActive = true
 
         return searchBar
     }

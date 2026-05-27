@@ -19,6 +19,7 @@ struct TimelineView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @Environment(\.scenePhase) private var scenePhase
     @ObservedObject private var semanticMemory = SemanticMemoryIndexController.shared
     @ObservedObject private var navigationRouter = OffRecordNavigationRouter.shared
 
@@ -109,6 +110,10 @@ struct TimelineView: View {
 
                     semanticSearchStatusBanner
 
+                    #if os(iOS)
+                    voiceSearchErrorBanner
+                    #endif
+
                     if !filteredEntriesCache.isEmpty {
                         MonthSummaryCard(entries: summaryEntriesCache)
                     }
@@ -116,7 +121,7 @@ struct TimelineView: View {
                     timelineContent
                 }
                 .frame(maxWidth: TimelineDesign.maxContentWidth)
-                .padding(.horizontal, 8)
+                .padding(.horizontal, OffRecordSpacing.screenX)
                 .padding(.top, 8)
                 .padding(.bottom, 28)
                 .frame(maxWidth: .infinity)
@@ -197,6 +202,19 @@ struct TimelineView: View {
         .onDisappear {
             currentSearchActivity?.resignCurrent()
             currentSearchActivity = nil
+        }
+        .onChange(of: scenePhase) { _, newPhase in
+            switch newPhase {
+            case .background:
+                clearTimelineCache()
+            case .active:
+                refreshTimelineCache()
+            default:
+                break
+            }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: .offRecordWillReleaseTransientMemory)) { _ in
+            clearTimelineCache()
         }
         .task(id: cacheSignature) {
             refreshTimelineCache()
@@ -384,6 +402,42 @@ struct TimelineView: View {
                 .accessibilityIdentifier("semanticMemory.searchMessage")
         }
     }
+
+    // MARK: - Voice Search Error
+
+    #if os(iOS)
+    @ViewBuilder
+    private var voiceSearchErrorBanner: some View {
+        if let error = voiceSearch.errorMessage {
+            HStack(spacing: 10) {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .foregroundStyle(OffRecordColor.brandCoral)
+                    .font(.system(size: 14, weight: .semibold))
+                Text(error)
+                    .font(OffRecordTypography.labelSmall)
+                    .foregroundStyle(OffRecordColor.textSecondary)
+                Spacer()
+                Button {
+                    voiceSearch.errorMessage = nil
+                } label: {
+                    Image(systemName: "xmark")
+                        .font(.system(size: 11, weight: .bold))
+                        .foregroundStyle(OffRecordColor.textTertiary)
+                }
+                .accessibilityLabel("Dismiss voice search error")
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(
+                OffRecordColor.surfacePeach,
+                in: RoundedRectangle(cornerRadius: OffRecordRadius.lg, style: .continuous)
+            )
+            .transition(.opacity.combined(with: .move(edge: .top)))
+            .accessibilityElement(children: .combine)
+            .accessibilityIdentifier("voiceSearch.errorBanner")
+        }
+    }
+    #endif
 
     // MARK: - Quick Filter Chips
 
@@ -835,6 +889,14 @@ struct TimelineView: View {
         summaryEntriesCache = summaryEntries
         entryMetricsCache = metrics
         PerformanceSignposts.end(token)
+    }
+
+    private func clearTimelineCache() {
+        filteredEntriesCache = []
+        groupedEntriesCache = [:]
+        sectionKeysCache = []
+        summaryEntriesCache = []
+        entryMetricsCache = [:]
     }
 
     private func sectionTitle(for key: SectionKey) -> String {

@@ -22,6 +22,7 @@ final class AudioPlaybackController: NSObject, ObservableObject, AVAudioPlayerDe
     static let speedOptions: [Float] = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0]
 
     func load(url: URL) throws {
+        stop()
         let player = try AVAudioPlayer(contentsOf: url)
         player.enableRate = true
         player.delegate = self
@@ -59,6 +60,7 @@ final class AudioPlaybackController: NSObject, ObservableObject, AVAudioPlayerDe
     // MARK: - Timer
 
     private func startTimer() {
+        stopTimer()
         timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { [weak self] _ in
             guard let self, let player = self.audioPlayer else { return }
             self.currentTime = player.currentTime
@@ -80,9 +82,17 @@ final class AudioPlaybackController: NSObject, ObservableObject, AVAudioPlayerDe
         }
     }
 
-    deinit {
+    func stop() {
         stopTimer()
         audioPlayer?.stop()
+        audioPlayer = nil
+        isPlaying = false
+        currentTime = 0
+        duration = 0
+    }
+
+    deinit {
+        stop()
     }
 }
 
@@ -175,11 +185,41 @@ struct AudioPlayerView: View {
                 loadError = "Unable to load audio."
             }
         }
+        .onDisappear {
+            controller.stop()
+        }
         .overlay {
             if let error = loadError {
-                Text(error)
-                    .font(OffRecordTypography.metadata)
-                    .foregroundColor(OffRecordColor.textCoral)
+                HStack(spacing: 10) {
+                    Image(systemName: "exclamationmark.triangle.fill")
+                        .foregroundStyle(OffRecordColor.brandCoral)
+                        .font(.system(size: 14, weight: .semibold))
+                    Text(error)
+                        .font(OffRecordTypography.labelSmall)
+                        .foregroundStyle(OffRecordColor.textCoral)
+                    Spacer()
+                    Button {
+                        loadError = nil
+                        Task {
+                            do {
+                                try controller.load(url: audioURL)
+                            } catch {
+                                loadError = "Unable to load audio."
+                            }
+                        }
+                    } label: {
+                        Text("Retry")
+                            .font(OffRecordTypography.labelSmall)
+                            .foregroundStyle(OffRecordColor.textCoral)
+                    }
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 10)
+                .background(
+                    OffRecordColor.surfacePeach,
+                    in: RoundedRectangle(cornerRadius: OffRecordRadius.lg, style: .continuous)
+                )
+                .padding(8)
             }
         }
     }

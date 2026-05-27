@@ -583,7 +583,7 @@ private struct DaypartHeroBackground: View {
 
     var body: some View {
         Group {
-            if let imageName = asset?.imageName, UIImage(named: imageName) != nil {
+            if let imageName = asset?.imageName {
                 Image(imageName)
                     .resizable()
                     .scaledToFill()

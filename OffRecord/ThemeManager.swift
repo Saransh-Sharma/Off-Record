@@ -36,7 +36,10 @@ enum AppTheme: String, CaseIterable, Identifiable {
     }
 
     var colorScheme: ColorScheme? {
-        .light
+        switch self {
+        case .dark: return .dark
+        default: return .light
+        }
     }
 
     /// Primary accent color for buttons and highlights
@@ -117,20 +120,22 @@ final class ThemeManager: ObservableObject {
 
     // MARK: - Semantic Colors
 
+    private var isDark: Bool { selectedTheme == .dark }
+
     var backgroundColor: Color {
-        OffRecordColor.backgroundPrimary
+        isDark ? OffRecordColor.darkBackground : OffRecordColor.backgroundPrimary
     }
 
     var textColor: Color {
-        OffRecordColor.textPrimary
+        isDark ? OffRecordColor.textInverse : OffRecordColor.textPrimary
     }
 
     var secondaryTextColor: Color {
-        OffRecordColor.textSecondary
+        isDark ? OffRecordColor.textSecondaryDark : OffRecordColor.textSecondary
     }
 
     var cardBackgroundColor: Color {
-        OffRecordColor.surfacePrimary
+        isDark ? OffRecordColor.darkSurface : OffRecordColor.surfacePrimary
     }
 
     /// Theme-aware accent color for UI elements
@@ -148,11 +153,11 @@ final class ThemeManager: ObservableObject {
     }
 
     var elevatedCardBackgroundColor: Color {
-        OffRecordColor.surfaceWarm
+        isDark ? OffRecordColor.darkSurfaceElevated : OffRecordColor.surfaceWarm
     }
 
     var borderColor: Color {
-        OffRecordColor.borderSoft
+        isDark ? OffRecordColor.borderDark : OffRecordColor.borderSoft
     }
 
     var privacyColor: Color {

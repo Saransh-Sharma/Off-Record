@@ -31,6 +31,10 @@ final class VoiceSearchManager: ObservableObject {
     // MARK: - Initialization
     
     init() {}
+
+    deinit {
+        stopListening()
+    }
     
     // MARK: - Public Methods
     
@@ -146,8 +150,8 @@ final class VoiceSearchManager: ObservableObject {
         let inputNode = audioEngine.inputNode
         let recordingFormat = inputNode.outputFormat(forBus: 0)
         
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { buffer, _ in
-            self.recognitionRequest?.append(buffer)
+        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
+            self?.recognitionRequest?.append(buffer)
         }
         
         // Start audio engine

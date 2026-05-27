@@ -45,6 +45,7 @@ struct ContentView: View {
                             compactBottomSafeAreaInset: proxy.safeAreaInsets.bottom
                         )
                     }
+                    .safeAreaPadding(.bottom, OffRecordCompactTabBarLayout.reservedContentBottomInset)
                 case .timeline:
                     NavigationStack { TimelineView() }
                         .safeAreaPadding(.bottom, OffRecordCompactTabBarLayout.reservedContentBottomInset)
@@ -59,12 +60,10 @@ struct ContentView: View {
                         .safeAreaPadding(.bottom, OffRecordCompactTabBarLayout.reservedContentBottomInset)
                 }
 
-                if navigationRouter.selectedTab != .today {
-                    OffRecordFloatingTabBar(selectedTab: selectedTabBinding)
-                        .padding(.horizontal, OffRecordCompactTabBarLayout.horizontalPadding)
-                        .padding(.bottom, OffRecordCompactTabBarLayout.screenEdgeBottomPadding)
-                        .offset(y: isKeyboardVisible ? 0 : proxy.safeAreaInsets.bottom)
-                }
+                OffRecordFloatingTabBar(selectedTab: selectedTabBinding)
+                    .padding(.horizontal, OffRecordCompactTabBarLayout.horizontalPadding)
+                    .padding(.bottom, OffRecordCompactTabBarLayout.screenEdgeBottomPadding)
+                    .offset(y: isKeyboardVisible ? 0 : proxy.safeAreaInsets.bottom)
             }
         }
         #if os(iOS)
