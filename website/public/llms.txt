@@ -57,7 +57,7 @@ Free. No in-app purchases. No subscriptions. No ads.
 |---|---|---|---|---|---|---|
 | Price | Free | $35/yr | $7/mo | $60/yr | $30/yr | Free |
 | Voice journaling | Yes | Yes | No | No | Cloud | No |
-| Apple Watch quick capture | Yes | No | No | No | No | No |
+| Apple Watch quick capture | Yes | Basic | No | No | No | No |
 | Weekly reflection | Private, local | Basic | Cloud | Cloud | Cloud | No |
 | AI features | On-device | Cloud | Cloud (GPT) | Cloud | Cloud | On-device |
 | Data collection | None | Analytics | Journal data | Journal data | Yes | Minimal |

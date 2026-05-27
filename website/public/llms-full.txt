@@ -12,7 +12,7 @@ OffRecord AI Journal is a free, privacy-first AI voice journal app for iPhone, i
 - **Price**: Free (no in-app purchases, no subscriptions, no ads)
 - **Developer**: OffRecord AI Journal
 - **App Store ID**: 6766499684
-- **Current Version**: 1.4.0 Unreleased
+- **Current Version**: 1.4.0 — Released
 - **Category**: Health & Fitness (HealthApplication)
 - **Website**: https://saransh-sharma.github.io/Off-Record
 - **App Store**: https://apps.apple.com/app/id6766499684
