@@ -17,6 +17,8 @@
 	</array>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>OffRecord uses the microphone to save private voice notes from your watch.</string>
+	<key>WKCompanionAppBundleIdentifier</key>
+	<string>com.singularity.offrecord</string>
 	<key>WKApplication</key>
 	<true/>
 </dict>
