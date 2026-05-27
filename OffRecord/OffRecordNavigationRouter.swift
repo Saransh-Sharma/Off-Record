@@ -8,6 +8,8 @@ enum OffRecordRoute: Equatable {
     case timeline(query: String?)
     case entry(UUID)
     case friday(question: String?)
+    case weeklyReflectionCurrent
+    case weeklyReflection(UUID)
 }
 
 @MainActor
@@ -20,6 +22,8 @@ final class OffRecordNavigationRouter: ObservableObject {
     @Published var timelineSearchText: String = ""
     @Published var routedEntryID: UUID?
     @Published var fridayQuestion: String?
+    @Published var routedWeeklyReflectionID: UUID?
+    @Published var shouldOpenCurrentWeeklyReflection = false
     @Published var shouldStartRecording = false
 
     private var deferredRoute: OffRecordRoute?
@@ -105,6 +109,14 @@ final class OffRecordNavigationRouter: ObservableObject {
         case .friday(let question):
             selectedTab = .friday
             fridayQuestion = question
+        case .weeklyReflectionCurrent:
+            selectedTab = .insights
+            routedWeeklyReflectionID = nil
+            shouldOpenCurrentWeeklyReflection = true
+        case .weeklyReflection(let id):
+            selectedTab = .insights
+            shouldOpenCurrentWeeklyReflection = false
+            routedWeeklyReflectionID = id
         }
     }
 
@@ -134,6 +146,14 @@ final class OffRecordNavigationRouter: ObservableObject {
             return .entry(id)
         case "friday":
             return .friday(question: question)
+        case "weekly-reflection":
+            if pathComponents.first?.lowercased() == "current" {
+                return .weeklyReflectionCurrent
+            }
+            guard let rawID = pathComponents.first, let id = UUID(uuidString: rawID) else {
+                return nil
+            }
+            return .weeklyReflection(id)
         default:
             return nil
         }
@@ -161,6 +181,12 @@ final class OffRecordNavigationRouter: ObservableObject {
             if let question, !question.isEmpty {
                 components.queryItems = [URLQueryItem(name: "question", value: question)]
             }
+        case .weeklyReflectionCurrent:
+            components.host = "weekly-reflection"
+            components.path = "/current"
+        case .weeklyReflection(let id):
+            components.host = "weekly-reflection"
+            components.path = "/\(id.uuidString)"
         }
 
         return components.url

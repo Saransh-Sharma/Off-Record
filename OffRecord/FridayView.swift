@@ -24,6 +24,7 @@ struct FridayView: View {
     @State private var shouldDeleteEmptyNoteDraft = false
     @State private var routedFridayQuestion: String?
     @State private var fridayActivity: NSUserActivity?
+    @State private var promptNoteError: String?
 
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \DiaryEntry.date, ascending: false)],
@@ -101,6 +102,14 @@ struct FridayView: View {
                     promptContext: promptNoteContext
                 )
             }
+        }
+        .alert("Could not open note", isPresented: Binding(
+            get: { promptNoteError != nil },
+            set: { if !$0 { promptNoteError = nil } }
+        )) {
+            Button("OK", role: .cancel) {}
+        } message: {
+            Text(promptNoteError ?? "")
         }
         .navigationDestination(isPresented: Binding(
             get: { routedFridayQuestion != nil },
@@ -941,7 +950,7 @@ struct FridayView: View {
 
     private func startPromptNote(from insight: ReflectionInsight) {
         let hadEntry = todayEntry != nil
-        let entry = getOrCreateTodayEntry()
+        guard let entry = getOrCreateTodayEntry() else { return }
         noteEntry = entry
         promptNoteContext = insight.prompt
         shouldDeleteEmptyNoteDraft = !hadEntry && entryHasNoContent(entry)
@@ -965,27 +974,32 @@ struct FridayView: View {
         }
     }
 
-    private func getOrCreateTodayEntry() -> DiaryEntry {
-        if let existing = todayDraftOrStartedEntry {
-            return existing
-        }
-
+    private func getOrCreateTodayEntry() -> DiaryEntry? {
         let now = Date()
-        let entry = DiaryEntry(context: viewContext)
-        entry.id = UUID()
-        entry.date = now
-        entry.createdAt = now
-        entry.text = ""
-        entry.isStarred = false
-        entry.updatedAt = now
-
         do {
+            let entry = try DiaryEntryDailyStore.getOrCreateEntry(on: now, in: viewContext)
             try viewContext.save()
+            return entry
         } catch {
-            viewContext.rollback()
+            if let existing = todayDraftOrStartedEntry {
+                return existing
+            }
+            let entry = DiaryEntry(context: viewContext)
+            entry.id = UUID()
+            entry.date = now
+            entry.createdAt = now
+            entry.text = ""
+            entry.isStarred = false
+            entry.updatedAt = now
+            do {
+                try viewContext.save()
+                return entry
+            } catch {
+                viewContext.rollback()
+                promptNoteError = "Could not create today's note. Please try again."
+                return nil
+            }
         }
-
-        return entry
     }
 
     private func entryHasNoContent(_ entry: DiaryEntry) -> Bool {

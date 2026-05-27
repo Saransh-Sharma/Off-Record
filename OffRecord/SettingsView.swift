@@ -13,6 +13,7 @@ struct SettingsView: View {
     @ObservedObject private var themeManager = ThemeManager.shared
     @ObservedObject private var goalManager = GoalManager.shared
     @ObservedObject private var semanticMemory = SemanticMemoryIndexController.shared
+    @ObservedObject private var weeklyReflection = WeeklyReflectionController.shared
 
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \DiaryEntry.date, ascending: true)],
@@ -21,6 +22,7 @@ struct SettingsView: View {
     private var entries: FetchedResults<DiaryEntry>
 
     @State private var showPermissionDeniedAlert = false
+    @State private var showWeeklyNotificationPermissionDeniedAlert = false
     @State private var showCloudSyncRestartAlert = false
     @State private var showDeleteSemanticIndexConfirm = false
 
@@ -81,6 +83,7 @@ struct SettingsView: View {
                 settingsSection(tint: OffRecordColor.surfaceMint) { journalingGoalSection }
                 settingsSection(tint: OffRecordColor.surfaceSage) { securitySection }
                 settingsSection(tint: OffRecordColor.surfaceLavender) { localAIPrivacySection }
+                settingsSection(tint: OffRecordColor.surfaceMint) { weeklyReflectionSection }
                 settingsSection(tint: OffRecordColor.surfaceMint) { semanticMemorySection }
                 settingsSection(tint: OffRecordColor.surfacePrimary) { systemSearchSection }
                 settingsSection(tint: OffRecordColor.surfacePeach) { dailyReminderSection }
@@ -112,6 +115,20 @@ struct SettingsView: View {
             Button("OK", role: .cancel) { }
         } message: {
             Text("Please enable notifications for OffRecord in Settings to receive daily reminders.")
+        }
+        .alert("Weekly Notifications Disabled", isPresented: $showWeeklyNotificationPermissionDeniedAlert) {
+            #if os(iOS)
+            Button("Open Settings") {
+                if let url = URL(string: UIApplication.openNotificationSettingsURLString) {
+                    UIApplication.shared.open(url)
+                } else if let url = URL(string: UIApplication.openSettingsURLString) {
+                    UIApplication.shared.open(url)
+                }
+            }
+            #endif
+            Button("OK", role: .cancel) { }
+        } message: {
+            Text("Enable notifications for OffRecord to receive your private weekly reflection reminder.")
         }
         .alert("Export error", isPresented: Binding(
             get: { exportError != nil },
@@ -493,6 +510,90 @@ struct SettingsView: View {
             Text("Daily Reminder")
         } footer: {
             Text("OffRecord sends one notification each day at your chosen time.")
+        }
+    }
+
+    private var weeklyReflectionSection: some View {
+        Section {
+            Toggle("Enable weekly reflection", isOn: Binding(
+                get: { weeklyReflection.settings.isEnabled },
+                set: { value in weeklyReflection.updateSettings { $0.isEnabled = value } }
+            ))
+            .accessibilityIdentifier("weeklyReflection.settings.enabled")
+
+            if weeklyReflection.settings.isEnabled {
+                Picker("Reflection day", selection: Binding(
+                    get: { weeklyReflection.settings.reminderWeekday },
+                    set: { value in weeklyReflection.updateSettings { $0.reminderWeekday = value } }
+                )) {
+                    Text("Sunday").tag(1)
+                    Text("Monday").tag(2)
+                    Text("Tuesday").tag(3)
+                    Text("Wednesday").tag(4)
+                    Text("Thursday").tag(5)
+                    Text("Friday").tag(6)
+                    Text("Saturday").tag(7)
+                }
+
+                DatePicker(
+                    "Reminder time",
+                    selection: Binding(
+                        get: {
+                            var components = DateComponents()
+                            components.hour = weeklyReflection.settings.reminderHour
+                            components.minute = weeklyReflection.settings.reminderMinute
+                            return Calendar.current.date(from: components) ?? Date()
+                        },
+                        set: { date in
+                            let components = Calendar.current.dateComponents([.hour, .minute], from: date)
+                            weeklyReflection.updateSettings {
+                                $0.reminderHour = components.hour ?? 19
+                                $0.reminderMinute = components.minute ?? 0
+                            }
+                        }
+                    ),
+                    displayedComponents: .hourAndMinute
+                )
+
+                Toggle("Show Home card", isOn: Binding(
+                    get: { weeklyReflection.settings.showHomeCard },
+                    set: { value in weeklyReflection.updateSettings { $0.showHomeCard = value } }
+                ))
+
+                Toggle("Send notification", isOn: Binding(
+                    get: { weeklyReflection.settings.sendNotification },
+                    set: { value in handleWeeklyNotificationToggle(value) }
+                ))
+
+                Label("Processing: Local only", systemImage: "lock.shield.fill")
+                    .font(OffRecordTypography.metadata)
+                    .foregroundColor(OffRecordColor.textSage)
+
+                Text("Weekly reflections use selected journal entries on this device. You can hide entries inside a report and regenerate without changing the original entry.")
+                    .font(OffRecordTypography.metadata)
+                    .foregroundColor(OffRecordColor.textSecondary)
+            }
+        } header: {
+            Text("Weekly Reflection")
+        } footer: {
+            Text("Notifications never include journal content, themes, moods, names, or quotes.")
+        }
+    }
+
+    private func handleWeeklyNotificationToggle(_ isEnabled: Bool) {
+        guard isEnabled else {
+            weeklyReflection.updateSettings { $0.sendNotification = false }
+            return
+        }
+
+        Task {
+            let granted = await WeeklyReflectionNotificationScheduler.requestPermissionIfNeeded()
+            await MainActor.run {
+                weeklyReflection.updateSettings { $0.sendNotification = granted }
+                if !granted {
+                    showWeeklyNotificationPermissionDeniedAlert = true
+                }
+            }
         }
     }
 

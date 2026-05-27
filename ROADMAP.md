@@ -5,7 +5,7 @@ This roadmap outlines the planned evolution of OffRecord AI Journal. Contributio
 ## Shipped
 
 ### v1.0 — Core Voice Journal
-- Voice journaling with fully on-device transcription (SFSpeechRecognizer)
+- Voice journaling with Apple Speech transcription after explicit consent
 - Friday personality model (communication style, emotional signature, knowledge graph)
 - NLP analysis via NLTagger (sentiment, named entities, topics)
 - Core Data storage with optional iCloud sync
@@ -26,7 +26,7 @@ This roadmap outlines the planned evolution of OffRecord AI Journal. Contributio
 - Shareable Personality Cards (Instagram Stories + Twitter/X formats)
 - Smarter App Store review prompts
 
-### v1.3 — Semantic Memory Search + Evidence-Based Friday *(current)*
+### v1.3 — Semantic Memory Search + Evidence-Based Friday
 - Timeline semantic search using local Apple NaturalLanguage embeddings and lexical matching
 - Hybrid ranking for meaning matches, exact people/places/topics, recency, starred entries, mood filters, and date filters
 - Evidence-Based Friday answers that retrieve journal evidence first and cite source entries
@@ -38,21 +38,34 @@ This roadmap outlines the planned evolution of OffRecord AI Journal. Contributio
 - “Siri & System Search” Settings controls for Spotlight metadata visibility and rebuilds
 - Automated and manual QA coverage for chunking, ranking, typed states, index lifecycle, and Friday citation behavior
 
+### v1.4 — Weekly Reflection + Apple Watch Quick Capture *(current)*
+- Proactive Weekly Reflection with Home card, report detail, Insights history, saved takeaways, source controls, regeneration, export, Settings controls, and local notifications
+- Local deterministic weekly reports from started entries, mood, sentiment, source type, topics, and snippets
+- Report-level source hiding and re-inclusion with versioned regeneration; no global entry privacy/exclude controls
+- High-risk entries count for eligibility/source management but stay out of generated insights, quotes, and exports
+- Deep links for `offrecord://weekly-reflection/current` and `offrecord://weekly-reflection/{reportID}`
+- watchOS 26+ companion focused on quick capture, not journal browsing
+- Mood, Speak, Record, and Recent outbox flows on Apple Watch
+- Privacy-safe complication and Smart Stack entry points for Quick Capture
+- Durable WatchConnectivity sync with metadata transfer, audio file transfer, retry/backoff state, and iPhone receipts
+- iPhone-side daily-entry import for mood/text and multi-audio `AudioAttachment` records
+- Local-only `WatchImportReceipt` idempotency so replayed watch transfers do not duplicate content
+- JSON and encrypted backup support for multiple audio attachments
+- Build caveat: full watch builds require the watchOS 26.2 platform/runtime in Xcode
+
 ## Planned
 
-### v1.4 — Friday Proactive Reflection + Semantic Intelligence Polish
-- Proactive Friday cards that surface unusual entries, theme shifts, weekly recaps, and decision/regret follow-ups
+### v1.5 — Watch QA + Proactive Reflection Polish
+- Paired-device Apple Watch QA for offline queue, reconnect, duplicate deliveries, long audio, interruptions, privacy previews, Reduce Motion, and large text
+- Full OffRecord, OffRecordWatch, and OffRecordWatchWidget build verification after installing the watchOS 26.2 platform/runtime
+- Future transcript improvements that keep Apple Speech consent explicit and avoid server transcription in the watch MVP
+- Proactive Friday cards beyond Weekly Reflection, including unusual entries, theme shifts, and decision/regret follow-ups
 - "Themes taking shape" insight from repeated topics and entities across recent entries, always with source evidence
 - Context-aware Today prompts that appear only when they can help the next reflection
 - Privacy-safe Friday smart reminders that never expose names, places, snippets, or sensitive content on the Lock Screen
 - Decision follow-up loop: detect patterns like "I decided to...", "I regret...", and "I chose...", then let users mark them reflected
 - Evidence-first framing for proactive insights: every card explains why it appeared and links back to supporting entries
-- Optional String Catalog groundwork for new or changed v1.4 copy; no full multi-language claim until at least one locale is complete and QA'd
-
-### v1.5 — Apple Watch Companion
-- Apple Watch companion app (WatchKit) for voice mood check-ins
-- WatchConnectivity for iPhone-Watch sync
-- Watch Complications for quick access
+- Optional String Catalog groundwork for new or changed v1.5 copy; no full multi-language claim until at least one locale is complete and QA'd
 
 ### v1.6 — Native macOS
 - Native macOS target using the shared SwiftUI codebase
@@ -113,4 +126,4 @@ The goal of v3.0 is a private assistant with deep understanding of your journali
 
 ---
 
-For technical details, see [ARCHITECTURE.md](ARCHITECTURE.md), [SEMANTIC_MEMORY_FRIDAY.md](SEMANTIC_MEMORY_FRIDAY.md), and the [Technology page](https://offrecord.example.com/technology.html).
+For technical details, see [ARCHITECTURE.md](ARCHITECTURE.md), [SEMANTIC_MEMORY_FRIDAY.md](SEMANTIC_MEMORY_FRIDAY.md), [WEEKLY_REFLECTION.md](WEEKLY_REFLECTION.md), and the [Technology page](https://offrecord.example.com/technology.html).

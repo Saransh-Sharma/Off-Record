@@ -447,7 +447,7 @@ struct OnboardingView: View {
         isRecording = false
         isTranscribing = true
         HapticManager.shared.recordingStopped()
-        let entry = createEntry(text: "", audioFileName: result.url.lastPathComponent, duration: result.duration)
+        let entry = createEntry(text: "", audioURL: result.url, duration: result.duration)
         entry.entryTranscriptionStatus = .processing
         try? viewContext.save()
         firstEntryAudioEntryID = entry.objectID
@@ -506,8 +506,8 @@ struct OnboardingView: View {
                     response.speechChoice = .granted
                     firstEntryDraft = text
                     response.firstEntryText = text
-                    entry.text = text
-                    entry.setValue(selectedMood.rawValue, forKey: "mood")
+                    JournalBlockTimelineStore.appendTextBlock(text: text, createdAt: entry.date ?? Date(), to: entry, in: viewContext)
+                    JournalBlockTimelineStore.appendMoodBlock(mood: selectedMood, createdAt: entry.date ?? Date(), to: entry, in: viewContext)
                     entry.entryTranscriptionStatus = .completed
                     entry.updatedAt = Date()
                     try? viewContext.save()
@@ -543,13 +543,13 @@ struct OnboardingView: View {
         let entry: DiaryEntry
         if let firstEntryAudioEntryID,
            let existingEntry = try? viewContext.existingObject(with: firstEntryAudioEntryID) as? DiaryEntry {
-            existingEntry.text = text
+            JournalBlockTimelineStore.appendTextBlock(text: text, createdAt: existingEntry.date ?? Date(), to: existingEntry, in: viewContext)
             existingEntry.updatedAt = Date()
-            existingEntry.setValue(selectedMood.rawValue, forKey: "mood")
+            JournalBlockTimelineStore.appendMoodBlock(mood: selectedMood, createdAt: existingEntry.date ?? Date(), to: existingEntry, in: viewContext)
             try? viewContext.save()
             entry = existingEntry
         } else {
-            entry = createEntry(text: text, audioFileName: nil, duration: 0)
+            entry = createEntry(text: text, audioURL: nil, duration: 0)
         }
         entryCreated = true
         response.firstEntryText = text
@@ -565,19 +565,50 @@ struct OnboardingView: View {
     }
 
     @discardableResult
-    private func createEntry(text: String, audioFileName: String?, duration: TimeInterval) -> DiaryEntry {
+    private func createEntry(text: String, audioURL: URL?, duration: TimeInterval) -> DiaryEntry {
         let now = Date()
-        let entry = DiaryEntry(context: viewContext)
-        entry.id = UUID()
-        entry.date = now
-        entry.createdAt = now
+        let entry: DiaryEntry
+        let createdFallbackEntry: Bool
+        do {
+            entry = try DiaryEntryDailyStore.getOrCreateEntry(on: now, in: viewContext)
+            createdFallbackEntry = false
+        } catch {
+            entry = DiaryEntry(context: viewContext)
+            entry.id = UUID()
+            entry.date = now
+            entry.createdAt = now
+            entry.text = ""
+            createdFallbackEntry = true
+        }
+        JournalBlockTimelineStore.appendTextBlock(text: text, createdAt: now, to: entry, in: viewContext)
         entry.updatedAt = now
-        entry.text = text
-        entry.isStarred = false
-        entry.setValue(audioFileName, forKey: "audioFileName")
-        entry.setValue(duration, forKey: "duration")
+        if createdFallbackEntry {
+            entry.isStarred = false
+        }
+        if let audioURL {
+            let byteCount = ((try? FileManager.default.attributesOfItem(atPath: audioURL.path)[.size]) as? NSNumber)?.int64Value ?? -1
+            let attachment = AudioAttachmentStore.attachAudio(
+                fileName: audioURL.lastPathComponent,
+                duration: duration,
+                createdAt: now,
+                sourceCaptureID: nil,
+                byteCount: byteCount,
+                codec: "aac-lc",
+                to: entry,
+                in: viewContext
+            )
+            JournalBlockTimelineStore.appendAudioBlock(
+                attachment: attachment,
+                createdAt: now,
+                sourceCaptureID: nil,
+                to: entry,
+                in: viewContext
+            )
+        }
         entry.entryTranscriptionStatus = .none
-        entry.setValue(selectedMood.rawValue, forKey: "mood")
+        if !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+            JournalBlockTimelineStore.appendMoodBlock(mood: selectedMood, createdAt: now, to: entry, in: viewContext)
+        }
         try? viewContext.save()
         return entry
     }

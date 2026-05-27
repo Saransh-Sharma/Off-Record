@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>OffRecord AI Journal - Private Voice Journal with On-Device AI</title>
-  <meta name="description" content="OffRecord AI Journal is a private voice journal for iPhone and iPad. Speak your thoughts, get on-device transcription, mood insights, Friday AI, and a personal knowledge graph without accounts, ads, or tracking.">
-  <meta name="keywords" content="OffRecord AI Journal, private voice journal, AI diary app, on-device AI journal, mood tracker, Friday AI, iPhone journal app">
+  <title>OffRecord AI Journal - Private Voice Journal with Weekly Reflections</title>
+  <meta name="description" content="OffRecord AI Journal is a private voice journal for iPhone, iPad, and Apple Watch. Speak your thoughts, capture quick notes from your wrist, get a private weekly reflection, and keep journaling without accounts, ads, or tracking.">
+  <meta name="keywords" content="OffRecord AI Journal, private voice journal, AI diary app, on-device AI journal, mood tracker, Friday AI, weekly reflection journal, iPhone journal app, Apple Watch journal app">
   <meta name="author" content="OffRecord AI Journal">
   <meta name="theme-color" content="#f6f2ea">
   <link rel="canonical" href="https://saransh-sharma.github.io/Off-Record/">
@@ -14,12 +14,12 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://saransh-sharma.github.io/Off-Record/">
   <meta property="og:title" content="OffRecord AI Journal - Your thoughts never leave your phone">
-  <meta property="og:description" content="A private AI voice journal with on-device transcription, Friday AI, mood insights, and zero tracking.">
+  <meta property="og:description" content="A private AI voice journal for iPhone, iPad, and Apple Watch with quick wrist capture, weekly reflections, and zero tracking.">
   <meta property="og:image" content="https://saransh-sharma.github.io/Off-Record/og-image.png?v=offrecord-20260517">
   <meta property="og:site_name" content="OffRecord AI Journal">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="OffRecord AI Journal">
-  <meta name="twitter:description" content="Private voice journaling with on-device AI.">
+  <meta name="twitter:description" content="Private voice journaling with quick Apple Watch capture and a weekly look back.">
   <meta name="twitter:image" content="https://saransh-sharma.github.io/Off-Record/og-image.png?v=offrecord-20260517">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -30,8 +30,8 @@
     "@type": "SoftwareApplication",
     "name": "OffRecord AI Journal",
     "applicationCategory": "HealthApplication",
-    "operatingSystem": "iOS 17.0+, iPadOS 17.0+",
-    "description": "A private AI voice journal with on-device transcription, mood insights, Friday AI, and zero tracking.",
+    "operatingSystem": "iOS 17+, iPadOS 17+, watchOS 26+",
+    "description": "A private AI voice journal with Apple Watch quick capture, weekly reflections, mood insights, Friday AI, and zero tracking.",
     "url": "https://saransh-sharma.github.io/Off-Record/",
     "downloadUrl": "https://apps.apple.com/app/id6766499684",
     "offers": {
@@ -434,6 +434,314 @@
       font-size: 16px;
       font-weight: 500;
     }
+    .watch-block {
+      background: #efe8da;
+      border-top: 1px solid var(--line);
+      border-bottom: 1px solid var(--line);
+    }
+    .watch-showcase {
+      display: grid;
+      grid-template-columns: minmax(0, 0.9fr) minmax(320px, 1.1fr);
+      gap: 44px;
+      align-items: center;
+    }
+    .watch-copy {
+      display: grid;
+      gap: 18px;
+    }
+    .watch-points {
+      list-style: none;
+      margin: 10px 0 0;
+      padding: 0;
+      display: grid;
+      gap: 12px;
+    }
+    .watch-points li {
+      display: grid;
+      grid-template-columns: 30px 1fr;
+      gap: 12px;
+      align-items: start;
+      color: var(--muted);
+      font-size: 16px;
+      font-weight: 600;
+    }
+    .watch-points li::before {
+      content: "";
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      margin-top: 1px;
+      background: var(--sage);
+      box-shadow: inset 0 0 0 7px #dbe5d5;
+    }
+    .watch-stage {
+      min-height: 520px;
+      display: grid;
+      place-items: center;
+      position: relative;
+      isolation: isolate;
+    }
+    .watch-stage::before {
+      content: "";
+      position: absolute;
+      width: min(74%, 480px);
+      aspect-ratio: 1;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(155,82,96,0.18), rgba(96,112,99,0.08) 45%, transparent 70%);
+      filter: blur(2px);
+      z-index: -1;
+      animation: watch-glow 4800ms var(--ease) infinite;
+    }
+    @keyframes watch-glow {
+      0%, 100% { transform: scale(0.96); opacity: 0.68; }
+      50% { transform: scale(1.04); opacity: 1; }
+    }
+    .watch-device {
+      width: min(330px, 84vw);
+      padding: 16px;
+      border-radius: 70px;
+      background: #272724;
+      box-shadow: 0 28px 70px rgba(39, 34, 25, 0.26), inset 0 1px 0 rgba(255,255,255,0.14);
+      position: relative;
+    }
+    .watch-device::before,
+    .watch-device::after {
+      content: "";
+      position: absolute;
+      left: 50%;
+      width: 128px;
+      height: 72px;
+      transform: translateX(-50%);
+      background: #2d2d29;
+      z-index: -1;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.08);
+    }
+    .watch-device::before {
+      bottom: calc(100% - 18px);
+      border-radius: 42px 42px 18px 18px;
+    }
+    .watch-device::after {
+      top: calc(100% - 18px);
+      border-radius: 18px 18px 42px 42px;
+    }
+    .watch-crown {
+      position: absolute;
+      right: -8px;
+      top: 128px;
+      width: 12px;
+      height: 54px;
+      border-radius: 999px;
+      background: #3c3a35;
+      box-shadow: inset 1px 0 0 rgba(255,255,255,0.18);
+    }
+    .watch-screen {
+      min-height: 380px;
+      padding: 24px 18px 18px;
+      border-radius: 54px;
+      background: linear-gradient(180deg, #fffdf8, #f6f2ea);
+      border: 1px solid rgba(255,255,255,0.5);
+      overflow: hidden;
+    }
+    .watch-topline {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .watch-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: var(--sage);
+      box-shadow: 0 0 0 5px rgba(96,112,99,0.15);
+    }
+    .watch-screen h3 {
+      margin: 24px 0 16px;
+      font-size: 30px;
+      line-height: 1;
+    }
+    .watch-actions {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 10px;
+    }
+    .watch-action {
+      min-height: 82px;
+      display: grid;
+      align-content: center;
+      justify-items: start;
+      gap: 7px;
+      padding: 14px;
+      border-radius: 24px;
+      color: var(--ink);
+      background: #ede5d7;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.55);
+    }
+    .watch-action:nth-child(1) { background: #e4ecdf; }
+    .watch-action:nth-child(2) { background: #efe0df; }
+    .watch-action:nth-child(3) { background: #dfecef; }
+    .watch-action:nth-child(4) { background: #f2e7d1; }
+    .watch-icon {
+      width: 26px;
+      height: 26px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      background: rgba(255,253,248,0.68);
+      font-size: 14px;
+      font-weight: 900;
+    }
+    .watch-action strong {
+      font-size: 15px;
+      line-height: 1;
+    }
+    .watch-status {
+      margin-top: 16px;
+      padding: 13px 14px;
+      border-radius: 20px;
+      background: #263029;
+      color: #fffdf8;
+      font-size: 13px;
+      font-weight: 800;
+      animation: watch-settle 3000ms var(--ease) infinite;
+    }
+    @keyframes watch-settle {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-2px); }
+    }
+    .weekly-band {
+      background: #f9f6ef;
+      color: var(--ink);
+      border-bottom: 1px solid var(--line);
+    }
+    .weekly-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 0.88fr) minmax(360px, 1.12fr);
+      gap: 34px;
+      align-items: center;
+    }
+    .weekly-copy {
+      display: grid;
+      gap: 18px;
+    }
+    .weekly-points {
+      list-style: none;
+      margin: 12px 0 0;
+      padding: 0;
+      display: grid;
+      gap: 12px;
+    }
+    .weekly-points li {
+      color: var(--muted);
+      font-size: 16px;
+      font-weight: 600;
+      display: grid;
+      grid-template-columns: 30px 1fr;
+      gap: 12px;
+      align-items: start;
+    }
+    .weekly-points li::before {
+      content: "";
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      margin-top: 1px;
+      background: var(--ocean);
+      box-shadow: inset 0 0 0 7px #dbe6e5;
+    }
+    .weekly-report {
+      padding: 30px;
+      background: #fffdf8;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      box-shadow: var(--shadow);
+    }
+    .report-cover {
+      display: grid;
+      gap: 14px;
+      padding-bottom: 22px;
+      border-bottom: 1px solid var(--line);
+    }
+    .report-date {
+      color: var(--sage);
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .report-title {
+      margin: 0;
+      font-size: 38px;
+      line-height: 1;
+      letter-spacing: 0;
+    }
+    .report-summary {
+      margin: 0;
+      color: var(--muted);
+      font-size: 17px;
+      font-weight: 500;
+    }
+    .report-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin: 18px 0;
+    }
+    .report-tile {
+      min-height: 116px;
+      padding: 16px;
+      border-radius: 8px;
+      background: #f3eee4;
+      display: grid;
+      align-content: space-between;
+      gap: 12px;
+    }
+    .report-tile span {
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 800;
+      text-transform: uppercase;
+    }
+    .report-tile strong {
+      font-size: 18px;
+      line-height: 1.12;
+    }
+    .report-list {
+      display: grid;
+      gap: 12px;
+      margin-top: 18px;
+    }
+    .report-note {
+      padding: 15px 16px;
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      background: #fffaf0;
+      color: var(--muted);
+      font-weight: 600;
+    }
+    .report-note strong {
+      color: var(--ink);
+      display: block;
+      margin-bottom: 4px;
+    }
+    .report-tools {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 20px;
+    }
+    .report-chip {
+      border-radius: 999px;
+      padding: 8px 11px;
+      background: rgba(59,110,120,0.1);
+      color: #365f67;
+      font-size: 13px;
+      font-weight: 800;
+    }
     .badge-row {
       display: flex;
       flex-wrap: wrap;
@@ -665,7 +973,7 @@
       h1 em { font-size: 64px; }
       h2 { font-size: 40px; }
       h2 em { font-size: 46px; }
-      .section-head, .product-grid, .friday-grid, .privacy-grid, .footer-grid {
+      .section-head, .product-grid, .friday-grid, .weekly-grid, .privacy-grid, .footer-grid, .watch-showcase {
         grid-template-columns: 1fr;
       }
       .feature-grid, .proof-strip {
@@ -684,11 +992,17 @@
       .hero-sub { font-size: 17px; }
       .hero-actions { flex-direction: column; align-items: center; }
       .pill-white, .hero-actions .pill-dark { width: 100%; max-width: 320px; }
-      section.block, .friday-band, .final { padding: 72px 0; }
+      section.block, .friday-band, .weekly-band, .final { padding: 72px 0; }
       .proof-strip, .feature-grid { grid-template-columns: 1fr; }
       .voice-card { min-height: 390px; padding: 22px; }
       .transcript { font-size: 27px; }
       .transcript em { font-size: 34px; }
+      .weekly-report { padding: 22px; }
+      .report-title { font-size: 30px; }
+      .report-row { grid-template-columns: 1fr; }
+      .watch-stage { min-height: 440px; }
+      .watch-device { width: min(300px, 88vw); }
+      .watch-screen { min-height: 350px; }
       .metric { grid-template-columns: 96px 1fr 38px; }
       .footer-bottom { flex-direction: column; }
     }
@@ -711,7 +1025,9 @@
       </a>
       <div class="nav-links" aria-label="Primary links">
         <a href="#features">Features</a>
+        <a href="#watch">Watch</a>
         <a href="#friday">Friday</a>
+        <a href="#weekly">Weekly</a>
         <a href="#privacy">Privacy</a>
         <a href="support.html">Support</a>
       </div>
@@ -730,12 +1046,12 @@
         <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260228_065522_522e2295-ba22-457e-8fdb-fbcd68109c73.mp4" type="video/mp4">
       </video>
       <div class="hero-center">
-        <div class="hero-kicker">Private voice journal - on-device AI</div>
+        <div class="hero-kicker">Private voice journal - weekly reflections</div>
         <h1 id="hero-title">
           Your thoughts deserve a home
           <em>that never leaves your phone</em>
         </h1>
-        <p class="hero-sub">OffRecord turns spoken thoughts into a searchable AI journal with mood insights, Friday, and a private knowledge graph. No accounts, no ads, no tracking.</p>
+        <p class="hero-sub">Speak freely, capture thoughts from your wrist, and get a private look back at your week. No accounts, no ads, no tracking.</p>
         <div class="hero-actions">
           <a class="pill pill-white" href="#walkthrough">
             <span class="play" aria-hidden="true"></span>
@@ -752,9 +1068,40 @@
     <div class="proof-strip" aria-label="OffRecord product facts">
       <div class="proof"><strong>$0</strong><span>Free forever</span></div>
       <div class="proof"><strong>0</strong><span>Accounts required</span></div>
-      <div class="proof"><strong>100%</strong><span>On-device AI</span></div>
-      <div class="proof"><strong>iOS 17+</strong><span>iPhone and iPad</span></div>
+      <div class="proof"><strong>Weekly</strong><span>A private look back</span></div>
+      <div class="proof"><strong>Watch</strong><span>Quick Capture on your wrist</span></div>
     </div>
+
+    <section class="block watch-block" id="watch">
+      <div class="wrap watch-showcase">
+        <div class="watch-copy reveal">
+          <p class="eyebrow">Now on Apple Watch</p>
+          <h2>Catch the thought before <em>it slips away.</em></h2>
+          <p class="section-copy">OffRecord Quick Capture puts mood, voice, recording, and recent saves on your wrist. Your full journal stays on iPhone and iPad; the watch is for the tiny moments you do not want to lose.</p>
+          <ul class="watch-points">
+            <li><span><strong>Capture a feeling in seconds.</strong> Turn the Crown, tap a mood, and move on.</span></li>
+            <li><span><strong>Record a thought before it slips away.</strong> Save a quick voice note even when your iPhone is not nearby.</span></li>
+            <li><span><strong>Your watch face stays private.</strong> Complications and Smart Stack show quick access, not journal text.</span></li>
+          </ul>
+        </div>
+        <div class="watch-stage reveal" aria-label="Apple Watch Quick Capture preview">
+          <div class="watch-device">
+            <div class="watch-crown" aria-hidden="true"></div>
+            <div class="watch-screen">
+              <div class="watch-topline"><span>Quick Capture</span><span class="watch-dot" aria-hidden="true"></span></div>
+              <h3>Saved on your watch.</h3>
+              <div class="watch-actions" aria-hidden="true">
+                <div class="watch-action"><span class="watch-icon">M</span><strong>Mood</strong></div>
+                <div class="watch-action"><span class="watch-icon">S</span><strong>Speak</strong></div>
+                <div class="watch-action"><span class="watch-icon">R</span><strong>Record</strong></div>
+                <div class="watch-action"><span class="watch-icon">20</span><strong>Recent</strong></div>
+              </div>
+              <div class="watch-status">If your iPhone is not nearby, your watch keeps it until it can send.</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
 
     <section class="block" id="walkthrough">
       <div class="wrap">
@@ -822,6 +1169,42 @@
       </div>
     </section>
 
+    <section class="block weekly-band" id="weekly">
+      <div class="wrap weekly-grid">
+        <div class="weekly-copy reveal">
+          <p class="eyebrow">Weekly Reflection</p>
+          <h2>A private look back at <em>what shaped your week.</em></h2>
+          <p class="section-copy">When you have written enough, OffRecord gathers the week into a calm report you can read on Sunday night or whenever you are ready.</p>
+          <ul class="weekly-points">
+            <li><span><strong>See what kept coming up.</strong> Themes, small wins, friction points, and questions help you notice the week without over-reading it.</span></li>
+            <li><span><strong>Choose which entries are included.</strong> Open the source list, remove an entry from the reflection, or add it back later.</span></li>
+            <li><span><strong>Save one takeaway for next week.</strong> Keep the line you want to remember, then find it again in history.</span></li>
+          </ul>
+        </div>
+        <article class="weekly-report reveal" aria-label="Weekly Reflection report preview">
+          <div class="report-cover">
+            <span class="report-date">Sunday evening</span>
+            <h3 class="report-title">You kept returning to steadier mornings.</h3>
+            <p class="report-summary">Your entries can show where the week felt lighter, where it felt crowded, and what might be worth carrying forward.</p>
+          </div>
+          <div class="report-row" aria-hidden="true">
+            <div class="report-tile"><span>Theme</span><strong>Protecting quiet time</strong></div>
+            <div class="report-tile"><span>Win</span><strong>You followed through twice</strong></div>
+            <div class="report-tile"><span>Question</span><strong>What needs less urgency?</strong></div>
+          </div>
+          <div class="report-list">
+            <div class="report-note"><strong>Source choices</strong> Keep the reflection focused by choosing what gets included.</div>
+            <div class="report-note"><strong>Private export</strong> Export the report when you want it. Quotes stay out unless you turn them on.</div>
+          </div>
+          <div class="report-tools" aria-hidden="true">
+            <span class="report-chip">Save takeaway</span>
+            <span class="report-chip">View history</span>
+            <span class="report-chip">Gentle reminder</span>
+          </div>
+        </article>
+      </div>
+    </section>
+
     <section class="block" id="features">
       <div class="wrap">
         <div class="section-head reveal">
@@ -829,15 +1212,15 @@
             <p class="eyebrow">Everything included</p>
             <h2>The journal app for voice, mood, memory, and <em>self-understanding.</em></h2>
           </div>
-          <p class="section-copy">OffRecord is not a blank notes app with a microphone. It is a private system for capturing what happened, finding what repeats, and making your emotional life easier to see.</p>
+          <p class="section-copy">OffRecord is not a blank notes app with a microphone. It helps you capture what happened, remember what mattered, and notice what repeats.</p>
         </div>
         <div class="feature-grid">
-          <article class="surface feature reveal"><div class="feature-mark">01</div><h3>Automatic mood tracking</h3><p>Sentiment analysis reads emotional tone from your words, so mood trends build without manual logging.</p></article>
-          <article class="surface feature reveal"><div class="feature-mark">02</div><h3>Personal knowledge graph</h3><p>People, places, topics, goals, and recurring themes become a searchable map of your inner world.</p></article>
-          <article class="surface feature reveal"><div class="feature-mark">03</div><h3>Talk to Friday</h3><p>Ask about mood patterns, journaling habits, personality traits, and what has been showing up lately.</p></article>
-          <article class="surface feature reveal"><div class="feature-mark">04</div><h3>Encrypted exports</h3><p>Export PDF, JSON, Markdown, CSV, plain text, or AES-256-GCM encrypted backups.</p></article>
+          <article class="surface feature reveal"><div class="feature-mark">01</div><h3>Weekly Reflection</h3><p>Get a calm end-of-week report with themes, wins, frictions, questions, takeaways, and history.</p></article>
+          <article class="surface feature reveal"><div class="feature-mark">02</div><h3>Apple Watch Quick Capture</h3><p>Capture a mood, dictated thought, or voice note from your wrist, then let iPhone add it to your journal.</p></article>
+          <article class="surface feature reveal"><div class="feature-mark">03</div><h3>Talk to Friday</h3><p>Ask what has been showing up lately and get answers grounded in your own entries.</p></article>
+          <article class="surface feature reveal"><div class="feature-mark">04</div><h3>Private exports</h3><p>Export your journal or weekly reflections when you want a copy. Reflection quotes stay off unless you choose them.</p></article>
           <article class="surface feature reveal"><div class="feature-mark">05</div><h3>Face ID lock</h3><p>Protect the app with Face ID or Touch ID and keep the journal private on shared or unlocked devices.</p></article>
-          <article class="surface feature reveal"><div class="feature-mark">06</div><h3>Eight themes</h3><p>System, Light, Sage, Lavender, Rose, Ocean, Warm, and Dark themes make the journal feel personal.</p></article>
+          <article class="surface feature reveal"><div class="feature-mark">06</div><h3>Mood and memory</h3><p>Moods, people, places, topics, and recurring ideas become easier to find as your journal grows.</p></article>
         </div>
       </div>
     </section>
@@ -846,29 +1229,30 @@
       <div class="wrap">
         <div class="section-head reveal">
           <div>
-            <p class="eyebrow">Privacy as architecture</p>
+            <p class="eyebrow">Privacy by design</p>
             <h2>Your journal is not a dataset. <em>It is yours.</em></h2>
           </div>
-          <p class="section-copy">Most AI journal apps ask you to trust their cloud. OffRecord takes the opposite path: the intelligence lives with the data, on the device in your hand.</p>
+          <p class="section-copy">Most AI journal apps ask you to send private writing away. OffRecord keeps your journal, reflections, and quick captures with you.</p>
         </div>
         <div class="privacy-grid">
           <div class="privacy-board reveal">
             <ul class="check-list">
               <li><span><strong>No account required.</strong> Start journaling without an email address, login, or profile.</span></li>
               <li><span><strong>No analytics or ad tracking.</strong> The app is built without third-party analytics, advertising, or telemetry SDKs.</span></li>
-              <li><span><strong>On-device AI.</strong> Speech, sentiment, entities, insights, and Friday processing run locally.</span></li>
+              <li><span><strong>Private reflections.</strong> Weekly Reflection is made from your own entries and stays in the app.</span></li>
               <li><span><strong>Optional iCloud sync.</strong> Sync through your personal Apple account only when you choose it.</span></li>
+              <li><span><strong>Private Apple Watch capture.</strong> Save quick thoughts on your wrist without showing journal text on the watch face.</span></li>
             </ul>
           </div>
           <div class="compare reveal">
             <table aria-label="Journal app comparison">
               <thead><tr><th>Feature</th><th class="us">OffRecord</th><th>Cloud journals</th></tr></thead>
               <tbody>
-                <tr><td>AI processing</td><td class="us">On device</td><td>Remote servers</td></tr>
-                <tr><td>Voice transcription</td><td class="us">Offline capable</td><td>Often cloud based</td></tr>
-                <tr><td>Data collection</td><td class="us">None</td><td>Varies by policy</td></tr>
-                <tr><td>Subscription</td><td class="us">Free</td><td>Common</td></tr>
-                <tr><td>Export ownership</td><td class="us">PDF, JSON, Markdown, CSV, encrypted backup</td><td>Often limited</td></tr>
+                <tr><td>Weekly reflection</td><td class="us">Stays in your journal</td><td>Often processed elsewhere</td></tr>
+                <tr><td>Apple Watch capture</td><td class="us">Saved privately first</td><td>Often needs a connection</td></tr>
+                <tr><td>Reminders</td><td class="us">No journal text</td><td>Can expose details</td></tr>
+                <tr><td>Account</td><td class="us">Not required</td><td>Common</td></tr>
+                <tr><td>Export ownership</td><td class="us">You choose what to include</td><td>Often limited</td></tr>
               </tbody>
             </table>
           </div>
@@ -880,7 +1264,7 @@
       <div class="wrap reveal">
         <p class="eyebrow">Download OffRecord</p>
         <h2>Two minutes a day. <em>A clearer record of you.</em></h2>
-        <p>Speak freely, understand your patterns, and keep the most personal data on the device where it belongs.</p>
+        <p>Speak freely, capture the small moments, and end the week with a reflection that belongs only to you.</p>
         <a class="pill pill-dark" href="https://apps.apple.com/app/id6766499684">
           Download free on the App Store
           <span class="arrow-house" aria-hidden="true"><span class="arrow"></span></span>
@@ -897,12 +1281,13 @@
             <img src="app-icon.png" alt="">
             <span>OffRecord AI Journal</span>
           </a>
-          <p>A private AI voice journal for iPhone and iPad. Your voice, your memories, your Friday, your phone.</p>
+          <p>A private AI voice journal for iPhone, iPad, and Apple Watch. Your voice, your memories, your Friday, your devices.</p>
         </div>
         <div class="footer-col">
           <h4>Product</h4>
           <a href="#features">Features</a>
           <a href="#friday">Friday</a>
+          <a href="#weekly">Weekly Reflection</a>
           <a href="technology.html">Technology</a>
           <a href="https://apps.apple.com/app/id6766499684">App Store</a>
         </div>

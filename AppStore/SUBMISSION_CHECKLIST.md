@@ -6,14 +6,21 @@
 - [ ] All source files compile without errors
 - [ ] No warnings in Release build
 - [ ] Minimum deployment target set (iOS 17.0+)
+- [ ] watchOS deployment target set (watchOS 26.0+)
+- [ ] watchOS 26.2 platform/runtime installed before embedded watch build verification
 - [ ] Bundle identifier: `com.singularity.offrecord`
-- [ ] Version: 1.3.0
+- [ ] Watch bundle identifier: `com.singularity.offrecord.watchkitapp`
+- [ ] Watch widget bundle identifier: `com.singularity.offrecord.watchkitapp.OffRecordWatchWidget`
+- [ ] Watch companion app bundle identifier setting: `com.singularity.offrecord`
+- [ ] Version: 1.4.0
 - [ ] Build number: 14
 - [ ] App Group configured: `group.com.singularity.offrecord`
+- [ ] `OffRecord` embeds `OffRecordWatch`, and `OffRecordWatch` embeds `OffRecordWatchWidget`
 - [ ] Archive builds successfully in Release configuration
 
 ### App Icon
 - [ ] 1024x1024 App Store icon (already in Assets.xcassets)
+- [ ] watchOS app icon content included in `AppIcon`
 - [ ] No transparency or alpha channel
 - [ ] No rounded corners (iOS applies them automatically)
 
@@ -42,6 +49,7 @@
 - [x] Privacy Policy hosted at URL
 - [x] App Privacy labels configured (Data Not Collected)
 - [x] Apple Speech transcription disclosure and consent shown before transcription
+- [x] Apple Watch Quick Capture privacy documented: local watch outbox, WatchConnectivity transfer, privacy-safe complication/Smart Stack content, and no analytics
 
 ### App Review
 - [x] Review notes prepared (in metadata.json)
@@ -72,7 +80,7 @@
 ### App Privacy
 1. Data Collection: "No, we do not collect data from this app"
 2. No data types to declare for developer collection
-3. Review notes explain Apple Speech transcription and optional iCloud Sync
+3. Review notes explain Apple Speech transcription, optional iCloud Sync, and Apple Watch Quick Capture via WatchConnectivity
 
 ### Version Information
 1. Upload screenshots for each device size

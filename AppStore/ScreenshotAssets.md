@@ -8,6 +8,10 @@
 - **iPhone 5.5" (iPhone 8 Plus)**: 1242 x 2208 pixels
 - **iPad 12.9" (iPad Pro)**: 2048 x 2732 pixels
 
+### Optional Apple Watch Assets
+- Capture Apple Watch Quick Capture Home, Mood, Record, and privacy-safe complication/Smart Stack states after the watchOS 26.2 runtime is installed.
+- Do not show raw journal text, transcript snippets, names, audio filenames, or sensitive mood context in watch marketing screenshots.
+
 ### Color Palette for Screenshots
 - Primary: #342044 (Deep Plum)
 - Secondary: #7FA08A (Sage)
@@ -111,7 +115,7 @@
 ---
 
 ## Screenshot 8: Privacy & Settings
-**Caption**: "100% On-Device. Your Diary Never Leaves Your Phone."
+**Caption**: "Private by Design. No Developer Servers."
 **Layout**:
 - Show Settings page highlighting privacy features
 - Privacy section with green checkmarks:
@@ -119,6 +123,7 @@
   - Apple Speech transcription with consent
   - No accounts required
   - No tracking or analytics
+  - Apple Watch captures sync privately
   - Face ID / Touch ID protection
   - AES-256 encrypted backups
 - Sage shield icon or privacy badge
@@ -163,6 +168,17 @@
 
 ---
 
+## Optional Apple Watch Screenshot: Quick Capture
+**Caption**: "Capture from your wrist. Sync when ready."
+**Layout**:
+- Show Quick Capture Home with Mood, Speak, Record, Recent, and one-line sync status
+- Show generic queue state such as "Held for later" or "On your iPhone"
+- Do not show journal text or transcript previews
+
+**Feature callout**: Apple Watch Quick Capture with privacy-safe outbox
+
+---
+
 ## App Preview Video (30 seconds)
 
 ### Storyboard
@@ -191,6 +207,8 @@ OffRecord AI Journal reimagines personal journaling with AI-powered Friday assis
 
 ### Long (for blog/feature)
 In a world where every app wants your data, OffRecord AI Journal takes a clear privacy stance: your journal analysis should not go to developer servers or non-Apple AI services. OffRecord AI Journal is an AI-powered voice diary that builds a "Friday" - a living, learning model of who you are. As you journal, OffRecord AI Journal learns your communication style, maps your emotional landscape, tracks your thought patterns, and builds a knowledge graph of the people, places, and topics in your life. Friday analysis is powered by cognitive science (Plutchik's emotions, Big Five personality, Bayesian inference) and local Apple frameworks. Apple Speech transcription is disclosed and permission-based.
+
+Apple Watch Quick Capture extends that privacy posture to your wrist: mood, dictation, and audio captures save locally first, sync through Apple WatchConnectivity, and use privacy-safe complication and Smart Stack surfaces.
 
 ---
 

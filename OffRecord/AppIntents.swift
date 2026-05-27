@@ -450,10 +450,7 @@ enum DiaryEntryIntentStore {
     @MainActor
     static func appendToToday(text: String) throws {
         let context = PersistenceController.shared.container.viewContext
-        let entry = todayEntry(in: context)
-        let existingText = entry.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        entry.text = existingText.isEmpty ? text : existingText + "\n\n" + text
-        entry.updatedAt = Date()
+        let entry = try JournalBlockTimelineStore.appendTextBlock(text: text, createdAt: Date(), in: context)
         try save(context)
         EntryLearningPipeline.upsertSemanticEntry(entry)
         JournalSpotlightIndexer.shared.upsert(entry: entry)
@@ -462,9 +459,7 @@ enum DiaryEntryIntentStore {
     @MainActor
     static func setTodayMood(_ mood: Mood) throws {
         let context = PersistenceController.shared.container.viewContext
-        let entry = todayEntry(in: context)
-        entry.setValue(mood.rawValue, forKey: "mood")
-        entry.updatedAt = Date()
+        let entry = try JournalBlockTimelineStore.appendMoodBlock(mood: mood, createdAt: Date(), in: context)
         try save(context)
         EntryLearningPipeline.upsertSemanticEntry(entry)
         JournalSpotlightIndexer.shared.upsert(entry: entry)
@@ -490,32 +485,6 @@ enum DiaryEntryIntentStore {
         request.predicate = predicate
         request.sortDescriptors = [NSSortDescriptor(keyPath: \DiaryEntry.updatedAt, ascending: false)]
         return fetch(request).startedEntries
-    }
-
-    @MainActor
-    private static func todayEntry(in context: NSManagedObjectContext) -> DiaryEntry {
-        let calendar = Calendar.current
-        let now = Date()
-        let startOfDay = calendar.startOfDay(for: now)
-        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? now
-
-        let request: NSFetchRequest<DiaryEntry> = DiaryEntry.fetchRequest()
-        request.predicate = NSPredicate(format: "date >= %@ AND date < %@", startOfDay as NSDate, endOfDay as NSDate)
-        request.sortDescriptors = [NSSortDescriptor(keyPath: \DiaryEntry.updatedAt, ascending: false)]
-        request.fetchLimit = 1
-
-        if let existing = try? context.fetch(request).first {
-            return existing
-        }
-
-        let entry = DiaryEntry(context: context)
-        entry.id = UUID()
-        entry.date = now
-        entry.createdAt = now
-        entry.updatedAt = now
-        entry.text = ""
-        entry.isStarred = false
-        return entry
     }
 
     @MainActor

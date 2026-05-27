@@ -54,6 +54,7 @@ struct TimelineView: View {
     @State private var sectionKeysCache: [SectionKey] = []
     @State private var summaryEntriesCache: [DiaryEntry] = []
     @State private var entryMetricsCache: [NSManagedObjectID: TimelineEntryPresentation] = [:]
+    @State private var cachedEntriesSignature = ""
     @State private var routedEntry: DiaryEntry?
     @State private var currentSearchActivity: NSUserActivity?
     @State private var showSpeechConsentPrompt = false
@@ -217,6 +218,10 @@ struct TimelineView: View {
             clearTimelineCache()
         }
         .task(id: cacheSignature) {
+            if cachedEntriesSignature != entriesSignature {
+                normalizeDuplicateDaysIfNeeded()
+                cachedEntriesSignature = entriesSignature
+            }
             refreshTimelineCache()
         }
     }
@@ -827,6 +832,7 @@ struct TimelineView: View {
     private func refreshTimelineCache() {
         let token = PerformanceSignposts.begin("TimelineFilterAndGroup")
         let filteredEntries = entries.startedEntries.filter { entry in
+            guard !entry.isDeleted else { return false }
             guard let entryDate = entry.date else { return false }
 
             if showStarredOnly && !entry.isStarred { return false }
@@ -889,6 +895,22 @@ struct TimelineView: View {
         summaryEntriesCache = summaryEntries
         entryMetricsCache = metrics
         PerformanceSignposts.end(token)
+    }
+
+    @MainActor
+    private func normalizeDuplicateDaysIfNeeded() {
+        do {
+            let normalizedEntries = try DiaryEntryDailyStore.normalizeAllDuplicateDays(in: viewContext)
+            guard viewContext.hasChanges else { return }
+            try viewContext.save()
+            viewContext.processPendingChanges()
+            for entry in normalizedEntries where !entry.isDeleted {
+                EntryLearningPipeline.upsertSemanticEntry(entry)
+                JournalSpotlightIndexer.shared.upsert(entry: entry)
+            }
+        } catch {
+            viewContext.rollback()
+        }
     }
 
     private func clearTimelineCache() {

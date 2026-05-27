@@ -7,11 +7,22 @@ OffRecord AI Journal - AI Voice Journal
 Private Journal & Mood Tracker
 
 ## Promotional Text (170 characters max)
-NEW: Search your journal by meaning and ask Friday evidence-backed questions with citations. Semantic Memory stays local on your iPhone.
+NEW: Apple Watch Quick Capture for mood, dictation, and audio notes. Saved on watch first, synced privately to iPhone.
 
 ## Description (4000 characters max)
 
 OffRecord AI Journal is a private voice journal that turns your spoken thoughts into a searchable diary with AI mood tracking. Speak your thoughts, and OffRecord AI Journal transforms them into a living journal while building a private AI assistant that reflects your inner world.
+
+APPLE WATCH QUICK CAPTURE
+Capture from your wrist without browsing your private journal on watch:
+
+- Mood: choose from OffRecord's eight moods with a watch-optimized dial
+- Speak: dictate a quick thought and save it to today's entry
+- Record: save raw voice audio first, even when your iPhone is not reachable
+- Recent: see the last 20 watch captures as private outbox status
+- Complication and Smart Stack: generic launch and queue status only
+
+The iPhone remains your full journal. Apple Watch is for fast, private capture.
 
 YOUR VOICE, YOUR DIARY
 Record your thoughts naturally with voice. OffRecord AI Journal uses Apple Speech for transcription after clearly asking permission; when your device is online, voice audio may be processed by Apple Speech and returned as a transcript saved in your journal.
@@ -44,7 +55,9 @@ Track your emotional journey with:
 
 RICH JOURNALING
 - Voice recording with real-time audio visualization
+- Apple Watch mood, dictation, and audio Quick Capture
 - Enhanced audio playback with progress bar, scrubbing, and speed control (0.5x-2x)
+- Multiple audio notes per day, including Apple Watch recordings
 - Photo attachments (up to 5 per entry, stored on-device only)
 - Search and filter your entire history
 - Smart search with knowledge graph-powered suggestions
@@ -59,11 +72,14 @@ Quick-access widgets for your Home Screen and Lock Screen:
 - Streak counter
 - Mood tracker
 - One-tap recording shortcut
+- Apple Watch complication and Smart Stack Quick Capture entry
 
 SECURITY & PRIVACY
 - Face ID / Touch ID app lock
 - Password-protected encrypted backups (AES-256-GCM)
 - Local Friday insights, mood analysis, and Semantic Memory
+- Watch captures save locally first and sync to iPhone with Apple WatchConnectivity
+- Watch complications and Smart Stack widgets do not show journal text
 - Optional iCloud sync (encrypted with your Apple ID)
 - No accounts required
 - No tracking, no analytics, no ads
@@ -73,12 +89,12 @@ SECURITY & PRIVACY
 System, Light, Sage, Lavender, Rose, Ocean, Warm, and Dark themes to match your style.
 
 BUILT FOR CONSISTENCY
-OffRecord AI Journal helps you build a journaling habit. Daily reminder notifications, writing prompts to get you started, and journaling goals with weekly targets and milestone celebrations.
+Daily reminders, writing prompts, and weekly goals help you build a consistent journaling habit.
 
 Your thoughts deserve a home. OffRecord AI Journal is that home.
 
 ## Keywords (100 characters max, comma-separated)
-diary,journal,voice,mood tracker,private AI assistant,private,speech to text,mindfulness,encrypted,anxiety
+diary,journal,voice,mood,private AI,private,speech to text,mindfulness,encrypted,anxiety
 
 ## Category
 Primary: Health & Fitness
@@ -95,6 +111,16 @@ https://saransh-sharma.github.io/Off-Record/support.html
 
 ## Privacy Policy URL
 https://saransh-sharma.github.io/Off-Record/privacy.html
+
+## What's New (Version 1.4)
+New in v1.4:
+
+- Apple Watch Quick Capture: Save Mood, Speak, and Record captures from your wrist.
+- Private Outbox: Watch captures save locally first and retry later if your iPhone is unreachable.
+- Watch Complication and Smart Stack: Open Quick Capture with generic, privacy-safe status only.
+- Better Audio Notes: Multiple watch recordings can attach to the same daily entry.
+- Safer Sync: Duplicate watch deliveries are ignored, and audio imports require the file before a receipt is created.
+- Still private: No analytics, no tracking, and no developer servers for watch captures.
 
 ## What's New (Version 1.3)
 New in v1.3:

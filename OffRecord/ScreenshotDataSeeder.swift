@@ -196,6 +196,7 @@ struct ScreenshotDataSeeder {
             diaryEntry.mood = entry.mood
             diaryEntry.isStarred = entry.starred
             diaryEntry.duration = entry.duration
+            JournalBlockTimelineStore.backfillBlocksIfNeeded(for: diaryEntry, in: context)
         }
 
         do {

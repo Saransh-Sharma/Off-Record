@@ -38,6 +38,7 @@ struct OffRecordApp: App {
         ScreenshotDataSeeder.seedIfNeeded(context: persistenceController.container.viewContext)
         UITestDataSeeder.seedIfNeeded(context: persistenceController.container.viewContext)
         ReminderManager.shared.reconcileScheduleIfNeeded()
+        WatchCaptureImporter.shared.start(context: persistenceController.container.viewContext)
     }
 
     var body: some Scene {
@@ -97,6 +98,10 @@ struct OffRecordApp: App {
             .onChange(of: lockManager.isUnlocked) { _, _ in
                 resumeDeferredRoutesIfPossible()
             }
+            .onReceive(NotificationCenter.default.publisher(for: .offRecordPendingRouteStored)) { _ in
+                consumeLegacyAndStoredRoutes()
+                resumeDeferredRoutesIfPossible()
+            }
             .onChange(of: scenePhase) { _, newPhase in
                 switch newPhase {
                 case .background:
@@ -148,31 +153,18 @@ struct OffRecordApp: App {
         context.mergePolicy = NSMergeByPropertyObjectTrumpMergePolicy
 
         context.perform {
-            do {
-                let fetchRequest = NSFetchRequest<NSDictionary>(entityName: "DiaryEntry")
-                fetchRequest.propertiesToFetch = ["audioFileName"]
-                fetchRequest.resultType = .dictionaryResultType
+            let fileNames = AudioAttachmentStore.audioFileNames(in: context)
 
-                let results = try context.fetch(fetchRequest)
-                let fileNames = results.compactMap { row in
-                    row["audioFileName"] as? String
-                }.filter { !$0.isEmpty }
-
-                let fileManager = FileManager.default
-                guard let base = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
-                    appLogger.warning("Audio cleanup could not resolve Application Support directory; falling back to empty keep list.")
-                    AudioRecorder.cleanupOrphanedRecordings(keepURLs: [])
-                    return
-                }
-
-                let recordingsDirectory = base.appendingPathComponent("Recordings", isDirectory: true)
-                let keepURLs = Set(fileNames.map { recordingsDirectory.appendingPathComponent($0) })
-
-                AudioRecorder.cleanupOrphanedRecordings(keepURLs: keepURLs)
-            } catch {
-                appLogger.error("Audio cleanup failed to fetch recording references: \(error.localizedDescription, privacy: .public)")
-                AudioRecorder.cleanupOrphanedRecordings(keepURLs: [])
+            let fileManager = FileManager.default
+            guard let base = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+                appLogger.warning("Audio cleanup could not resolve Application Support directory; skipping cleanup.")
+                return
             }
+
+            let recordingsDirectory = base.appendingPathComponent("Recordings", isDirectory: true)
+            let keepURLs = Set(fileNames.map { recordingsDirectory.appendingPathComponent($0) })
+
+            AudioRecorder.cleanupOrphanedRecordings(keepURLs: keepURLs)
         }
         #endif
     }
@@ -196,6 +188,14 @@ final class OffRecordNotificationDelegate: NSObject, UNUserNotificationCenterDel
         didReceive response: UNNotificationResponse
     ) async {
         ReminderManager.shared.reconcileScheduleIfNeeded()
+        if let rawURL = response.notification.request.content.userInfo["offrecordRouteURL"] as? String,
+           let url = URL(string: rawURL),
+           let route = OffRecordNavigationRouter.route(from: url) {
+            OffRecordNavigationRouter.storePendingRoute(route)
+            await MainActor.run {
+                NotificationCenter.default.post(name: .offRecordPendingRouteStored, object: nil)
+            }
+        }
     }
 }
 
@@ -203,4 +203,5 @@ final class OffRecordNotificationDelegate: NSObject, UNUserNotificationCenterDel
 
 extension Notification.Name {
     static let startRecordingFromSiri = Notification.Name("startRecordingFromSiri")
+    static let offRecordPendingRouteStored = Notification.Name("offRecordPendingRouteStored")
 }

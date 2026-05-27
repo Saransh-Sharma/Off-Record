@@ -41,6 +41,7 @@ struct PersistenceController {
             entry.updatedAt = now
             entry.text = "Sample entry for preview day \(i + 1)"
             entry.isStarred = i % 3 == 0
+            JournalBlockTimelineStore.backfillBlocksIfNeeded(for: entry, in: viewContext)
         }
         do {
             try viewContext.save()

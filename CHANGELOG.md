@@ -2,6 +2,31 @@
 
 All notable changes to OffRecord AI Journal are documented here.
 
+## [1.4.0] — Unreleased
+
+### Added
+- **Proactive Weekly Reflection**: Added a local weekly report with Home card, report detail, Insights history, saved takeaways, source controls, regeneration, export, and Settings controls.
+- **Weekly Reflection Notifications**: Added recurring local weekly reminders with static privacy-safe copy and deep-link routing to the current report.
+- **Apple Watch Quick Capture**: Added a watchOS 26+ companion for Mood, Speak, Record, and Recent capture flows. The watch app is capture/outbox only; the iPhone remains the canonical journal.
+- **Privacy-Safe Watch Complication and Smart Stack**: Added generic Quick Capture launch surfaces and queue status without journal text, transcripts, audio filenames, or snippets.
+- **Durable Watch Sync**: Watch captures are stored locally first, then transferred with WatchConnectivity metadata and audio file transfers. The outbox persists retry state, backoff timing, missing-file status, and receipt handling.
+- **Multi-Audio Attachments**: Added `AudioAttachment` records so multiple watch recordings on the same day are preserved while keeping legacy `audioFileName` compatibility.
+- **Watch Import Receipts**: Added local-only `WatchImportReceipt` idempotency so duplicate WatchConnectivity deliveries do not duplicate journal content.
+- **Audio Attachment Backup Support**: JSON and encrypted backups now include multiple audio attachment records.
+
+### Privacy
+- Weekly Reflection generation is deterministic and local-only. Reports are persisted as Codable AI state and are not sent to developer servers or non-Apple AI services.
+- High-risk entries count toward weekly eligibility and source management but are excluded from generated insights, evidence quotes, source snippets, and exports.
+- Weekly Reflection notification title, body, and route payload stay journal-free.
+- Watch complications, Smart Stack widgets, and Recent with previews disabled remain privacy-safe and do not expose raw journal text.
+- Watch audio imports are file-first: metadata alone cannot create a completed imported audio entry or synced receipt.
+- No analytics, tracking, telemetry SDKs, developer servers, or non-Apple AI services were added for watch support.
+
+### QA
+- Added Weekly Reflection coverage for eligibility thresholds, report versioning, dismiss/delete visibility, high-risk exclusion, source re-inclusion, notification privacy, export quote defaults, Home states, source sheet flows, and current deep-link version behavior.
+- Added Watch Quick Capture coverage for 20-item Recent projection, retry backoff, duplicate import replay, missing audio metadata, duplicate audio delivery, and backup round trips.
+- Full embedded watch app and watch simulator builds require installing the watchOS 26.2 platform/runtime in Xcode.
+
 ## [1.3.0] — Unreleased
 
 ### Added
@@ -37,7 +62,7 @@ All notable changes to OffRecord AI Journal are documented here.
 ## [1.0.0] — 2026-03-23
 
 ### Added
-- Voice journaling with fully on-device transcription (Apple Speech framework)
+- Voice journaling with Apple Speech transcription after explicit consent
 - Friday: on-device personality model (communication style, emotional signature, knowledge graph)
 - Mood tracking with automatic sentiment analysis (NLTagger)
 - Smart insights and pattern detection

@@ -89,6 +89,9 @@ struct SystemDiscoverabilityTests {
 
         let id = UUID()
         #expect(OffRecordNavigationRouter.route(from: URL(string: "offrecord://entry/\(id.uuidString)")!) == .entry(id))
+        #expect(OffRecordNavigationRouter.route(from: URL(string: "offrecord://weekly-reflection/current")!) == .weeklyReflectionCurrent)
+        #expect(OffRecordNavigationRouter.route(from: URL(string: "offrecord://weekly-reflection/\(id.uuidString)")!) == .weeklyReflection(id))
+        #expect(OffRecordNavigationRouter.route(from: URL(string: "offrecord://weekly-reflection/not-a-uuid")!) == nil)
         #expect(OffRecordNavigationRouter.route(fromSpotlightIdentifier: "entry:\(id.uuidString)") == .entry(id))
     }
 
@@ -344,6 +347,363 @@ struct EntryVisibilityTests {
         entry.duration = duration
         entry.isStarred = false
         return entry
+    }
+}
+
+// MARK: - Daily Entry Merge Tests
+
+@MainActor
+@Suite(.serialized)
+struct DiaryEntryDailyStoreTests {
+    @Test func journalBlockTimestampUsesHumanAndExactTime() throws {
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        var components = DateComponents()
+        components.calendar = calendar
+        components.timeZone = calendar.timeZone
+        components.year = 2036
+        components.month = 5
+        components.day = 24
+        components.hour = 18
+        components.minute = 42
+        let date = try #require(components.date)
+        let label = JournalBlockTimelinePresentation.label(for: date)
+
+        #expect(label.contains("Evening"))
+        #expect(label.contains("6:42") || label.contains("18:42"))
+    }
+
+    @Test func audioAttachmentDestinationRejectsPathTraversal() throws {
+        #expect(throws: Error.self) {
+            _ = try AudioAttachmentStore.destinationURL(for: "../outside.m4a")
+        }
+        #expect(throws: Error.self) {
+            _ = try AudioAttachmentStore.destinationURL(for: "nested/outside.m4a")
+        }
+    }
+
+    @Test func recomposingLegacyTextOmitsTimelineLabels() throws {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let date = makeDate(day: 24, hour: 18)
+        let entry = makeEntry(in: context, date: date, text: nil)
+
+        JournalBlockTimelineStore.appendTextBlock(text: "Dinner with friends", createdAt: date, to: entry, in: context)
+        try context.save()
+
+        JournalBlockTimelineStore.recomposeLegacyFields(for: entry, touchUpdatedAt: false)
+        #expect(entry.text == "Dinner with friends")
+        #expect(entry.text?.contains("[") == false)
+        #expect(entry.text?.contains("Evening") == false)
+    }
+
+    @Test func appendingTextUsesExistingEntryForSameDay() throws {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let date = makeDate(day: 29, hour: 9)
+        let existing = makeEntry(in: context, date: date, text: "Morning note", mood: Mood.calm.rawValue)
+        try context.save()
+
+        let returned = try DiaryEntryDailyStore.appendText("Evening note", on: makeDate(day: 29, hour: 18), in: context)
+        try context.save()
+
+        let entries = try DiaryEntryDailyStore.entries(on: date, in: context)
+        #expect(entries.count == 1)
+        #expect(returned.objectID == existing.objectID)
+        #expect(entries.first?.text?.contains("Morning note") == true)
+        #expect(entries.first?.text?.contains("Evening note") == true)
+        #expect(blocks(for: entries.first, kind: .text).count == 2)
+    }
+
+    @Test func normalizingSameDayDuplicatesAppendsTextChronologically() throws {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let date = makeDate(day: 27, hour: 9)
+        makeEntry(in: context, date: makeDate(day: 27, hour: 9), text: "First", updatedAt: makeDate(day: 27, hour: 9))
+        makeEntry(in: context, date: makeDate(day: 27, hour: 13), text: "Second", updatedAt: makeDate(day: 27, hour: 20))
+        makeEntry(in: context, date: makeDate(day: 27, hour: 15), text: "Third", updatedAt: makeDate(day: 27, hour: 12))
+        try context.save()
+
+        try DiaryEntryDailyStore.normalizeDuplicateEntries(on: date, in: context)
+        try context.save()
+
+        let entries = try DiaryEntryDailyStore.entries(on: date, in: context)
+        #expect(entries.count == 1)
+        #expect(entries.first?.text?.contains("First") == true)
+        #expect(entries.first?.text?.contains("Second") == true)
+        #expect(entries.first?.text?.contains("Third") == true)
+        #expect(blocks(for: entries.first, kind: .text).count == 3)
+    }
+
+    @Test func mergePreservesMetadataAndLatestUpdatedPrimary() throws {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let first = makeEntry(
+            in: context,
+            date: makeDate(day: 28, hour: 9),
+            text: "First",
+            mood: Mood.none.rawValue,
+            duration: 3,
+            isStarred: false,
+            updatedAt: makeDate(day: 28, hour: 10)
+        )
+        let primary = makeEntry(
+            in: context,
+            date: makeDate(day: 28, hour: 12),
+            text: "Second",
+            mood: Mood.calm.rawValue,
+            audioFileName: "voice.m4a",
+            duration: 4,
+            isStarred: true,
+            updatedAt: makeDate(day: 28, hour: 20)
+        )
+        let photoSource = makeEntry(
+            in: context,
+            date: makeDate(day: 28, hour: 18),
+            text: "",
+            mood: Mood.happy.rawValue,
+            duration: 5,
+            isStarred: false,
+            updatedAt: makeDate(day: 28, hour: 15)
+        )
+        let photo = PhotoAttachment(context: context)
+        photo.id = UUID()
+        photo.createdAt = makeDate(day: 28, hour: 18)
+        photo.fileName = "photo.jpg"
+        photo.entry = photoSource
+        _ = first
+        try context.save()
+
+        let mergedEntry = try DiaryEntryDailyStore.normalizeDuplicateEntries(on: makeDate(day: 28, hour: 9), in: context)
+        try context.save()
+
+        let entries = try DiaryEntryDailyStore.entries(on: makeDate(day: 28, hour: 9), in: context)
+        let merged = try #require(entries.first)
+        #expect(entries.count == 1)
+        #expect(mergedEntry?.objectID == primary.objectID)
+        #expect(merged.objectID == primary.objectID)
+        #expect(merged.text?.contains("First") == true)
+        #expect(merged.text?.contains("Second") == true)
+        #expect(merged.mood == Mood.happy.rawValue)
+        #expect(merged.audioFileName == "voice.m4a")
+        #expect(merged.isStarred)
+        #expect(photo.entry?.objectID == primary.objectID)
+        #expect(blocks(for: merged, kind: .photo).count == 1)
+    }
+
+    @Test func normalizingKeepsDifferentDaysSeparate() throws {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        makeEntry(in: context, date: makeDate(day: 30, hour: 9), text: "Yesterday")
+        makeEntry(in: context, date: makeDate(day: 31, hour: 9), text: "Today")
+        try context.save()
+
+        try DiaryEntryDailyStore.normalizeDuplicateEntries(on: makeDate(day: 30, hour: 9), in: context)
+        try DiaryEntryDailyStore.normalizeDuplicateEntries(on: makeDate(day: 31, hour: 9), in: context)
+        try context.save()
+
+        #expect(try DiaryEntryDailyStore.entries(on: makeDate(day: 30, hour: 9), in: context).count == 1)
+        #expect(try DiaryEntryDailyStore.entries(on: makeDate(day: 31, hour: 9), in: context).count == 1)
+    }
+
+    @Test func normalizingDuplicateDaysPreservesAudioAttachments() throws {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let first = makeEntry(in: context, date: makeDate(day: 26, hour: 9), text: "First")
+        let second = makeEntry(in: context, date: makeDate(day: 26, hour: 14), text: "Second", updatedAt: makeDate(day: 26, hour: 16))
+        AudioAttachmentStore.attachAudio(
+            fileName: "first.m4a",
+            duration: 4,
+            createdAt: makeDate(day: 26, hour: 9),
+            sourceCaptureID: UUID(),
+            byteCount: 4,
+            codec: "aac-lc",
+            to: first,
+            in: context
+        )
+        AudioAttachmentStore.attachAudio(
+            fileName: "second.m4a",
+            duration: 5,
+            createdAt: makeDate(day: 26, hour: 14),
+            sourceCaptureID: UUID(),
+            byteCount: 5,
+            codec: "aac-lc",
+            to: second,
+            in: context
+        )
+        try context.save()
+
+        let merged = try #require(try DiaryEntryDailyStore.normalizeDuplicateEntries(on: makeDate(day: 26, hour: 10), in: context))
+        try context.save()
+
+        #expect(try DiaryEntryDailyStore.entries(on: makeDate(day: 26, hour: 10), in: context).count == 1)
+        #expect(AudioAttachmentStore.audioAttachments(for: merged).count == 2)
+        #expect(blocks(for: merged, kind: .audio).count == 2)
+        #expect(merged.duration == 9)
+    }
+
+    @Test func backfillingLegacyBlocksIsIdempotent() throws {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let entry = makeEntry(in: context, date: makeDate(day: 25, hour: 8), text: "Legacy text", mood: Mood.happy.rawValue)
+        let originalUpdatedAt = try #require(entry.updatedAt)
+        let photo = PhotoAttachment(context: context)
+        photo.id = UUID()
+        photo.createdAt = makeDate(day: 25, hour: 10)
+        photo.fileName = "legacy.jpg"
+        photo.entry = entry
+        AudioAttachmentStore.attachAudio(
+            fileName: "legacy.m4a",
+            duration: 7,
+            createdAt: makeDate(day: 25, hour: 9),
+            sourceCaptureID: UUID(),
+            byteCount: 7,
+            codec: "aac-lc",
+            to: entry,
+            in: context
+        )
+        try context.save()
+
+        JournalBlockTimelineStore.backfillBlocksIfNeeded(for: entry, in: context)
+        JournalBlockTimelineStore.backfillBlocksIfNeeded(for: entry, in: context)
+        try context.save()
+
+        #expect(blocks(for: entry, kind: .text).count == 1)
+        #expect(blocks(for: entry, kind: .mood).count == 1)
+        #expect(blocks(for: entry, kind: .audio).count == 1)
+        #expect(blocks(for: entry, kind: .photo).count == 1)
+        #expect(entry.updatedAt == originalUpdatedAt)
+    }
+
+    @Test func deletingOneAudioBlockPreservesOtherClipsAndReturnsFileCleanupPlan() throws {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let entry = makeEntry(in: context, date: makeDate(day: 24, hour: 8), text: nil)
+        let firstFileName = "delete-one-\(UUID().uuidString).m4a"
+        let secondFileName = "keep-one-\(UUID().uuidString).m4a"
+        let firstURL = try AudioAttachmentStore.destinationURL(for: firstFileName)
+        let secondURL = try AudioAttachmentStore.destinationURL(for: secondFileName)
+        try Data([1, 2, 3]).write(to: firstURL)
+        try Data([4, 5, 6]).write(to: secondURL)
+        let firstAttachment = AudioAttachmentStore.attachAudio(
+            fileName: firstFileName,
+            duration: 4,
+            createdAt: makeDate(day: 24, hour: 8),
+            sourceCaptureID: UUID(),
+            byteCount: 3,
+            codec: "aac-lc",
+            to: entry,
+            in: context
+        )
+        AudioAttachmentStore.attachAudio(
+            fileName: secondFileName,
+            duration: 5,
+            createdAt: makeDate(day: 24, hour: 9),
+            sourceCaptureID: UUID(),
+            byteCount: 3,
+            codec: "aac-lc",
+            to: entry,
+            in: context
+        )
+        JournalBlockTimelineStore.backfillBlocksIfNeeded(for: entry, in: context)
+        try context.save()
+
+        let firstAttachmentID = try #require(firstAttachment.value(forKey: "id") as? UUID)
+        let block = try #require(blocks(for: entry, kind: .audio).first { $0.audioAttachmentIDValue == firstAttachmentID })
+        let plan = JournalBlockTimelineStore.deleteBlock(block, in: context)
+        try context.save()
+        for url in plan.fileURLsToRemoveAfterSave {
+            try? FileManager.default.removeItem(at: url)
+        }
+
+        #expect(AudioAttachmentStore.audioAttachments(for: entry).count == 1)
+        #expect(blocks(for: entry, kind: .audio).count == 1)
+        #expect(entry.duration == 5)
+        #expect(!FileManager.default.fileExists(atPath: firstURL.path))
+        #expect(FileManager.default.fileExists(atPath: secondURL.path))
+        try? FileManager.default.removeItem(at: secondURL)
+    }
+
+    @Test func deletingWholeDayCascadesContentAndLeavesWatchReceipts() throws {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let entry = makeEntry(in: context, date: makeDate(day: 23, hour: 8), text: "Delete me")
+        let captureID = UUID()
+        AudioAttachmentStore.attachAudio(
+            fileName: "whole-day-\(UUID().uuidString).m4a",
+            duration: 2,
+            createdAt: makeDate(day: 23, hour: 8),
+            sourceCaptureID: captureID,
+            byteCount: 2,
+            codec: "aac-lc",
+            to: entry,
+            in: context
+        )
+        JournalBlockTimelineStore.backfillBlocksIfNeeded(for: entry, in: context)
+        let receipt = NSEntityDescription.insertNewObject(forEntityName: "WatchImportReceipt", into: context)
+        receipt.setValue(captureID, forKey: "captureID")
+        receipt.setValue(entry.id, forKey: "importedEntryID")
+        receipt.setValue(Date(), forKey: "importedAt")
+        receipt.setValue("audio", forKey: "kind")
+        try context.save()
+
+        _ = JournalBlockTimelineStore.prepareDeleteWholeDay(entry, in: context)
+        try context.save()
+
+        #expect(try context.fetch(DiaryEntry.fetchRequest()).isEmpty)
+        #expect(try context.fetch(NSFetchRequest<NSManagedObject>(entityName: "WatchImportReceipt")).count == 1)
+    }
+
+    @Test func manyBlocksKeepDeterministicTimelineOrder() throws {
+        let context = PersistenceController(inMemory: true).container.viewContext
+        let entry = makeEntry(in: context, date: makeDate(day: 22, hour: 8), text: nil)
+        for index in stride(from: 99, through: 0, by: -1) {
+            JournalBlockTimelineStore.appendTextBlock(
+                text: "Block \(index)",
+                createdAt: makeDate(day: 22, hour: 8).addingTimeInterval(Double(index)),
+                to: entry,
+                in: context
+            )
+        }
+        try context.save()
+
+        let blocks = JournalBlockTimelineStore.blocks(for: entry)
+        #expect(blocks.count == 100)
+        #expect(blocks.first?.textValue == "Block 0")
+        #expect(blocks.last?.textValue == "Block 99")
+    }
+
+    @discardableResult
+    private func makeEntry(
+        in context: NSManagedObjectContext,
+        date: Date,
+        text: String?,
+        mood: String? = nil,
+        audioFileName: String? = nil,
+        duration: Double = 0,
+        isStarred: Bool = false,
+        updatedAt: Date? = nil
+    ) -> DiaryEntry {
+        let entry = DiaryEntry(context: context)
+        entry.id = UUID()
+        entry.date = date
+        entry.createdAt = date
+        entry.updatedAt = updatedAt ?? date
+        entry.text = text
+        entry.mood = mood
+        entry.audioFileName = audioFileName
+        entry.duration = duration
+        entry.isStarred = isStarred
+        return entry
+    }
+
+    private func makeDate(day: Int, hour: Int) -> Date {
+        var components = DateComponents()
+        components.calendar = Calendar(identifier: .gregorian)
+        components.timeZone = TimeZone(secondsFromGMT: 0)
+        components.year = 2036
+        components.month = 5
+        components.day = day
+        components.hour = hour
+        return components.date!
+    }
+
+    private func blocks(for entry: DiaryEntry?, kind: JournalBlockKind) -> [JournalBlock] {
+        guard let entry else { return [] }
+        return JournalBlockTimelineStore.blocks(for: entry).filter {
+            $0.blockKind == kind
+        }
     }
 }
 

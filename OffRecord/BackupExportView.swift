@@ -204,23 +204,31 @@ struct BackupExportView: View {
     private func exportData() {
         isExporting = true
         HapticManager.shared.buttonTap()
-        
-        DispatchQueue.global(qos: .userInitiated).async {
+
+        let selectedFormat = selectedFormat
+        let encryptionPassword = encryptionPassword
+        let includeAllEntries = includeAllEntries
+        let startDate = startDate
+        let endDate = endDate
+        let starredOnly = starredOnly
+        let deviceName = BackupData.currentDeviceName()
+        let exportableEntries = entries.map { ExportableEntry(from: $0) }
+
+        Task.detached(priority: .userInitiated) {
             do {
                 let url: URL
                 
                 switch selectedFormat {
                 case .json:
-                    url = try BackupService.shared.exportToJSON(entries: entries)
+                    url = try BackupService.writeJSONBackup(entries: exportableEntries, deviceName: deviceName)
                 case .encryptedBackup:
-                    url = try BackupService.shared.exportEncrypted(entries: entries, password: encryptionPassword)
+                    url = try BackupService.writeEncryptedBackup(entries: exportableEntries, password: encryptionPassword, deviceName: deviceName)
                 case .text, .markdown, .csv:
-                    var filteredEntries = entries
+                    var filteredEntries = exportableEntries
                     
                     if !includeAllEntries {
                         filteredEntries = filteredEntries.filter { entry in
-                            guard let date = entry.date else { return false }
-                            return date >= startDate && date <= endDate
+                            entry.date >= startDate && entry.date <= endDate
                         }
                     }
                     
@@ -230,11 +238,11 @@ struct BackupExportView: View {
                     
                     switch selectedFormat {
                     case .text:
-                        url = try BackupService.shared.exportToText(entries: filteredEntries)
+                        url = try BackupService.writeTextExport(entries: filteredEntries)
                     case .markdown:
-                        url = try BackupService.shared.exportToMarkdown(entries: filteredEntries)
+                        url = try BackupService.writeMarkdownExport(entries: filteredEntries)
                     case .csv:
-                        url = try BackupService.shared.exportToCSV(entries: filteredEntries)
+                        url = try BackupService.writeCSVExport(entries: filteredEntries)
                     default:
                         // Should not be reached
                         return
@@ -243,14 +251,14 @@ struct BackupExportView: View {
                     // PDF handled separately elsewhere
                     return
                 }
-                
-                DispatchQueue.main.async {
+
+                await MainActor.run {
                     isExporting = false
                     exportURL = url
                     HapticManager.shared.entrySaved()
                 }
             } catch {
-                DispatchQueue.main.async {
+                await MainActor.run {
                     isExporting = false
                     errorMessage = error.localizedDescription
                     showError = true
@@ -435,7 +443,13 @@ struct ImportBackupView: View {
             guard let url = urls.first else { return }
             if url.pathExtension.lowercased() == "dvx" {
                 // Encrypted backup — prompt for password
-                _ = url.startAccessingSecurityScopedResource()
+                guard url.startAccessingSecurityScopedResource() else {
+                    pendingEncryptedURL = nil
+                    importPassword = ""
+                    importResult = .error("Unable to access the selected file.")
+                    showResult = true
+                    return
+                }
                 pendingEncryptedURL = url
                 importPassword = ""
                 showPasswordPrompt = true
@@ -450,24 +464,20 @@ struct ImportBackupView: View {
 
     private func importEncryptedBackup(from url: URL) {
         isImporting = true
-        defer { url.stopAccessingSecurityScopedResource() }
 
-        DispatchQueue.global(qos: .userInitiated).async {
+        Task { @MainActor in
+            defer { url.stopAccessingSecurityScopedResource() }
             do {
                 let count = try BackupService.shared.importEncrypted(url: url, password: importPassword, context: viewContext)
-                DispatchQueue.main.async {
-                    isImporting = false
-                    importResult = .success(count)
-                    showResult = true
-                    HapticManager.shared.entrySaved()
-                }
+                isImporting = false
+                importResult = .success(count)
+                showResult = true
+                HapticManager.shared.entrySaved()
             } catch {
-                DispatchQueue.main.async {
-                    isImporting = false
-                    importResult = .error("Failed to import: \(error.localizedDescription)")
-                    showResult = true
-                    HapticManager.shared.error()
-                }
+                isImporting = false
+                importResult = .error("Failed to import: \(error.localizedDescription)")
+                showResult = true
+                HapticManager.shared.error()
             }
         }
     }
@@ -483,27 +493,21 @@ struct ImportBackupView: View {
             return
         }
         
-        defer {
-            url.stopAccessingSecurityScopedResource()
-        }
-        
-        DispatchQueue.global(qos: .userInitiated).async {
+        Task { @MainActor in
+            defer {
+                url.stopAccessingSecurityScopedResource()
+            }
             do {
                 let count = try BackupService.shared.importFromJSON(url: url, context: viewContext)
-                
-                DispatchQueue.main.async {
-                    isImporting = false
-                    importResult = .success(count)
-                    showResult = true
-                    HapticManager.shared.entrySaved()
-                }
+                isImporting = false
+                importResult = .success(count)
+                showResult = true
+                HapticManager.shared.entrySaved()
             } catch {
-                DispatchQueue.main.async {
-                    isImporting = false
-                    importResult = .error("Failed to import: \(error.localizedDescription)")
-                    showResult = true
-                    HapticManager.shared.error()
-                }
+                isImporting = false
+                importResult = .error("Failed to import: \(error.localizedDescription)")
+                showResult = true
+                HapticManager.shared.error()
             }
         }
     }

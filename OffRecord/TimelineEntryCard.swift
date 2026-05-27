@@ -69,6 +69,8 @@ struct TimelineEntryCard: View {
             }
             .layoutPriority(1)
 
+            Spacer(minLength: 8)
+
             if let evidence {
                 VStack(alignment: .trailing, spacing: 4) {
                     Image(systemName: evidence.matchReason == .exact ? "text.magnifyingglass" : "brain.head.profile")
@@ -101,7 +103,7 @@ struct TimelineEntryCard: View {
         .padding(.leading, 16)
         .padding(.trailing, 10)
         .padding(.vertical, 14)
-        .frame(minHeight: TimelineDesign.entryRowMinHeight)
+        .frame(maxWidth: .infinity, minHeight: TimelineDesign.entryRowMinHeight, alignment: .leading)
         .offRecordContentCard(cornerRadius: 20, fill: OffRecordColor.surfacePrimary, useGlass: true)
         .contentShape(RoundedRectangle(cornerRadius: 20))
         .accessibilityElement(children: .contain)

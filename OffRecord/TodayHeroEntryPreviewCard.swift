@@ -56,7 +56,7 @@ struct TodayHeroEntryPreviewCard: View {
         if !text.isEmpty {
             return text
         }
-        if (entry.value(forKey: "audioFileName") as? String)?.isEmpty == false {
+        if entry.hasStartedEntryAudio {
             return "Recording saved. Tap to add text or play your recording."
         }
         if entry.photos?.count ?? 0 > 0 {
