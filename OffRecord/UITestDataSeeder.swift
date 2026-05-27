@@ -12,7 +12,11 @@ import Foundation
 struct UITestDataSeeder {
     static func seedIfNeeded(context: NSManagedObjectContext) {
         let arguments = ProcessInfo.processInfo.arguments
-        guard arguments.contains("-HeroNudgeUITest") || arguments.contains("-OnboardingUITest") || arguments.contains("-SemanticMemoryUITest") || arguments.contains("-ProactiveReflectionUITest") else { return }
+        guard arguments.contains("-HeroNudgeUITest")
+                || arguments.contains("-OnboardingUITest")
+                || arguments.contains("-SemanticMemoryUITest")
+                || arguments.contains("-ProactiveReflectionUITest")
+                || arguments.contains("-WeeklyReflectionUITest") else { return }
 
         if arguments.contains("-OnboardingUITest") {
             UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
@@ -34,6 +38,8 @@ struct UITestDataSeeder {
             FridayAssistantEngine.shared.resetForUITesting()
             LocalAIEngine.shared.userProfile = UserProfile()
             seedSemanticMemoryEntries(in: context)
+        } else if arguments.contains("-WeeklyReflectionUITest") {
+            seedWeeklyReflectionState(arguments: arguments, context: context)
         } else if arguments.contains("-ProactiveReflectionUITest") {
             FridayAssistantEngine.shared.resetForUITesting()
             LocalAIEngine.shared.userProfile = UserProfile()
@@ -82,6 +88,7 @@ struct UITestDataSeeder {
         entry.text = text
         entry.isStarred = false
         entry.duration = 0
+        JournalBlockTimelineStore.backfillBlocksIfNeeded(for: entry, in: context)
     }
 
     private static func seedSemanticMemoryEntries(in context: NSManagedObjectContext) {
@@ -165,6 +172,86 @@ struct UITestDataSeeder {
         }
     }
 
+    private static func seedWeeklyReflectionState(arguments: [String], context: NSManagedObjectContext) {
+        if arguments.contains("-WeeklyReflectionEmpty") {
+            return
+        }
+
+        if arguments.contains("-WeeklyReflectionFailed") {
+            try? WeeklyReflectionRepository(context: context).save(settings: .default, reports: [
+                makeWeeklyReport(status: .failed, eligibility: .empty, includedEntryIds: [])
+            ])
+            return
+        }
+
+        let repeated = String(repeating: "work focus rest boundary quiet ", count: 20)
+        let entries: [(daysAgo: Int, text: String, mood: String)] = arguments.contains("-WeeklyReflectionHighRisk")
+            ? [
+                (0, "I thought about suicide and needed the night to be safer. \(repeated)", "sad"),
+                (1, "I wrote about tea, rest, and a quiet call with Maya. \(repeated)", "calm")
+            ]
+            : [
+                (0, "Work felt scattered, but I protected quiet focus time. \(repeated)", "calm"),
+                (1, "Rest helped me notice a better boundary around meetings. \(repeated)", "grateful"),
+                (2, "A walk made the deadline feel easier to hold. \(repeated)", "happy")
+            ]
+
+        for item in entries {
+            insertEntry(daysAgo: item.daysAgo, text: item.text, mood: item.mood, starred: false, context: context)
+        }
+
+        if arguments.contains("-WeeklyReflectionDismissed") {
+            try? context.save()
+            let snapshots = fetchWeeklySnapshots(context: context)
+            var report = WeeklyReflectionGenerationService.generate(
+                period: WeeklyReflectionEligibilityService.period(),
+                entries: snapshots
+            )
+            report.status = .dismissed
+            try? WeeklyReflectionRepository(context: context).save(settings: .default, reports: [report])
+        }
+    }
+
+    private static func fetchWeeklySnapshots(context: NSManagedObjectContext) -> [WeeklyReflectionEntrySnapshot] {
+        let request: NSFetchRequest<DiaryEntry> = DiaryEntry.fetchRequest()
+        request.predicate = DiaryEntry.startedEntryPredicate
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \DiaryEntry.date, ascending: false)]
+        return ((try? context.fetch(request)) ?? []).compactMap(WeeklyReflectionEntrySnapshot.init(entry:))
+    }
+
+    private static func makeWeeklyReport(
+        status: WeeklyReflectionStatus,
+        eligibility: WeeklyReflectionEligibilityKind,
+        includedEntryIds: [UUID]
+    ) -> WeeklyReflectionReport {
+        let period = WeeklyReflectionEligibilityService.period()
+        return WeeklyReflectionReport(
+            id: UUID(),
+            periodStart: period.start,
+            periodEnd: period.end,
+            generatedAt: Date(),
+            versionNumber: 1,
+            processingMode: .local,
+            status: status,
+            eligibility: eligibility,
+            includedEntryIds: includedEntryIds,
+            hiddenEntryIds: [],
+            unavailableEntryIds: [],
+            privateEntryCount: 0,
+            inputSignature: "ui-test-\(status.rawValue)",
+            heroSentence: "Reflection could not be created.",
+            summary: "Your entries are safe. OffRecord could not prepare this reflection right now.",
+            emotionalArc: nil,
+            themes: [],
+            wins: [],
+            frictions: [],
+            questions: ["Would you like to try again?"],
+            savedTakeaway: nil,
+            safetyLevel: .none,
+            userMarkedHelpful: nil
+        )
+    }
+
     private static func insertEntry(daysAgo: Int, text: String, mood: String, starred: Bool, context: NSManagedObjectContext) {
         let calendar = Calendar.current
         let now = Date()
@@ -178,5 +265,6 @@ struct UITestDataSeeder {
         entry.mood = mood
         entry.isStarred = starred
         entry.duration = 0
+        JournalBlockTimelineStore.backfillBlocksIfNeeded(for: entry, in: context)
     }
 }

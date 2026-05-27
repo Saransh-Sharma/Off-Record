@@ -14,6 +14,8 @@ extension DiaryEntry {
             NSPredicate(format: "text != nil AND text != ''"),
             NSPredicate(format: "duration > 0"),
             NSPredicate(format: "audioFileName != nil AND audioFileName != ''"),
+            NSPredicate(format: "audioAttachments.@count > 0"),
+            NSPredicate(format: "blocks.@count > 0"),
             NSPredicate(format: "mood != nil AND mood != '' AND mood != %@", Mood.none.rawValue),
             NSPredicate(format: "photos.@count > 0")
         ])
@@ -28,7 +30,12 @@ extension DiaryEntry {
     var hasStartedEntryAudio: Bool {
         let fileName = (value(forKey: "audioFileName") as? String)?
             .trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return !fileName.isEmpty || duration > 0
+        let attachmentCount = (value(forKey: "audioAttachments") as? Set<NSManagedObject>)?.count ?? 0
+        return !fileName.isEmpty || attachmentCount > 0 || duration > 0
+    }
+
+    var hasStartedEntryBlocks: Bool {
+        ((value(forKey: "blocks") as? Set<NSManagedObject>)?.count ?? 0) > 0
     }
 
     var hasStartedEntryPhotos: Bool {
@@ -63,6 +70,7 @@ extension DiaryEntry {
 
     var isStartedEntry: Bool {
         startedEntryWordCount > 0
+            || hasStartedEntryBlocks
             || hasStartedEntryAudio
             || hasStartedEntryPhotos
             || hasStartedEntryMood
