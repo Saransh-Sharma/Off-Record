@@ -15,6 +15,8 @@ struct StatsView: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ObservedObject private var goalManager = GoalManager.shared
     @ObservedObject private var proactiveReflection = ProactiveReflectionController.shared
+    @ObservedObject private var weeklyReflection = WeeklyReflectionController.shared
+    @ObservedObject private var navigationRouter = OffRecordNavigationRouter.shared
 
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \DiaryEntry.date, ascending: false)],
@@ -26,9 +28,13 @@ struct StatsView: View {
     @State private var showDeepDive: Bool = false
     @State private var stats: JournalStatsSnapshot = .empty
     @State private var startedEntriesForCards: [DiaryEntry] = []
+    @State private var selectedWeeklyReflection: WeeklyReflectionReport?
 
     private var isIPad: Bool { horizontalSizeClass == .regular }
     private var startedEntries: [DiaryEntry] { entries.startedEntries }
+    private var weeklyReflectionRouteEntries: [DiaryEntry] {
+        startedEntriesForCards.isEmpty ? startedEntries : startedEntriesForCards
+    }
     private var entriesSignature: String {
         var hasher = Hasher()
         for entry in entries {
@@ -54,6 +60,7 @@ struct StatsView: View {
                     weekActivityCard
                     WeeklyInsightsSection(entries: startedEntriesForCards)
                     ProactiveWeeklyReflectionCard(entries: startedEntriesForCards)
+                    WeeklyReflectionHistorySection(entries: startedEntriesForCards)
 
                     // TIER 3: Deep Dive — collapsible
                     DisclosureGroup(isExpanded: $showDeepDive) {
@@ -85,6 +92,19 @@ struct StatsView: View {
         }
         .task(id: "\(entriesSignature)-\(goalManager.weeklyTarget)-\(goalManager.isEnabled)") {
             await refreshStats()
+        }
+        .navigationDestination(item: $selectedWeeklyReflection) { report in
+            WeeklyReflectionReportView(report: report, entries: startedEntriesForCards)
+        }
+        .onChange(of: navigationRouter.shouldOpenCurrentWeeklyReflection) { _, shouldOpen in
+            guard shouldOpen else { return }
+            selectedWeeklyReflection = weeklyReflection.openCurrentReport(entries: weeklyReflectionRouteEntries)
+            navigationRouter.shouldOpenCurrentWeeklyReflection = false
+        }
+        .onChange(of: navigationRouter.routedWeeklyReflectionID) { _, id in
+            guard let id else { return }
+            selectedWeeklyReflection = weeklyReflection.report(id: id)
+            navigationRouter.routedWeeklyReflectionID = nil
         }
     }
 
@@ -449,6 +469,7 @@ struct StatsView: View {
         startedEntriesForCards = currentEntries
         stats = nextStats
         proactiveReflection.refreshIfNeeded(entries: currentEntries)
+        weeklyReflection.refreshIfNeeded(entries: currentEntries)
         if let milestone = goalManager.checkMilestone(currentStreak: nextStats.currentStreak) {
             HapticManager.shared.streakMilestone()
             if reduceMotion {

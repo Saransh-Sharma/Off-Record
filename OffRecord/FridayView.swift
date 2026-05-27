@@ -966,26 +966,29 @@ struct FridayView: View {
     }
 
     private func getOrCreateTodayEntry() -> DiaryEntry {
-        if let existing = todayDraftOrStartedEntry {
-            return existing
-        }
-
         let now = Date()
-        let entry = DiaryEntry(context: viewContext)
-        entry.id = UUID()
-        entry.date = now
-        entry.createdAt = now
-        entry.text = ""
-        entry.isStarred = false
-        entry.updatedAt = now
-
         do {
+            let entry = try DiaryEntryDailyStore.getOrCreateEntry(on: now, in: viewContext)
             try viewContext.save()
+            return entry
         } catch {
-            viewContext.rollback()
+            if let existing = todayDraftOrStartedEntry {
+                return existing
+            }
+            let entry = DiaryEntry(context: viewContext)
+            entry.id = UUID()
+            entry.date = now
+            entry.createdAt = now
+            entry.text = ""
+            entry.isStarred = false
+            entry.updatedAt = now
+            do {
+                try viewContext.save()
+            } catch {
+                viewContext.rollback()
+            }
+            return entry
         }
-
-        return entry
     }
 
     private func entryHasNoContent(_ entry: DiaryEntry) -> Bool {
