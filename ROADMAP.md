@@ -26,7 +26,7 @@ This roadmap outlines the planned evolution of OffRecord AI Journal. Contributio
 - Shareable Personality Cards (Instagram Stories + Twitter/X formats)
 - Smarter App Store review prompts
 
-### v1.3 — Semantic Memory Search + Evidence-Based Friday *(current)*
+### v1.3 — Semantic Memory Search + Evidence-Based Friday
 - Timeline semantic search using local Apple NaturalLanguage embeddings and lexical matching
 - Hybrid ranking for meaning matches, exact people/places/topics, recency, starred entries, mood filters, and date filters
 - Evidence-Based Friday answers that retrieve journal evidence first and cite source entries
