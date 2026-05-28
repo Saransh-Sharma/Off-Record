@@ -232,6 +232,20 @@ final class OffRecordUITests: XCTestCase {
     }
 
     @MainActor
+    func testDaypartHeroDateUsesTwoLinesWhenTodayEntryExists() throws {
+        let app = launchHeroNudgeApp(arguments: ["-HeroNudgeHasToday"])
+
+        XCTAssertTrue(app.otherElements["homeHero.fullBleed"].waitForExistence(timeout: 8))
+        let dateTitle = app.descendants(matching: .any)["homeHero.dateTitle"].firstMatch
+        XCTAssertTrue(dateTitle.waitForExistence(timeout: 4))
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM d"
+        XCTAssertTrue(dateTitle.label.contains(formatter.string(from: Date())))
+        XCTAssertGreaterThan(dateTitle.frame.height, 72)
+    }
+
+    @MainActor
     func testDaypartHeroWelcomeForFirstEntry() throws {
         let app = launchHeroNudgeApp(arguments: ["-HeroNudgeFirstRun"])
 

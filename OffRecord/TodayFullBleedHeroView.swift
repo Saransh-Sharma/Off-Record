@@ -152,8 +152,11 @@ struct TodayFullBleedHeroView: View {
                     .lineSpacing(-3)
                     .lineLimit(2)
                     .minimumScaleFactor(0.76)
-                    .frame(maxWidth: 290, alignment: .leading)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: 340, alignment: .leading)
+                    .accessibilityIdentifier("homeHero.dateTitle")
             }
+            .layoutPriority(2)
 
             VStack(alignment: .leading, spacing: 5) {
                 Text(hero.prompt.title)
