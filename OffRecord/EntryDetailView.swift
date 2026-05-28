@@ -69,11 +69,12 @@ struct EntryDetailSaveDecision: Equatable {
     }
 }
 
-private struct JournalBlockTimelineItem: Identifiable {
+struct JournalBlockTimelineItem: Identifiable {
     let id: NSManagedObjectID
     let blockID: UUID
     let kind: JournalBlockKind
     let createdAt: Date
+    let sourceCaptureID: UUID?
     let timestamp: String
     let text: String
     let mood: Mood
@@ -81,6 +82,22 @@ private struct JournalBlockTimelineItem: Identifiable {
     let audioURL: URL?
     let audioExists: Bool
     let photoAttachmentID: UUID?
+
+    var daypart: String {
+        JournalBlockTimelinePresentation.daypart(for: createdAt)
+    }
+
+    var timeText: String {
+        EntryDetailDateFormatters.time.string(from: createdAt)
+    }
+
+    var presentationBlock: JournalEntryPresentationBlock {
+        JournalEntryPresentationBlock(
+            kind: kind,
+            createdAt: createdAt,
+            sourceCaptureID: sourceCaptureID
+        )
+    }
 
     var accessibilityLabel: String {
         switch kind {
@@ -93,6 +110,53 @@ private struct JournalBlockTimelineItem: Identifiable {
             return "Mood check-in, \(mood.displayName), \(timestamp)"
         case .photo:
             return "Photo, \(timestamp)"
+        }
+    }
+}
+
+extension JournalBlockTimelineItem {
+    var systemImage: String {
+        switch kind {
+        case .text: return "square.and.pencil"
+        case .audio: return "waveform"
+        case .mood: return "leaf.fill"
+        case .photo: return "photo"
+        }
+    }
+
+    var accentColor: Color {
+        switch kind {
+        case .text: return OffRecordColor.textLavender
+        case .audio: return OffRecordColor.textSky
+        case .mood: return mood.readableStyle.foreground
+        case .photo: return OffRecordColor.textPeach
+        }
+    }
+
+    var nodeFill: Color {
+        switch kind {
+        case .text: return OffRecordColor.surfaceLavender
+        case .audio: return OffRecordColor.surfaceBlue
+        case .mood: return mood == .none ? OffRecordColor.surfaceSage : mood.readableStyle.fill
+        case .photo: return OffRecordColor.surfacePeach
+        }
+    }
+
+    var nodeBorder: Color {
+        switch kind {
+        case .text: return OffRecordColor.brandLavender.opacity(0.42)
+        case .audio: return OffRecordColor.brandSky.opacity(0.48)
+        case .mood: return mood == .none ? OffRecordColor.borderSage : mood.readableStyle.border
+        case .photo: return OffRecordColor.borderWarm
+        }
+    }
+
+    var nodeForeground: Color {
+        switch kind {
+        case .text: return OffRecordColor.textBrand
+        case .audio: return OffRecordColor.textSky
+        case .mood: return mood == .none ? OffRecordColor.textSage : mood.readableStyle.foreground
+        case .photo: return OffRecordColor.textPeach
         }
     }
 }
@@ -1080,6 +1144,7 @@ struct EntryDetailView: View {
                 blockID: block.blockID,
                 kind: kind,
                 createdAt: createdAt,
+                sourceCaptureID: block.sourceCaptureIDValue,
                 timestamp: timestamp,
                 text: block.textValue,
                 mood: mood,
