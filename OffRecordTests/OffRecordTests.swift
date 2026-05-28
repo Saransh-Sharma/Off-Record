@@ -396,6 +396,39 @@ struct DiaryEntryDailyStoreTests {
         #expect(entry.text?.contains("Evening") == false)
     }
 
+    @Test func timelinePreviewSanitizerRemovesStandaloneBlockTimestamp() {
+        let preview = TimelineEntryPreviewSanitizer.sanitize("""
+        [Morning · 10:05 AM]
+        Had the kick off of MJJS execution.
+        """)
+
+        #expect(preview == "Had the kick off of MJJS execution.")
+    }
+
+    @Test func timelinePreviewSanitizerRemovesInlineBlockTimestamp() {
+        let preview = TimelineEntryPreviewSanitizer.sanitize("[Evening · 6:42 PM] Dinner with friends")
+
+        #expect(preview == "Dinner with friends")
+    }
+
+    @Test func timelinePreviewSanitizerPreservesNonTimestampBracketedText() {
+        let preview = TimelineEntryPreviewSanitizer.sanitize("[Work] Morning planning went well")
+
+        #expect(preview == "[Work] Morning planning went well")
+    }
+
+    @Test func timelinePreviewSanitizerHandlesMultipleBlockTimestamps() {
+        let preview = TimelineEntryPreviewSanitizer.sanitize("""
+        [Morning · 10:05 AM]
+        First note.
+
+        [Afternoon · 13:30]
+        Second note.
+        """)
+
+        #expect(preview == "First note.\n\nSecond note.")
+    }
+
     @Test func appendingTextUsesExistingEntryForSameDay() throws {
         let context = PersistenceController(inMemory: true).container.viewContext
         let date = makeDate(day: 29, hour: 9)

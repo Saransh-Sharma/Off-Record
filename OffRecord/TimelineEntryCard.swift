@@ -29,6 +29,10 @@ struct TimelineEntryCard: View {
         metrics?.hasPhotos ?? !PhotoStorageManager.shared.attachments(for: entry).isEmpty
     }
 
+    private var previewText: String {
+        TimelineEntryPreviewSanitizer.sanitize(evidence?.snippet ?? entry.text ?? "")
+    }
+
     var body: some View {
         HStack(alignment: .center, spacing: 6) {
             VStack(alignment: .leading, spacing: 10) {
@@ -58,13 +62,13 @@ struct TimelineEntryCard: View {
                     }
                 }
 
-                highlightedText(evidence?.snippet ?? entry.text ?? "")
+                highlightedText(previewText)
                     .font(OffRecordTypography.bodySmall)
                     .foregroundStyle(OffRecordColor.textPrimary)
                     .lineSpacing(1.5)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityLabel(evidence?.snippet ?? entry.text ?? "")
+                    .accessibilityLabel(previewText)
                     .accessibilityIdentifier(evidence == nil ? "timeline.entrySnippet" : "timeline.evidenceSnippet")
             }
             .layoutPriority(1)
@@ -148,6 +152,29 @@ struct TimelineEntryCard: View {
         }
 
         return attributedString
+    }
+}
+
+enum TimelineEntryPreviewSanitizer {
+    private static let blockTimestampPattern = #"\[(Late night|Early morning|Morning|Afternoon|Evening|Night)\s*·\s*\d{1,2}:\d{2}(?:\s?[AP]M)?\]\s*"#
+
+    static func sanitize(_ text: String) -> String {
+        guard let expression = try? NSRegularExpression(
+            pattern: blockTimestampPattern,
+            options: [.caseInsensitive]
+        ) else {
+            return text.trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        let range = NSRange(text.startIndex..<text.endIndex, in: text)
+        let sanitized = expression.stringByReplacingMatches(
+            in: text,
+            options: [],
+            range: range,
+            withTemplate: ""
+        )
+
+        return sanitized.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 }
 
