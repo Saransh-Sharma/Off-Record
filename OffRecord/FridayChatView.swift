@@ -479,8 +479,8 @@ struct FridayResponseGenerator {
 struct FridayChatView: View {
     private let initialQuestion: String?
     private let autoSubmitInitialQuestion: Bool
+    @Environment(\.dismiss) private var dismiss
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
-    @ObservedObject private var themeManager = ThemeManager.shared
     @ObservedObject private var semanticMemory = SemanticMemoryIndexController.shared
     @AppStorage("authorName") private var authorName: String = ""
 
@@ -494,7 +494,6 @@ struct FridayChatView: View {
     @State private var inputText: String = ""
     @State private var isAnswering = false
     @State private var appliedInitialQuestion = false
-    @Namespace private var bottomAnchor
 
     private var startedEntries: [DiaryEntry] { entries.startedEntries }
 
@@ -504,259 +503,153 @@ struct FridayChatView: View {
     }
 
     var body: some View {
-        VStack(spacing: 0) {
-            // Chat messages
-            ScrollViewReader { proxy in
+        ScrollViewReader { proxy in
+            ZStack(alignment: .topLeading) {
+                FridayChatBackground()
+
                 ScrollView {
-                    LazyVStack(spacing: 16) {
-                        // Welcome message
-                        if messages.isEmpty {
-                            welcomeCard
-                                .padding(.top, 20)
-                        }
+                    VStack(spacing: contentSpacing) {
+                        screenContent
 
-                        ForEach(messages) { message in
-                            chatBubble(for: message)
-                        }
-
-                        // Invisible anchor for scrolling
                         Color.clear
                             .frame(height: 1)
                             .id("bottom")
                     }
-                    .padding(.horizontal)
-                    .padding(.bottom, 8)
+                    .padding(.horizontal, horizontalPadding)
+                    .padding(.top, topContentPadding)
+                    .padding(.bottom, scrollBottomPadding)
                 }
-                .onChange(of: messages.count) {
-                    withAnimation(.easeOut(duration: 0.3)) {
-                        proxy.scrollTo("bottom", anchor: .bottom)
-                    }
+                .scrollIndicators(.hidden)
+                .accessibilityIdentifier("friday.questionChips")
+
+                FridayBackButton {
+                    dismiss()
+                }
+                .padding(.leading, OffRecordSpacing.xxl)
+                .padding(.top, 16)
+            }
+            .safeAreaInset(edge: .bottom) {
+                FridayComposer(
+                    text: $inputText,
+                    isAnswering: isAnswering,
+                    isIndexing: semanticMemory.isBuilding,
+                    indexingProgress: semanticMemory.progress,
+                    indexingMessage: semanticMemory.statusMessage,
+                    onSend: askFreeformQuestion
+                )
+                .padding(.bottom, composerBottomClearance)
+            }
+            .onChange(of: messages.count) { _, _ in
+                withAnimation(.easeOut(duration: 0.28)) {
+                    proxy.scrollTo("bottom", anchor: .bottom)
                 }
             }
-
-            Divider()
-                .background(themeManager.secondaryTextColor.opacity(0.3))
-
-            composer
-
-            // Suggested questions chips
-            questionChips
-                .safeAreaPadding(.bottom, chipRailBottomClearance)
+            .onChange(of: isAnswering) { _, _ in
+                withAnimation(.easeOut(duration: 0.28)) {
+                    proxy.scrollTo("bottom", anchor: .bottom)
+                }
+            }
         }
-        .navigationTitle("Talk to Friday")
+        .navigationTitle("")
+        .navigationBarTitleDisplayMode(.inline)
+        .toolbar(.hidden, for: .navigationBar)
         .background(OffRecordColor.appBackgroundGradient.ignoresSafeArea())
-        .onAppear {
+        .task {
             semanticMemory.ensureIndexed(entries: startedEntries)
             applyInitialQuestionIfNeeded()
         }
     }
 
-    private var chipRailBottomClearance: CGFloat {
-        horizontalSizeClass == .compact ? OffRecordCompactTabBarLayout.reservedContentBottomInset : 0
-    }
-
-    // MARK: - Welcome Card
-
-    private var welcomeCard: some View {
-        VStack(spacing: 16) {
-            FridayMascotView(pose: .listening, size: 92)
-
-            Text(FridayPersonality.welcome(name: authorName))
-                .font(OffRecordTypography.sectionTitle)
-                .foregroundColor(themeManager.textColor)
-                .multilineTextAlignment(.center)
-
-            Text("Tap a question below. Friday answers from on-device patterns in your journal.")
-                .font(OffRecordTypography.bodySmall)
-                .foregroundColor(themeManager.secondaryTextColor)
-                .multilineTextAlignment(.center)
-                .padding(.horizontal)
-        }
-        .padding(.vertical, 24)
-    }
-
-    // MARK: - Chat Bubble
-
-    private func chatBubble(for message: FridayChatMessage) -> some View {
-        HStack(alignment: .top, spacing: 8) {
-            if message.isUser {
-                Spacer(minLength: 60)
-            } else {
-                FridayMascotView(pose: .thinking, size: 34)
-                .padding(.top, 4)
-            }
-
-            VStack(alignment: message.isUser ? .trailing : .leading, spacing: 4) {
-                Text(message.text)
-                    .font(OffRecordTypography.bodySmall)
-                    .foregroundColor(message.isUser ? OffRecordColor.textInverse : themeManager.textColor)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 10)
-                    .background(
-                        RoundedRectangle(cornerRadius: 18)
-                            .fill(message.isUser
-                                  ? OffRecordColor.brandLavenderDark
-                                  : OffRecordColor.surfaceWarm)
-                    )
-                    .accessibilityIdentifier(message.isUser ? "friday.userMessage" : "friday.answerMessage")
-
-                if !message.isUser {
-                    if let limitations = message.limitations {
-                        Text(limitations)
-                            .font(OffRecordTypography.metadata)
-                            .foregroundColor(OffRecordColor.textSecondary)
-                            .padding(.horizontal, 4)
-                            .accessibilityIdentifier("friday.limitations")
-                    }
-
-                    if !message.evidence.isEmpty {
-                        evidenceRail(message.evidence)
-                    }
-                }
-            }
-
-            if !message.isUser {
-                Spacer(minLength: 40)
-            }
+    @ViewBuilder
+    private var screenContent: some View {
+        switch screenMode {
+        case .activeChat:
+            FridayActiveChatHeader()
+            FridayMessageList(
+                messages: messages,
+                isAnswering: isAnswering,
+                entryProvider: entry(for:)
+            )
+            FridayPromptSection(
+                title: "Or ask me something",
+                questions: compactQuestions,
+                askedQuestions: askedQuestions,
+                layout: .grid,
+                action: askQuestion
+            )
+        case .loadingIndex:
+            FridayWarmMinimalContent(
+                userName: authorName,
+                questions: landingQuestions,
+                askedQuestions: askedQuestions,
+                mode: .indexing(semanticMemory.statusMessage),
+                action: askQuestion
+            )
+        case .noJournalData:
+            FridayWarmMinimalContent(
+                userName: authorName,
+                questions: noDataQuestions,
+                askedQuestions: askedQuestions,
+                mode: .noJournalData,
+                action: askQuestion
+            )
+        case .warmMinimal, .error:
+            FridayWarmMinimalContent(
+                userName: authorName,
+                questions: landingQuestions,
+                askedQuestions: askedQuestions,
+                mode: .warm,
+                action: askQuestion
+            )
         }
     }
 
-    private func evidenceRail(_ evidence: [EvidenceReference]) -> some View {
-        VStack(alignment: .leading, spacing: 8) {
-            Text("Evidence from your journal")
-                .font(OffRecordTypography.labelSmall)
-                .foregroundColor(OffRecordColor.textLavender)
-                .accessibilityIdentifier("friday.evidenceHeader")
-
-            ForEach(Array(evidence.prefix(3))) { item in
-                if let entry = entry(for: item.entryID) {
-                    NavigationLink {
-                        EntryDetailView(entry: entry)
-                    } label: {
-                        EvidenceChip(evidence: item)
-                    }
-                    .buttonStyle(.plain)
-                    .accessibilityElement(children: .contain)
-                    .accessibilityIdentifier("friday.evidenceChip")
-                } else {
-                    EvidenceChip(evidence: item)
-                }
-            }
+    private var screenMode: FridayChatScreenMode {
+        if !messages.isEmpty || isAnswering {
+            return .activeChat
         }
-        .padding(.top, 4)
-        .frame(maxWidth: 320, alignment: .leading)
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("friday.evidenceRail")
-    }
-
-    private var composer: some View {
-        VStack(spacing: 8) {
-            if semanticMemory.isBuilding {
-                HStack(spacing: 8) {
-                    ProgressView(value: semanticMemory.progress)
-                    Text(semanticMemory.statusMessage)
-                        .font(OffRecordTypography.metadata)
-                        .foregroundColor(OffRecordColor.textSecondary)
-                        .lineLimit(2)
-                }
-                .padding(.horizontal)
-                .padding(.top, 8)
-            }
-
-            HStack(alignment: .bottom, spacing: 10) {
-                TextField("Ask Friday about your journal...", text: $inputText, axis: .vertical)
-                    .textFieldStyle(.plain)
-                    .lineLimit(1...4)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 11)
-                    .background(
-                        RoundedRectangle(cornerRadius: 18, style: .continuous)
-                            .fill(OffRecordColor.surfacePrimary)
-                            .overlay(
-                                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                                    .stroke(OffRecordColor.borderSoft, lineWidth: 1)
-                            )
-                    )
-                    .disabled(isAnswering)
-                    .accessibilityIdentifier("friday.askField")
-
-                Button {
-                    askFreeformQuestion()
-                } label: {
-                    Image(systemName: isAnswering ? "hourglass" : "arrow.up.circle.fill")
-                        .font(.system(size: 30, weight: .semibold))
-                        .foregroundColor(canSendFreeform ? OffRecordColor.brandLavenderDark : OffRecordColor.textTertiary)
-                }
-                .disabled(!canSendFreeform)
-                .accessibilityLabel("Ask Friday")
-                .accessibilityIdentifier("friday.askButton")
-            }
-            .padding(.horizontal)
-            .padding(.top, 10)
+        if startedEntries.count < 5 {
+            return .noJournalData
         }
-        .offRecordGlassBar(cornerRadius: 0, fallbackFill: OffRecordColor.surfaceWarm)
-    }
-
-    // MARK: - Question Chips
-
-    private var questionChips: some View {
-        VStack(spacing: 8) {
-            if availableQuestions.isEmpty {
-                Text("You've asked all the questions! Tap any to ask again.")
-                    .font(OffRecordTypography.metadata)
-                    .foregroundColor(themeManager.secondaryTextColor)
-                    .padding(.top, 8)
-            }
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 10) {
-                    ForEach(displayedQuestions) { question in
-                        Button {
-                            askQuestion(question)
-                        } label: {
-                            HStack(spacing: 6) {
-                                Image(systemName: question.icon)
-                                    .font(.system(size: 11))
-                                Text(question.rawValue)
-                                    .font(OffRecordTypography.metadata)
-                                    .lineLimit(1)
-                            }
-                            .foregroundColor(askedQuestions.contains(question)
-                                             ? themeManager.secondaryTextColor
-                                             : OffRecordColor.textBrand)
-                            .padding(.horizontal, 12)
-                            .padding(.vertical, 8)
-                            .offRecordGlassControl(
-                                tint: askedQuestions.contains(question) ? nil : OffRecordColor.brandLavenderDark,
-                                in: Capsule(),
-                                fallbackFill: askedQuestions.contains(question)
-                                    ? OffRecordColor.surfaceWarm.opacity(0.7)
-                                    : OffRecordColor.surfaceLavender
-                            )
-                        }
-                        .buttonStyle(.plain)
-                        .accessibilityIdentifier("friday.questionChip.\(question.accessibilityID)")
-                    }
-                }
-                .padding(.horizontal)
-            }
-            .accessibilityIdentifier("friday.questionChips")
-            .padding(.vertical, 10)
+        if semanticMemory.isBuilding {
+            return .loadingIndex
         }
-        .offRecordGlassBar(cornerRadius: 0, fallbackFill: OffRecordColor.surfaceWarm)
+        return .warmMinimal
     }
 
-    // MARK: - Logic
-
-    private var availableQuestions: [FridayQuestion] {
-        FridayQuestion.allCases.filter { !askedQuestions.contains($0) }
+    private var landingQuestions: [FridayQuestion] {
+        [.moodPattern, .stressTriggers, .talkAboutMost, .dominantTopics]
     }
 
-    private var displayedQuestions: [FridayQuestion] {
-        // Show unasked first, then asked ones
-        let unasked = FridayQuestion.allCases.filter { !askedQuestions.contains($0) }
-        let asked = FridayQuestion.allCases.filter { askedQuestions.contains($0) }
-        return unasked + asked
+    private var compactQuestions: [FridayQuestion] {
+        [.moodPattern, .stressTriggers, .talkAboutMost, .happiestWhen]
+    }
+
+    private var noDataQuestions: [FridayQuestion] {
+        [.bestJournalTime, .communicationStyle, .moodPattern, .dominantTopics]
+    }
+
+    private var horizontalPadding: CGFloat {
+        horizontalSizeClass == .compact ? OffRecordSpacing.xxl : 40
+    }
+
+    private var topContentPadding: CGFloat {
+        if screenMode == .activeChat {
+            return horizontalSizeClass == .compact ? 82 : 72
+        }
+        return horizontalSizeClass == .compact ? 48 : 64
+    }
+
+    private var contentSpacing: CGFloat {
+        screenMode == .activeChat ? 18 : 0
+    }
+
+    private var composerBottomClearance: CGFloat {
+        horizontalSizeClass == .compact ? 52 : 16
+    }
+
+    private var scrollBottomPadding: CGFloat {
+        horizontalSizeClass == .compact ? 260 : 160
     }
 
     private func applyInitialQuestionIfNeeded() {
@@ -818,62 +711,8 @@ struct FridayChatView: View {
     }
 }
 
-private struct EvidenceChip: View {
-    let evidence: EvidenceReference
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 10) {
-            Image(systemName: evidence.matchReason == .exact ? "text.magnifyingglass" : "quote.bubble.fill")
-                .font(OffRecordTypography.metadata)
-                .foregroundColor(OffRecordColor.brandLavenderDark)
-                .frame(width: 18)
-
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 6) {
-                    Text(formattedDate)
-                        .font(OffRecordTypography.labelSmall)
-                        .foregroundColor(OffRecordColor.textPrimary)
-                    if let mood = evidence.mood, !mood.isEmpty {
-                        Text(mood.capitalized)
-                            .font(OffRecordTypography.labelSmall)
-                            .foregroundColor(OffRecordColor.textSecondary)
-                            .accessibilityIdentifier("friday.evidenceChip.mood")
-                    }
-                }
-                Text(evidence.snippet)
-                    .font(OffRecordTypography.metadata)
-                    .foregroundColor(OffRecordColor.textSecondary)
-                    .lineLimit(3)
-                    .accessibilityIdentifier("friday.evidenceChip.snippet")
-                Text(evidence.matchReason.rawValue)
-                    .font(OffRecordTypography.labelSmall)
-                    .foregroundColor(OffRecordColor.textLavender)
-                    .accessibilityIdentifier("friday.evidenceChip.reason")
-            }
-        }
-        .padding(10)
-        .background(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .fill(OffRecordColor.surfaceLavender.opacity(0.7))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .stroke(OffRecordColor.borderSoft, lineWidth: 1)
-                )
-        )
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("friday.evidenceChip")
-    }
-
-    private var formattedDate: String {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .medium
-        formatter.timeStyle = .none
-        return formatter.string(from: evidence.date)
-    }
-}
-
 #Preview {
-    NavigationView {
+    NavigationStack {
         FridayChatView()
     }
 }
