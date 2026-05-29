@@ -401,7 +401,7 @@ struct SettingsView: View {
                 if semanticMemory.usesFallbackEmbeddings {
                     HStack(alignment: .top, spacing: 6) {
                         Image(systemName: "exclamationmark.triangle.fill")
-                        Text("Apple embedding assets were unavailable, so OffRecord is using a local lexical fallback until rebuild succeeds.")
+                        Text("Sentence embeddings were unavailable, so OffRecord is using a local lexical fallback until rebuild succeeds.")
                     }
                     .font(OffRecordTypography.metadata)
                     .foregroundColor(OffRecordColor.textPeach)

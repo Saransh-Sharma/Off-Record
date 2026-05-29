@@ -11,6 +11,7 @@ import NaturalLanguage
 import CoreData
 import CryptoKit
 import SQLite3
+import os
 #if canImport(Accelerate)
 import Accelerate
 #endif
@@ -18,6 +19,8 @@ import Accelerate
 #if canImport(UIKit)
 import UIKit
 #endif
+
+private let semanticMemoryLogger = Logger(subsystem: "com.singularity.offrecord", category: "SemanticMemory")
 
 // MARK: - Evidence Model
 
@@ -104,7 +107,7 @@ struct MemoryIndexSnapshot: Codable, Sendable {
     let updatedAt: Date
     let chunks: [MemoryChunk]
 
-    static let currentSchemaVersion = 3
+    static let currentSchemaVersion = 4
     static let currentChunkingVersion = 2
 }
 
@@ -172,65 +175,59 @@ enum EmbeddingProviderError: LocalizedError {
     }
 }
 
-actor NLContextualEmbeddingProvider: EmbeddingProvider {
-    private var loadedModels: [String: NLContextualEmbedding] = [:]
+actor NLSentenceEmbeddingProvider: EmbeddingProvider {
+    static let modelIDPrefix = "apple.nl-sentence"
+
+    private let canonicalLanguage: NLLanguage
+    private var embeddings: [String: NLEmbedding] = [:]
+
+    init(canonicalLanguage: NLLanguage = .english) {
+        self.canonicalLanguage = canonicalLanguage
+    }
 
     func embedding(for text: String, language: NLLanguage?) async throws -> EmbeddedText {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { throw EmbeddingProviderError.emptyResult }
 
-        let resolvedLanguage = language ?? NLLanguageRecognizer.dominantLanguage(for: trimmed) ?? .english
-        let model = try await model(for: resolvedLanguage)
-        let result = try model.embeddingResult(for: trimmed, language: resolvedLanguage)
-
-        var sum = Array(repeating: 0.0, count: model.dimension)
-        var count = 0.0
-        result.enumerateTokenVectors(in: trimmed.startIndex..<trimmed.endIndex) { vector, _ in
-            guard vector.count == sum.count else { return true }
-            for index in vector.indices {
-                sum[index] += vector[index]
-            }
-            count += 1
-            return true
+        let detectedLanguage = language ?? NLLanguageRecognizer.dominantLanguage(for: trimmed)
+        let (embedding, resolvedLanguage) = try sentenceEmbedding(preferredLanguage: detectedLanguage)
+        guard let vector = embedding.vector(for: trimmed), !vector.isEmpty else {
+            throw EmbeddingProviderError.emptyResult
         }
 
-        guard count > 0 else { throw EmbeddingProviderError.emptyResult }
-        let pooled = sum.map { Float($0 / count) }
         let metadata = EmbeddingMetadata(
-            modelID: model.modelIdentifier,
-            revision: model.revision,
-            dimension: model.dimension,
+            modelID: "\(Self.modelIDPrefix).\(resolvedLanguage.rawValue)",
+            revision: embedding.revision,
+            dimension: embedding.dimension,
             language: resolvedLanguage.rawValue
         )
-        return EmbeddedText(vector: VectorMath.normalized(pooled), metadata: metadata)
+        return EmbeddedText(vector: VectorMath.normalized(vector.map(Float.init)), metadata: metadata)
     }
 
-    private func model(for language: NLLanguage) async throws -> NLContextualEmbedding {
-        let key = language.rawValue
-        if let model = loadedModels[key] {
-            return model
+    private func sentenceEmbedding(preferredLanguage: NLLanguage?) throws -> (NLEmbedding, NLLanguage) {
+        var candidates = [canonicalLanguage]
+        if let preferredLanguage, preferredLanguage != canonicalLanguage {
+            candidates.append(preferredLanguage)
         }
 
-        guard let model = NLContextualEmbedding(language: language) ?? NLContextualEmbedding(language: .english) else {
-            throw EmbeddingProviderError.unavailable
-        }
-
-        if !model.hasAvailableAssets {
-            let result = await requestAssets(for: model)
-            guard result == .available else { throw EmbeddingProviderError.unavailable }
-        }
-
-        try model.load()
-        loadedModels[key] = model
-        return model
-    }
-
-    private func requestAssets(for model: NLContextualEmbedding) async -> NLContextualEmbedding.AssetsResult {
-        await withCheckedContinuation { continuation in
-            model.requestAssets { result, _ in
-                continuation.resume(returning: result)
+        for candidate in candidates {
+            let key = candidate.rawValue
+            if let cached = embeddings[key] {
+                return (cached, candidate)
+            }
+            if let embedding = NLEmbedding.sentenceEmbedding(for: candidate) {
+                embeddings[key] = embedding
+                semanticMemoryLogger.notice(
+                    "Using sentence embedding language=\(candidate.rawValue, privacy: .public) revision=\(embedding.revision, privacy: .public) dimension=\(embedding.dimension, privacy: .public)"
+                )
+                return (embedding, candidate)
             }
         }
+
+        semanticMemoryLogger.error(
+            "No sentence embedding available for canonical=\(self.canonicalLanguage.rawValue, privacy: .public) detected=\(preferredLanguage?.rawValue ?? "nil", privacy: .public)"
+        )
+        throw EmbeddingProviderError.unavailable
     }
 }
 
@@ -1011,7 +1008,7 @@ private actor SemanticMemoryIndexActor {
 
     init(
         storeURL: URL? = nil,
-        preferredProvider: any EmbeddingProvider = NLContextualEmbeddingProvider(),
+        preferredProvider: any EmbeddingProvider = NLSentenceEmbeddingProvider(),
         fallbackProvider: any EmbeddingProvider = UnavailableEmbeddingProvider()
     ) {
         let url: URL
@@ -1034,6 +1031,7 @@ private actor SemanticMemoryIndexActor {
 
     func needsRebuild(records: [IndexableEntry], forceRemoteReconcile: Bool) -> Bool {
         if forceRemoteReconcile { return true }
+        guard currentIndexUsesSupportedProvider else { return true }
         let expectedHashes = Dictionary(uniqueKeysWithValues: records.map { ($0.id, TextSignals.hash($0.text)) })
         let expectedIDs = Set(expectedHashes.keys)
         let indexedIDs = Set(chunks.map(\.entryID))
@@ -1062,6 +1060,9 @@ private actor SemanticMemoryIndexActor {
         }
 
         let provider = await selectedProvider(sampleText: records.first?.text ?? "")
+        semanticMemoryLogger.notice(
+            "Rebuilding semantic memory records=\(records.count, privacy: .public) provider=\(String(describing: type(of: provider)), privacy: .public)"
+        )
         var builtChunks: [MemoryChunk] = []
         var textByChunkID: [String: String] = [:]
         let total = max(records.count, 1)
@@ -1145,6 +1146,9 @@ private actor SemanticMemoryIndexActor {
         })
         let lexicalHits = HybridMemorySearchService.lexicalHits(query: trimmed, chunks: chunks, textByChunkID: textByChunkID, rankedChunkIDs: lexicalIDs)
         let results = HybridMemorySearchService.search(query: trimmed, chunks: chunks, queryVector: embedded.vector, lexicalHits: lexicalHits, limit: limit)
+        semanticMemoryLogger.notice(
+            "Search queryLength=\(trimmed.count, privacy: .public) chunks=\(self.chunks.count, privacy: .public) lexicalIDs=\(lexicalIDs.count, privacy: .public) lexicalHits=\(lexicalHits.count, privacy: .public) results=\(results.count, privacy: .public) provider=\(embedded.metadata.modelID, privacy: .public)"
+        )
 
         let evidence = results.compactMap { result -> EvidenceReference? in
             guard let record = recordByID[result.chunk.entryID] else { return nil }
@@ -1171,8 +1175,10 @@ private actor SemanticMemoryIndexActor {
         guard !sampleText.isEmpty else { return fallbackProvider }
         do {
             _ = try await preferredProvider.embedding(for: sampleText, language: NLLanguageRecognizer.dominantLanguage(for: sampleText))
+            semanticMemoryLogger.notice("Selected sentence embedding provider for semantic memory.")
             return preferredProvider
         } catch {
+            semanticMemoryLogger.error("Sentence embedding provider unavailable; using lexical fallback. error=\(error.localizedDescription, privacy: .public)")
             return fallbackProvider
         }
     }
@@ -1210,7 +1216,7 @@ private actor SemanticMemoryIndexActor {
                     embeddingModelID: embedded.metadata.modelID,
                     embeddingRevision: embedded.metadata.revision,
                     embeddingDimension: embedded.vector.count,
-                    language: language?.rawValue ?? embedded.metadata.language,
+                    language: embedded.metadata.language,
                     vector: embedded.vector,
                     isStarred: record.isStarred
                 )
@@ -1235,6 +1241,13 @@ private actor SemanticMemoryIndexActor {
 
     private var shouldPauseForSystemConditions: Bool {
         ProcessInfo.processInfo.isLowPowerModeEnabled || ProcessInfo.processInfo.thermalState == .serious || ProcessInfo.processInfo.thermalState == .critical
+    }
+
+    private var currentIndexUsesSupportedProvider: Bool {
+        chunks.allSatisfy { chunk in
+            chunk.embeddingModelID.hasPrefix(NLSentenceEmbeddingProvider.modelIDPrefix)
+            || chunk.embeddingModelID == UnavailableEmbeddingProvider().metadata.modelID
+        }
     }
 }
 
@@ -1504,7 +1517,7 @@ final class SemanticMemoryIndexController: ObservableObject {
         usesFallbackEmbeddings = ProcessInfo.processInfo.arguments.contains("-SemanticMemoryUseFallbackEmbeddings")
             || snapshot.embeddingModelID == UnavailableEmbeddingProvider().metadata.modelID
         statusMessage = usesFallbackEmbeddings && !snapshot.chunks.isEmpty
-            ? "Semantic memory is ready with lexical fallback. Apple embedding assets were unavailable."
+            ? "Semantic memory is ready with lexical fallback. Sentence embeddings were unavailable for this index."
             : message
     }
 
@@ -1518,10 +1531,21 @@ final class SemanticMemoryIndexController: ObservableObject {
 @MainActor
 enum EvidenceFridayEngine {
     static func answer(question: String, entries: [DiaryEntry], profileSummary: String? = nil) async -> EvidenceBackedFridayAnswer {
+        let isSuggestedQuestion = profileSummary?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
+        semanticMemoryLogger.notice(
+            "Friday answer requested suggested=\(isSuggestedQuestion.description, privacy: .public) entries=\(entries.count, privacy: .public)"
+        )
         let searchResult = await SemanticMemoryIndexController.shared.search(query: question, entries: entries, limit: 6)
 
         switch searchResult {
         case .building(let progress, let message):
+            if let fallback = profileFallbackAnswer(
+                profileSummary: profileSummary,
+                limitation: "Semantic Memory is still indexing, so citations are not attached yet."
+            ) {
+                semanticMemoryLogger.notice("Friday using suggested profile fallback while index is building.")
+                return fallback
+            }
             return EvidenceBackedFridayAnswer(
                 summary: "Friday is still building semantic memory.",
                 observations: [EvidenceObservation(text: "\(message) \(Int(progress * 100))% complete.", evidenceIDs: [])],
@@ -1531,6 +1555,13 @@ enum EvidenceFridayEngine {
                 limitations: "Friday will not answer from a partially built index."
             )
         case .unavailable(let reason):
+            if let fallback = profileFallbackAnswer(
+                profileSummary: profileSummary,
+                limitation: "Semantic Memory is unavailable right now, so citations are not attached. \(reason)"
+            ) {
+                semanticMemoryLogger.notice("Friday using suggested profile fallback because search is unavailable.")
+                return fallback
+            }
             return EvidenceBackedFridayAnswer(
                 summary: "I do not have enough journal evidence to answer that yet.",
                 observations: [EvidenceObservation(text: reason, evidenceIDs: [])],
@@ -1540,6 +1571,13 @@ enum EvidenceFridayEngine {
                 limitations: "Friday only answers from entries stored on this device."
             )
         case .failed(let message):
+            if let fallback = profileFallbackAnswer(
+                profileSummary: profileSummary,
+                limitation: "Semantic Memory search failed, so citations are not attached. \(message)"
+            ) {
+                semanticMemoryLogger.notice("Friday using suggested profile fallback because search failed.")
+                return fallback
+            }
             return EvidenceBackedFridayAnswer(
                 summary: "Friday could not search your journal right now.",
                 observations: [EvidenceObservation(text: message, evidenceIDs: [])],
@@ -1555,8 +1593,18 @@ enum EvidenceFridayEngine {
 
     static func answer(question: String, evidence: [EvidenceReference], profileSummary: String? = nil) async -> EvidenceBackedFridayAnswer {
         let strongEvidence = strongEvidence(from: evidence)
+        semanticMemoryLogger.notice(
+            "Friday evidence evaluated retrieved=\(evidence.count, privacy: .public) strong=\(strongEvidence.count, privacy: .public) profileFallback=\((profileSummary?.isEmpty == false).description, privacy: .public)"
+        )
 
         guard !strongEvidence.isEmpty else {
+            if let fallback = profileFallbackAnswer(
+                profileSummary: profileSummary,
+                limitation: "Semantic Memory could not find supporting entries for citations."
+            ) {
+                semanticMemoryLogger.notice("Friday using suggested profile fallback because evidence was weak.")
+                return fallback
+            }
             return EvidenceBackedFridayAnswer(
                 summary: "I do not have enough journal evidence to answer that yet.",
                 observations: [EvidenceObservation(text: "Try asking after a few more entries, or search for a person, topic, mood, or time period you have written about.", evidenceIDs: [])],
@@ -1603,6 +1651,7 @@ enum EvidenceFridayEngine {
         let hasMultipleMatches = evidence.count >= 2 && (evidence.dropFirst().first?.score ?? 0) >= 0.014
 
         if SemanticMemoryIndexController.shared.usesFallbackEmbeddings && !hasLexicalSupport {
+            semanticMemoryLogger.notice("Rejecting fallback evidence because lexical support is missing.")
             return []
         }
 
@@ -1613,6 +1662,19 @@ enum EvidenceFridayEngine {
             return evidence.filter { $0.score >= 0.014 }
         }
         return []
+    }
+
+    private static func profileFallbackAnswer(profileSummary: String?, limitation: String) -> EvidenceBackedFridayAnswer? {
+        guard let profileSummary = profileSummary?.trimmingCharacters(in: .whitespacesAndNewlines),
+              !profileSummary.isEmpty else { return nil }
+        return EvidenceBackedFridayAnswer(
+            summary: profileSummary,
+            observations: [],
+            evidence: [],
+            confidence: 0.45,
+            followUpPrompt: "Ask about a specific person, topic, mood, or time period if you want citations.",
+            limitations: limitation
+        )
     }
 
     private static func buildSummary(question: String, evidence: [EvidenceReference]) -> String {

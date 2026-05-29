@@ -985,6 +985,18 @@ struct SemanticMemoryTests {
         #expect(VectorMath.cosine(lhs, unrelated) < 0.01)
     }
 
+    @Test func sentenceEmbeddingProviderProducesStableVectors() async throws {
+        let provider = NLSentenceEmbeddingProvider()
+        let embedded = try await provider.embedding(
+            for: "Work pressure felt lighter after a long walk.",
+            language: .english
+        )
+
+        #expect(embedded.metadata.modelID.hasPrefix(NLSentenceEmbeddingProvider.modelIDPrefix))
+        #expect(embedded.metadata.dimension == embedded.vector.count)
+        #expect(!embedded.vector.isEmpty)
+    }
+
     @Test func hybridSearchPreservesExactNameRanking() {
         let entryID = UUID()
         let exact = makeChunk(
@@ -1066,6 +1078,20 @@ struct SemanticMemoryTests {
         #expect(answer.summary.contains("not have enough journal evidence"))
     }
 
+    @Test func fridaySuggestedPromptUsesProfileSummaryWhenEvidenceIsMissing() async {
+        let profileSummary = "Your recent mood has been balanced, with work stress showing up most often on weekdays."
+        let answer = await EvidenceFridayEngine.answer(
+            question: "What's my mood pattern this week?",
+            evidence: [],
+            profileSummary: profileSummary
+        )
+
+        #expect(answer.summary == profileSummary)
+        #expect(answer.evidence.isEmpty)
+        #expect(answer.confidence > 0)
+        #expect(answer.limitations?.localizedCaseInsensitiveContains("citations") == true)
+    }
+
     @Test func fridayRefusesWeakMeaningOnlyEvidence() async {
         let evidence = EvidenceReference(
             id: "weak",
@@ -1083,6 +1109,30 @@ struct SemanticMemoryTests {
         #expect(answer.evidence.isEmpty)
         #expect(answer.confidence == 0)
         #expect(answer.limitations?.localizedCaseInsensitiveContains("retrieved journal evidence") == true)
+    }
+
+    @Test func fridaySuggestedPromptUsesProfileSummaryWhenEvidenceIsWeak() async {
+        let profileSummary = "Work has been the clearest source of tension in your recent entries."
+        let evidence = EvidenceReference(
+            id: "weak",
+            entryID: UUID(),
+            date: Date(),
+            mood: nil,
+            snippet: "A loosely related memory.",
+            chunkText: "A loosely related memory.",
+            score: 0.004,
+            matchReason: .meaning
+        )
+
+        let answer = await EvidenceFridayEngine.answer(
+            question: "What triggers my stress?",
+            evidence: [evidence],
+            profileSummary: profileSummary
+        )
+
+        #expect(answer.summary == profileSummary)
+        #expect(answer.evidence.isEmpty)
+        #expect(answer.limitations?.localizedCaseInsensitiveContains("supporting entries") == true)
     }
 
     @Test func fridayObservationsCarryEvidenceIDs() async {
