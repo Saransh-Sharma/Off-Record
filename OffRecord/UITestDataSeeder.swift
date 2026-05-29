@@ -37,7 +37,9 @@ struct UITestDataSeeder {
             resetSemanticMemorySidecar()
             FridayAssistantEngine.shared.resetForUITesting()
             LocalAIEngine.shared.userProfile = UserProfile()
-            seedSemanticMemoryEntries(in: context)
+            if !arguments.contains("-SemanticMemoryEmptyJournal") {
+                seedSemanticMemoryEntries(in: context)
+            }
         } else if arguments.contains("-WeeklyReflectionUITest") {
             seedWeeklyReflectionState(arguments: arguments, context: context)
         } else if arguments.contains("-ProactiveReflectionUITest") {

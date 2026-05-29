@@ -42,7 +42,7 @@ final class SemanticMemoryUITests: XCTestCase {
         XCTAssertTrue(waitForChunkCount(app, equals: 0, timeout: 8))
         XCTAssertTrue(app.staticTexts["semanticMemory.statusMessage"].label.localizedCaseInsensitiveContains("deleted"))
 
-        app.buttons["tab.timeline"].tap()
+        app.buttons["tab.timeline"].firstMatch.tap()
         XCTAssertTrue(app.staticTexts.matching(labelContaining: "quarterly review").firstMatch.waitForExistence(timeout: 8))
         XCTAssertTrue(app.staticTexts.matching(labelContaining: "Bangalore cafe").firstMatch.waitForExistence(timeout: 4))
     }
@@ -86,7 +86,7 @@ final class SemanticMemoryUITests: XCTestCase {
         let app = launchSemanticMemoryApp()
         waitForSemanticIndexReady(app)
 
-        app.buttons["tab.timeline"].tap()
+        app.buttons["tab.timeline"].firstMatch.tap()
         enterSearch("Maya Bangalore", in: app)
 
         let mayaDinner = app.staticTexts.matching(labelContaining: "Dinner with Maya and Arjun").firstMatch
@@ -107,7 +107,7 @@ final class SemanticMemoryUITests: XCTestCase {
     func testTimelineShowsBuildingStateWhileIndexing() throws {
         let app = launchSemanticMemoryApp(extraArguments: ["-SemanticMemorySlowIndexingUITest"])
 
-        app.buttons["tab.timeline"].tap()
+        app.buttons["tab.timeline"].firstMatch.tap()
         enterSearch("stress after work", in: app)
 
         let buildingTitle = app.descendants(matching: .any)["semanticMemory.buildingTitle"].firstMatch
@@ -150,6 +150,66 @@ final class SemanticMemoryUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["friday.evidenceChip.snippet"].firstMatch.waitForExistence(timeout: 4))
     }
 
+    func testFridaySuggestedQuestionUsesProfileAnswerWhenFallbackHasNoCitationMatch() throws {
+        let app = launchSemanticMemoryApp()
+        waitForSemanticIndexReady(app)
+
+        openFridayChat(app)
+        let chip = app.descendants(matching: .any)["friday.questionChip.moodPattern"].firstMatch
+        scrollQuestionChipIntoView(chip, in: app)
+        XCTAssertTrue(chip.waitForExistence(timeout: 8))
+        XCTAssertTrue(elementFrameIsVisible(chip, in: app))
+        chip.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+
+        let answer = app.staticTexts["friday.answerMessage"]
+        XCTAssertTrue(answer.waitForExistence(timeout: 15))
+        XCTAssertFalse(answer.label.localizedCaseInsensitiveContains("not have enough journal evidence"))
+        XCTAssertTrue(answer.label.localizedCaseInsensitiveContains("mood"))
+    }
+
+    func testFridayWarmMinimalRedesignLoadsWithComposerAndPrompts() throws {
+        let app = launchSemanticMemoryApp()
+        waitForSemanticIndexReady(app)
+
+        openFridayChat(app)
+
+        XCTAssertTrue(app.staticTexts["Talk to Friday"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.descendants(matching: .any)["friday.askField"].firstMatch.waitForExistence(timeout: 4))
+        let moodPrompt = app.descendants(matching: .any)["friday.questionChip.moodPattern"].firstMatch
+        scrollQuestionChipIntoView(moodPrompt, in: app)
+        XCTAssertTrue(moodPrompt.waitForExistence(timeout: 4))
+
+        let stressPrompt = app.descendants(matching: .any)["friday.questionChip.stressTriggers"].firstMatch
+        scrollQuestionChipIntoView(stressPrompt, in: app)
+        XCTAssertTrue(stressPrompt.waitForExistence(timeout: 4))
+    }
+
+    func testFridayPromptTapTransitionsToActiveChat() throws {
+        let app = launchSemanticMemoryApp()
+        waitForSemanticIndexReady(app)
+
+        openFridayChat(app)
+        let chip = app.descendants(matching: .any)["friday.questionChip.moodPattern"].firstMatch
+        scrollQuestionChipIntoView(chip, in: app)
+        XCTAssertTrue(chip.waitForExistence(timeout: 8))
+        chip.tap()
+
+        XCTAssertTrue(app.staticTexts["friday.userMessage"].waitForExistence(timeout: 4))
+        XCTAssertTrue(app.staticTexts["Friday"].firstMatch.waitForExistence(timeout: 4))
+        XCTAssertTrue(app.descendants(matching: .any)["friday.askField"].firstMatch.exists)
+    }
+
+    func testFridayNoDataStateIsHonestAndStillAllowsTyping() throws {
+        let app = launchSemanticMemoryApp(extraArguments: ["-SemanticMemoryEmptyJournal"])
+
+        openFridayChat(app)
+
+        XCTAssertTrue(app.staticTexts["I need a little context."].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.staticTexts.matching(labelContaining: "Write or record a few entries").firstMatch.exists)
+        XCTAssertTrue(app.descendants(matching: .any)["friday.askField"].firstMatch.exists)
+        XCTAssertTrue(app.buttons["friday.askButton"].firstMatch.exists)
+    }
+
     func testFridayUnsupportedQuestionRefusesWithoutEvidence() throws {
         let app = launchSemanticMemoryApp()
         waitForSemanticIndexReady(app)
@@ -190,20 +250,20 @@ final class SemanticMemoryUITests: XCTestCase {
 
     @discardableResult
     private func waitForSemanticIndexReady(_ app: XCUIApplication, timeout: TimeInterval = 15) -> Bool {
-        app.buttons["tab.timeline"].tap()
+        app.buttons["tab.timeline"].firstMatch.tap()
         enterSearch("stress after work", in: app)
         guard waitForSearchResult(containing: "work stress and pressure", in: app, timeout: timeout) else {
             return false
         }
 
-        app.buttons["tab.settings"].tap()
+        app.buttons["tab.settings"].firstMatch.tap()
         let section = app.descendants(matching: .any)["semanticMemory.section"].firstMatch
         scrollUntilExists(section, in: app)
         return waitForChunkCountGreaterThanZero(app, timeout: timeout)
     }
 
     private func openSemanticMemorySettings(_ app: XCUIApplication) {
-        app.buttons["tab.settings"].tap()
+        app.buttons["tab.settings"].firstMatch.tap()
         let section = app.descendants(matching: .any)["semanticMemory.section"].firstMatch
         scrollUntilExists(section, in: app)
         XCTAssertTrue(section.waitForExistence(timeout: 8))
@@ -228,7 +288,7 @@ final class SemanticMemoryUITests: XCTestCase {
     }
 
     private func assertWorkStressSearch(in app: XCUIApplication) {
-        app.buttons["tab.timeline"].tap()
+        app.buttons["tab.timeline"].firstMatch.tap()
         enterSearch("stress after work", in: app)
 
         XCTAssertTrue(waitForSearchResult(containing: "work stress and pressure", in: app, timeout: 15))
@@ -253,28 +313,37 @@ final class SemanticMemoryUITests: XCTestCase {
 
     private func askFriday(_ question: String, in app: XCUIApplication) {
         openFridayChat(app)
-        let field = app.textFields["friday.askField"]
+        let field = app.descendants(matching: .any)["friday.askField"].firstMatch
         XCTAssertTrue(field.waitForExistence(timeout: 8))
+        XCTAssertTrue(field.isHittable)
         field.tap()
         field.typeText(question)
 
-        let askButton = app.buttons["friday.askButton"]
+        let askButton = app.descendants(matching: .any)["friday.askButton"].firstMatch
         XCTAssertTrue(askButton.waitForExistence(timeout: 4))
         askButton.tap()
         XCTAssertTrue(app.staticTexts["friday.userMessage"].waitForExistence(timeout: 4))
     }
 
     private func openFridayChat(_ app: XCUIApplication) {
-        app.buttons["tab.friday"].tap()
-        let talkToFriday = app.descendants(matching: .any)["friday.talk"].firstMatch
+        app.buttons["tab.friday"].firstMatch.tap()
+        let talkButton = app.buttons["friday.talk"].firstMatch
+        let talkToFriday = talkButton.exists ? talkButton : app.descendants(matching: .any)["friday.talk"].firstMatch
         XCTAssertTrue(talkToFriday.waitForExistence(timeout: 8))
+        XCTAssertTrue(elementFrameIsVisible(talkToFriday, in: app))
         talkToFriday.tap()
+
+        let field = app.descendants(matching: .any)["friday.askField"].firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 8))
     }
 
     private func scrollQuestionChipIntoView(_ chip: XCUIElement, in app: XCUIApplication) {
         let scroller = app.scrollViews["friday.questionChips"].firstMatch
         XCTAssertTrue(scroller.waitForExistence(timeout: 8))
         for _ in 0..<6 where !elementFrameIsVisible(chip, in: app) {
+            scroller.swipeUp()
+        }
+        for _ in 0..<3 where !elementFrameIsVisible(chip, in: app) {
             scroller.swipeLeft()
         }
     }
