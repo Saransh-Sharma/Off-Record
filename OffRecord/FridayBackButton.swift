@@ -1,0 +1,25 @@
+//
+//  FridayBackButton.swift
+//  OffRecord
+//
+//  Floating navigation control for Friday chat.
+//
+
+import SwiftUI
+
+struct FridayBackButton: View {
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: "chevron.left")
+                .font(.system(size: 19, weight: .semibold))
+                .foregroundStyle(OffRecordColor.brandPlum)
+                .frame(width: 44, height: 44)
+                .background(OffRecordColor.surfacePrimary.opacity(0.94), in: Circle())
+                .shadow(color: Color.black.opacity(0.06), radius: 14, x: 0, y: 4)
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Back")
+    }
+}
