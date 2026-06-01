@@ -60,7 +60,7 @@ struct StatsView: View {
                     weekActivityCard
                     WeeklyInsightsSection(entries: startedEntriesForCards)
                     ProactiveWeeklyReflectionCard(entries: startedEntriesForCards)
-                    WeeklyReflectionHistorySection(entries: startedEntriesForCards)
+                    WeeklyReflectionHistorySection(entries: weeklyReflectionRouteEntries)
 
                     // TIER 3: Deep Dive — collapsible
                     DisclosureGroup(isExpanded: $showDeepDive) {
@@ -96,16 +96,24 @@ struct StatsView: View {
         .navigationDestination(item: $selectedWeeklyReflection) { report in
             WeeklyReflectionReportView(report: report, entries: weeklyReflectionRouteEntries)
         }
+        .onAppear {
+            openPendingWeeklyReflectionRouteIfNeeded()
+        }
         .onChange(of: navigationRouter.shouldOpenCurrentWeeklyReflection) { _, shouldOpen in
             guard shouldOpen else { return }
-            selectedWeeklyReflection = weeklyReflection.openCurrentReport(entries: weeklyReflectionRouteEntries)
-            navigationRouter.shouldOpenCurrentWeeklyReflection = false
+            openPendingWeeklyReflectionRouteIfNeeded()
         }
         .onChange(of: navigationRouter.routedWeeklyReflectionID) { _, id in
             guard let id else { return }
             selectedWeeklyReflection = weeklyReflection.report(id: id)
             navigationRouter.routedWeeklyReflectionID = nil
         }
+    }
+
+    private func openPendingWeeklyReflectionRouteIfNeeded() {
+        guard navigationRouter.shouldOpenCurrentWeeklyReflection else { return }
+        selectedWeeklyReflection = weeklyReflection.openCurrentReport(entries: weeklyReflectionRouteEntries)
+        navigationRouter.shouldOpenCurrentWeeklyReflection = false
     }
 
     // MARK: - Empty State

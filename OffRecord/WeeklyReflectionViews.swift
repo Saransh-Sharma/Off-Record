@@ -23,8 +23,13 @@ struct WeeklyReflectionHomeCard: View {
                 card(for: report)
             }
         }
-        .onAppear { controller.refreshIfNeeded(entries: entries) }
-        .onChange(of: entriesSignature) { _, _ in controller.refreshIfNeeded(entries: entries) }
+        .onAppear { refreshUnlessUsingFailedUITestFixture() }
+        .onChange(of: entriesSignature) { _, _ in refreshUnlessUsingFailedUITestFixture() }
+    }
+
+    private func refreshUnlessUsingFailedUITestFixture() {
+        guard !ProcessInfo.processInfo.arguments.contains("-WeeklyReflectionFailed") else { return }
+        controller.refreshIfNeeded(entries: entries)
     }
 
     @ViewBuilder
@@ -279,18 +284,23 @@ struct WeeklyReflectionReportView: View {
             ToolbarItem(placement: .topBarTrailing) {
                 Menu {
                     Button("Export") { showExport = true }
+                        .accessibilityIdentifier("weeklyReflection.menu.export")
                     Button("Privacy & sources") { showSources = true }
+                        .accessibilityIdentifier("weeklyReflection.menu.sources")
                     Button("Dismiss this week") {
                         controller.dismiss(displayedReport)
                         dismiss()
                     }
+                    .accessibilityIdentifier("weeklyReflection.menu.dismiss")
                     Button("Delete report", role: .destructive) {
                         controller.delete(displayedReport)
                         dismiss()
                     }
+                    .accessibilityIdentifier("weeklyReflection.menu.delete")
                 } label: {
                     Image(systemName: "ellipsis.circle")
                 }
+                .accessibilityIdentifier("weeklyReflection.report.menu")
             }
         }
     }
@@ -323,6 +333,7 @@ struct WeeklyReflectionReportView: View {
                 .font(OffRecordTypography.bodySmall)
                 .foregroundColor(OffRecordColor.textSecondary)
         }
+        .accessibilityIdentifier("weeklyReflection.support")
     }
 
     private var themesSection: some View {
@@ -369,6 +380,7 @@ struct WeeklyReflectionReportView: View {
             TextField("What do you want to remember?", text: $takeawayText, axis: .vertical)
                 .textFieldStyle(.roundedBorder)
                 .lineLimit(2...4)
+                .accessibilityIdentifier("weeklyReflection.takeaway.textField")
             Button("Save takeaway") {
                 controller.saveTakeaway(takeawayText, for: displayedReport)
             }
@@ -395,6 +407,7 @@ struct WeeklyReflectionReportView: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
+            .accessibilityIdentifier("weeklyReflection.export.open")
         }
     }
 
@@ -429,17 +442,26 @@ struct WeeklyReflectionReportView: View {
 private struct WeeklyReflectionSourcesSheet: View {
     let report: WeeklyReflectionReport
     let entries: [DiaryEntry]
+    @Environment(\.managedObjectContext) private var viewContext
     @ObservedObject private var controller = WeeklyReflectionController.shared
     @Environment(\.dismiss) private var dismiss
     @State private var includedSelection: Set<UUID> = []
     @State private var selectedEntry: IdentifiableEntry?
 
     private var availableEntries: [DiaryEntry] {
-        entries.filter { entry in
+        sourceEntries.filter { entry in
             guard entry.id != nil else { return false }
             return report.period.contains(entry.date ?? entry.createdAt ?? .distantPast)
         }
         .sorted { ($0.date ?? .distantPast) < ($1.date ?? .distantPast) }
+    }
+
+    private var sourceEntries: [DiaryEntry] {
+        if !entries.isEmpty { return entries }
+        let request: NSFetchRequest<DiaryEntry> = DiaryEntry.fetchRequest()
+        request.predicate = DiaryEntry.startedEntryPredicate
+        request.sortDescriptors = [NSSortDescriptor(keyPath: \DiaryEntry.date, ascending: false)]
+        return (try? viewContext.fetch(request)) ?? []
     }
 
     private var availableEntryIDs: Set<UUID> {
@@ -525,6 +547,7 @@ private struct WeeklyReflectionSourcesSheet: View {
                 .accessibilityIdentifier("weeklyReflection.sources.includeToggle")
             }
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("weeklyReflection.sources.entry")
     }
 
@@ -566,6 +589,7 @@ private struct WeeklyReflectionExportSheet: View {
             Form {
                 Section("Include") {
                     Toggle("Source quotes", isOn: $includeQuotes)
+                        .accessibilityIdentifier("weeklyReflection.export.includeQuotes")
                     Text("Source quotes are off by default. The export never includes full journal entries.")
                         .font(OffRecordTypography.metadata)
                         .foregroundColor(OffRecordColor.textSecondary)
@@ -576,6 +600,7 @@ private struct WeeklyReflectionExportSheet: View {
                             Text(format.rawValue).tag(format)
                         }
                     }
+                    .accessibilityIdentifier("weeklyReflection.export.format")
                 }
                 Section {
                     Button("Preview export") {
