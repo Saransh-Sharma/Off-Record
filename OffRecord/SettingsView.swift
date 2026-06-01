@@ -8,6 +8,7 @@ import UIKit
 struct SettingsView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @ObservedObject private var reminderManager = ReminderManager.shared
     @ObservedObject private var lockManager = AppLockManager.shared
     @ObservedObject private var themeManager = ThemeManager.shared
@@ -72,29 +73,64 @@ struct SettingsView: View {
     }
 
     var body: some View {
-        ScrollView {
-            let columns = horizontalSizeClass == .regular
-                ? [GridItem(.flexible(), spacing: OffRecordSpacing.lg), GridItem(.flexible(), spacing: OffRecordSpacing.lg)]
-                : [GridItem(.flexible())]
+        GeometryReader { proxy in
+            ScrollView {
+                let columns = settingsColumns(for: proxy.size.width)
 
-            LazyVGrid(columns: columns, spacing: OffRecordSpacing.lg) {
-                settingsSection(tint: OffRecordColor.surfacePeach) { exportSection }
-                settingsSection(tint: OffRecordColor.surfaceLavender) { appearanceSection }
-                settingsSection(tint: OffRecordColor.surfaceMint) { journalingGoalSection }
-                settingsSection(tint: OffRecordColor.surfaceSage) { securitySection }
-                settingsSection(tint: OffRecordColor.surfaceLavender) { localAIPrivacySection }
-                settingsSection(tint: OffRecordColor.surfaceMint) { weeklyReflectionSection }
-                settingsSection(tint: OffRecordColor.surfaceMint) { semanticMemorySection }
-                settingsSection(tint: OffRecordColor.surfacePrimary) { systemSearchSection }
-                settingsSection(tint: OffRecordColor.surfacePeach) { dailyReminderSection }
-                settingsSection(tint: OffRecordColor.surfacePrimary) { storageSection }
-                settingsSection(tint: OffRecordColor.surfaceMint) { iCloudSection }
-                settingsSection(tint: OffRecordColor.surfaceSage) { privacySection }
-                settingsSection(tint: OffRecordColor.surfacePrimary) { backupSection }
-                settingsSection(tint: OffRecordColor.surfacePrimary) { aboutSection }
+                VStack(alignment: .leading, spacing: OffRecordSpacing.section) {
+                    SettingsGroup(
+                        title: "Journal & Reminders",
+                        subtitle: "Tune the habit-building parts of OffRecord without exposing journal content."
+                    ) {
+                        LazyVGrid(columns: columns, spacing: OffRecordSpacing.lg) {
+                            journalingGoalSection
+                            dailyReminderSection
+                            weeklyReflectionSection
+                        }
+                    }
+
+                    SettingsGroup(
+                        title: "Privacy & AI",
+                        subtitle: "Control local intelligence, search surfaces, and device-level privacy."
+                    ) {
+                        LazyVGrid(columns: columns, spacing: OffRecordSpacing.lg) {
+                            securitySection
+                            localAIPrivacySection
+                            semanticMemorySection
+                            systemSearchSection
+                        }
+                    }
+
+                    SettingsGroup(
+                        title: "Data & Export",
+                        subtitle: "Export, back up, sync, and review what OffRecord stores on this device."
+                    ) {
+                        LazyVGrid(columns: columns, spacing: OffRecordSpacing.lg) {
+                            exportSection
+                            backupSection
+                            iCloudSection
+                            storageSection
+                        }
+                    }
+
+                    SettingsGroup(title: "Appearance") {
+                        LazyVGrid(columns: columns, spacing: OffRecordSpacing.lg) {
+                            appearanceSection
+                        }
+                    }
+
+                    SettingsGroup(title: "About") {
+                        LazyVGrid(columns: columns, spacing: OffRecordSpacing.lg) {
+                            privacySection
+                            aboutSection
+                        }
+                    }
+                }
+                .frame(maxWidth: contentMaxWidth(for: proxy.size.width))
+                .frame(maxWidth: .infinity)
+                .padding(.horizontal, OffRecordSpacing.screenX)
+                .padding(.vertical, OffRecordSpacing.screenY)
             }
-            .padding(.horizontal, OffRecordSpacing.screenX)
-            .padding(.vertical, 16)
         }
         .background(OffRecordColor.appBackgroundGradient)
         .onAppear {
@@ -172,87 +208,117 @@ struct SettingsView: View {
 
     // MARK: - Sections
 
-    private func settingsSection<Content: View>(tint: Color, @ViewBuilder content: () -> Content) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-            content()
+    private func settingsColumns(for width: CGFloat) -> [GridItem] {
+        guard width >= 760, !dynamicTypeSize.isAccessibilitySize else {
+            return [GridItem(.flexible(), spacing: OffRecordSpacing.lg)]
         }
-        .padding(OffRecordSpacing.md)
-        .offRecordContentCard(cornerRadius: OffRecordRadius.xl, fill: tint)
+
+        return [
+            GridItem(.flexible(), spacing: OffRecordSpacing.lg),
+            GridItem(.flexible(), spacing: OffRecordSpacing.lg)
+        ]
+    }
+
+    private func contentMaxWidth(for width: CGFloat) -> CGFloat? {
+        width >= 900 ? 980 : nil
     }
 
     @ViewBuilder
     private var exportSection: some View {
-        Section(header: Text("Export"), footer: Text("Your name and description will appear on the cover page of exported PDFs.")) {
+        SettingsCard(
+            title: "PDF Export",
+            subtitle: "Create a readable PDF for a month, quarter, or year.",
+            footer: "Your name and description appear only on the exported PDF cover page.",
+            systemImage: "doc.richtext",
+            tint: OffRecordColor.textSky,
+            fill: OffRecordColor.surfaceBlue
+        ) {
             TextField("Your name", text: $authorName)
+                .textFieldStyle(.roundedBorder)
             TextField("Description (optional)", text: $authorDescription)
+                .textFieldStyle(.roundedBorder)
 
             if years.isEmpty {
-                Text("No entries to export yet.")
-                    .foregroundColor(OffRecordColor.textSecondary)
-            } else {
-                Picker("Period", selection: $selectedExportPeriod) {
-                    ForEach(ExportPeriod.allCases) { period in
-                        Text(period.rawValue).tag(period)
-                    }
-                }
-
-                let yearBinding = Binding<Int>(
-                    get: { selectedYear ?? years.last ?? Calendar.current.component(.year, from: Date()) },
-                    set: { selectedYear = $0 }
+                SettingsRow(
+                    systemImage: "tray",
+                    title: "No entries to export yet",
+                    subtitle: "Record a few private entries first, then come back to create a PDF.",
+                    tint: OffRecordColor.textSky
                 )
-
-                Picker("Year", selection: yearBinding) {
-                    ForEach(years, id: \.self) { year in
-                        Text(String(year)).tag(year)
-                    }
-                }
-
-                if selectedExportPeriod == .monthly {
-                    let monthBinding = Binding<Int>(
-                        get: { selectedMonth ?? currentMonth },
-                        set: { selectedMonth = $0 }
-                    )
-
-                    Picker("Month", selection: monthBinding) {
-                        ForEach(1...12, id: \.self) { month in
-                            Text(monthName(month)).tag(month)
+            } else {
+                DisclosureGroup {
+                    VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
+                        Picker("Period", selection: $selectedExportPeriod) {
+                            ForEach(ExportPeriod.allCases) { period in
+                                Text(period.rawValue).tag(period)
+                            }
                         }
-                    }
-                } else if selectedExportPeriod == .quarterly {
-                    let quarterBinding = Binding<Int>(
-                        get: { selectedMonth ?? currentQuarter },
-                        set: { selectedMonth = $0 }
-                    )
 
-                    Picker("Quarter", selection: quarterBinding) {
-                        Text("Q1 (Jan - Mar)").tag(1)
-                        Text("Q2 (Apr - Jun)").tag(2)
-                        Text("Q3 (Jul - Sep)").tag(3)
-                        Text("Q4 (Oct - Dec)").tag(4)
+                        let yearBinding = Binding<Int>(
+                            get: { selectedYear ?? years.last ?? Calendar.current.component(.year, from: Date()) },
+                            set: { selectedYear = $0 }
+                        )
+
+                        Picker("Year", selection: yearBinding) {
+                            ForEach(years, id: \.self) { year in
+                                Text(String(year)).tag(year)
+                            }
+                        }
+
+                        if selectedExportPeriod == .monthly {
+                            let monthBinding = Binding<Int>(
+                                get: { selectedMonth ?? currentMonth },
+                                set: { selectedMonth = $0 }
+                            )
+
+                            Picker("Month", selection: monthBinding) {
+                                ForEach(1...12, id: \.self) { month in
+                                    Text(monthName(month)).tag(month)
+                                }
+                            }
+                        } else if selectedExportPeriod == .quarterly {
+                            let quarterBinding = Binding<Int>(
+                                get: { selectedMonth ?? currentQuarter },
+                                set: { selectedMonth = $0 }
+                            )
+
+                            Picker("Quarter", selection: quarterBinding) {
+                                Text("Q1 (Jan - Mar)").tag(1)
+                                Text("Q2 (Apr - Jun)").tag(2)
+                                Text("Q3 (Jul - Sep)").tag(3)
+                                Text("Q4 (Oct - Dec)").tag(4)
+                            }
+                        }
+
+                        Picker("Paper size", selection: $selectedPaperSize) {
+                            ForEach(PDFPaperSize.allCases) { size in
+                                Text(size.rawValue).tag(size)
+                            }
+                        }
+
+                        Toggle("Only starred entries", isOn: $starredOnly)
                     }
+                    .padding(.top, OffRecordSpacing.sm)
+                } label: {
+                    Label("Export options", systemImage: "slider.horizontal.3")
+                        .font(OffRecordTypography.labelMedium)
+                        .foregroundStyle(OffRecordColor.textSky)
                 }
-
-                Picker("Paper size", selection: $selectedPaperSize) {
-                    ForEach(PDFPaperSize.allCases) { size in
-                        Text(size.rawValue).tag(size)
-                    }
-                }
-
-                Toggle("Only starred entries", isOn: $starredOnly)
 
                 Button {
                     generatePDF()
                 } label: {
-                    HStack {
-                        Text("Export as PDF")
-                        Spacer()
+                    HStack(spacing: OffRecordSpacing.sm) {
                         if isExporting {
                             ProgressView()
+                                .tint(OffRecordColor.textInverse)
                         } else {
                             Image(systemName: "square.and.arrow.up")
                         }
+                        Text(isExporting ? "Exporting PDF..." : "Export as PDF")
                     }
                 }
+                .buttonStyle(SettingsPrimaryButtonStyle())
                 .disabled(isExporting)
             }
         }
@@ -260,8 +326,14 @@ struct SettingsView: View {
 
     @ViewBuilder
     private var appearanceSection: some View {
-        Section {
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: horizontalSizeClass == .regular ? 6 : 4), spacing: 12) {
+        SettingsCard(
+            title: "Accent Color",
+            subtitle: "Choose the accent used for buttons, highlights, and selected states.",
+            systemImage: "paintpalette",
+            tint: themeManager.selectedTheme.readableAccentColor,
+            fill: OffRecordColor.surfacePrimary
+        ) {
+            LazyVGrid(columns: [GridItem(.adaptive(minimum: 72), spacing: OffRecordSpacing.md)], spacing: OffRecordSpacing.md) {
                 ForEach(AppTheme.allCases) { theme in
                     ThemeButton(
                         theme: theme,
@@ -274,17 +346,18 @@ struct SettingsView: View {
                     }
                 }
             }
-            .padding(.vertical, 8)
-        } header: {
-            Text("Accent Color")
-        } footer: {
-            Text("Choose an accent color. This tints buttons and highlights throughout the app.")
         }
     }
 
     @ViewBuilder
     private var journalingGoalSection: some View {
-        Section {
+        SettingsCard(
+            title: "Journaling Goal",
+            subtitle: "Set a weekly target to build a consistent habit.",
+            systemImage: "target",
+            tint: OffRecordColor.textAqua,
+            fill: OffRecordColor.surfaceMint
+        ) {
             Toggle("Enable weekly goal", isOn: $goalManager.isEnabled)
 
             if goalManager.isEnabled {
@@ -292,35 +365,46 @@ struct SettingsView: View {
 
                 Toggle("Notify when goal reached", isOn: $goalManager.notifyOnGoal)
             }
-        } header: {
-            Text("Journaling Goal")
-        } footer: {
-            Text("Set a weekly journaling target to build a consistent habit.")
         }
     }
 
     @ViewBuilder
     private var securitySection: some View {
-        Section(header: Text("Privacy Lock")) {
+        SettingsCard(
+            title: "Privacy Lock",
+            subtitle: "Require device authentication before opening your journal.",
+            systemImage: "lock.shield.fill",
+            tint: OffRecordColor.textSage,
+            fill: OffRecordColor.surfaceSage
+        ) {
             Toggle("Require \(lockManager.biometryTypeName) to open OffRecord", isOn: $lockManager.isEnabled)
 
             if lockManager.isEnabled {
                 Text("Your journal locks when you leave the app. OffRecord never sees or stores your \(lockManager.biometryTypeName).")
                     .font(OffRecordTypography.metadata)
                     .foregroundColor(OffRecordColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
             if !lockManager.biometricsAvailable {
                 Text("If \(lockManager.biometryTypeName) is unavailable, iOS will use your device passcode.")
                     .font(OffRecordTypography.metadata)
                     .foregroundColor(OffRecordColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
 
     @ViewBuilder
     private var localAIPrivacySection: some View {
-        Section {
+        SettingsCard(
+            title: "Local AI & Offline Privacy",
+            subtitle: "Private intelligence stays local unless you allow Apple Speech transcription.",
+            footer: "Optional iCloud Sync is separate and uses your personal Apple iCloud account, not an OffRecord server.",
+            systemImage: "cpu.fill",
+            tint: OffRecordColor.textLavender,
+            fill: OffRecordColor.surfaceLavender
+        ) {
             VStack(alignment: .leading, spacing: 12) {
                 PrivacyInfoRow(
                     icon: "cpu.fill",
@@ -346,35 +430,28 @@ struct SettingsView: View {
                     .foregroundColor(OffRecordColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
-            .padding(.vertical, 4)
-        } header: {
-            Text("Local AI & Offline Privacy")
-        } footer: {
-            Text("Optional iCloud Sync is separate and uses your personal Apple iCloud account, not an OffRecord server.")
         }
     }
 
     @ViewBuilder
     private var semanticMemorySection: some View {
-        Section {
+        SettingsCard(
+            title: "Semantic Memory",
+            subtitle: "Derived local search memory for Friday and journal recall.",
+            footer: "Embeddings are derived locally from journal entries and are not synced to iCloud.",
+            systemImage: "brain.head.profile",
+            tint: OffRecordColor.textLavender,
+            fill: OffRecordColor.surfacePrimary
+        ) {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 12) {
-                    ZStack {
-                        Circle()
-                            .fill(OffRecordColor.surfaceLavender)
-                            .frame(width: 38, height: 38)
-                        Image(systemName: "brain.head.profile")
-                            .font(OffRecordTypography.bodySmall)
-                            .foregroundColor(OffRecordColor.textLavender)
-                    }
-
                     VStack(alignment: .leading, spacing: 3) {
                         Text("Semantic Memory")
                             .font(OffRecordTypography.labelMedium)
                         Text(semanticMemory.statusMessage)
                             .font(OffRecordTypography.metadata)
                             .foregroundColor(OffRecordColor.textSecondary)
-                            .lineLimit(2)
+                            .fixedSize(horizontal: false, vertical: true)
                             .accessibilityIdentifier("semanticMemory.statusMessage")
                     }
 
@@ -390,11 +467,10 @@ struct SettingsView: View {
                         .accessibilityIdentifier("semanticMemory.progress")
                 }
 
-                HStack {
-                    Text("Indexed chunks")
-                    Spacer()
+                SettingsRow(systemImage: "number", title: "Indexed chunks", tint: OffRecordColor.textLavender) {
                     Text("\(semanticMemory.chunkCount)")
-                        .foregroundColor(OffRecordColor.textSecondary)
+                        .font(OffRecordTypography.bodySmall)
+                        .foregroundColor(OffRecordColor.textPrimary)
                         .accessibilityIdentifier("semanticMemory.chunkCount")
                 }
 
@@ -415,6 +491,7 @@ struct SettingsView: View {
                 } label: {
                     Label("Rebuild Semantic Memory", systemImage: "arrow.clockwise")
                 }
+                .buttonStyle(SettingsSecondaryButtonStyle(tint: OffRecordColor.textLavender, fill: OffRecordColor.surfaceLavender))
                 .accessibilityIdentifier("semanticMemory.rebuild")
                 .disabled(semanticMemory.isBuilding)
 
@@ -423,21 +500,24 @@ struct SettingsView: View {
                 } label: {
                     Label("Delete Local Semantic Index", systemImage: "trash")
                 }
+                .buttonStyle(SettingsSecondaryButtonStyle(tint: OffRecordColor.textCoral, fill: OffRecordColor.backgroundBlushTint))
                 .accessibilityIdentifier("semanticMemory.delete")
                 .disabled(semanticMemory.isBuilding && semanticMemory.chunkCount == 0)
             }
-            .padding(.vertical, 4)
-        } header: {
-            Text("Semantic Memory")
-                .accessibilityIdentifier("semanticMemory.section")
-        } footer: {
-            Text("Embeddings are derived locally from your journal entries and are not synced to iCloud. If Apple model assets are requested, only model files are downloaded; journal text stays on device.")
+            .accessibilityIdentifier("semanticMemory.section")
         }
     }
 
     @ViewBuilder
     private var systemSearchSection: some View {
-        Section {
+        SettingsCard(
+            title: "Siri & System Search",
+            subtitle: "Let system surfaces open private OffRecord destinations without exposing journal text.",
+            footer: "Reading and searching entry text still happens inside the locked app.",
+            systemImage: "magnifyingglass",
+            tint: OffRecordColor.textSky,
+            fill: OffRecordColor.surfacePrimary
+        ) {
             Toggle("Show entries in Spotlight", isOn: $spotlightMetadataIndexingEnabled)
                 .accessibilityIdentifier("settings.systemSearch.spotlightToggle")
 
@@ -457,19 +537,22 @@ struct SettingsView: View {
             } label: {
                 Label("Rebuild Spotlight Metadata", systemImage: "magnifyingglass")
             }
+            .buttonStyle(SettingsSecondaryButtonStyle(tint: OffRecordColor.textSky, fill: OffRecordColor.surfaceBlue))
             .accessibilityIdentifier("settings.systemSearch.rebuildSpotlight")
             .disabled(!spotlightMetadataIndexingEnabled)
-        } header: {
-            Text("Siri & System Search")
-                .accessibilityIdentifier("settings.systemSearch.section")
-        } footer: {
-            Text("Siri, Shortcuts, Spotlight, Action Button, and widgets can open private OffRecord surfaces. Reading and searching entry text still happens inside the locked app.")
         }
+        .accessibilityIdentifier("settings.systemSearch.section")
     }
 
     @ViewBuilder
     private var dailyReminderSection: some View {
-        Section {
+        SettingsCard(
+            title: "Daily Reminder",
+            subtitle: "Send one privacy-safe notification at your chosen time.",
+            systemImage: "bell.badge",
+            tint: OffRecordColor.textPeach,
+            fill: OffRecordColor.surfacePeach
+        ) {
             Toggle("Remind me to record", isOn: Binding(
                 get: { reminderManager.isEnabled },
                 set: { newValue in
@@ -505,16 +588,20 @@ struct SettingsView: View {
                 Text("Reminder text stays privacy-safe and never includes names, topics, moods, regrets, or journal snippets.")
                     .font(OffRecordTypography.metadata)
                     .foregroundColor(OffRecordColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-        } header: {
-            Text("Daily Reminder")
-        } footer: {
-            Text("OffRecord sends one notification each day at your chosen time.")
         }
     }
 
     private var weeklyReflectionSection: some View {
-        Section {
+        SettingsCard(
+            title: "Weekly Reflection",
+            subtitle: "Summarize selected journal entries locally and optionally remind you weekly.",
+            footer: "Notifications never include journal content, themes, moods, names, or quotes.",
+            systemImage: "calendar.badge.clock",
+            tint: OffRecordColor.textAqua,
+            fill: OffRecordColor.surfaceMint
+        ) {
             Toggle("Enable weekly reflection", isOn: Binding(
                 get: { weeklyReflection.settings.isEnabled },
                 set: { value in weeklyReflection.updateSettings { $0.isEnabled = value } }
@@ -572,11 +659,8 @@ struct SettingsView: View {
                 Text("Weekly reflections use selected journal entries on this device. You can hide entries inside a report and regenerate without changing the original entry.")
                     .font(OffRecordTypography.metadata)
                     .foregroundColor(OffRecordColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-        } header: {
-            Text("Weekly Reflection")
-        } footer: {
-            Text("Notifications never include journal content, themes, moods, names, or quotes.")
         }
     }
 
@@ -599,25 +683,20 @@ struct SettingsView: View {
 
     @ViewBuilder
     private var iCloudSection: some View {
-        Section {
+        SettingsCard(
+            title: "iCloud Sync",
+            subtitle: syncStatusText,
+            footer: iCloudSyncEnabled
+                ? (PersistenceController.isCloudAvailable
+                   ? "Your data syncs securely through your personal iCloud account. Only you can access it."
+                   : "Sign in to iCloud in iOS Settings to enable sync.")
+                : "Sync is off. Your entries are stored only on this device.",
+            systemImage: iCloudSyncEnabled && PersistenceController.isCloudAvailable ? "icloud.fill" : "icloud.slash",
+            tint: iCloudSyncEnabled && PersistenceController.isCloudAvailable ? OffRecordColor.textSky : OffRecordColor.textTertiary,
+            fill: OffRecordColor.surfaceBlue
+        ) {
             Toggle(isOn: $iCloudSyncEnabled) {
-                HStack(spacing: 12) {
-                    ZStack {
-                        Circle()
-                            .fill(iCloudSyncEnabled && PersistenceController.isCloudAvailable ? OffRecordColor.surfaceBlue : OffRecordColor.surfaceWarm)
-                            .frame(width: 36, height: 36)
-                        Image(systemName: iCloudSyncEnabled && PersistenceController.isCloudAvailable ? "icloud.fill" : "icloud.slash")
-                            .font(OffRecordTypography.bodyLarge)
-                            .foregroundColor(iCloudSyncEnabled && PersistenceController.isCloudAvailable ? OffRecordColor.textSky : OffRecordColor.textTertiary)
-                    }
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("iCloud Sync")
-                            .font(OffRecordTypography.labelMedium)
-                        Text(syncStatusText)
-                            .font(OffRecordTypography.metadata)
-                            .foregroundColor(OffRecordColor.textSecondary)
-                    }
-                }
+                Text("Sync entries with iCloud")
             }
             .onChange(of: iCloudSyncEnabled) { _, newValue in
                 PersistenceController.shared.setCloudSyncEnabled(newValue)
@@ -630,6 +709,7 @@ struct SettingsView: View {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundColor(OffRecordColor.textSage)
                             .font(OffRecordTypography.metadata)
+                            .accessibilityHidden(true)
                         Text("Entries sync automatically via your personal iCloud")
                             .font(OffRecordTypography.metadata)
                             .foregroundColor(OffRecordColor.textSecondary)
@@ -638,6 +718,7 @@ struct SettingsView: View {
                         Image(systemName: "lock.fill")
                             .foregroundColor(OffRecordColor.textSage)
                             .font(OffRecordTypography.metadata)
+                            .accessibilityHidden(true)
                         Text("Encrypted through your Apple ID")
                             .font(OffRecordTypography.metadata)
                             .foregroundColor(OffRecordColor.textSecondary)
@@ -649,20 +730,13 @@ struct SettingsView: View {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundColor(OffRecordColor.textPeach)
                         .font(OffRecordTypography.metadata)
+                        .accessibilityHidden(true)
                     Text("iCloud unavailable")
                         .font(OffRecordTypography.metadata)
                         .foregroundColor(OffRecordColor.textSecondary)
                 }
                 .padding(.vertical, 4)
             }
-        } header: {
-            Text("iCloud Sync")
-        } footer: {
-            Text(iCloudSyncEnabled
-                 ? (PersistenceController.isCloudAvailable
-                    ? "Your data syncs securely through your personal iCloud account. Only you can access it."
-                    : "Sign in to iCloud in iOS Settings to enable sync.")
-                 : "Sync is off. Your entries are stored only on this device.")
         }
     }
 
@@ -678,26 +752,14 @@ struct SettingsView: View {
 
     @ViewBuilder
     private var privacySection: some View {
-        Section {
-            HStack(spacing: 12) {
-                ZStack {
-                    Circle()
-                        .fill(OffRecordColor.surfaceSage)
-                        .frame(width: 44, height: 44)
-                    Image(systemName: "lock.shield.fill")
-                        .font(OffRecordTypography.titleSmall)
-                        .foregroundColor(OffRecordColor.textSage)
-                }
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Privacy First")
-                        .font(OffRecordTypography.labelMedium)
-                    Text("Your data is encrypted and private")
-                        .font(OffRecordTypography.metadata)
-                        .foregroundColor(OffRecordColor.textSecondary)
-                }
-            }
-            .padding(.vertical, 4)
-
+        SettingsCard(
+            title: "Privacy & Security",
+            subtitle: "A quick summary of OffRecord's privacy posture.",
+            footer: "Your thoughts are yours alone. If enabled, sync uses your personal iCloud account, encrypted with your Apple ID.",
+            systemImage: "lock.shield.fill",
+            tint: OffRecordColor.textSage,
+            fill: OffRecordColor.surfaceSage
+        ) {
             VStack(alignment: .leading, spacing: 12) {
                 PrivacyInfoRow(
                     icon: "waveform",
@@ -721,103 +783,80 @@ struct SettingsView: View {
                 Link(destination: privacyPolicyURL) {
                     Label("Privacy Policy", systemImage: "hand.raised.fill")
                 }
+                .buttonStyle(SettingsSecondaryButtonStyle(tint: OffRecordColor.textSage, fill: OffRecordColor.surfacePrimary))
             }
-        } header: {
-            Text("Privacy & Security")
-        } footer: {
-            Text("Your thoughts are yours alone. If enabled, sync uses your personal iCloud account, encrypted with your Apple ID.")
         }
     }
 
     @ViewBuilder
     private var backupSection: some View {
-        Section {
+        SettingsCard(
+            title: "Backup & Export",
+            subtitle: "Create portable backups or restore a previous archive.",
+            footer: "Encrypted backups are password protected. OffRecord cannot recover a forgotten backup password.",
+            systemImage: "archivebox",
+            tint: OffRecordColor.textSky,
+            fill: OffRecordColor.surfacePrimary
+        ) {
             NavigationLink {
                 BackupExportView(entries: startedEntries)
             } label: {
-                HStack(spacing: 12) {
-                    ZStack {
-                        Circle()
-                            .fill(OffRecordColor.surfacePeach)
-                            .frame(width: 36, height: 36)
-                        Image(systemName: "square.and.arrow.up")
-                            .font(OffRecordTypography.bodySmall)
-                            .foregroundColor(OffRecordColor.textPeach)
-                    }
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Export Data")
-                            .font(OffRecordTypography.bodySmall)
-                        Text("JSON, Text, Markdown, CSV")
-                            .font(OffRecordTypography.metadata)
-                            .foregroundColor(OffRecordColor.textSecondary)
-                    }
-                }
+                SettingsActionRow(
+                    systemImage: "square.and.arrow.up",
+                    title: "Export Data",
+                    subtitle: "JSON, encrypted backup, Text, Markdown, CSV",
+                    tint: OffRecordColor.textSky
+                )
             }
 
             NavigationLink {
                 ImportBackupView()
             } label: {
-                HStack(spacing: 12) {
-                    ZStack {
-                        Circle()
-                            .fill(OffRecordColor.surfaceBlue)
-                            .frame(width: 36, height: 36)
-                        Image(systemName: "square.and.arrow.down")
-                            .font(OffRecordTypography.bodySmall)
-                            .foregroundColor(OffRecordColor.textSky)
-                    }
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text("Import Backup")
-                            .font(OffRecordTypography.bodySmall)
-                        Text("Restore from JSON backup")
-                            .font(OffRecordTypography.metadata)
-                            .foregroundColor(OffRecordColor.textSecondary)
-                    }
-                }
+                SettingsActionRow(
+                    systemImage: "square.and.arrow.down",
+                    title: "Import Backup",
+                    subtitle: "Restore JSON or encrypted backup files",
+                    tint: OffRecordColor.textSky
+                )
             }
-        } header: {
-            Text("Backup & Export")
-        } footer: {
-            Text("Export your diary for safekeeping or import a previous backup.")
         }
     }
 
     @ViewBuilder
     private var storageSection: some View {
-        Section {
+        SettingsCard(
+            title: "Storage",
+            subtitle: "See what OffRecord is storing on this device.",
+            footer: "Entries and photos sync through iCloud when enabled. Audio recordings stay on this device.",
+            systemImage: "internaldrive",
+            tint: OffRecordColor.textAqua,
+            fill: OffRecordColor.surfacePrimary
+        ) {
             if isCalculatingStorage {
-                HStack {
-                    Text("Calculating...")
-                    Spacer()
+                SettingsRow(systemImage: "hourglass", title: "Calculating storage", tint: OffRecordColor.textAqua) {
                     ProgressView()
                 }
             } else {
-                StorageRow(label: "Audio Recordings", bytes: audioStorageBytes, icon: "waveform", color: OffRecordColor.textAqua)
-                StorageRow(label: "Photos", bytes: photoStorageBytes, icon: "photo", color: OffRecordColor.textBlush)
-                StorageRow(label: "Database", bytes: databaseStorageBytes, icon: "cylinder", color: OffRecordColor.textPeach)
+                let total = audioStorageBytes + photoStorageBytes + databaseStorageBytes
+                StorageRow(label: "Audio Recordings", bytes: audioStorageBytes, totalBytes: total, icon: "waveform", color: OffRecordColor.textAqua)
+                StorageRow(label: "Photos", bytes: photoStorageBytes, totalBytes: total, icon: "photo", color: OffRecordColor.textBlush)
+                StorageRow(label: "Database", bytes: databaseStorageBytes, totalBytes: total, icon: "cylinder", color: OffRecordColor.textPeach)
 
-                HStack {
-                    Text("Total")
-                        .fontWeight(.semibold)
-                    Spacer()
-                    Text(formatBytes(audioStorageBytes + photoStorageBytes + databaseStorageBytes))
-                        .fontWeight(.semibold)
+                SettingsRow(systemImage: "sum", title: "Total", tint: OffRecordColor.textBrand) {
+                    Text(formatBytes(total))
+                        .font(OffRecordTypography.labelMedium)
                         .foregroundColor(OffRecordColor.textPrimary)
+                        .monospacedDigit()
                 }
             }
-        } header: {
-            HStack {
-                Text("Storage")
-                Spacer()
-                Button {
-                    calculateStorage()
-                } label: {
-                    Image(systemName: "arrow.clockwise")
-                        .font(OffRecordTypography.metadata)
-                }
+
+            Button {
+                calculateStorage()
+            } label: {
+                Label("Refresh storage", systemImage: "arrow.clockwise")
             }
-        } footer: {
-            Text("Entries and photos sync through iCloud. Audio recordings stay on this device.")
+            .buttonStyle(SettingsSecondaryButtonStyle(tint: OffRecordColor.textAqua, fill: OffRecordColor.surfaceMint))
+            .accessibilityLabel("Refresh storage")
         }
     }
 
@@ -878,19 +917,24 @@ struct SettingsView: View {
 
     @ViewBuilder
     private var aboutSection: some View {
-        Section(header: Text("About")) {
-            HStack {
-                Text("Version")
-                Spacer()
+        SettingsCard(
+            title: "About OffRecord",
+            subtitle: "App version and local journal summary.",
+            systemImage: "info.circle",
+            tint: OffRecordColor.textBrand,
+            fill: OffRecordColor.surfacePrimary
+        ) {
+            SettingsRow(systemImage: "number", title: "Version", tint: OffRecordColor.textBrand) {
                 Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
-                    .foregroundColor(OffRecordColor.textSecondary)
+                    .font(OffRecordTypography.bodySmall)
+                    .foregroundColor(OffRecordColor.textPrimary)
             }
 
-            HStack {
-                Text("Total Entries")
-                Spacer()
+            SettingsRow(systemImage: "book.pages", title: "Total entries", tint: OffRecordColor.textBrand) {
                 Text("\(totalEntriesCount)")
-                    .foregroundColor(OffRecordColor.textSecondary)
+                    .font(OffRecordTypography.bodySmall)
+                    .foregroundColor(OffRecordColor.textPrimary)
+                    .monospacedDigit()
             }
         }
     }
@@ -1023,100 +1067,3 @@ struct ShareSheet: UIViewControllerRepresentable {
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
 }
 #endif
-
-// MARK: - Theme Button
-
-struct ThemeButton: View {
-    let theme: AppTheme
-    let isSelected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button(action: action) {
-            VStack(spacing: 6) {
-                ZStack {
-                    Color.clear
-                        .frame(width: 48, height: 48)
-                        .offRecordGlassControl(tint: isSelected ? theme.accentColor : nil, in: Circle(), fallbackFill: theme.accentColor.opacity(0.2))
-                    
-                    Circle()
-                        .fill(theme.accentColor.opacity(isSelected ? 1 : 0.8))
-                        .frame(width: 32, height: 32)
-                    
-                    Image(systemName: theme.icon)
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundColor(theme.swatchForegroundColor)
-                }
-                .overlay {
-                    if isSelected {
-                        Circle()
-                            .stroke(theme.accentColor, lineWidth: 2)
-                            .frame(width: 52, height: 52)
-                    }
-                }
-                
-                Text(theme.rawValue)
-                    .font(OffRecordTypography.metadata)
-                    .foregroundColor(isSelected ? theme.readableAccentColor : OffRecordColor.textSecondary)
-            }
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-// MARK: - Storage Row
-
-struct StorageRow: View {
-    let label: String
-    let bytes: Int64
-    let icon: String
-    let color: Color
-
-    var body: some View {
-        HStack(spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(color.opacity(0.15))
-                    .frame(width: 32, height: 32)
-                Image(systemName: icon)
-                    .font(OffRecordTypography.metadata)
-                    .foregroundColor(color)
-            }
-            Text(label)
-            Spacer()
-            Text(formattedSize)
-                .foregroundColor(OffRecordColor.textSecondary)
-        }
-    }
-
-    private var formattedSize: String {
-        let formatter = ByteCountFormatter()
-        formatter.countStyle = .file
-        return formatter.string(fromByteCount: bytes)
-    }
-}
-
-// MARK: - Privacy Info Row
-
-struct PrivacyInfoRow: View {
-    let icon: String
-    let title: String
-    let description: String
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 12) {
-            Image(systemName: icon)
-                .font(OffRecordTypography.bodySmall)
-                .foregroundColor(OffRecordColor.textSage)
-                .frame(width: 20)
-
-            VStack(alignment: .leading, spacing: 2) {
-                Text(title)
-                    .font(OffRecordTypography.labelMedium)
-                Text(description)
-                    .font(OffRecordTypography.metadata)
-                    .foregroundColor(OffRecordColor.textSecondary)
-            }
-        }
-    }
-}
