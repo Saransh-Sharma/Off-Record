@@ -333,6 +333,7 @@ struct EntryDetailView: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel("Back")
+                .accessibilityIdentifier("entryDetail.backButton")
 
                 Spacer()
 
@@ -355,6 +356,7 @@ struct EntryDetailView: View {
                             border: OffRecordColor.borderSage,
                             action: saveActiveEditing
                         )
+                        .accessibilityIdentifier("entryDetail.saveText")
                         .disabled(!canSaveActiveEditing)
                         .opacity(canSaveActiveEditing ? 1 : 0.46)
                     }
@@ -1023,6 +1025,7 @@ struct EntryDetailView: View {
                 )
                 .shadow(color: OffRecordShadow.cardColor, radius: 18, x: 0, y: 8)
                 .accessibilityLabel("New text block")
+                .accessibilityIdentifier("entryDetail.newTextBlock")
 
             if let newTextBlockError {
                 Text(newTextBlockError)
