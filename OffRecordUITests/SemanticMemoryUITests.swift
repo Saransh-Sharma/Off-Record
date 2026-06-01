@@ -184,6 +184,53 @@ final class SemanticMemoryUITests: XCTestCase {
         XCTAssertTrue(stressPrompt.waitForExistence(timeout: 4))
     }
 
+    func testFridayBackButtonIsHittableAndReturnsToFridayOverview() throws {
+        let app = launchSemanticMemoryApp()
+        waitForSemanticIndexReady(app)
+
+        openFridayChat(app)
+
+        let backButton = app.buttons["friday.backButton"].firstMatch
+        XCTAssertTrue(backButton.waitForExistence(timeout: 4))
+        XCTAssertTrue(backButton.isHittable)
+        backButton.tap()
+
+        let talkButton = app.buttons["friday.talk"].firstMatch
+        let talkToFriday = talkButton.exists ? talkButton : app.descendants(matching: .any)["friday.talk"].firstMatch
+        XCTAssertTrue(talkToFriday.waitForExistence(timeout: 4))
+        XCTAssertTrue(elementFrameIsVisible(talkToFriday, in: app))
+    }
+
+    func testFridayComposerStaysAboveFloatingTabBarWhenKeyboardAppears() throws {
+        let app = launchSemanticMemoryApp()
+        waitForSemanticIndexReady(app)
+
+        openFridayChat(app)
+
+        let field = focusFridayAskField(in: app)
+        XCTAssertTrue(
+            waitForFridayComposerAboveFloatingTabBar(app),
+            fridayComposerGapDebugDescription(app)
+        )
+
+        field.typeText("layout check")
+        let value = field.value as? String ?? ""
+        XCTAssertTrue(value.localizedCaseInsensitiveContains("layout check"))
+    }
+
+    func testFridayComposerStaysAboveFloatingTabBarInActiveChat() throws {
+        let app = launchSemanticMemoryApp()
+        waitForSemanticIndexReady(app)
+
+        askFriday("What did I write about work stress?", in: app)
+        _ = focusFridayAskField(in: app)
+
+        XCTAssertTrue(
+            waitForFridayComposerAboveFloatingTabBar(app),
+            fridayComposerGapDebugDescription(app)
+        )
+    }
+
     func testFridayPromptTapTransitionsToActiveChat() throws {
         let app = launchSemanticMemoryApp()
         waitForSemanticIndexReady(app)
@@ -335,6 +382,46 @@ final class SemanticMemoryUITests: XCTestCase {
 
         let field = app.descendants(matching: .any)["friday.askField"].firstMatch
         XCTAssertTrue(field.waitForExistence(timeout: 8))
+    }
+
+    private func focusFridayAskField(in app: XCUIApplication) -> XCUIElement {
+        let field = app.descendants(matching: .any)["friday.askField"].firstMatch
+        XCTAssertTrue(field.waitForExistence(timeout: 8))
+        XCTAssertTrue(field.isHittable)
+        field.tap()
+        XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 4))
+        return field
+    }
+
+    private func waitForFridayComposerAboveFloatingTabBar(_ app: XCUIApplication, timeout: TimeInterval = 4) -> Bool {
+        let composer = app.descendants(matching: .any)["friday.composer"].firstMatch
+        let floatingTabBar = app.descendants(matching: .any)["offrecord.floatingTabBar"].firstMatch
+        guard composer.waitForExistence(timeout: timeout), floatingTabBar.waitForExistence(timeout: timeout) else {
+            return false
+        }
+
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            if composerGapAboveFloatingTabBar(composer: composer, tabBar: floatingTabBar).map({ (CGFloat(0)...CGFloat(6)).contains($0) }) == true {
+                return true
+            }
+            RunLoop.current.run(until: Date().addingTimeInterval(0.1))
+        }
+
+        return composerGapAboveFloatingTabBar(composer: composer, tabBar: floatingTabBar).map { (CGFloat(0)...CGFloat(6)).contains($0) } ?? false
+    }
+
+    private func composerGapAboveFloatingTabBar(composer: XCUIElement, tabBar: XCUIElement) -> CGFloat? {
+        guard composer.exists, tabBar.exists else { return nil }
+        return tabBar.frame.minY - composer.frame.maxY
+    }
+
+    private func fridayComposerGapDebugDescription(_ app: XCUIApplication) -> String {
+        let composer = app.descendants(matching: .any)["friday.composer"].firstMatch
+        let field = app.descendants(matching: .any)["friday.askField"].firstMatch
+        let floatingTabBar = app.descendants(matching: .any)["offrecord.floatingTabBar"].firstMatch
+        let gap = composerGapAboveFloatingTabBar(composer: composer, tabBar: floatingTabBar).map(String.init(describing:)) ?? "nil"
+        return "composerExists=\(composer.exists) composerFrame=\(composer.frame) fieldExists=\(field.exists) fieldFrame=\(field.frame) tabBarExists=\(floatingTabBar.exists) tabBarFrame=\(floatingTabBar.frame) gap=\(gap)"
     }
 
     private func scrollQuestionChipIntoView(_ chip: XCUIElement, in app: XCUIApplication) {

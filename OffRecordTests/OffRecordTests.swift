@@ -16,6 +16,64 @@ import UIKit
 #endif
 @testable import OffRecord
 
+// MARK: - Friday Chat Layout Tests
+
+@MainActor
+struct FridayChatLayoutTests {
+    @Test func compactKeyboardVisibleComposerClearsFloatingTabBar() {
+        let clearance = FridayChatLayout.composerBottomClearance(
+            horizontalSizeClass: .compact,
+            isKeyboardVisible: true
+        )
+
+        #expect(clearance == OffRecordCompactTabBarLayout.composerKeyboardVisibleClearance)
+        #expect(OffRecordCompactTabBarLayout.composerGapAboveTabBar == 0)
+        #expect(OffRecordCompactTabBarLayout.composerKeyboardFlushAlignmentOffset == 12)
+    }
+
+    @Test func compactKeyboardVisibleComposerClearanceDoesNotIncludeKeyboardHeight() {
+        let clearance = FridayChatLayout.composerBottomClearance(
+            horizontalSizeClass: .compact,
+            isKeyboardVisible: true
+        )
+
+        #expect(clearance < 312)
+        #expect(clearance > OffRecordCompactTabBarLayout.reservedContentBottomInset)
+    }
+
+    @Test func compactKeyboardHiddenComposerKeepsExistingVisualSpacing() {
+        let clearance = FridayChatLayout.composerBottomClearance(
+            horizontalSizeClass: .compact,
+            isKeyboardVisible: false
+        )
+
+        #expect(clearance == FridayChatLayout.compactComposerBottomClearance)
+        #expect(clearance == 52)
+    }
+
+    @Test func regularWidthComposerClearanceStaysCompact() {
+        #expect(
+            FridayChatLayout.composerBottomClearance(
+                horizontalSizeClass: .regular,
+                isKeyboardVisible: true
+            ) == FridayChatLayout.regularComposerBottomClearance
+        )
+        #expect(
+            FridayChatLayout.composerBottomClearance(
+                horizontalSizeClass: nil,
+                isKeyboardVisible: true
+            ) == FridayChatLayout.regularComposerBottomClearance
+        )
+    }
+
+    @Test func compactBackButtonMovesDownAndKeepsMinimumTapTarget() {
+        #expect(FridayChatLayout.backButtonTopPadding(horizontalSizeClass: .compact) > 16)
+        #expect(FridayChatLayout.backButtonTopPadding(horizontalSizeClass: .compact) == 32)
+        #expect(FridayChatLayout.backButtonTopPadding(horizontalSizeClass: .regular) == 24)
+        #expect(FridayChatLayout.minimumTapTarget == 44)
+    }
+}
+
 // MARK: - System Discoverability Tests
 
 @MainActor

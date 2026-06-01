@@ -54,6 +54,8 @@ struct FridayComposer: View {
                     .stroke(OffRecordColor.borderSoft, lineWidth: 1)
             }
             .shadow(color: Color.black.opacity(0.08), radius: 24, x: 0, y: 8)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("friday.composer")
         }
         .padding(.horizontal, OffRecordSpacing.xxl)
         .padding(.top, OffRecordSpacing.sm)

@@ -9,6 +9,9 @@
 
 import SwiftUI
 import CoreData
+#if os(iOS)
+import UIKit
+#endif
 
 // MARK: - Question Types
 
@@ -476,6 +479,33 @@ struct FridayResponseGenerator {
 
 // MARK: - Friday Chat View
 
+enum FridayChatLayout {
+    static let compactBackButtonTopPadding: CGFloat = 32
+    static let regularBackButtonTopPadding: CGFloat = 24
+    static let compactComposerBottomClearance: CGFloat = 52
+    static let regularComposerBottomClearance: CGFloat = 16
+    static let minimumTapTarget: CGFloat = 44
+
+    static func backButtonTopPadding(horizontalSizeClass: UserInterfaceSizeClass?) -> CGFloat {
+        horizontalSizeClass == .compact ? compactBackButtonTopPadding : regularBackButtonTopPadding
+    }
+
+    static func composerBottomClearance(
+        horizontalSizeClass: UserInterfaceSizeClass?,
+        isKeyboardVisible: Bool
+    ) -> CGFloat {
+        guard horizontalSizeClass == .compact else {
+            return regularComposerBottomClearance
+        }
+
+        guard isKeyboardVisible else {
+            return compactComposerBottomClearance
+        }
+
+        return OffRecordCompactTabBarLayout.composerKeyboardVisibleClearance
+    }
+}
+
 struct FridayChatView: View {
     private let initialQuestion: String?
     private let autoSubmitInitialQuestion: Bool
@@ -494,6 +524,7 @@ struct FridayChatView: View {
     @State private var inputText: String = ""
     @State private var isAnswering = false
     @State private var appliedInitialQuestion = false
+    @State private var isKeyboardVisible = false
 
     private var startedEntries: [DiaryEntry] { entries.startedEntries }
 
@@ -526,7 +557,7 @@ struct FridayChatView: View {
                     dismiss()
                 }
                 .padding(.leading, OffRecordSpacing.xxl)
-                .padding(.top, 16)
+                .padding(.top, backButtonTopPadding)
             }
             .safeAreaInset(edge: .bottom) {
                 FridayComposer(
@@ -558,6 +589,14 @@ struct FridayChatView: View {
             semanticMemory.ensureIndexed(entries: startedEntries)
             applyInitialQuestionIfNeeded()
         }
+        #if os(iOS)
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+            isKeyboardVisible = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            isKeyboardVisible = false
+        }
+        #endif
     }
 
     @ViewBuilder
@@ -645,7 +684,14 @@ struct FridayChatView: View {
     }
 
     private var composerBottomClearance: CGFloat {
-        horizontalSizeClass == .compact ? 52 : 16
+        FridayChatLayout.composerBottomClearance(
+            horizontalSizeClass: horizontalSizeClass,
+            isKeyboardVisible: isKeyboardVisible
+        )
+    }
+
+    private var backButtonTopPadding: CGFloat {
+        FridayChatLayout.backButtonTopPadding(horizontalSizeClass: horizontalSizeClass)
     }
 
     private var scrollBottomPadding: CGFloat {
