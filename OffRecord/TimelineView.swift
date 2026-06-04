@@ -20,6 +20,7 @@ struct TimelineView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @ObservedObject private var semanticMemory = SemanticMemoryIndexController.shared
     @ObservedObject private var navigationRouter = OffRecordNavigationRouter.shared
 
@@ -93,7 +94,10 @@ struct TimelineView: View {
 
     var body: some View {
         GeometryReader { proxy in
-            let metrics = OffRecordAdaptiveMetrics(width: proxy.size.width)
+            let metrics = OffRecordAdaptiveMetrics(
+                width: proxy.size.width,
+                horizontalSizeClass: horizontalSizeClass
+            )
 
             if metrics.mode.supportsSupplementaryPanels {
                 timelineSplit(metrics: metrics)
@@ -1025,6 +1029,8 @@ struct TimelineView: View {
 
     private func delete(entry: DiaryEntry) {
         let deletedID = entry.id
+        let shouldClearSelectedEntry = deletedID != nil && selectedEntry?.id == deletedID
+        let shouldClearRoutedEntry = deletedID != nil && routedEntry?.id == deletedID
         withAnimation(.easeInOut(duration: 0.2)) {
             viewContext.delete(entry)
         }
@@ -1033,6 +1039,13 @@ struct TimelineView: View {
             if let deletedID {
                 SemanticMemoryIndexController.shared.deleteEntry(id: deletedID)
                 JournalSpotlightIndexer.shared.delete(entryID: deletedID)
+                if shouldClearSelectedEntry {
+                    selectedEntry = nil
+                }
+                if shouldClearRoutedEntry {
+                    routedEntry = nil
+                    navigationRouter.clearEntryRouteIfNeeded(deletedID)
+                }
             }
             HapticManager.shared.entryDeleted()
         } catch {

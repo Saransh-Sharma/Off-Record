@@ -108,6 +108,7 @@ struct TimelineDayRow: View {
                     onDelete: onDelete
                 )
                 .overlay(selectionOverlay)
+                .accessibilityIdentifier(entryAccessibilityIdentifier)
             } else {
                 if let onSelect {
                     Button(action: onSelect) {
@@ -123,6 +124,7 @@ struct TimelineDayRow: View {
                     }
                     .buttonStyle(.plain)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityIdentifier(entryAccessibilityIdentifier)
                 } else {
                     NavigationLink {
                         EntryDetailView(entry: entry)
@@ -139,10 +141,16 @@ struct TimelineDayRow: View {
                     }
                     .buttonStyle(.plain)
                     .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityIdentifier(entryAccessibilityIdentifier)
                 }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var entryAccessibilityIdentifier: String {
+        let id = entry.id?.uuidString ?? entry.objectID.uriRepresentation().absoluteString
+        return "timeline.entryRow.\(id)"
     }
 
     @ViewBuilder

@@ -11,6 +11,7 @@ import CoreData
 
 @MainActor
 struct ScreenshotDataSeeder {
+    static let firstEntryID = UUID(uuidString: "11111111-1111-1111-1111-111111111111")!
 
     static func seedIfNeeded(context: NSManagedObjectContext) {
         guard ProcessInfo.processInfo.arguments.contains("-ScreenshotMode") else { return }
@@ -182,9 +183,9 @@ struct ScreenshotDataSeeder {
             ),
         ]
 
-        for entry in entries {
+        for (index, entry) in entries.enumerated() {
             let diaryEntry = DiaryEntry(context: context)
-            diaryEntry.id = UUID()
+            diaryEntry.id = index == 0 ? Self.firstEntryID : UUID()
             let entryDate = calendar.date(byAdding: .day, value: -entry.daysAgo, to: now)!
             // Set time to a reasonable hour (8am-9pm range)
             let hour = 8 + (entry.daysAgo * 3) % 14
