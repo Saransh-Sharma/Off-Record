@@ -27,10 +27,17 @@ struct ContentView: View {
     private var entries: FetchedResults<DiaryEntry>
 
     var body: some View {
-        if horizontalSizeClass == .compact {
-            compactTabs
-        } else {
-            adaptiveTabs
+        GeometryReader { proxy in
+            let metrics = OffRecordAdaptiveMetrics(
+                width: proxy.size.width,
+                horizontalSizeClass: horizontalSizeClass
+            )
+
+            if metrics.mode.usesCompactPhoneChrome {
+                compactTabs
+            } else {
+                adaptiveTabs
+            }
         }
     }
 
@@ -96,6 +103,7 @@ struct ContentView: View {
                 Label("Today", systemImage: "sun.max")
             }
             .tag(OffRecordTab.today)
+            .keyboardShortcut("1", modifiers: .command)
 
             NavigationStack {
                 TimelineView()
@@ -104,6 +112,7 @@ struct ContentView: View {
                 Label("Timeline", systemImage: "list.bullet")
             }
             .tag(OffRecordTab.timeline)
+            .keyboardShortcut("2", modifiers: .command)
 
             NavigationStack {
                 StatsView()
@@ -112,6 +121,7 @@ struct ContentView: View {
                 Label("Insights", systemImage: "chart.bar")
             }
             .tag(OffRecordTab.insights)
+            .keyboardShortcut("3", modifiers: .command)
 
             NavigationStack {
                 FridayView()
@@ -120,6 +130,7 @@ struct ContentView: View {
                 Label("Friday", systemImage: "sparkles")
             }
             .tag(OffRecordTab.friday)
+            .keyboardShortcut("4", modifiers: .command)
 
             NavigationStack {
                 SettingsView()
@@ -128,6 +139,7 @@ struct ContentView: View {
                 Label("Settings", systemImage: "gearshape")
             }
             .tag(OffRecordTab.settings)
+            .keyboardShortcut("5", modifiers: .command)
         }
     }
 
