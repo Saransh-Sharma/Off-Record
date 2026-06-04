@@ -493,7 +493,7 @@
 				CODE_SIGN_ENTITLEMENTS = OffRecordWatch/OffRecordWatch.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-					CURRENT_PROJECT_VERSION = 14;
+				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_TEAM = CJ43UNM3AR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -502,7 +502,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-					MARKETING_VERSION = 1.4.0;
+				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.singularity.offrecord.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -523,7 +523,7 @@
 				CODE_SIGN_ENTITLEMENTS = OffRecordWatch/OffRecordWatch.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-					CURRENT_PROJECT_VERSION = 14;
+				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_TEAM = CJ43UNM3AR;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
@@ -532,7 +532,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-					MARKETING_VERSION = 1.4.0;
+				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.singularity.offrecord.watchkitapp;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -554,7 +554,7 @@
 				CODE_SIGN_ENTITLEMENTS = OffRecordWatchWidget/OffRecordWatchWidget.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-					CURRENT_PROJECT_VERSION = 14;
+				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_TEAM = CJ43UNM3AR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = OffRecordWatchWidget/Info.plist;
@@ -563,7 +563,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-					MARKETING_VERSION = 1.4.0;
+				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.singularity.offrecord.watchkitapp.OffRecordWatchWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -583,7 +583,7 @@
 				CODE_SIGN_ENTITLEMENTS = OffRecordWatchWidget/OffRecordWatchWidget.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-					CURRENT_PROJECT_VERSION = 14;
+				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_TEAM = CJ43UNM3AR;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = OffRecordWatchWidget/Info.plist;
@@ -592,7 +592,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-					MARKETING_VERSION = 1.4.0;
+				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.singularity.offrecord.watchkitapp.OffRecordWatchWidget;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = watchos;
@@ -738,7 +738,7 @@
 				CODE_SIGN_ENTITLEMENTS = OffRecord/OffRecord.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-					CURRENT_PROJECT_VERSION = 14;
+				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_ASSET_PATHS = "\"OffRecord/Preview Content\"";
 				DEVELOPMENT_TEAM = CJ43UNM3AR;
 				ENABLE_APP_SANDBOX = YES;
@@ -748,22 +748,29 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = OffRecord/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = OffRecord;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "OffRecord AI Journal uses the microphone to record your journal entries.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "OffRecord AI Journal uses speech recognition to convert your recorded journal into text.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "OffRecord AI Journal uses Face ID to lock and unlock access to your private journal entries.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "OffRecord AI Journal needs microphone access to record your voice journal entries.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "OffRecord AI Journal lets you attach photos to your journal entries. Photos are stored on your device only.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "OffRecord AI Journal uses speech recognition to transcribe your voice recordings into text.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
+				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-					MARKETING_VERSION = 1.4.0;
+				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.singularity.offrecord;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -784,7 +791,7 @@
 				CODE_SIGN_ENTITLEMENTS = OffRecord/OffRecord.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-					CURRENT_PROJECT_VERSION = 14;
+				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_ASSET_PATHS = "\"OffRecord/Preview Content\"";
 				DEVELOPMENT_TEAM = CJ43UNM3AR;
 				ENABLE_APP_SANDBOX = YES;
@@ -794,22 +801,29 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = OffRecord/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = OffRecord;
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "OffRecord AI Journal uses the microphone to record your journal entries.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "OffRecord AI Journal uses speech recognition to convert your recorded journal into text.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "OffRecord AI Journal uses Face ID to lock and unlock access to your private journal entries.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "OffRecord AI Journal needs microphone access to record your voice journal entries.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "OffRecord AI Journal lets you attach photos to your journal entries. Photos are stored on your device only.";
+				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "OffRecord AI Journal uses speech recognition to transcribe your voice recordings into text.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = YES;
+				INFOPLIST_KEY_UIStatusBarStyle = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-					MARKETING_VERSION = 1.4.0;
+				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.singularity.offrecord;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -831,7 +845,7 @@
 				DEVELOPMENT_TEAM = CJ43UNM3AR;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-					MARKETING_VERSION = 1.4.0;
+				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.singularity.offrecordTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -851,7 +865,7 @@
 				CURRENT_PROJECT_VERSION = 14;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-					MARKETING_VERSION = 1.4.0;
+				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.singularity.offrecordTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -871,7 +885,7 @@
 				DEVELOPMENT_TEAM = CJ43UNM3AR;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-					MARKETING_VERSION = 1.4.0;
+				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.singularity.offrecordUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
@@ -891,7 +905,7 @@
 				DEVELOPMENT_TEAM = CJ43UNM3AR;
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
-					MARKETING_VERSION = 1.4.0;
+				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.singularity.offrecordUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;

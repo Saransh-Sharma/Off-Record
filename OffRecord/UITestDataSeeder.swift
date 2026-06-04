@@ -16,7 +16,9 @@ struct UITestDataSeeder {
                 || arguments.contains("-OnboardingUITest")
                 || arguments.contains("-SemanticMemoryUITest")
                 || arguments.contains("-ProactiveReflectionUITest")
-                || arguments.contains("-WeeklyReflectionUITest") else { return }
+                || arguments.contains("-WeeklyReflectionUITest")
+                || arguments.contains("-CaptureSpeechConsentUITest") else { return }
+        seedPendingRouteIfNeeded(arguments: arguments)
 
         if arguments.contains("-OnboardingUITest") {
             UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
@@ -28,6 +30,9 @@ struct UITestDataSeeder {
 
         UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
         UserDefaults.standard.set("Saransh", forKey: "authorName")
+        if arguments.contains("-CaptureSpeechConsentUITest") {
+            SpeechTranscriptionConsent.revokeAppleSpeechProcessing()
+        }
         DaypartHeroStore().reset()
 
         clearEntries(in: context)
@@ -37,7 +42,9 @@ struct UITestDataSeeder {
             resetSemanticMemorySidecar()
             FridayAssistantEngine.shared.resetForUITesting()
             LocalAIEngine.shared.userProfile = UserProfile()
-            seedSemanticMemoryEntries(in: context)
+            if !arguments.contains("-SemanticMemoryEmptyJournal") {
+                seedSemanticMemoryEntries(in: context)
+            }
         } else if arguments.contains("-WeeklyReflectionUITest") {
             seedWeeklyReflectionState(arguments: arguments, context: context)
         } else if arguments.contains("-ProactiveReflectionUITest") {
@@ -54,6 +61,16 @@ struct UITestDataSeeder {
         }
 
         try? context.save()
+    }
+
+    private static func seedPendingRouteIfNeeded(arguments: [String]) {
+        guard let marker = arguments.firstIndex(of: "-OpenRoute"),
+              arguments.indices.contains(arguments.index(after: marker)) else {
+            return
+        }
+        UserDefaults.standard.removeObject(forKey: OffRecordNavigationRouter.pendingRouteDefaultsKey)
+        let rawRoute = arguments[arguments.index(after: marker)]
+        UserDefaults.standard.set(rawRoute, forKey: OffRecordNavigationRouter.pendingRouteDefaultsKey)
     }
 
     private static func clearEntries(in context: NSManagedObjectContext) {
@@ -184,17 +201,32 @@ struct UITestDataSeeder {
             return
         }
 
+        if arguments.contains("-WeeklyReflectionDeleted") {
+            try? WeeklyReflectionRepository(context: context).save(settings: .default, reports: [
+                makeWeeklyReport(status: .deleted, eligibility: .full, includedEntryIds: [])
+            ])
+            return
+        }
+
         let repeated = String(repeating: "work focus rest boundary quiet ", count: 20)
-        let entries: [(daysAgo: Int, text: String, mood: String)] = arguments.contains("-WeeklyReflectionHighRisk")
-            ? [
+        let entries: [(daysAgo: Int, text: String, mood: String)]
+        if arguments.contains("-WeeklyReflectionHighRisk") {
+            entries = [
                 (0, "I thought about suicide and needed the night to be safer. \(repeated)", "sad"),
                 (1, "I wrote about tea, rest, and a quiet call with Maya. \(repeated)", "calm")
             ]
-            : [
+        } else if arguments.contains("-WeeklyReflectionLight") {
+            entries = [
+                (0, "Work felt scattered, but I protected quiet focus time. \(repeated)", "calm"),
+                (1, "Rest helped me notice a better boundary around meetings. \(repeated)", "grateful")
+            ]
+        } else {
+            entries = [
                 (0, "Work felt scattered, but I protected quiet focus time. \(repeated)", "calm"),
                 (1, "Rest helped me notice a better boundary around meetings. \(repeated)", "grateful"),
                 (2, "A walk made the deadline feel easier to hold. \(repeated)", "happy")
             ]
+        }
 
         for item in entries {
             insertEntry(daysAgo: item.daysAgo, text: item.text, mood: item.mood, starred: false, context: context)

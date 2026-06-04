@@ -25,7 +25,7 @@ Core components:
 - `SemanticMemoryIndexActor` owns background indexing and search work. It accepts immutable `IndexableEntry` values so embedding, chunking, and sidecar writes do not run on the main actor.
 - `MemoryChunker` splits entries by sentence and paragraph boundaries, preserving offsets so snippets can be recovered from the source entry.
 - `EmbeddingProvider` defines the embedding boundary.
-- `NLContextualEmbeddingProvider` is the default first-party, on-device provider.
+- `NLSentenceEmbeddingProvider` is the default first-party, on-device provider.
 - `UnavailableEmbeddingProvider` gives deterministic unavailable/fallback behavior when embedding assets cannot be used.
 - `LocalSemanticIndexStore` stores vector blobs, chunk metadata, search state, and the SQLite FTS sidecar.
 - `HybridMemorySearchService` combines semantic and lexical retrieval with ranking boosts.
@@ -121,7 +121,7 @@ Automated coverage should include:
 Manual QA should include:
 
 - Simulator smoke with seeded journal data.
-- Real-device testing for `NLContextualEmbedding` asset availability.
+- Real-device testing for `NLEmbedding.sentenceEmbedding(for:)` availability.
 - iOS 17/18 deterministic fallback behavior.
 - iOS 26 Apple Intelligence availability checks when a capable device is available.
 - Low Power Mode and thermal-throttling behavior during rebuild.

@@ -16,6 +16,64 @@ import UIKit
 #endif
 @testable import OffRecord
 
+// MARK: - Friday Chat Layout Tests
+
+@MainActor
+struct FridayChatLayoutTests {
+    @Test func compactKeyboardVisibleComposerClearsFloatingTabBar() {
+        let clearance = FridayChatLayout.composerBottomClearance(
+            horizontalSizeClass: .compact,
+            isKeyboardVisible: true
+        )
+
+        #expect(clearance == OffRecordCompactTabBarLayout.composerKeyboardVisibleClearance)
+        #expect(OffRecordCompactTabBarLayout.composerGapAboveTabBar == 0)
+        #expect(OffRecordCompactTabBarLayout.composerKeyboardFlushAlignmentOffset == 12)
+    }
+
+    @Test func compactKeyboardVisibleComposerClearanceDoesNotIncludeKeyboardHeight() {
+        let clearance = FridayChatLayout.composerBottomClearance(
+            horizontalSizeClass: .compact,
+            isKeyboardVisible: true
+        )
+
+        #expect(clearance < 312)
+        #expect(clearance > OffRecordCompactTabBarLayout.reservedContentBottomInset)
+    }
+
+    @Test func compactKeyboardHiddenComposerKeepsExistingVisualSpacing() {
+        let clearance = FridayChatLayout.composerBottomClearance(
+            horizontalSizeClass: .compact,
+            isKeyboardVisible: false
+        )
+
+        #expect(clearance == FridayChatLayout.compactComposerBottomClearance)
+        #expect(clearance == 52)
+    }
+
+    @Test func regularWidthComposerClearanceStaysCompact() {
+        #expect(
+            FridayChatLayout.composerBottomClearance(
+                horizontalSizeClass: .regular,
+                isKeyboardVisible: true
+            ) == FridayChatLayout.regularComposerBottomClearance
+        )
+        #expect(
+            FridayChatLayout.composerBottomClearance(
+                horizontalSizeClass: nil,
+                isKeyboardVisible: true
+            ) == FridayChatLayout.regularComposerBottomClearance
+        )
+    }
+
+    @Test func compactBackButtonMovesDownAndKeepsMinimumTapTarget() {
+        #expect(FridayChatLayout.backButtonTopPadding(horizontalSizeClass: .compact) > 16)
+        #expect(FridayChatLayout.backButtonTopPadding(horizontalSizeClass: .compact) == 32)
+        #expect(FridayChatLayout.backButtonTopPadding(horizontalSizeClass: .regular) == 24)
+        #expect(FridayChatLayout.minimumTapTarget == 44)
+    }
+}
+
 // MARK: - System Discoverability Tests
 
 @MainActor
@@ -394,6 +452,39 @@ struct DiaryEntryDailyStoreTests {
         #expect(entry.text == "Dinner with friends")
         #expect(entry.text?.contains("[") == false)
         #expect(entry.text?.contains("Evening") == false)
+    }
+
+    @Test func timelinePreviewSanitizerRemovesStandaloneBlockTimestamp() {
+        let preview = TimelineEntryPreviewSanitizer.sanitize("""
+        [Morning · 10:05 AM]
+        Had the kick off of MJJS execution.
+        """)
+
+        #expect(preview == "Had the kick off of MJJS execution.")
+    }
+
+    @Test func timelinePreviewSanitizerRemovesInlineBlockTimestamp() {
+        let preview = TimelineEntryPreviewSanitizer.sanitize("[Evening · 6:42 PM] Dinner with friends")
+
+        #expect(preview == "Dinner with friends")
+    }
+
+    @Test func timelinePreviewSanitizerPreservesNonTimestampBracketedText() {
+        let preview = TimelineEntryPreviewSanitizer.sanitize("[Work] Morning planning went well")
+
+        #expect(preview == "[Work] Morning planning went well")
+    }
+
+    @Test func timelinePreviewSanitizerHandlesMultipleBlockTimestamps() {
+        let preview = TimelineEntryPreviewSanitizer.sanitize("""
+        [Morning · 10:05 AM]
+        First note.
+
+        [Afternoon · 13:30]
+        Second note.
+        """)
+
+        #expect(preview == "First note.\n\nSecond note.")
     }
 
     @Test func appendingTextUsesExistingEntryForSameDay() throws {
@@ -952,6 +1043,18 @@ struct SemanticMemoryTests {
         #expect(VectorMath.cosine(lhs, unrelated) < 0.01)
     }
 
+    @Test func sentenceEmbeddingProviderProducesStableVectors() async throws {
+        let provider = NLSentenceEmbeddingProvider()
+        let embedded = try await provider.embedding(
+            for: "Work pressure felt lighter after a long walk.",
+            language: .english
+        )
+
+        #expect(embedded.metadata.modelID.hasPrefix(NLSentenceEmbeddingProvider.modelIDPrefix))
+        #expect(embedded.metadata.dimension == embedded.vector.count)
+        #expect(!embedded.vector.isEmpty)
+    }
+
     @Test func hybridSearchPreservesExactNameRanking() {
         let entryID = UUID()
         let exact = makeChunk(
@@ -1033,6 +1136,20 @@ struct SemanticMemoryTests {
         #expect(answer.summary.contains("not have enough journal evidence"))
     }
 
+    @Test func fridaySuggestedPromptUsesProfileSummaryWhenEvidenceIsMissing() async {
+        let profileSummary = "Your recent mood has been balanced, with work stress showing up most often on weekdays."
+        let answer = await EvidenceFridayEngine.answer(
+            question: "What's my mood pattern this week?",
+            evidence: [],
+            profileSummary: profileSummary
+        )
+
+        #expect(answer.summary == profileSummary)
+        #expect(answer.evidence.isEmpty)
+        #expect(answer.confidence > 0)
+        #expect(answer.limitations?.localizedCaseInsensitiveContains("citations") == true)
+    }
+
     @Test func fridayRefusesWeakMeaningOnlyEvidence() async {
         let evidence = EvidenceReference(
             id: "weak",
@@ -1050,6 +1167,30 @@ struct SemanticMemoryTests {
         #expect(answer.evidence.isEmpty)
         #expect(answer.confidence == 0)
         #expect(answer.limitations?.localizedCaseInsensitiveContains("retrieved journal evidence") == true)
+    }
+
+    @Test func fridaySuggestedPromptUsesProfileSummaryWhenEvidenceIsWeak() async {
+        let profileSummary = "Work has been the clearest source of tension in your recent entries."
+        let evidence = EvidenceReference(
+            id: "weak",
+            entryID: UUID(),
+            date: Date(),
+            mood: nil,
+            snippet: "A loosely related memory.",
+            chunkText: "A loosely related memory.",
+            score: 0.004,
+            matchReason: .meaning
+        )
+
+        let answer = await EvidenceFridayEngine.answer(
+            question: "What triggers my stress?",
+            evidence: [evidence],
+            profileSummary: profileSummary
+        )
+
+        #expect(answer.summary == profileSummary)
+        #expect(answer.evidence.isEmpty)
+        #expect(answer.limitations?.localizedCaseInsensitiveContains("supporting entries") == true)
     }
 
     @Test func fridayObservationsCarryEvidenceIDs() async {

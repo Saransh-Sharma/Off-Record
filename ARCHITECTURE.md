@@ -191,7 +191,7 @@ System-facing metadata must never include raw journal text, transcript snippets,
 | Framework | Purpose |
 |---|---|
 | Speech | On-device speech recognition |
-| NaturalLanguage | NLP (sentiment, NER, POS tagging, contextual embeddings) |
+| NaturalLanguage | NLP (sentiment, NER, POS tagging, sentence embeddings) |
 | Accelerate | Vector normalization and similarity math |
 | SQLite3 / FTS5 | Durable local lexical sidecar for hybrid search |
 | CoreData | Local persistence |

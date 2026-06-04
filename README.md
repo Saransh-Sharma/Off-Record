@@ -152,7 +152,7 @@ OffRecord AI Journal is a **free journal app** with local Friday insights, Seman
 
 - **Language:** Swift, SwiftUI
 - **Data:** Core Data + CloudKit (optional iCloud sync), `AudioAttachment` records for multiple voice notes, Codable Weekly Reflection reports in AI state, local-only `WatchImportReceipt` idempotency
-- **AI/ML:** Apple NaturalLanguage, NLContextualEmbedding, Apple Speech, on-device NLP via Neural Engine
+- **AI/ML:** Apple NaturalLanguage, NLEmbedding sentence vectors, Apple Speech, on-device NLP via Neural Engine
 - **System Integration:** App Intents, App Shortcuts, Core Spotlight, NSUserActivity, WidgetKit, UserNotifications, WatchConnectivity, custom `offrecord://` and `offrecordwatch://` deep links
 - **Watch Shared Types:** `WatchCaptureEnvelope`, `WatchCaptureKind`, `WatchSyncState`, `WatchAudioManifest`, `WatchCaptureSourceSurface`
 - **Minimum:** iOS 17.0+ for the iPhone/iPad app; watchOS 26.0+ for the Apple Watch companion

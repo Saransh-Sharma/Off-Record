@@ -96,8 +96,8 @@ final class WatchCaptureStore: ObservableObject {
             captureID: captureID,
             kind: .audio,
             sourceSurface: source,
-            textPreview: "Audio only",
-            speechTruthState: .audioOnly,
+            textPreview: "Voice moment",
+            speechTruthState: .transcriptOnIPhoneLater,
             audioManifest: manifest
         )
         enqueue(envelope, audioFileURL: fileURL)

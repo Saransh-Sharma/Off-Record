@@ -33,6 +33,12 @@ class ScreenshotTests: XCTestCase {
     /// Navigate to a tab by name. Handles the custom floating iPhone tab bar plus iPad system tab/sidebar layouts.
     /// Uses .firstMatch to handle iPadOS where tab buttons appear as nested duplicates.
     private func navigateToTab(_ name: String) {
+        let identifiedButton = app.buttons["tab.\(name.lowercased())"].firstMatch
+        if identifiedButton.waitForExistence(timeout: 3) {
+            identifiedButton.tap()
+            return
+        }
+
         // iPhone: custom floating tab bar exposes each tab as an accessibility button.
         let customButton = app.buttons[name].firstMatch
         if customButton.waitForExistence(timeout: 3) {
@@ -61,7 +67,7 @@ class ScreenshotTests: XCTestCase {
 
     func test01_TodayView() throws {
         navigateToTab("Today")
-        sleep(2)
+        XCTAssertTrue(app.otherElements["homeHero.fullBleed"].waitForExistence(timeout: 8))
         takeScreenshot(named: "01_TodayView")
     }
 
@@ -69,7 +75,7 @@ class ScreenshotTests: XCTestCase {
 
     func test02_Timeline() throws {
         navigateToTab("Timeline")
-        sleep(2)
+        XCTAssertTrue(app.searchFields["timeline.searchField"].firstMatch.waitForExistence(timeout: 8))
         takeScreenshot(named: "02_Timeline")
     }
 
@@ -77,13 +83,13 @@ class ScreenshotTests: XCTestCase {
 
     func test03_Insights() throws {
         navigateToTab("Insights")
-        sleep(2)
+        XCTAssertTrue(app.navigationBars["Insights"].waitForExistence(timeout: 8))
 
         // Dismiss the milestone overlay if it appears
         let keepGoingButton = app.buttons["Keep Going"]
         if keepGoingButton.waitForExistence(timeout: 3) {
             keepGoingButton.tap()
-            sleep(1)
+            XCTAssertFalse(keepGoingButton.waitForExistence(timeout: 3))
         }
 
         takeScreenshot(named: "03_Insights")
@@ -93,7 +99,7 @@ class ScreenshotTests: XCTestCase {
 
     func test04_Friday() throws {
         navigateToTab("Friday")
-        sleep(2)
+        XCTAssertTrue(app.buttons["friday.talk"].firstMatch.waitForExistence(timeout: 8))
         takeScreenshot(named: "04_Friday")
     }
 
@@ -101,12 +107,12 @@ class ScreenshotTests: XCTestCase {
 
     func test05_FridayEmotions() throws {
         navigateToTab("Friday")
-        sleep(1)
+        XCTAssertTrue(app.buttons["friday.talk"].firstMatch.waitForExistence(timeout: 8))
 
         let emotionsButton = app.buttons["Emotions"]
         if emotionsButton.waitForExistence(timeout: 3) {
             emotionsButton.tap()
-            sleep(2)
+            XCTAssertTrue(app.staticTexts["Emotional Signature"].firstMatch.waitForExistence(timeout: 6))
         }
         takeScreenshot(named: "05_FridayEmotions")
     }
@@ -115,19 +121,18 @@ class ScreenshotTests: XCTestCase {
 
     func test06_FridayWorld() throws {
         navigateToTab("Friday")
-        sleep(1)
+        XCTAssertTrue(app.buttons["friday.talk"].firstMatch.waitForExistence(timeout: 8))
 
         // "My World" is the 4th button in a horizontal ScrollView — swipe left to reveal it
         let emotionsButton = app.buttons["Emotions"]
         if emotionsButton.waitForExistence(timeout: 3) {
             emotionsButton.swipeLeft()
-            sleep(1)
         }
 
         let worldButton = app.buttons["My World"]
         if worldButton.waitForExistence(timeout: 3) {
             worldButton.tap()
-            sleep(2)
+            XCTAssertTrue(app.staticTexts["My World"].firstMatch.waitForExistence(timeout: 6))
         }
         takeScreenshot(named: "06_FridayWorld")
     }
@@ -136,7 +141,7 @@ class ScreenshotTests: XCTestCase {
 
     func test07_EntryDetail() throws {
         navigateToTab("Timeline")
-        sleep(2)
+        XCTAssertTrue(app.searchFields["timeline.searchField"].firstMatch.waitForExistence(timeout: 8))
 
         // Tap the first NavigationLink row containing entry text
         let firstLink = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "cherry blossoms")).firstMatch
@@ -149,7 +154,7 @@ class ScreenshotTests: XCTestCase {
                 staticTexts.firstMatch.tap()
             }
         }
-        sleep(2)
+        XCTAssertTrue(app.staticTexts["entryDetail.mainText"].firstMatch.waitForExistence(timeout: 8))
         takeScreenshot(named: "07_EntryDetail")
     }
 
@@ -157,7 +162,7 @@ class ScreenshotTests: XCTestCase {
 
     func test08_Settings() throws {
         navigateToTab("Settings")
-        sleep(2)
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 8))
         takeScreenshot(named: "08_Settings")
     }
 

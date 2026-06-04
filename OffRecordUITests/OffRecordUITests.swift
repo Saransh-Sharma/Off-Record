@@ -23,12 +23,14 @@ final class OffRecordUITests: XCTestCase {
     }
 
     @MainActor
-    func testExample() throws {
-        // UI tests must launch the application that they test.
+    func testLaunchShowsTodaySurface() throws {
         let app = XCUIApplication()
+        app.launchArguments = ["-UITesting", "-HeroNudgeUITest", "-HeroNudgeEmptyToday"]
         app.launch()
 
-        // Use XCTAssert and related functions to verify your tests produce the correct results.
+        XCTAssertTrue(app.buttons["tab.today"].firstMatch.waitForExistence(timeout: 10))
+        XCTAssertTrue(app.otherElements["homeHero.fullBleed"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.descendants(matching: .any)["todayDock.record"].firstMatch.exists)
     }
 
     @MainActor
@@ -52,9 +54,7 @@ final class OffRecordUITests: XCTestCase {
         nameField.tap()
 
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 4))
-        sleep(1)
-        XCTAssertTrue(app.keyboards.firstMatch.exists)
-        XCTAssertTrue(nameField.isHittable)
+        XCTAssertTrue(wait(for: nameField, matching: NSPredicate(format: "isHittable == true"), timeout: 3))
 
         let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         attachment.name = "OnboardingWelcomeKeyboardVisible"
@@ -229,6 +229,20 @@ final class OffRecordUITests: XCTestCase {
         XCTAssertTrue(dockRecord.waitForExistence(timeout: 4))
         XCTAssertLessThanOrEqual(entryPreview.frame.maxY + 12, dockRecord.frame.minY)
         XCTAssertTrue(app.descendants(matching: .any)["todayDock.write"].firstMatch.exists)
+    }
+
+    @MainActor
+    func testDaypartHeroDateUsesTwoLinesWhenTodayEntryExists() throws {
+        let app = launchHeroNudgeApp(arguments: ["-HeroNudgeHasToday"])
+
+        XCTAssertTrue(app.otherElements["homeHero.fullBleed"].waitForExistence(timeout: 8))
+        let dateTitle = app.descendants(matching: .any)["homeHero.dateTitle"].firstMatch
+        XCTAssertTrue(dateTitle.waitForExistence(timeout: 4))
+
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMMM d"
+        XCTAssertTrue(dateTitle.label.contains(formatter.string(from: Date())))
+        XCTAssertGreaterThan(dateTitle.frame.height, 72)
     }
 
     @MainActor
@@ -431,7 +445,12 @@ final class OffRecordUITests: XCTestCase {
 
     private func waitForButton(_ button: XCUIElement, toBeEnabled enabled: Bool, timeout: TimeInterval = 4) -> Bool {
         let predicate = NSPredicate(format: "isEnabled == %@", NSNumber(value: enabled))
-        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: button)
+        return wait(for: button, matching: predicate, timeout: timeout)
+    }
+
+    private func wait(for element: XCUIElement, matching predicate: NSPredicate, timeout: TimeInterval) -> Bool {
+        guard element.waitForExistence(timeout: timeout) else { return false }
+        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: element)
         return XCTWaiter().wait(for: [expectation], timeout: timeout) == .completed
     }
 
@@ -478,6 +497,13 @@ final class OffRecordUITests: XCTestCase {
     }
 
     private func navigateToTab(_ name: String, in app: XCUIApplication) {
+        let identifier = "tab.\(name.lowercased())"
+        let identifiedButton = app.buttons[identifier].firstMatch
+        if identifiedButton.waitForExistence(timeout: 4) {
+            identifiedButton.tap()
+            return
+        }
+
         let customButton = app.buttons[name].firstMatch
         if customButton.waitForExistence(timeout: 4) {
             customButton.tap()

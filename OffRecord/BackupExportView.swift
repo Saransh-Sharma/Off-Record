@@ -25,7 +25,7 @@ struct BackupExportView: View {
     @State private var confirmPassword = ""
     
     private var filteredEntryCount: Int {
-        // JSON is always a full backup – filters apply only to other formats
+        // JSON and encrypted backups are always full backups; filters apply only to readable exports.
         if selectedFormat == .json || selectedFormat == .encryptedBackup {
             return entries.count
         }
@@ -45,34 +45,44 @@ struct BackupExportView: View {
         
         return filtered.count
     }
+
+    private var filtersAreDisabled: Bool {
+        selectedFormat == .json || selectedFormat == .encryptedBackup
+    }
+
+    private var filterFooterText: String {
+        switch selectedFormat {
+        case .json:
+            return "JSON backups always include all entries so they can be restored completely."
+        case .encryptedBackup:
+            return "Encrypted backups always include all entries and can be imported back into OffRecord."
+        default:
+            return "\(filteredEntryCount) entries will be exported."
+        }
+    }
     
     var body: some View {
-        Form {
-            // Format selection
-            Section {
+        ScrollView {
+            VStack(alignment: .leading, spacing: OffRecordSpacing.lg) {
+                SettingsCard(
+                    title: "Export Format",
+                    subtitle: "Choose a restore-ready backup or a readable file for safekeeping.",
+                    systemImage: "doc.badge.arrow.up",
+                    tint: OffRecordColor.textSky,
+                    fill: OffRecordColor.surfacePrimary
+                ) {
                 ForEach(ExportFormat.allCases.filter { $0 != .pdf }, id: \.self) { format in
                     Button {
                         selectedFormat = format
                         HapticManager.shared.selectionChanged()
                     } label: {
                         HStack(spacing: 12) {
-                            ZStack {
-                                Circle()
-                                    .fill(selectedFormat == format ? OffRecordColor.surfaceBlue : OffRecordColor.surfaceWarm)
-                                    .frame(width: 40, height: 40)
-                                Image(systemName: format.icon)
-                                    .foregroundColor(selectedFormat == format ? OffRecordColor.textSky : OffRecordColor.textSecondary)
-                            }
-                            
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(format.rawValue)
-                                    .font(OffRecordTypography.bodySmall)
-                                    .foregroundColor(OffRecordColor.textPrimary)
-                                Text(format.description)
-                                    .font(OffRecordTypography.metadata)
-                                    .foregroundColor(OffRecordColor.textSecondary)
-                            }
-                            
+                            SettingsRow(
+                                systemImage: format.icon,
+                                title: format.rawValue,
+                                subtitle: format.description,
+                                tint: selectedFormat == format ? OffRecordColor.textSky : OffRecordColor.textSecondary
+                            )
                             Spacer()
                             
                             if selectedFormat == format {
@@ -82,13 +92,20 @@ struct BackupExportView: View {
                         }
                     }
                     .buttonStyle(.plain)
+                    .accessibilityLabel(format.rawValue)
+                    .accessibilityValue(selectedFormat == format ? "Selected" : "Not selected")
+                    .accessibilityHint(format.description)
+                    .accessibilityAddTraits(selectedFormat == format ? [.isSelected] : [])
                 }
-            } header: {
-                Text("Export Format")
             }
             
-            // Date range / filters (for non-JSON formats)
-            Section {
+                SettingsCard(
+                    title: "Filter",
+                    subtitle: filterFooterText,
+                    systemImage: "line.3.horizontal.decrease.circle",
+                    tint: OffRecordColor.textAqua,
+                    fill: OffRecordColor.surfaceMint
+                ) {
                 Toggle("Include all entries", isOn: $includeAllEntries)
                 
                 if !includeAllEntries {
@@ -97,94 +114,69 @@ struct BackupExportView: View {
                 }
                 
                 Toggle("Starred entries only", isOn: $starredOnly)
-            } header: {
-                Text("Filter")
-            } footer: {
-                if selectedFormat == .json {
-                    Text("JSON backup always includes all entries")
-                } else {
-                    Text("\(filteredEntryCount) entries will be exported")
-                }
             }
-            .disabled(selectedFormat == .json || selectedFormat == .encryptedBackup)
+            .disabled(filtersAreDisabled)
 
             // Password fields for encrypted backup
             if selectedFormat == .encryptedBackup {
-                Section {
+                    SettingsCard(
+                        title: "Encryption Password",
+                        subtitle: "Choose a strong password. You'll need it to restore this backup.",
+                        footer: "There is no way to recover a forgotten password.",
+                        systemImage: "lock.shield.fill",
+                        tint: OffRecordColor.textSage,
+                        fill: OffRecordColor.surfaceSage
+                    ) {
                     SecureField("Password", text: $encryptionPassword)
+                            .textFieldStyle(.roundedBorder)
                     SecureField("Confirm Password", text: $confirmPassword)
+                            .textFieldStyle(.roundedBorder)
 
                     if !encryptionPassword.isEmpty && !confirmPassword.isEmpty && encryptionPassword != confirmPassword {
                         Text("Passwords do not match")
                             .font(OffRecordTypography.metadata)
                             .foregroundColor(OffRecordColor.textCoral)
                     }
-                } header: {
-                    Text("Encryption Password")
-                } footer: {
-                    Text("Choose a strong password. You'll need it to restore this backup. There is no way to recover a forgotten password.")
                 }
             }
 
-            // Export info
-            Section {
+                SettingsCard(
+                    title: "Export Privacy",
+                    subtitle: "Exports are created on this device.",
+                    systemImage: "lock.fill",
+                    tint: OffRecordColor.textSage,
+                    fill: OffRecordColor.surfacePrimary
+                ) {
                 if selectedFormat == .json || selectedFormat == .encryptedBackup {
-                    HStack(spacing: 8) {
-                        Image(systemName: "arrow.triangle.2.circlepath")
-                            .foregroundColor(OffRecordColor.textSage)
-                            .font(OffRecordTypography.metadata)
-                        Text("Can be imported back into OffRecord AI Journal")
-                            .font(OffRecordTypography.metadata)
-                            .foregroundColor(OffRecordColor.textSecondary)
-                    }
+                        SettingsRow(systemImage: "arrow.triangle.2.circlepath", title: "Can be imported back into OffRecord", tint: OffRecordColor.textSage)
                 }
 
                 if selectedFormat == .encryptedBackup {
-                    HStack(spacing: 8) {
-                        Image(systemName: "lock.shield.fill")
-                            .foregroundColor(OffRecordColor.textSage)
-                            .font(OffRecordTypography.metadata)
-                        Text("AES-256 encrypted with your password")
-                            .font(OffRecordTypography.metadata)
-                            .foregroundColor(OffRecordColor.textSecondary)
-                    }
+                        SettingsRow(systemImage: "lock.shield.fill", title: "AES-256 encrypted with your password", tint: OffRecordColor.textSage)
                 }
                 
-                HStack(spacing: 8) {
-                    Image(systemName: "lock.fill")
-                        .foregroundColor(OffRecordColor.textSky)
-                        .font(OffRecordTypography.metadata)
-                    Text("File saved to your device only")
-                        .font(OffRecordTypography.metadata)
-                        .foregroundColor(OffRecordColor.textSecondary)
+                    SettingsRow(systemImage: "lock.fill", title: "File saved to your device only", tint: OffRecordColor.textSky)
                 }
-            } header: {
-                Text("Info")
-            }
             
-            // Export button
-            Section {
                 Button {
                     exportData()
                 } label: {
-                    HStack {
-                        Spacer()
+                    HStack(spacing: OffRecordSpacing.sm) {
                         if isExporting {
                             ProgressView()
-                                .padding(.trailing, 8)
+                                .tint(OffRecordColor.textInverse)
                         }
                         Text(isExporting ? "Exporting..." : "Export \(filteredEntryCount) Entries")
-                            .fontWeight(.semibold)
-                        Spacer()
                     }
-                    .padding(.vertical, 10)
-                    .foregroundColor(OffRecordColor.textInverse)
-                    .background(OffRecordColor.brandPlum, in: Capsule())
                 }
+                .buttonStyle(SettingsPrimaryButtonStyle())
                 .disabled(isExporting || filteredEntryCount == 0 || (selectedFormat == .encryptedBackup && (encryptionPassword.isEmpty || encryptionPassword != confirmPassword)))
             }
+            .frame(maxWidth: 760)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, OffRecordSpacing.screenX)
+            .padding(.vertical, OffRecordSpacing.screenY)
         }
-        .scrollContentBackground(.hidden)
         .background(OffRecordColor.appBackgroundGradient)
         .navigationTitle("Export Data")
         .navigationBarTitleDisplayMode(.inline)
@@ -289,84 +281,53 @@ struct ImportBackupView: View {
     }
     
     var body: some View {
-        Form {
-            Section {
-                VStack(spacing: 16) {
-                    ZStack {
-                        Circle()
-                            .fill(OffRecordColor.surfaceBlue)
-                            .frame(width: 80, height: 80)
-                        Image(systemName: "doc.badge.plus")
-                            .font(.system(size: 32))
-                            .foregroundColor(OffRecordColor.textSky)
-                    }
-                    
-                    Text("Import JSON Backup")
-                        .font(OffRecordTypography.sectionTitle)
-                    
-                    Text("Select a JSON backup file exported from OffRecord AI Journal to restore your entries.")
+        ScrollView {
+            VStack(alignment: .leading, spacing: OffRecordSpacing.lg) {
+                SettingsCard(
+                    title: "Import Backup",
+                    subtitle: "Restore entries from a JSON backup or encrypted .dvx backup exported from OffRecord.",
+                    systemImage: "doc.badge.plus",
+                    tint: OffRecordColor.textSky,
+                    fill: OffRecordColor.surfaceBlue
+                ) {
+                    Text("Select a backup file. OffRecord will skip duplicates and preserve existing entries.")
                         .font(OffRecordTypography.bodySmall)
                         .foregroundColor(OffRecordColor.textSecondary)
-                        .multilineTextAlignment(.center)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 20)
-            }
-            
-            Section {
-                HStack(spacing: 8) {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundColor(OffRecordColor.textSage)
-                        .font(OffRecordTypography.metadata)
-                    Text("Duplicate entries are automatically skipped")
-                        .font(OffRecordTypography.metadata)
-                        .foregroundColor(OffRecordColor.textSecondary)
+
+                SettingsCard(
+                    title: "How it works",
+                    subtitle: "Imports are additive and stay under your control.",
+                    systemImage: "checkmark.seal",
+                    tint: OffRecordColor.textSage,
+                    fill: OffRecordColor.surfacePrimary
+                ) {
+                    SettingsRow(systemImage: "checkmark.circle.fill", title: "Duplicate entries are automatically skipped", tint: OffRecordColor.textSage)
+                    SettingsRow(systemImage: "arrow.triangle.merge", title: "Existing entries are preserved", tint: OffRecordColor.textSky)
+                    SettingsRow(systemImage: "icloud.and.arrow.up", title: "Imported entries sync to iCloud when sync is enabled", tint: OffRecordColor.textLavender)
                 }
-                
-                HStack(spacing: 8) {
-                    Image(systemName: "arrow.triangle.merge")
-                        .foregroundColor(OffRecordColor.textSky)
-                        .font(OffRecordTypography.metadata)
-                    Text("Existing entries are preserved")
-                        .font(OffRecordTypography.metadata)
-                        .foregroundColor(OffRecordColor.textSecondary)
-                }
-                
-                HStack(spacing: 8) {
-                    Image(systemName: "icloud.and.arrow.up")
-                        .foregroundColor(OffRecordColor.textLavender)
-                        .font(OffRecordTypography.metadata)
-                    Text("Imported entries sync to iCloud")
-                        .font(OffRecordTypography.metadata)
-                        .foregroundColor(OffRecordColor.textSecondary)
-                }
-            } header: {
-                Text("How it works")
-            }
-            
-            Section {
+
                 Button {
                     showFilePicker = true
                     HapticManager.shared.buttonTap()
                 } label: {
-                    HStack {
-                        Spacer()
+                    HStack(spacing: OffRecordSpacing.sm) {
                         if isImporting {
                             ProgressView()
-                                .padding(.trailing, 8)
+                                .tint(OffRecordColor.textInverse)
                         }
                         Text(isImporting ? "Importing..." : "Select Backup File")
-                            .fontWeight(.semibold)
-                        Spacer()
                     }
-                    .padding(.vertical, 10)
-                    .foregroundColor(OffRecordColor.textInverse)
-                    .background(OffRecordColor.brandPlum, in: Capsule())
                 }
+                .buttonStyle(SettingsPrimaryButtonStyle())
                 .disabled(isImporting)
             }
+            .frame(maxWidth: 760)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, OffRecordSpacing.screenX)
+            .padding(.vertical, OffRecordSpacing.screenY)
         }
-        .scrollContentBackground(.hidden)
         .background(OffRecordColor.appBackgroundGradient)
         .navigationTitle("Import Backup")
         .navigationBarTitleDisplayMode(.inline)
@@ -377,42 +338,43 @@ struct ImportBackupView: View {
         ) { result in
             handleFileSelection(result)
         }
-        .sheet(isPresented: $showPasswordPrompt) {
+        .sheet(isPresented: $showPasswordPrompt, onDismiss: cleanupPendingEncryptedImport) {
             NavigationView {
-                Form {
-                    Section {
+                ScrollView {
+                    VStack(alignment: .leading, spacing: OffRecordSpacing.lg) {
+                        SettingsCard(
+                            title: "Encrypted Backup",
+                            subtitle: "Enter the password used when this encrypted backup was created.",
+                            systemImage: "lock.shield.fill",
+                            tint: OffRecordColor.textSage,
+                            fill: OffRecordColor.surfaceSage
+                        ) {
                         SecureField("Password", text: $importPassword)
-                    } header: {
-                        Text("Enter Backup Password")
-                    } footer: {
-                        Text("Enter the password you used when creating this encrypted backup.")
-                    }
+                                .textFieldStyle(.roundedBorder)
+                        }
 
-                    Section {
                         Button {
+                            guard let url = pendingEncryptedURL else { return }
+                            let password = importPassword
+                            pendingEncryptedURL = nil
+                            importPassword = ""
                             showPasswordPrompt = false
-                            if let url = pendingEncryptedURL {
-                                importEncryptedBackup(from: url)
-                            }
+                            importEncryptedBackup(from: url, password: password)
                         } label: {
                             Text("Decrypt & Import")
-                                .fontWeight(.semibold)
-                                .frame(maxWidth: .infinity)
-                                .padding(.vertical, 10)
-                                .foregroundColor(OffRecordColor.textInverse)
-                                .background(OffRecordColor.brandPlum, in: Capsule())
                         }
+                        .buttonStyle(SettingsPrimaryButtonStyle())
                         .disabled(importPassword.isEmpty)
                     }
+                    .padding(OffRecordSpacing.screenX)
                 }
+                .background(OffRecordColor.appBackgroundGradient)
                 .navigationTitle("Encrypted Backup")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("Cancel") {
                             showPasswordPrompt = false
-                            pendingEncryptedURL?.stopAccessingSecurityScopedResource()
-                            pendingEncryptedURL = nil
                         }
                     }
                 }
@@ -462,13 +424,19 @@ struct ImportBackupView: View {
         }
     }
 
-    private func importEncryptedBackup(from url: URL) {
+    private func cleanupPendingEncryptedImport() {
+        pendingEncryptedURL?.stopAccessingSecurityScopedResource()
+        pendingEncryptedURL = nil
+        importPassword = ""
+    }
+
+    private func importEncryptedBackup(from url: URL, password: String) {
         isImporting = true
 
         Task { @MainActor in
             defer { url.stopAccessingSecurityScopedResource() }
             do {
-                let count = try BackupService.shared.importEncrypted(url: url, password: importPassword, context: viewContext)
+                let count = try BackupService.shared.importEncrypted(url: url, password: password, context: viewContext)
                 isImporting = false
                 importResult = .success(count)
                 showResult = true

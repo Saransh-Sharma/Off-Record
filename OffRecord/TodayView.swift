@@ -1309,6 +1309,14 @@ struct TodayView: View {
     private func stopRecording() {
         HapticManager.shared.recordingStopped()
 
+        if ProcessInfo.processInfo.arguments.contains("-CaptureSpeechConsentUITest"),
+           let testAudioURL = makeUITestRecordingFile() {
+            _ = recorder.stopRecording()
+            recordingState = .processing
+            saveEntry(audioURL: testAudioURL, duration: 4)
+            return
+        }
+
         if let result = recorder.stopRecording() {
             recordingState = .processing
             saveEntry(audioURL: result.url, duration: result.duration)
@@ -1316,6 +1324,21 @@ struct TodayView: View {
             recordingState = .idle
             heroRecordingPromptID = nil
             activeHeroPromptID = nil
+        }
+    }
+
+    private func makeUITestRecordingFile() -> URL? {
+        guard let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
+            return nil
+        }
+        let directory = base.appendingPathComponent("Recordings", isDirectory: true)
+        do {
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            let url = directory.appendingPathComponent("ui-test-recording-\(UUID().uuidString).m4a")
+            try Data([0, 1, 2, 3]).write(to: url)
+            return url
+        } catch {
+            return nil
         }
     }
 
