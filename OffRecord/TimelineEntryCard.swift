@@ -114,6 +114,7 @@ struct TimelineEntryCard: View {
         .frame(maxWidth: .infinity, minHeight: TimelineDesign.entryRowMinHeight, alignment: .leading)
         .offRecordContentCard(cornerRadius: 20, fill: OffRecordColor.surfacePrimary, useGlass: true)
         .contentShape(RoundedRectangle(cornerRadius: 20))
+        .offRecordPointerLift(enabled: !isEditing)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("timeline.entryRow")
     }

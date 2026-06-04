@@ -56,6 +56,7 @@ struct TimelineView: View {
     @State private var entryMetricsCache: [NSManagedObjectID: TimelineEntryPresentation] = [:]
     @State private var cachedEntriesSignature = ""
     @State private var routedEntry: DiaryEntry?
+    @State private var selectedEntry: DiaryEntry?
     @State private var currentSearchActivity: NSUserActivity?
     @State private var showSpeechConsentPrompt = false
 
@@ -91,48 +92,18 @@ struct TimelineView: View {
     }
 
     var body: some View {
-        ZStack(alignment: .topTrailing) {
-            ScrollView {
-                VStack(alignment: .leading, spacing: TimelineDesign.contentSpacing) {
-                    VStack(alignment: .leading, spacing: TimelineDesign.headerSearchSpacing) {
-                        timelineHeader
-                        searchArea
-                    }
+        GeometryReader { proxy in
+            let metrics = OffRecordAdaptiveMetrics(width: proxy.size.width)
 
-                    if showFilters {
-                        filterBar
-                            .transition(.move(edge: .top).combined(with: .opacity))
-                    }
-
-                    if hasActiveFilters {
-                        activeFiltersBar
-                            .transition(.opacity)
-                    }
-
-                    semanticSearchStatusBanner
-
-                    #if os(iOS)
-                    voiceSearchErrorBanner
-                    #endif
-
-                    if !filteredEntriesCache.isEmpty {
-                        MonthSummaryCard(entries: summaryEntriesCache)
-                    }
-
-                    timelineContent
-                }
-                .frame(maxWidth: TimelineDesign.maxContentWidth)
-                .padding(.horizontal, OffRecordSpacing.screenX)
-                .padding(.top, 8)
-                .padding(.bottom, 28)
-                .frame(maxWidth: .infinity)
+            if metrics.mode.supportsSupplementaryPanels {
+                timelineSplit(metrics: metrics)
+            } else {
+                timelineList(
+                    maxWidth: TimelineDesign.maxContentWidth,
+                    selectedEntryID: nil,
+                    onSelect: nil
+                )
             }
-            .refreshable {
-                HapticManager.shared.pullToRefresh()
-                try? await Task.sleep(nanoseconds: 300_000_000)
-            }
-
-            timelinePlanterArtwork
         }
         .background {
             OffRecordColor.appBackgroundGradient
@@ -224,6 +195,121 @@ struct TimelineView: View {
             }
             refreshTimelineCache()
         }
+        .overlay(alignment: .topLeading) {
+            timelineKeyboardShortcuts
+        }
+    }
+
+    private var timelineKeyboardShortcuts: some View {
+        Button("Search timeline") {
+            isSearchFocused = true
+        }
+        .keyboardShortcut("f", modifiers: .command)
+        .frame(width: 1, height: 1)
+        .opacity(0.01)
+        .accessibilityHidden(true)
+    }
+
+    private func timelineList(
+        maxWidth: CGFloat,
+        selectedEntryID: UUID?,
+        onSelect: ((DiaryEntry) -> Void)?
+    ) -> some View {
+        ZStack(alignment: .topTrailing) {
+            ScrollView {
+                VStack(alignment: .leading, spacing: TimelineDesign.contentSpacing) {
+                    VStack(alignment: .leading, spacing: TimelineDesign.headerSearchSpacing) {
+                        timelineHeader
+                        searchArea
+                    }
+
+                    if showFilters {
+                        filterBar
+                            .transition(.move(edge: .top).combined(with: .opacity))
+                    }
+
+                    if hasActiveFilters {
+                        activeFiltersBar
+                            .transition(.opacity)
+                    }
+
+                    semanticSearchStatusBanner
+
+                    #if os(iOS)
+                    voiceSearchErrorBanner
+                    #endif
+
+                    if !filteredEntriesCache.isEmpty {
+                        MonthSummaryCard(entries: summaryEntriesCache)
+                    }
+
+                    timelineContent(selectedEntryID: selectedEntryID, onSelect: onSelect)
+                }
+                .frame(maxWidth: maxWidth)
+                .padding(.horizontal, OffRecordSpacing.screenX)
+                .padding(.top, 8)
+                .padding(.bottom, 28)
+                .frame(maxWidth: .infinity)
+            }
+            .refreshable {
+                HapticManager.shared.pullToRefresh()
+                try? await Task.sleep(nanoseconds: 300_000_000)
+            }
+
+            timelinePlanterArtwork
+        }
+    }
+
+    private func timelineSplit(metrics: OffRecordAdaptiveMetrics) -> some View {
+        HStack(spacing: 0) {
+            timelineList(
+                maxWidth: metrics.timelineListWidth,
+                selectedEntryID: selectedEntry?.id,
+                onSelect: { entry in
+                    selectedEntry = entry
+                    HapticManager.shared.selectionChanged()
+                }
+            )
+            .frame(width: metrics.timelineListWidth)
+            .background(OffRecordColor.appBackgroundGradient)
+
+            Divider()
+                .overlay(OffRecordColor.borderSoft)
+
+            Group {
+                if let selectedEntry {
+                    EntryDetailView(entry: selectedEntry, showsDismissButton: false)
+                        .id(selectedEntry.objectID)
+                } else {
+                    timelineDetailPlaceholder
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+        }
+    }
+
+    private var timelineDetailPlaceholder: some View {
+        VStack(spacing: OffRecordSpacing.lg) {
+            OffRecordIconBubble(
+                systemImage: "book.pages",
+                tint: OffRecordColor.textLavender,
+                fill: OffRecordColor.surfaceLavender,
+                size: 58,
+                iconSize: 24
+            )
+
+            Text("Select an entry")
+                .font(OffRecordTypography.titleMedium)
+                .foregroundStyle(OffRecordColor.textHeading)
+
+            Text("Your timeline stays open while you read, edit, or review a day.")
+                .font(OffRecordTypography.bodySmall)
+                .foregroundStyle(OffRecordColor.textSecondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 320)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(OffRecordColor.backgroundPrimary.opacity(0.82))
     }
 
     // MARK: - Header
@@ -596,7 +682,10 @@ struct TimelineView: View {
     // MARK: - Timeline Content
 
     @ViewBuilder
-    private var timelineContent: some View {
+    private func timelineContent(
+        selectedEntryID: UUID?,
+        onSelect: ((DiaryEntry) -> Void)?
+    ) -> some View {
         if filteredEntriesCache.isEmpty {
             emptySearchState
         } else {
@@ -610,7 +699,9 @@ struct TimelineView: View {
                             searchText: searchText,
                             semanticResults: effectiveSemanticResults,
                             isEditing: isEditingTimeline,
-                            onDelete: delete(entry:)
+                            selectedEntryID: selectedEntryID,
+                            onDelete: delete(entry:),
+                            onSelect: onSelect
                         )
                     }
                 }
