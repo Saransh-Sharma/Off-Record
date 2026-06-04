@@ -3,7 +3,12 @@ import XCTest
 @MainActor
 func launchOffRecord(arguments: [String]) -> XCUIApplication {
     let app = XCUIApplication()
-    app.launchArguments = arguments
+    app.launchArguments = arguments + [
+        "-AppleLanguages",
+        "(en)",
+        "-AppleLocale",
+        "en_US"
+    ]
     app.launch()
     XCTAssertTrue(app.buttons["tab.today"].firstMatch.waitForExistence(timeout: 10))
     return app

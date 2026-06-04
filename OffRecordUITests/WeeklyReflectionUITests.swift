@@ -72,12 +72,12 @@ final class WeeklyReflectionUITests: XCTestCase {
 
         openSourcesSheetFromReportMenu(in: app)
 
-        let includeToggle = app.switches["Include in regenerated report"].firstMatch
-        scrollUntilExists(includeToggle, in: app, maxSwipes: 10)
+        let includeToggle = app.switches["weeklyReflection.sources.includeToggle"].firstMatch
+        scrollUntilHittable(includeToggle, in: app, maxSwipes: 10)
         XCTAssertTrue(includeToggle.waitForExistence(timeout: 6))
         let originalValue = includeToggle.value as? String
         includeToggle.coordinate(withNormalizedOffset: CGVector(dx: 0.9, dy: 0.5)).tap()
-        XCTAssertNotEqual(includeToggle.value as? String, originalValue)
+        XCTAssertTrue(includeToggle.waitForValueChange(from: originalValue, timeout: 3))
     }
 
     func testSourceSheetOpenEntryNavigatesToEntry() throws {
@@ -86,10 +86,10 @@ final class WeeklyReflectionUITests: XCTestCase {
 
         openSourcesSheetFromReportMenu(in: app)
 
-        let sourceRow = app.descendants(matching: .any)["weeklyReflection.sources.entry"].firstMatch
-        scrollUntilExists(sourceRow, in: app, maxSwipes: 10)
-        XCTAssertTrue(sourceRow.waitForExistence(timeout: 6))
-        sourceRow.coordinate(withNormalizedOffset: CGVector(dx: 0.42, dy: 0.28)).tap()
+        let sourceButton = app.buttons["weeklyReflection.sources.openEntry"].firstMatch
+        scrollUntilHittable(sourceButton, in: app, maxSwipes: 10)
+        XCTAssertTrue(sourceButton.waitForExistence(timeout: 6))
+        sourceButton.tap()
         XCTAssertTrue(app.staticTexts["entryDetail.mainText"].firstMatch.waitForExistence(timeout: 6))
     }
 
@@ -247,5 +247,16 @@ final class WeeklyReflectionUITests: XCTestCase {
 private extension XCUIElementQuery {
     func matching(labelContaining text: String) -> XCUIElementQuery {
         matching(NSPredicate(format: "label CONTAINS[c] %@", text))
+    }
+}
+
+private extension XCUIElement {
+    func waitForValueChange(from originalValue: String?, timeout: TimeInterval) -> Bool {
+        let predicate = NSPredicate { element, _ in
+            guard let element = element as? XCUIElement else { return false }
+            return element.value as? String != originalValue
+        }
+        let expectation = XCTNSPredicateExpectation(predicate: predicate, object: self)
+        return XCTWaiter().wait(for: [expectation], timeout: timeout) == .completed
     }
 }

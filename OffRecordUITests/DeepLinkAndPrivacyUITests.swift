@@ -26,8 +26,9 @@ final class DeepLinkAndPrivacyUITests: XCTestCase {
         )
 
         XCTAssertTrue(app.descendants(matching: .any)["friday.askField"].firstMatch.waitForExistence(timeout: 10))
-        XCTAssertTrue(app.staticTexts["friday.userMessage"].waitForExistence(timeout: 8))
-        XCTAssertTrue(app.staticTexts["friday.userMessage"].label.localizedCaseInsensitiveContains("work stress"))
+        let userMessage = app.staticTexts.matching(NSPredicate(format: "identifier BEGINSWITH %@", "friday.userMessage.")).firstMatch
+        XCTAssertTrue(userMessage.waitForExistence(timeout: 8))
+        XCTAssertTrue(userMessage.label.localizedCaseInsensitiveContains("work stress"))
     }
 
     func testWeeklyReflectionCurrentDeepLinkOpensReport() throws {
@@ -73,7 +74,16 @@ final class DeepLinkAndPrivacyUITests: XCTestCase {
 
     private func launchRoutedApp(route: String, arguments: [String]) -> XCUIApplication {
         let app = XCUIApplication()
-        app.launchArguments = arguments + ["-OpenRoute", route]
+        app.launchArguments = arguments + [
+            "-hasCompletedOnboarding",
+            "YES",
+            "-AppleLanguages",
+            "(en)",
+            "-AppleLocale",
+            "en_US",
+            "-OpenRoute",
+            route
+        ]
         app.launch()
         return app
     }

@@ -112,7 +112,7 @@ class ScreenshotTests: XCTestCase {
         let emotionsButton = app.buttons["Emotions"]
         if emotionsButton.waitForExistence(timeout: 3) {
             emotionsButton.tap()
-            XCTAssertTrue(app.staticTexts["Emotional Signature"].firstMatch.waitForExistence(timeout: 6) || emotionsButton.exists)
+            XCTAssertTrue(app.staticTexts["Emotional Signature"].firstMatch.waitForExistence(timeout: 6))
         }
         takeScreenshot(named: "05_FridayEmotions")
     }
@@ -132,7 +132,7 @@ class ScreenshotTests: XCTestCase {
         let worldButton = app.buttons["My World"]
         if worldButton.waitForExistence(timeout: 3) {
             worldButton.tap()
-            XCTAssertTrue(app.staticTexts["My World"].firstMatch.waitForExistence(timeout: 6) || worldButton.exists)
+            XCTAssertTrue(app.staticTexts["My World"].firstMatch.waitForExistence(timeout: 6))
         }
         takeScreenshot(named: "06_FridayWorld")
     }

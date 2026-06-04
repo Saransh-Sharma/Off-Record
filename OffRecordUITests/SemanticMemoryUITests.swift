@@ -126,7 +126,7 @@ final class SemanticMemoryUITests: XCTestCase {
 
         askFriday("What did I write about work stress and pressure?", in: app)
 
-        XCTAssertTrue(app.staticTexts["friday.answerMessage"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "identifier BEGINSWITH %@", "friday.answerMessage.")).firstMatch.waitForExistence(timeout: 15))
         XCTAssertTrue(app.descendants(matching: .any)["friday.evidenceRail"].firstMatch.waitForExistence(timeout: 8))
         XCTAssertTrue(app.descendants(matching: .any)["friday.evidenceChip"].firstMatch.exists)
         XCTAssertTrue(app.descendants(matching: .any)["friday.evidenceChip.snippet"].firstMatch.label.localizedCaseInsensitiveContains("work"))
@@ -145,7 +145,7 @@ final class SemanticMemoryUITests: XCTestCase {
         XCTAssertTrue(elementFrameIsVisible(chip, in: app))
         chip.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
 
-        XCTAssertTrue(app.staticTexts["friday.answerMessage"].waitForExistence(timeout: 15))
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "identifier BEGINSWITH %@", "friday.answerMessage.")).firstMatch.waitForExistence(timeout: 15))
         XCTAssertTrue(app.descendants(matching: .any)["friday.evidenceRail"].firstMatch.waitForExistence(timeout: 8))
         XCTAssertTrue(app.descendants(matching: .any)["friday.evidenceChip.snippet"].firstMatch.waitForExistence(timeout: 4))
     }
@@ -161,7 +161,7 @@ final class SemanticMemoryUITests: XCTestCase {
         XCTAssertTrue(elementFrameIsVisible(chip, in: app))
         chip.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
 
-        let answer = app.staticTexts["friday.answerMessage"]
+        let answer = app.staticTexts.matching(NSPredicate(format: "identifier BEGINSWITH %@", "friday.answerMessage.")).firstMatch
         XCTAssertTrue(answer.waitForExistence(timeout: 15))
         XCTAssertFalse(answer.label.localizedCaseInsensitiveContains("not have enough journal evidence"))
         XCTAssertTrue(answer.label.localizedCaseInsensitiveContains("mood"))
@@ -241,7 +241,7 @@ final class SemanticMemoryUITests: XCTestCase {
         XCTAssertTrue(chip.waitForExistence(timeout: 8))
         chip.tap()
 
-        XCTAssertTrue(app.staticTexts["friday.userMessage"].waitForExistence(timeout: 4))
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "identifier BEGINSWITH %@", "friday.userMessage.")).firstMatch.waitForExistence(timeout: 4))
         XCTAssertTrue(app.staticTexts["Friday"].firstMatch.waitForExistence(timeout: 4))
         XCTAssertTrue(app.descendants(matching: .any)["friday.askField"].firstMatch.exists)
     }
@@ -263,7 +263,7 @@ final class SemanticMemoryUITests: XCTestCase {
 
         askFriday("What did I write about scuba diving in Lisbon?", in: app)
 
-        let answer = app.staticTexts["friday.answerMessage"]
+        let answer = app.staticTexts.matching(NSPredicate(format: "identifier BEGINSWITH %@", "friday.answerMessage.")).firstMatch
         XCTAssertTrue(answer.waitForExistence(timeout: 15))
         XCTAssertTrue(answer.label.localizedCaseInsensitiveContains("not have enough journal evidence"))
         XCTAssertTrue(app.staticTexts["friday.limitations"].waitForExistence(timeout: 4))
@@ -369,7 +369,7 @@ final class SemanticMemoryUITests: XCTestCase {
         let askButton = app.descendants(matching: .any)["friday.askButton"].firstMatch
         XCTAssertTrue(askButton.waitForExistence(timeout: 4))
         askButton.tap()
-        XCTAssertTrue(app.staticTexts["friday.userMessage"].waitForExistence(timeout: 4))
+        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "identifier BEGINSWITH %@", "friday.userMessage.")).firstMatch.waitForExistence(timeout: 4))
     }
 
     private func openFridayChat(_ app: XCUIApplication) {
