@@ -338,7 +338,7 @@ struct ImportBackupView: View {
         ) { result in
             handleFileSelection(result)
         }
-        .sheet(isPresented: $showPasswordPrompt) {
+        .sheet(isPresented: $showPasswordPrompt, onDismiss: cleanupPendingEncryptedImport) {
             NavigationView {
                 ScrollView {
                     VStack(alignment: .leading, spacing: OffRecordSpacing.lg) {
@@ -354,10 +354,12 @@ struct ImportBackupView: View {
                         }
 
                         Button {
+                            guard let url = pendingEncryptedURL else { return }
+                            let password = importPassword
+                            pendingEncryptedURL = nil
+                            importPassword = ""
                             showPasswordPrompt = false
-                            if let url = pendingEncryptedURL {
-                                importEncryptedBackup(from: url)
-                            }
+                            importEncryptedBackup(from: url, password: password)
                         } label: {
                             Text("Decrypt & Import")
                         }
@@ -373,8 +375,6 @@ struct ImportBackupView: View {
                     ToolbarItem(placement: .cancellationAction) {
                         Button("Cancel") {
                             showPasswordPrompt = false
-                            pendingEncryptedURL?.stopAccessingSecurityScopedResource()
-                            pendingEncryptedURL = nil
                         }
                     }
                 }
@@ -424,13 +424,19 @@ struct ImportBackupView: View {
         }
     }
 
-    private func importEncryptedBackup(from url: URL) {
+    private func cleanupPendingEncryptedImport() {
+        pendingEncryptedURL?.stopAccessingSecurityScopedResource()
+        pendingEncryptedURL = nil
+        importPassword = ""
+    }
+
+    private func importEncryptedBackup(from url: URL, password: String) {
         isImporting = true
 
         Task { @MainActor in
             defer { url.stopAccessingSecurityScopedResource() }
             do {
-                let count = try BackupService.shared.importEncrypted(url: url, password: importPassword, context: viewContext)
+                let count = try BackupService.shared.importEncrypted(url: url, password: password, context: viewContext)
                 isImporting = false
                 importResult = .success(count)
                 showResult = true
