@@ -75,7 +75,11 @@ struct SettingsView: View {
     var body: some View {
         GeometryReader { proxy in
             ScrollView {
-                let columns = settingsColumns(for: proxy.size.width)
+                let metrics = OffRecordAdaptiveMetrics(
+                    width: proxy.size.width,
+                    horizontalSizeClass: horizontalSizeClass
+                )
+                let columns = metrics.settingsColumns(dynamicTypeSize: dynamicTypeSize)
 
                 VStack(alignment: .leading, spacing: OffRecordSpacing.section) {
                     SettingsGroup(
@@ -126,9 +130,9 @@ struct SettingsView: View {
                         }
                     }
                 }
-                .frame(maxWidth: contentMaxWidth(for: proxy.size.width))
+                .frame(maxWidth: metrics.pageMaxWidth)
                 .frame(maxWidth: .infinity)
-                .padding(.horizontal, OffRecordSpacing.screenX)
+                .padding(.horizontal, metrics.pageHorizontalPadding)
                 .padding(.vertical, OffRecordSpacing.screenY)
             }
         }
@@ -207,21 +211,6 @@ struct SettingsView: View {
     }
 
     // MARK: - Sections
-
-    private func settingsColumns(for width: CGFloat) -> [GridItem] {
-        guard width >= 760, !dynamicTypeSize.isAccessibilitySize else {
-            return [GridItem(.flexible(), spacing: OffRecordSpacing.lg)]
-        }
-
-        return [
-            GridItem(.flexible(), spacing: OffRecordSpacing.lg),
-            GridItem(.flexible(), spacing: OffRecordSpacing.lg)
-        ]
-    }
-
-    private func contentMaxWidth(for width: CGFloat) -> CGFloat? {
-        width >= 900 ? 980 : nil
-    }
 
     @ViewBuilder
     private var exportSection: some View {

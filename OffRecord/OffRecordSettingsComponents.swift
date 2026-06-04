@@ -69,6 +69,7 @@ struct SettingsCard<Content: View>: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(OffRecordSpacing.xl)
         .offRecordContentCard(cornerRadius: OffRecordRadius.xl, fill: fill)
+        .offRecordPointerLift()
     }
 }
 
@@ -323,6 +324,7 @@ struct ThemeButton: View {
             .frame(minHeight: 76)
         }
         .buttonStyle(.plain)
+        .offRecordPointerLift()
         .accessibilityLabel(theme.rawValue)
         .accessibilityValue(isSelected ? "Selected" : "Not selected")
         .accessibilityAddTraits(isSelected ? [.isSelected] : [])
