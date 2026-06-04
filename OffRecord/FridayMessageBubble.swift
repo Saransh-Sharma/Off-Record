@@ -53,7 +53,7 @@ struct FridayMessageBubble: View {
                                 .accessibilityHidden(true)
                         }
                     }
-                    .accessibilityIdentifier(message.isUser ? "friday.userMessage" : "friday.answerMessage")
+                    .accessibilityIdentifier("\(message.isUser ? "friday.userMessage" : "friday.answerMessage").\(message.id.uuidString)")
 
                 if !message.isUser {
                     if let limitations = message.limitations {

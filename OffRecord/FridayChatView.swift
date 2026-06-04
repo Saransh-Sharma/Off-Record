@@ -716,12 +716,12 @@ struct FridayChatView: View {
     }
 
     private var canSendFreeform: Bool {
-        !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isAnswering
+        !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isAnswering && !semanticMemory.isBuilding
     }
 
     private func askFreeformQuestion() {
         let question = inputText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !question.isEmpty else { return }
+        guard canSendFreeform else { return }
         inputText = ""
         askEvidenceQuestion(question, profileSummary: nil)
     }

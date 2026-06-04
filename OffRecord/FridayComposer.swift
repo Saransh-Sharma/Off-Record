@@ -83,6 +83,6 @@ struct FridayComposer: View {
     }
 
     private var canSend: Bool {
-        !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isAnswering
+        !text.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isAnswering && !isIndexing
     }
 }
