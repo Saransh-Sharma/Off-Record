@@ -191,6 +191,7 @@ struct EntryDetailView: View {
     private let deleteEmptyDraftOnDisappear: Bool
     private let promptContext: String?
     private let heroPromptID: String?
+    private let showsDismissButton: Bool
     @State private var currentActivity: NSUserActivity?
 
     // Photo state
@@ -203,18 +204,32 @@ struct EntryDetailView: View {
     #endif
 
     private var isIPad: Bool { horizontalSizeClass == .regular }
+    private var compactMoodPickerBinding: Binding<Bool> {
+        Binding(
+            get: { showMoodPicker && !isIPad },
+            set: { if !$0 { showMoodPicker = false } }
+        )
+    }
+    private var regularMoodPickerBinding: Binding<Bool> {
+        Binding(
+            get: { showMoodPicker && isIPad },
+            set: { if !$0 { showMoodPicker = false } }
+        )
+    }
 
     init(
         entry: DiaryEntry,
         startEditing: Bool = false,
         deleteEmptyDraftOnDisappear: Bool = false,
         promptContext: String? = nil,
-        heroPromptID: String? = nil
+        heroPromptID: String? = nil,
+        showsDismissButton: Bool = true
     ) {
         self.entry = entry
         self.deleteEmptyDraftOnDisappear = deleteEmptyDraftOnDisappear
         self.promptContext = promptContext
         self.heroPromptID = heroPromptID
+        self.showsDismissButton = showsDismissButton
         _text = State(initialValue: entry.text ?? "")
         _isComposingTextBlock = State(initialValue: startEditing)
         let moodString = entry.value(forKey: "mood") as? String ?? ""
@@ -254,11 +269,11 @@ struct EntryDetailView: View {
                 .padding(.bottom, isActivelyEditing ? 160 : 96)
             }
             .scrollDismissesKeyboard(.interactively)
-            .frame(maxWidth: isIPad ? 700 : .infinity)
+            .frame(maxWidth: isIPad ? 860 : .infinity)
             .frame(maxWidth: .infinity)
         }
         .navigationBarBackButtonHidden(true)
-        .toolbar(.hidden, for: .navigationBar)
+        .toolbar(showsDismissButton ? .hidden : .visible, for: .navigationBar)
         .confirmationDialog(
             "Delete this day?",
             isPresented: $showDeleteDayConfirm,
@@ -312,8 +327,12 @@ struct EntryDetailView: View {
         .onChange(of: entry.entryTranscriptionStatus) { _, _ in
             syncTextFromEntry(reason: "transcriptionStatusChanged")
         }
-        .fullScreenCover(isPresented: $showMoodPicker) {
+        .fullScreenCover(isPresented: compactMoodPickerBinding) {
             MoodDialSheet(selectedMood: $selectedMood, onSave: saveMood)
+        }
+        .sheet(isPresented: regularMoodPickerBinding) {
+            MoodDialSheet(selectedMood: $selectedMood, onSave: saveMood)
+                .presentationDetents([.large])
         }
     }
 
@@ -322,18 +341,29 @@ struct EntryDetailView: View {
     private var journalEntryTopBar: some View {
         ZStack {
             HStack {
-                Button(action: { dismiss() }) {
-                    Image(systemName: "chevron.left")
-                        .font(.system(size: 18, weight: .semibold))
-                        .foregroundStyle(OffRecordColor.textBrand)
-                        .frame(width: 48, height: 48)
-                        .background(OffRecordColor.surfacePrimary, in: Circle())
-                        .overlay(Circle().stroke(OffRecordColor.borderSoft, lineWidth: 1))
-                        .shadow(color: OffRecordShadow.cardColor, radius: 14, x: 0, y: 6)
+                if showsDismissButton {
+                    Button(action: { dismiss() }) {
+                        Image(systemName: "chevron.left")
+                            .font(.system(size: 18, weight: .semibold))
+                            .foregroundStyle(OffRecordColor.textBrand)
+                            .frame(width: 48, height: 48)
+                            .background(OffRecordColor.surfacePrimary, in: Circle())
+                            .overlay(Circle().stroke(OffRecordColor.borderSoft, lineWidth: 1))
+                            .shadow(color: OffRecordShadow.cardColor, radius: 14, x: 0, y: 6)
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel("Back")
+                    .accessibilityIdentifier("entryDetail.backButton")
+                } else {
+                    OffRecordIconBubble(
+                        systemImage: "book.pages",
+                        tint: OffRecordColor.textLavender,
+                        fill: OffRecordColor.surfaceLavender,
+                        size: 48,
+                        iconSize: 18
+                    )
+                    .accessibilityHidden(true)
                 }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Back")
-                .accessibilityIdentifier("entryDetail.backButton")
 
                 Spacer()
 

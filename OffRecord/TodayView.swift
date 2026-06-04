@@ -66,6 +66,7 @@ struct TodayView: View {
     @ObservedObject private var navigationRouter = OffRecordNavigationRouter.shared
     private let compactTabSelection: Binding<OffRecordTab>?
     private let compactBottomSafeAreaInset: CGFloat
+    private let compactDockOwnership: Binding<Bool>?
 
     @StateObject private var recorder = AudioRecorder()
     @State private var recordingState: RecordingState = .idle
@@ -97,10 +98,12 @@ struct TodayView: View {
 
     init(
         compactTabSelection: Binding<OffRecordTab>? = nil,
-        compactBottomSafeAreaInset: CGFloat = 0
+        compactBottomSafeAreaInset: CGFloat = 0,
+        compactDockOwnership: Binding<Bool>? = nil
     ) {
         self.compactTabSelection = compactTabSelection
         self.compactBottomSafeAreaInset = compactBottomSafeAreaInset
+        self.compactDockOwnership = compactDockOwnership
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: Date())
         let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? startOfDay
@@ -176,77 +179,15 @@ struct TodayView: View {
 
     var body: some View {
         GeometryReader { proxy in
-            ZStack(alignment: .bottom) {
-                OffRecordColor.backgroundPrimary
-                .ignoresSafeArea()
+            let metrics = OffRecordAdaptiveMetrics(
+                width: proxy.size.width,
+                horizontalSizeClass: horizontalSizeClass
+            )
 
-                ScrollView(showsIndicators: false) {
-                    VStack(spacing: 0) {
-                        let heroTopBleed = todayHeroTopBleed(for: proxy.safeAreaInsets.top)
-                        let heroContentHeight = todayHeroHeight(
-                            for: proxy.size,
-                            hasEntryToday: effectiveLatestEntry != nil
-                        ) + heroTopBleed
-                        let heroHeight = heroContentHeight + proactivePromptHeroExtension
-
-                        if let hero = currentHero {
-                            TodayFullBleedHeroView(
-                                hero: hero,
-                                greeting: greeting,
-                                dateText: formattedHeroDate,
-                                entriesThisYear: entriesThisYear,
-                                todayEntry: effectiveLatestEntry,
-                                height: heroHeight,
-                                contentHeight: heroContentHeight,
-                                topSafeAreaInset: proxy.safeAreaInsets.top,
-                                isRecording: heroRecordingPromptID == hero.prompt.id && recordingState == .recording,
-                                isProcessing: heroRecordingPromptID == hero.prompt.id && recordingState == .processing,
-                                currentTime: recorder.currentTime,
-                                level: Double(recorder.level),
-                                onPrivacy: { isShowingPrivacyExplanation = true }
-                            )
-                            .overlay(alignment: .bottom) {
-                                proactiveHeroPrompt
-                            }
-                            .padding(.top, -heroTopBleed)
-                        } else {
-                            Color.clear
-                                .frame(height: heroHeight)
-                                .padding(.top, -heroTopBleed)
-                        }
-
-                        if recordingState == .idle {
-                            WeeklyReflectionHomeCard(entries: startedEntries) {
-                                startTypedNote(promptContext: nil, heroPromptID: nil)
-                            }
-                            .padding(.horizontal, OffRecordSpacing.screenX)
-                            .padding(.top, postHeroTopPadding(hasEntryToday: effectiveLatestEntry != nil))
-
-                            TodayNudgeSection(prompts: EntryPrompt.defaultPrompts) { prompt in
-                                startTypedNote(promptContext: prompt.detail, heroPromptID: nil)
-                            }
-                            .padding(.horizontal, OffRecordSpacing.screenX)
-                            .padding(.top, 18)
-                        }
-                    }
-                    .padding(.bottom, compactTabSelection == nil ? OffRecordSpacing.xl : OffRecordCompactTabBarLayout.todayDockScrollContentBottomPadding)
-                    .frame(maxWidth: isIPad ? 700 : .infinity)
-                    .frame(maxWidth: .infinity)
-                }
-
-                if compactTabSelection == nil {
-                    Spacer(minLength: 0)
-
-                    // Recording controls at bottom
-                    recordingSection
-                }
-
-                if let compactTabSelection {
-                    compactBottomDock(
-                        selectedTab: compactTabSelection,
-                        bottomSafeAreaInset: compactBottomSafeAreaInset
-                    )
-                }
+            if metrics.mode.supportsSupplementaryPanels, compactTabSelection == nil {
+                expandedTodayLayout(proxy: proxy, metrics: metrics)
+            } else {
+                phoneFirstTodayLayout(proxy: proxy, metrics: metrics)
             }
         }
         .alert("Recording Error", isPresented: Binding(
@@ -340,6 +281,147 @@ struct TodayView: View {
         }
         .task(id: todayEntriesSignature) {
             await refreshHistoricalEntryCache(recordHeroExposure: true)
+        }
+        .overlay(alignment: .topLeading) {
+            todayKeyboardShortcuts
+        }
+    }
+
+    private var todayKeyboardShortcuts: some View {
+        Button("New journal note") {
+            guard recordingState == .idle else { return }
+            startTypedNote()
+        }
+        .keyboardShortcut("n", modifiers: .command)
+        .frame(width: 1, height: 1)
+        .opacity(0.01)
+        .accessibilityHidden(true)
+    }
+
+    private func phoneFirstTodayLayout(
+        proxy: GeometryProxy,
+        metrics: OffRecordAdaptiveMetrics
+    ) -> some View {
+        ZStack(alignment: .bottom) {
+            OffRecordColor.backgroundPrimary
+                .ignoresSafeArea()
+
+            ScrollView(showsIndicators: false) {
+                todayScrollContent(proxy: proxy, metrics: metrics)
+                    .padding(.bottom, compactTabSelection == nil ? OffRecordSpacing.xl : OffRecordCompactTabBarLayout.todayDockScrollContentBottomPadding)
+                    .frame(maxWidth: metrics.readableContentMaxWidth ?? .infinity)
+                    .frame(maxWidth: .infinity)
+            }
+
+            if compactTabSelection == nil {
+                Spacer(minLength: 0)
+                recordingSection
+            }
+
+            if let compactTabSelection {
+                compactBottomDock(
+                    selectedTab: compactTabSelection,
+                    bottomSafeAreaInset: compactBottomSafeAreaInset
+                )
+                .onAppear {
+                    compactDockOwnership?.wrappedValue = true
+                }
+                .onDisappear {
+                    compactDockOwnership?.wrappedValue = false
+                }
+            }
+        }
+    }
+
+    private func expandedTodayLayout(
+        proxy: GeometryProxy,
+        metrics: OffRecordAdaptiveMetrics
+    ) -> some View {
+        HStack(alignment: .top, spacing: OffRecordSpacing.xxl) {
+            ScrollView(showsIndicators: false) {
+                todayScrollContent(proxy: proxy, metrics: metrics)
+                    .padding(.bottom, OffRecordSpacing.section)
+            }
+            .frame(maxWidth: .infinity)
+
+            VStack(spacing: OffRecordSpacing.lg) {
+                recordingSection
+                    .padding(.horizontal, 0)
+
+                if recordingState == .idle {
+                    VStack(alignment: .leading, spacing: OffRecordSpacing.sm) {
+                        Label("Ready on this device", systemImage: "lock.shield")
+                            .font(OffRecordTypography.labelSmall)
+                            .foregroundStyle(OffRecordColor.textSage)
+
+                        Text("Record, write, or attach photos without losing sight of today.")
+                            .font(OffRecordTypography.metadata)
+                            .foregroundStyle(OffRecordColor.textSecondary)
+                    }
+                    .padding(OffRecordSpacing.lg)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceSage)
+                }
+            }
+            .frame(width: metrics.todayCapturePanelWidth)
+            .padding(.top, max(proxy.safeAreaInsets.top + 24, 36))
+            .padding(.trailing, metrics.pageHorizontalPadding)
+        }
+        .padding(.leading, metrics.pageHorizontalPadding)
+        .background(OffRecordColor.backgroundPrimary.ignoresSafeArea())
+    }
+
+    private func todayScrollContent(
+        proxy: GeometryProxy,
+        metrics: OffRecordAdaptiveMetrics
+    ) -> some View {
+        VStack(spacing: 0) {
+            let heroTopBleed = todayHeroTopBleed(for: proxy.safeAreaInsets.top)
+            let heroContentHeight = todayHeroHeight(
+                for: proxy.size,
+                hasEntryToday: effectiveLatestEntry != nil
+            ) + heroTopBleed
+            let heroHeight = heroContentHeight + proactivePromptHeroExtension
+
+            if let hero = currentHero {
+                TodayFullBleedHeroView(
+                    hero: hero,
+                    greeting: greeting,
+                    dateText: formattedHeroDate,
+                    entriesThisYear: entriesThisYear,
+                    todayEntry: effectiveLatestEntry,
+                    height: heroHeight,
+                    contentHeight: heroContentHeight,
+                    topSafeAreaInset: proxy.safeAreaInsets.top,
+                    isRecording: heroRecordingPromptID == hero.prompt.id && recordingState == .recording,
+                    isProcessing: heroRecordingPromptID == hero.prompt.id && recordingState == .processing,
+                    currentTime: recorder.currentTime,
+                    level: Double(recorder.level),
+                    onPrivacy: { isShowingPrivacyExplanation = true }
+                )
+                .overlay(alignment: .bottom) {
+                    proactiveHeroPrompt
+                }
+                .padding(.top, -heroTopBleed)
+            } else {
+                Color.clear
+                    .frame(height: heroHeight)
+                    .padding(.top, -heroTopBleed)
+            }
+
+            if recordingState == .idle {
+                WeeklyReflectionHomeCard(entries: startedEntries) {
+                    startTypedNote(promptContext: nil, heroPromptID: nil)
+                }
+                .padding(.horizontal, metrics.pageHorizontalPadding)
+                .padding(.top, postHeroTopPadding(hasEntryToday: effectiveLatestEntry != nil))
+
+                TodayNudgeSection(prompts: EntryPrompt.defaultPrompts) { prompt in
+                    startTypedNote(promptContext: prompt.detail, heroPromptID: nil)
+                }
+                .padding(.horizontal, metrics.pageHorizontalPadding)
+                .padding(.top, 18)
+            }
         }
     }
 

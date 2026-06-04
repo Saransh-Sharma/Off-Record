@@ -42,42 +42,19 @@ struct FridayView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 24) {
-                fridayHeader
-                    .scrollTransition { content, phase in
-                        content
-                            .opacity(phase.isIdentity ? 1 : 0.6)
-                            .scaleEffect(phase.isIdentity ? 1 : 0.92)
-                    }
+        GeometryReader { proxy in
+            let metrics = OffRecordAdaptiveMetrics(
+                width: proxy.size.width,
+                horizontalSizeClass: horizontalSizeClass
+            )
 
-                talkToFridayButton
-
-                // Maturity indicator
-                maturityBadge
-
-                // Section Picker
-                sectionPicker
-
-                // Content based on selection
-                switch selectedSection {
-                case .overview:
-                    overviewSection
-                case .personality:
-                    personalitySection
-                case .emotions:
-                    emotionsSection
-                case .world:
-                    worldSection
+            ScrollView {
+                if metrics.mode.supportsSupplementaryPanels {
+                    expandedFridayLayout(metrics: metrics)
+                } else {
+                    phoneFirstFridayLayout(metrics: metrics)
                 }
-
-                // Privacy badge
-                privacyBadge
             }
-            .padding(.horizontal, OffRecordSpacing.screenX)
-            .padding(.vertical, 16)
-            .frame(maxWidth: isIPad ? 700 : .infinity)
-            .frame(maxWidth: .infinity)
         }
         .navigationTitle("Friday")
         .background(OffRecordColor.appBackgroundGradient.ignoresSafeArea())
@@ -124,6 +101,101 @@ struct FridayView: View {
                 initialQuestion: routedFridayQuestion,
                 autoSubmitInitialQuestion: routedFridayQuestion?.isEmpty == false
             )
+        }
+    }
+
+    private func phoneFirstFridayLayout(metrics: OffRecordAdaptiveMetrics) -> some View {
+        VStack(spacing: 24) {
+            fridayHeader
+                .scrollTransition { content, phase in
+                    content
+                        .opacity(phase.isIdentity ? 1 : 0.6)
+                        .scaleEffect(phase.isIdentity ? 1 : 0.92)
+                }
+
+            talkToFridayButton
+            maturityBadge
+            sectionPicker
+            selectedFridayContent
+            privacyBadge
+        }
+        .padding(.horizontal, metrics.pageHorizontalPadding)
+        .padding(.vertical, 16)
+        .frame(maxWidth: metrics.readableContentMaxWidth ?? .infinity)
+        .frame(maxWidth: .infinity)
+    }
+
+    private func expandedFridayLayout(metrics: OffRecordAdaptiveMetrics) -> some View {
+        HStack(alignment: .top, spacing: OffRecordSpacing.xxxl) {
+            VStack(spacing: OffRecordSpacing.xl) {
+                fridayHeader
+                talkToFridayButton
+                maturityBadge
+                fridaySectionRail
+                privacyBadge
+            }
+            .frame(width: 320)
+            .padding(.top, OffRecordSpacing.lg)
+
+            VStack(spacing: OffRecordSpacing.xl) {
+                selectedFridayContent
+            }
+            .frame(maxWidth: .infinity, alignment: .topLeading)
+        }
+        .padding(.horizontal, metrics.pageHorizontalPadding)
+        .padding(.vertical, OffRecordSpacing.xxl)
+        .frame(maxWidth: metrics.pageMaxWidth ?? .infinity)
+        .frame(maxWidth: .infinity)
+    }
+
+    @ViewBuilder
+    private var selectedFridayContent: some View {
+        switch selectedSection {
+        case .overview:
+            overviewSection
+        case .personality:
+            personalitySection
+        case .emotions:
+            emotionsSection
+        case .world:
+            worldSection
+        }
+    }
+
+    private var fridaySectionRail: some View {
+        VStack(alignment: .leading, spacing: OffRecordSpacing.sm) {
+            ForEach(FridaySection.allCases, id: \.self) { section in
+                Button {
+                    withAnimation(.spring(response: 0.3)) {
+                        selectedSection = section
+                    }
+                } label: {
+                    HStack {
+                        Text(section.rawValue)
+                            .font(OffRecordTypography.labelMedium)
+                        Spacer()
+                        if selectedSection == section {
+                            Image(systemName: "checkmark")
+                                .font(OffRecordTypography.labelSmall)
+                        }
+                    }
+                    .foregroundStyle(selectedSection == section ? OffRecordReadableTintStyle.friday.foreground : OffRecordColor.textPrimary)
+                    .padding(.horizontal, OffRecordSpacing.lg)
+                    .frame(minHeight: 46)
+                    .background(
+                        selectedSection == section ? OffRecordReadableTintStyle.friday.fill : OffRecordReadableTintStyle.neutral.fill,
+                        in: RoundedRectangle(cornerRadius: OffRecordRadius.lg, style: .continuous)
+                    )
+                    .overlay(
+                        RoundedRectangle(cornerRadius: OffRecordRadius.lg, style: .continuous)
+                            .stroke(selectedSection == section ? OffRecordReadableTintStyle.friday.border : OffRecordReadableTintStyle.neutral.border, lineWidth: 1)
+                    )
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("\(section.rawValue) section")
+                .accessibilityAddTraits(selectedSection == section ? .isSelected : [])
+                .offRecordPointerLift()
+            }
         }
     }
 

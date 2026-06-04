@@ -41,6 +41,7 @@ struct FridayPromptPill: View {
             }
         }
         .buttonStyle(.plain)
+        .offRecordPointerLift(enabled: !isAsked)
         .accessibilityLabel("Ask Friday: \(title)")
         .accessibilityIdentifier("friday.questionChip.\(question.accessibilityID)")
     }

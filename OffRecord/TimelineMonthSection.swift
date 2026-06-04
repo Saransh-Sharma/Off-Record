@@ -20,7 +20,9 @@ struct TimelineMonthSection: View {
     let searchText: String
     let semanticResults: [UUID: EvidenceReference]
     let isEditing: Bool
+    var selectedEntryID: UUID?
     let onDelete: (DiaryEntry) -> Void
+    var onSelect: ((DiaryEntry) -> Void)?
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -49,7 +51,9 @@ struct TimelineMonthSection: View {
                         searchText: searchText,
                         evidence: entry.id.flatMap { semanticResults[$0] },
                         isEditing: isEditing,
-                        onDelete: { onDelete(entry) }
+                        isSelected: entry.id == selectedEntryID,
+                        onDelete: { onDelete(entry) },
+                        onSelect: onSelect.map { select in { select(entry) } }
                     )
                 }
             }
@@ -85,7 +89,9 @@ struct TimelineDayRow: View {
     let searchText: String
     let evidence: EvidenceReference?
     let isEditing: Bool
+    let isSelected: Bool
     let onDelete: () -> Void
+    let onSelect: (() -> Void)?
 
     var body: some View {
         HStack(alignment: .top, spacing: TimelineDesign.dayRowContentSpacing) {
@@ -101,24 +107,60 @@ struct TimelineDayRow: View {
                     isEditing: isEditing,
                     onDelete: onDelete
                 )
+                .overlay(selectionOverlay)
+                .accessibilityIdentifier(entryAccessibilityIdentifier)
             } else {
-                NavigationLink {
-                    EntryDetailView(entry: entry)
-                } label: {
-                    TimelineEntryCard(
-                        entry: entry,
-                        metrics: metrics,
-                        searchText: searchText,
-                        evidence: evidence,
-                        isEditing: isEditing,
-                        onDelete: onDelete
-                    )
+                if let onSelect {
+                    Button(action: onSelect) {
+                        TimelineEntryCard(
+                            entry: entry,
+                            metrics: metrics,
+                            searchText: searchText,
+                            evidence: evidence,
+                            isEditing: isEditing,
+                            onDelete: onDelete
+                        )
+                        .overlay(selectionOverlay)
+                    }
+                    .buttonStyle(.plain)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityIdentifier(entryAccessibilityIdentifier)
+                } else {
+                    NavigationLink {
+                        EntryDetailView(entry: entry)
+                    } label: {
+                        TimelineEntryCard(
+                            entry: entry,
+                            metrics: metrics,
+                            searchText: searchText,
+                            evidence: evidence,
+                            isEditing: isEditing,
+                            onDelete: onDelete
+                        )
+                        .overlay(selectionOverlay)
+                    }
+                    .buttonStyle(.plain)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .accessibilityIdentifier(entryAccessibilityIdentifier)
                 }
-                .buttonStyle(.plain)
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+
+    private var entryAccessibilityIdentifier: String {
+        let id = entry.id?.uuidString ?? entry.objectID.uriRepresentation().absoluteString
+        return "timeline.entryRow.\(id)"
+    }
+
+    @ViewBuilder
+    private var selectionOverlay: some View {
+        if isSelected {
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(OffRecordColor.brandLavenderDark.opacity(0.72), lineWidth: 2)
+                .padding(1)
+                .accessibilityHidden(true)
+        }
     }
 }
 

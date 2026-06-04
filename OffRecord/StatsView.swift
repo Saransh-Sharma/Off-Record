@@ -12,6 +12,7 @@ import Charts
 struct StatsView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ObservedObject private var goalManager = GoalManager.shared
     @ObservedObject private var proactiveReflection = ProactiveReflectionController.shared
@@ -45,43 +46,19 @@ struct StatsView: View {
     }
 
     var body: some View {
-        ScrollView {
-            VStack(spacing: 20) {
-                if stats.isEmpty && startedEntriesForCards.isEmpty {
-                    emptyStateCard
-                } else {
-                    // TIER 1: Hero — streak + goal
-                    streakCard
-                    if goalManager.isEnabled {
-                        goalProgressCard
-                    }
+        GeometryReader { proxy in
+            let metrics = OffRecordAdaptiveMetrics(
+                width: proxy.size.width,
+                horizontalSizeClass: horizontalSizeClass
+            )
 
-                    // TIER 2: This Week — activity + unified reflection
-                    weekActivityCard
-                    WeeklyInsightsSection(entries: startedEntriesForCards)
-                    ProactiveWeeklyReflectionCard(entries: startedEntriesForCards)
-                    WeeklyReflectionHistorySection(entries: weeklyReflectionRouteEntries)
-
-                    // TIER 3: Deep Dive — collapsible
-                    DisclosureGroup(isExpanded: $showDeepDive) {
-                        VStack(spacing: 20) {
-                            aiInsightsCard
-                            moodTrendsCard
-                            statsSummaryCard
-                            weeklySummaryCard
-                        }
-                    } label: {
-                        Label("Deep Dive", systemImage: "chart.bar.doc.horizontal")
-                            .font(OffRecordTypography.sectionTitle)
-                            .foregroundColor(OffRecordColor.textHeading)
-                    }
-                    .tint(OffRecordColor.textSecondary)
-                }
+            ScrollView {
+                statsContent(metrics: metrics)
+                    .padding(.horizontal, metrics.pageHorizontalPadding)
+                    .padding(.vertical, 16)
+                    .frame(maxWidth: metrics.pageMaxWidth ?? .infinity)
+                    .frame(maxWidth: .infinity)
             }
-            .padding(.horizontal, OffRecordSpacing.screenX)
-            .padding(.vertical, 16)
-            .frame(maxWidth: isIPad ? 700 : .infinity)
-            .frame(maxWidth: .infinity)
         }
         .background(OffRecordColor.appBackgroundGradient)
         .navigationTitle("Insights")
@@ -114,6 +91,58 @@ struct StatsView: View {
         guard navigationRouter.shouldOpenCurrentWeeklyReflection else { return }
         selectedWeeklyReflection = weeklyReflection.openCurrentReport(entries: weeklyReflectionRouteEntries)
         navigationRouter.shouldOpenCurrentWeeklyReflection = false
+    }
+
+    @ViewBuilder
+    private func statsContent(metrics: OffRecordAdaptiveMetrics) -> some View {
+        VStack(spacing: 20) {
+            if stats.isEmpty && startedEntriesForCards.isEmpty {
+                emptyStateCard
+            } else {
+                if metrics.mode >= .expanded {
+                    LazyVGrid(
+                        columns: metrics.insightsColumns(dynamicTypeSize: dynamicTypeSize),
+                        spacing: OffRecordSpacing.lg
+                    ) {
+                        streakCard
+                        if goalManager.isEnabled {
+                            goalProgressCard
+                        }
+                        weekActivityCard
+                        WeeklyInsightsSection(entries: startedEntriesForCards)
+                        ProactiveWeeklyReflectionCard(entries: startedEntriesForCards)
+                        WeeklyReflectionHistorySection(entries: weeklyReflectionRouteEntries)
+                    }
+                } else {
+                    streakCard
+                    if goalManager.isEnabled {
+                        goalProgressCard
+                    }
+                    weekActivityCard
+                    WeeklyInsightsSection(entries: startedEntriesForCards)
+                    ProactiveWeeklyReflectionCard(entries: startedEntriesForCards)
+                    WeeklyReflectionHistorySection(entries: weeklyReflectionRouteEntries)
+                }
+
+                deepDiveSection
+            }
+        }
+    }
+
+    private var deepDiveSection: some View {
+        DisclosureGroup(isExpanded: $showDeepDive) {
+            VStack(spacing: 20) {
+                aiInsightsCard
+                moodTrendsCard
+                statsSummaryCard
+                weeklySummaryCard
+            }
+        } label: {
+            Label("Deep Dive", systemImage: "chart.bar.doc.horizontal")
+                .font(OffRecordTypography.sectionTitle)
+                .foregroundColor(OffRecordColor.textHeading)
+        }
+        .tint(OffRecordColor.textSecondary)
     }
 
     // MARK: - Empty State

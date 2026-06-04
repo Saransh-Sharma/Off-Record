@@ -20,6 +20,7 @@ struct ContentView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @ObservedObject private var navigationRouter = OffRecordNavigationRouter.shared
     @State private var isKeyboardVisible = false
+    @State private var todayOwnsCompactDock = false
 
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \DiaryEntry.date, ascending: false)],
@@ -27,22 +28,32 @@ struct ContentView: View {
     private var entries: FetchedResults<DiaryEntry>
 
     var body: some View {
-        if horizontalSizeClass == .compact {
-            compactTabs
-        } else {
-            adaptiveTabs
+        GeometryReader { proxy in
+            let metrics = OffRecordAdaptiveMetrics(
+                width: proxy.size.width,
+                horizontalSizeClass: horizontalSizeClass
+            )
+
+            if metrics.mode.usesCompactPhoneChrome {
+                compactTabs
+            } else {
+                adaptiveTabs
+            }
         }
     }
 
     private var compactTabs: some View {
         GeometryReader { proxy in
+            let shouldRenderFloatingTabBar = navigationRouter.selectedTab != .today || !todayOwnsCompactDock
+
             ZStack(alignment: .bottom) {
                 switch navigationRouter.selectedTab {
                 case .today:
                     NavigationStack {
                         TodayView(
                             compactTabSelection: selectedTabBinding,
-                            compactBottomSafeAreaInset: proxy.safeAreaInsets.bottom
+                            compactBottomSafeAreaInset: proxy.safeAreaInsets.bottom,
+                            compactDockOwnership: $todayOwnsCompactDock
                         )
                     }
                     .safeAreaPadding(.bottom, OffRecordCompactTabBarLayout.reservedContentBottomInset)
@@ -60,10 +71,12 @@ struct ContentView: View {
                         .safeAreaPadding(.bottom, OffRecordCompactTabBarLayout.reservedContentBottomInset)
                 }
 
-                OffRecordFloatingTabBar(selectedTab: selectedTabBinding)
-                    .padding(.horizontal, OffRecordCompactTabBarLayout.horizontalPadding)
-                    .padding(.bottom, OffRecordCompactTabBarLayout.screenEdgeBottomPadding)
-                    .offset(y: isKeyboardVisible ? 0 : proxy.safeAreaInsets.bottom)
+                if shouldRenderFloatingTabBar {
+                    OffRecordFloatingTabBar(selectedTab: selectedTabBinding)
+                        .padding(.horizontal, OffRecordCompactTabBarLayout.horizontalPadding)
+                        .padding(.bottom, OffRecordCompactTabBarLayout.screenEdgeBottomPadding)
+                        .offset(y: isKeyboardVisible ? 0 : proxy.safeAreaInsets.bottom)
+                }
             }
         }
         #if os(iOS)
@@ -74,6 +87,11 @@ struct ContentView: View {
             isKeyboardVisible = false
         }
         #endif
+        .onChange(of: navigationRouter.selectedTab) { _, selectedTab in
+            if selectedTab != .today {
+                todayOwnsCompactDock = false
+            }
+        }
         .offRecordScreenBackground()
     }
 
@@ -96,6 +114,7 @@ struct ContentView: View {
                 Label("Today", systemImage: "sun.max")
             }
             .tag(OffRecordTab.today)
+            .keyboardShortcut("1", modifiers: .command)
 
             NavigationStack {
                 TimelineView()
@@ -104,6 +123,7 @@ struct ContentView: View {
                 Label("Timeline", systemImage: "list.bullet")
             }
             .tag(OffRecordTab.timeline)
+            .keyboardShortcut("2", modifiers: .command)
 
             NavigationStack {
                 StatsView()
@@ -112,6 +132,7 @@ struct ContentView: View {
                 Label("Insights", systemImage: "chart.bar")
             }
             .tag(OffRecordTab.insights)
+            .keyboardShortcut("3", modifiers: .command)
 
             NavigationStack {
                 FridayView()
@@ -120,6 +141,7 @@ struct ContentView: View {
                 Label("Friday", systemImage: "sparkles")
             }
             .tag(OffRecordTab.friday)
+            .keyboardShortcut("4", modifiers: .command)
 
             NavigationStack {
                 SettingsView()
@@ -128,6 +150,7 @@ struct ContentView: View {
                 Label("Settings", systemImage: "gearshape")
             }
             .tag(OffRecordTab.settings)
+            .keyboardShortcut("5", modifiers: .command)
         }
     }
 

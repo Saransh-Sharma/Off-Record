@@ -534,50 +534,60 @@ struct FridayChatView: View {
     }
 
     var body: some View {
-        ScrollViewReader { proxy in
-            ZStack(alignment: .topLeading) {
-                FridayChatBackground()
+        GeometryReader { geometry in
+            let metrics = OffRecordAdaptiveMetrics(
+                width: geometry.size.width,
+                horizontalSizeClass: horizontalSizeClass
+            )
 
-                ScrollView {
-                    VStack(spacing: contentSpacing) {
-                        screenContent
+            ScrollViewReader { proxy in
+                ZStack(alignment: .topLeading) {
+                    FridayChatBackground()
 
-                        Color.clear
-                            .frame(height: 1)
-                            .id("bottom")
+                    ScrollView {
+                        VStack(spacing: contentSpacing) {
+                            screenContent
+
+                            Color.clear
+                                .frame(height: 1)
+                                .id("bottom")
+                        }
+                        .padding(.horizontal, horizontalPadding)
+                        .padding(.top, topContentPadding)
+                        .padding(.bottom, scrollBottomPadding)
+                        .frame(maxWidth: metrics.fridayReadableWidth)
+                        .frame(maxWidth: .infinity)
                     }
-                    .padding(.horizontal, horizontalPadding)
-                    .padding(.top, topContentPadding)
-                    .padding(.bottom, scrollBottomPadding)
-                }
-                .scrollIndicators(.hidden)
-                .accessibilityIdentifier("friday.questionChips")
+                    .scrollIndicators(.hidden)
+                    .accessibilityIdentifier("friday.questionChips")
 
-                FridayBackButton {
-                    dismiss()
+                    FridayBackButton {
+                        dismiss()
+                    }
+                    .padding(.leading, OffRecordSpacing.xxl)
+                    .padding(.top, backButtonTopPadding)
                 }
-                .padding(.leading, OffRecordSpacing.xxl)
-                .padding(.top, backButtonTopPadding)
-            }
-            .safeAreaInset(edge: .bottom) {
-                FridayComposer(
-                    text: $inputText,
-                    isAnswering: isAnswering,
-                    isIndexing: semanticMemory.isBuilding,
-                    indexingProgress: semanticMemory.progress,
-                    indexingMessage: semanticMemory.statusMessage,
-                    onSend: askFreeformQuestion
-                )
-                .padding(.bottom, composerBottomClearance)
-            }
-            .onChange(of: messages.count) { _, _ in
-                withAnimation(.easeOut(duration: 0.28)) {
-                    proxy.scrollTo("bottom", anchor: .bottom)
+                .safeAreaInset(edge: .bottom) {
+                    FridayComposer(
+                        text: $inputText,
+                        isAnswering: isAnswering,
+                        isIndexing: semanticMemory.isBuilding,
+                        indexingProgress: semanticMemory.progress,
+                        indexingMessage: semanticMemory.statusMessage,
+                        maxWidth: metrics.fridayReadableWidth,
+                        onSend: askFreeformQuestion
+                    )
+                    .padding(.bottom, composerBottomClearance)
                 }
-            }
-            .onChange(of: isAnswering) { _, _ in
-                withAnimation(.easeOut(duration: 0.28)) {
-                    proxy.scrollTo("bottom", anchor: .bottom)
+                .onChange(of: messages.count) { _, _ in
+                    withAnimation(.easeOut(duration: 0.28)) {
+                        proxy.scrollTo("bottom", anchor: .bottom)
+                    }
+                }
+                .onChange(of: isAnswering) { _, _ in
+                    withAnimation(.easeOut(duration: 0.28)) {
+                        proxy.scrollTo("bottom", anchor: .bottom)
+                    }
                 }
             }
         }
