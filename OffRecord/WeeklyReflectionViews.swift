@@ -28,7 +28,10 @@ struct WeeklyReflectionHomeCard: View {
     }
 
     private func refreshUnlessUsingFailedUITestFixture() {
-        guard !ProcessInfo.processInfo.arguments.contains("-WeeklyReflectionFailed") else { return }
+        let arguments = ProcessInfo.processInfo.arguments
+        guard !arguments.contains("-WeeklyReflectionFailed"),
+              !arguments.contains("-WeeklyReflectionDeleted"),
+              !arguments.contains("-WeeklyReflectionDismissed") else { return }
         controller.refreshIfNeeded(entries: entries)
     }
 
@@ -500,7 +503,7 @@ private struct WeeklyReflectionSourcesSheet: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Update") {
-                        controller.regenerate(report: report, hiding: selectedHiddenIDs, entries: entries)
+                        controller.regenerate(report: report, hiding: selectedHiddenIDs, entries: availableEntries)
                         dismiss()
                     }
                     .disabled(Set(report.hiddenEntryIds) == Set(selectedHiddenIDs))
