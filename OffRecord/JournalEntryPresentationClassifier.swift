@@ -22,6 +22,7 @@ enum JournalEntryPresentationClassifier {
         for blocks: [JournalEntryPresentationBlock],
         calendar: Calendar = .current
     ) -> JournalEntryPresentationLayout {
+        let blocks = orderedBlocks(blocks)
         guard !blocks.isEmpty else { return .singleEntry }
 
         let primaryBlocks = blocks.filter(\.isPrimaryJournalMoment)
@@ -53,8 +54,12 @@ enum JournalEntryPresentationClassifier {
     ) -> Bool {
         guard let first = blocks.first else { return true }
 
-        if let captureID = first.sourceCaptureID {
-            return blocks.allSatisfy { $0.sourceCaptureID == captureID }
+        let captureIDs = blocks.compactMap(\.sourceCaptureID)
+        if !captureIDs.isEmpty {
+            guard captureIDs.count == blocks.count, let firstCaptureID = captureIDs.first else {
+                return false
+            }
+            return captureIDs.allSatisfy { $0 == firstCaptureID }
         }
 
         return blocks.allSatisfy {

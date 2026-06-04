@@ -60,6 +60,18 @@ struct JournalEntryPresentationClassifierTests {
         #expect(ordered == [first, second, third])
     }
 
+    @Test func mixedCaptureIDPresenceIsOrderIndependent() {
+        let captureID = UUID()
+        let text = JournalEntryPresentationBlock(kind: .text, createdAt: makeDate(hour: 10, minute: 0), sourceCaptureID: captureID)
+        let audio = JournalEntryPresentationBlock(kind: .audio, createdAt: makeDate(hour: 10, minute: 0))
+
+        let textFirst = JournalEntryPresentationClassifier.layout(for: [text, audio], calendar: calendar)
+        let audioFirst = JournalEntryPresentationClassifier.layout(for: [audio, text], calendar: calendar)
+
+        #expect(textFirst == .multiEntry)
+        #expect(audioFirst == .multiEntry)
+    }
+
     private func makeDate(hour: Int, minute: Int) -> Date {
         var components = DateComponents()
         components.calendar = calendar
