@@ -12,13 +12,13 @@ import Foundation
 struct UITestDataSeeder {
     static func seedIfNeeded(context: NSManagedObjectContext) {
         let arguments = ProcessInfo.processInfo.arguments
-        seedPendingRouteIfNeeded(arguments: arguments)
         guard arguments.contains("-HeroNudgeUITest")
                 || arguments.contains("-OnboardingUITest")
                 || arguments.contains("-SemanticMemoryUITest")
                 || arguments.contains("-ProactiveReflectionUITest")
                 || arguments.contains("-WeeklyReflectionUITest")
                 || arguments.contains("-CaptureSpeechConsentUITest") else { return }
+        seedPendingRouteIfNeeded(arguments: arguments)
 
         if arguments.contains("-OnboardingUITest") {
             UserDefaults.standard.set(false, forKey: "hasCompletedOnboarding")
@@ -64,11 +64,11 @@ struct UITestDataSeeder {
     }
 
     private static func seedPendingRouteIfNeeded(arguments: [String]) {
-        UserDefaults.standard.removeObject(forKey: OffRecordNavigationRouter.pendingRouteDefaultsKey)
         guard let marker = arguments.firstIndex(of: "-OpenRoute"),
               arguments.indices.contains(arguments.index(after: marker)) else {
             return
         }
+        UserDefaults.standard.removeObject(forKey: OffRecordNavigationRouter.pendingRouteDefaultsKey)
         let rawRoute = arguments[arguments.index(after: marker)]
         UserDefaults.standard.set(rawRoute, forKey: OffRecordNavigationRouter.pendingRouteDefaultsKey)
     }

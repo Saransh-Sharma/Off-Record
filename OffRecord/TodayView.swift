@@ -1311,6 +1311,7 @@ struct TodayView: View {
 
         if ProcessInfo.processInfo.arguments.contains("-CaptureSpeechConsentUITest"),
            let testAudioURL = makeUITestRecordingFile() {
+            _ = recorder.stopRecording()
             recordingState = .processing
             saveEntry(audioURL: testAudioURL, duration: 4)
             return

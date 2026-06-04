@@ -149,7 +149,7 @@ struct WatchSpeakCaptureView: View {
 
             WatchPrimaryButton(
                 title: saved ? "Saved" : "Save",
-                systemImage: saved ? "checkmark.circle.fill" : "checkmark.circle.fill",
+                systemImage: saved ? "checkmark.circle.fill" : "tray.and.arrow.down.fill",
                 fill: WatchPalette.sageSurface,
                 foreground: WatchPalette.sageText,
                 isDisabled: isSaving || saved || !canSave,
