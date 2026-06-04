@@ -502,7 +502,7 @@ struct SettingsView: View {
                 }
                 .buttonStyle(SettingsSecondaryButtonStyle(tint: OffRecordColor.textCoral, fill: OffRecordColor.backgroundBlushTint))
                 .accessibilityIdentifier("semanticMemory.delete")
-                .disabled(semanticMemory.isBuilding && semanticMemory.chunkCount == 0)
+                .disabled(semanticMemory.isBuilding || semanticMemory.chunkCount == 0)
             }
             .accessibilityIdentifier("semanticMemory.section")
         }

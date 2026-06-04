@@ -136,7 +136,7 @@ struct SettingsRow<Trailing: View>: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.vertical, OffRecordSpacing.xs)
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
     }
 
     private var textStack: some View {
@@ -351,7 +351,7 @@ struct StorageRow: View {
                     .overlay(alignment: .leading) {
                         Capsule()
                             .fill(color.opacity(0.72))
-                            .frame(width: max(6, proxy.size.width * progress))
+                            .frame(width: progress > 0 ? max(6, proxy.size.width * progress) : 0)
                     }
             }
             .frame(height: 7)

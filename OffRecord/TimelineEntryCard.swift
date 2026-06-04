@@ -33,6 +33,10 @@ struct TimelineEntryCard: View {
         TimelineEntryPreviewSanitizer.sanitize(evidence?.snippet ?? entry.text ?? "")
     }
 
+    private var accessiblePreviewText: String {
+        previewText.isEmpty ? "Tap to add text" : previewText
+    }
+
     var body: some View {
         HStack(alignment: .center, spacing: 6) {
             VStack(alignment: .leading, spacing: 10) {
@@ -68,7 +72,7 @@ struct TimelineEntryCard: View {
                     .lineSpacing(1.5)
                     .lineLimit(2)
                     .fixedSize(horizontal: false, vertical: true)
-                    .accessibilityLabel(previewText)
+                    .accessibilityLabel(accessiblePreviewText)
                     .accessibilityIdentifier(evidence == nil ? "timeline.entrySnippet" : "timeline.evidenceSnippet")
             }
             .layoutPriority(1)
