@@ -1732,28 +1732,33 @@ struct EntryDetailView: View {
     }
 
     private func savePendingEditsBeforeExit() -> Bool {
+        var didSave = true
+
+        if let activeEditingItem {
+            let trimmed = editingBlockText.trimmingCharacters(in: .whitespacesAndNewlines)
+            if trimmed.isEmpty {
+                cancelEditingBlock()
+            } else {
+                didSave = finishEditingBlock(activeEditingItem) && didSave
+            }
+        }
+
         if isComposingTextBlock {
             let trimmed = newTextBlockText.trimmingCharacters(in: .whitespacesAndNewlines)
             guard !trimmed.isEmpty else {
                 cancelNewTextBlock()
-                return true
+                return didSave
             }
-            return saveNewTextBlock()
+            didSave = saveNewTextBlock() && didSave
         }
 
-        if let activeEditingItem {
-            let trimmed = editingBlockText.trimmingCharacters(in: .whitespacesAndNewlines)
-            guard !trimmed.isEmpty else {
-                cancelEditingBlock()
-                return true
-            }
-            return finishEditingBlock(activeEditingItem)
-        }
-
-        return true
+        return didSave
     }
 
     private func beginNewTextBlock() {
+        if editingBlockObjectID != nil {
+            guard savePendingEditsBeforeExit() else { return }
+        }
         newTextBlockText = ""
         newTextBlockError = nil
         isComposingTextBlock = true
@@ -1805,6 +1810,9 @@ struct EntryDetailView: View {
     }
 
     private func beginEditingBlock(_ item: JournalBlockTimelineItem) {
+        if isComposingTextBlock {
+            guard savePendingEditsBeforeExit() else { return }
+        }
         editingBlockObjectID = item.id
         editingBlockText = item.text
         blockEditError = nil
