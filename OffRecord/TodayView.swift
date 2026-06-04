@@ -66,6 +66,7 @@ struct TodayView: View {
     @ObservedObject private var navigationRouter = OffRecordNavigationRouter.shared
     private let compactTabSelection: Binding<OffRecordTab>?
     private let compactBottomSafeAreaInset: CGFloat
+    private let compactDockOwnership: Binding<Bool>?
 
     @StateObject private var recorder = AudioRecorder()
     @State private var recordingState: RecordingState = .idle
@@ -97,10 +98,12 @@ struct TodayView: View {
 
     init(
         compactTabSelection: Binding<OffRecordTab>? = nil,
-        compactBottomSafeAreaInset: CGFloat = 0
+        compactBottomSafeAreaInset: CGFloat = 0,
+        compactDockOwnership: Binding<Bool>? = nil
     ) {
         self.compactTabSelection = compactTabSelection
         self.compactBottomSafeAreaInset = compactBottomSafeAreaInset
+        self.compactDockOwnership = compactDockOwnership
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: Date())
         let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? startOfDay
@@ -320,6 +323,12 @@ struct TodayView: View {
                     selectedTab: compactTabSelection,
                     bottomSafeAreaInset: compactBottomSafeAreaInset
                 )
+                .onAppear {
+                    compactDockOwnership?.wrappedValue = true
+                }
+                .onDisappear {
+                    compactDockOwnership?.wrappedValue = false
+                }
             }
         }
     }

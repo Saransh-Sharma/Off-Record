@@ -20,6 +20,7 @@ struct ContentView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @ObservedObject private var navigationRouter = OffRecordNavigationRouter.shared
     @State private var isKeyboardVisible = false
+    @State private var todayOwnsCompactDock = false
 
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \DiaryEntry.date, ascending: false)],
@@ -43,13 +44,16 @@ struct ContentView: View {
 
     private var compactTabs: some View {
         GeometryReader { proxy in
+            let shouldRenderFloatingTabBar = navigationRouter.selectedTab != .today || !todayOwnsCompactDock
+
             ZStack(alignment: .bottom) {
                 switch navigationRouter.selectedTab {
                 case .today:
                     NavigationStack {
                         TodayView(
                             compactTabSelection: selectedTabBinding,
-                            compactBottomSafeAreaInset: proxy.safeAreaInsets.bottom
+                            compactBottomSafeAreaInset: proxy.safeAreaInsets.bottom,
+                            compactDockOwnership: $todayOwnsCompactDock
                         )
                     }
                     .safeAreaPadding(.bottom, OffRecordCompactTabBarLayout.reservedContentBottomInset)
@@ -67,10 +71,12 @@ struct ContentView: View {
                         .safeAreaPadding(.bottom, OffRecordCompactTabBarLayout.reservedContentBottomInset)
                 }
 
-                OffRecordFloatingTabBar(selectedTab: selectedTabBinding)
-                    .padding(.horizontal, OffRecordCompactTabBarLayout.horizontalPadding)
-                    .padding(.bottom, OffRecordCompactTabBarLayout.screenEdgeBottomPadding)
-                    .offset(y: isKeyboardVisible ? 0 : proxy.safeAreaInsets.bottom)
+                if shouldRenderFloatingTabBar {
+                    OffRecordFloatingTabBar(selectedTab: selectedTabBinding)
+                        .padding(.horizontal, OffRecordCompactTabBarLayout.horizontalPadding)
+                        .padding(.bottom, OffRecordCompactTabBarLayout.screenEdgeBottomPadding)
+                        .offset(y: isKeyboardVisible ? 0 : proxy.safeAreaInsets.bottom)
+                }
             }
         }
         #if os(iOS)
@@ -81,6 +87,11 @@ struct ContentView: View {
             isKeyboardVisible = false
         }
         #endif
+        .onChange(of: navigationRouter.selectedTab) { _, selectedTab in
+            if selectedTab != .today {
+                todayOwnsCompactDock = false
+            }
+        }
         .offRecordScreenBackground()
     }
 
