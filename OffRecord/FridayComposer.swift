@@ -13,6 +13,7 @@ struct FridayComposer: View {
     let isIndexing: Bool
     let indexingProgress: Double
     let indexingMessage: String
+    var maxWidth: CGFloat? = nil
     let onSend: () -> Void
 
     var body: some View {
@@ -59,6 +60,8 @@ struct FridayComposer: View {
         }
         .padding(.horizontal, OffRecordSpacing.xxl)
         .padding(.top, OffRecordSpacing.sm)
+        .frame(maxWidth: maxWidth)
+        .frame(maxWidth: .infinity)
         .background(OffRecordColor.backgroundPrimary.opacity(0.98).ignoresSafeArea())
     }
 

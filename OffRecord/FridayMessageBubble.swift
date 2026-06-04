@@ -10,6 +10,7 @@ import SwiftUI
 struct FridayMessageBubble: View {
     let message: FridayChatMessage
     let entryProvider: (UUID) -> DiaryEntry?
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
 
     var body: some View {
         HStack(alignment: .top, spacing: OffRecordSpacing.md) {
@@ -35,7 +36,7 @@ struct FridayMessageBubble: View {
                     .foregroundStyle(message.isUser ? OffRecordColor.textBrand : OffRecordColor.textBrand.opacity(0.88))
                     .padding(.horizontal, 16)
                     .padding(.vertical, 14)
-                    .frame(maxWidth: message.isUser ? 260 : 286, alignment: message.isUser ? .trailing : .leading)
+                    .frame(maxWidth: message.isUser ? userBubbleMaxWidth : assistantBubbleMaxWidth, alignment: message.isUser ? .trailing : .leading)
                     .background(message.isUser ? userBubbleFill : assistantBubbleFill, in: RoundedRectangle(cornerRadius: 22))
                     .overlay {
                         RoundedRectangle(cornerRadius: 22)
@@ -82,5 +83,13 @@ struct FridayMessageBubble: View {
 
     private var userBubbleFill: Color {
         OffRecordColor.backgroundLavenderTint
+    }
+
+    private var userBubbleMaxWidth: CGFloat {
+        horizontalSizeClass == .compact ? 260 : 420
+    }
+
+    private var assistantBubbleMaxWidth: CGFloat {
+        horizontalSizeClass == .compact ? 286 : 560
     }
 }
