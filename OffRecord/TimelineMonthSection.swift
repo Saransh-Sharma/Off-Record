@@ -13,59 +13,11 @@ struct TimelineEntryPresentation: Equatable {
     static let empty = TimelineEntryPresentation(wordCount: 0, hasPhotos: false)
 }
 
-struct TimelineMonthSection: View {
-    let title: String
-    let entries: [DiaryEntry]
-    let metrics: [NSManagedObjectID: TimelineEntryPresentation]
-    let searchText: String
-    let semanticResults: [UUID: EvidenceReference]
-    let isEditing: Bool
-    var selectedEntryID: UUID?
-    let onDelete: (DiaryEntry) -> Void
-    var onSelect: ((DiaryEntry) -> Void)?
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(spacing: 12) {
-                CalendarSectionIcon()
-
-                Text(title)
-                    .font(OffRecordTypography.titleMedium)
-                    .foregroundStyle(OffRecordColor.textBrand)
-
-                Spacer()
-
-                Text("\(entries.count) \(entries.count == 1 ? "entry" : "entries")")
-                    .font(OffRecordTypography.labelLarge)
-                    .foregroundStyle(OffRecordColor.textBrand.opacity(0.75))
-            }
-            .padding(.horizontal, 2)
-
-            LazyVStack(spacing: TimelineDesign.monthRowSpacing) {
-                ForEach(Array(entries.enumerated()), id: \.element.objectID) { index, entry in
-                    TimelineDayRow(
-                        entry: entry,
-                        index: index,
-                        isLast: index == entries.count - 1,
-                        metrics: metrics[entry.objectID],
-                        searchText: searchText,
-                        evidence: entry.id.flatMap { semanticResults[$0] },
-                        isEditing: isEditing,
-                        isSelected: entry.id == selectedEntryID,
-                        onDelete: { onDelete(entry) },
-                        onSelect: onSelect.map { select in { select(entry) } }
-                    )
-                }
-            }
-        }
-    }
-}
-
 struct CalendarSectionIcon: View {
     var body: some View {
         ZStack {
             Image(systemName: "calendar")
-                .font(.system(size: 27, weight: .semibold))
+                .font(OffRecordTypography.titleMedium)
                 .foregroundStyle(OffRecordColor.textBrand)
             Circle()
                 .fill(OffRecordColor.brandCoral)
@@ -88,62 +40,27 @@ struct TimelineDayRow: View {
     let metrics: TimelineEntryPresentation?
     let searchText: String
     let evidence: EvidenceReference?
-    let isEditing: Bool
     let isSelected: Bool
-    let onDelete: () -> Void
-    let onSelect: (() -> Void)?
+    let onSelect: () -> Void
 
     var body: some View {
         HStack(alignment: .top, spacing: TimelineDesign.dayRowContentSpacing) {
             TimelineDateSpine(date: entry.date ?? Date(), index: index, isLast: isLast)
                 .frame(width: TimelineDesign.daySpineWidth)
 
-            if isEditing {
+            Button(action: onSelect) {
                 TimelineEntryCard(
                     entry: entry,
                     metrics: metrics,
                     searchText: searchText,
-                    evidence: evidence,
-                    isEditing: isEditing,
-                    onDelete: onDelete
+                    evidence: evidence
                 )
                 .overlay(selectionOverlay)
-                .accessibilityIdentifier(entryAccessibilityIdentifier)
-            } else {
-                if let onSelect {
-                    Button(action: onSelect) {
-                        TimelineEntryCard(
-                            entry: entry,
-                            metrics: metrics,
-                            searchText: searchText,
-                            evidence: evidence,
-                            isEditing: isEditing,
-                            onDelete: onDelete
-                        )
-                        .overlay(selectionOverlay)
-                    }
-                    .buttonStyle(.plain)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .accessibilityIdentifier(entryAccessibilityIdentifier)
-                } else {
-                    NavigationLink {
-                        EntryDetailView(entry: entry)
-                    } label: {
-                        TimelineEntryCard(
-                            entry: entry,
-                            metrics: metrics,
-                            searchText: searchText,
-                            evidence: evidence,
-                            isEditing: isEditing,
-                            onDelete: onDelete
-                        )
-                        .overlay(selectionOverlay)
-                    }
-                    .buttonStyle(.plain)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .accessibilityIdentifier(entryAccessibilityIdentifier)
-                }
             }
+            .buttonStyle(.plain)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .accessibilityIdentifier(entryAccessibilityIdentifier)
+            .accessibilityHint("Opens the entry. Swipe for star and delete.")
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -156,8 +73,8 @@ struct TimelineDayRow: View {
     @ViewBuilder
     private var selectionOverlay: some View {
         if isSelected {
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(OffRecordColor.brandLavenderDark.opacity(0.72), lineWidth: 2)
+            RoundedRectangle(cornerRadius: OffRecordRadius.lg, style: .continuous)
+                .stroke(OffRecordColor.textLavender.opacity(0.72), lineWidth: 2)
                 .padding(1)
                 .accessibilityHidden(true)
         }
@@ -202,7 +119,8 @@ struct TimelineDateSpine: View {
             .overlay(Circle().stroke(style.border, lineWidth: 1.1))
             .padding(.top, TimelineDesign.dateBadgeTopPadding)
         }
-        .frame(minHeight: TimelineDesign.entryRowMinHeight)
+        .frame(minHeight: TimelineDesign.dateBadgeSize + TimelineDesign.dateBadgeTopPadding * 2)
+        .accessibilityHidden(true)
     }
 
     private var dayNumber: String {

@@ -10,8 +10,6 @@ struct TimelineEntryCard: View {
     let metrics: TimelineEntryPresentation?
     let searchText: String
     let evidence: EvidenceReference?
-    let isEditing: Bool
-    let onDelete: () -> Void
 
     private var mood: Mood {
         guard let moodString = entry.value(forKey: "mood") as? String,
@@ -82,7 +80,7 @@ struct TimelineEntryCard: View {
             if let evidence {
                 VStack(alignment: .trailing, spacing: 4) {
                     Image(systemName: evidence.matchReason == .exact ? "text.magnifyingglass" : "brain.head.profile")
-                        .foregroundStyle(OffRecordColor.brandLavenderDark)
+                        .foregroundStyle(OffRecordColor.textLavender)
                     Text(evidence.matchReason.rawValue)
                         .font(OffRecordTypography.labelSmall)
                         .foregroundStyle(OffRecordColor.textLavender)
@@ -93,35 +91,21 @@ struct TimelineEntryCard: View {
             }
 
             moodArt
-
-            if isEditing {
-                Button(role: .destructive) {
-                    onDelete()
-                } label: {
-                    Image(systemName: "trash.fill")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(OffRecordColor.textInverse)
-                        .frame(width: 36, height: 36)
-                        .background(Circle().fill(OffRecordColor.textCoral))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Delete entry")
-            }
         }
-        .padding(.leading, 16)
-        .padding(.trailing, 10)
-        .padding(.vertical, 14)
+        .padding(.leading, OffRecordSpacing.lg)
+        .padding(.trailing, OffRecordSpacing.sm)
+        .padding(.vertical, OffRecordSpacing.md)
         .frame(maxWidth: .infinity, minHeight: TimelineDesign.entryRowMinHeight, alignment: .leading)
-        .offRecordContentCard(cornerRadius: 20, fill: OffRecordColor.surfacePrimary, useGlass: true)
-        .contentShape(RoundedRectangle(cornerRadius: 20))
-        .offRecordPointerLift(enabled: !isEditing)
+        .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfacePrimary, useGlass: true)
+        .contentShape(RoundedRectangle(cornerRadius: OffRecordRadius.lg))
+        .offRecordPointerLift()
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("timeline.entryRow")
     }
 
     @ViewBuilder
     private var moodArt: some View {
-        Image(mood.largeMoodAssetName)
+        mood.largeImage
             .resizable()
             .scaledToFit()
             .frame(width: TimelineDesign.moodArtSize, height: TimelineDesign.moodArtSize)
