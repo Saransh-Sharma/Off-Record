@@ -7,7 +7,7 @@ This document describes the high-level architecture of OffRecord AI Journal to h
 ```
 Microphone → AudioRecorder (AAC 44.1kHz)
     ↓
-SpeechTranscriber (SFSpeechRecognizer, on-device)
+TranscriptionKit (SpeechAnalyzer + SpeechTranscriber/DictationTranscriber)
     ↓
 LocalAIEngine + InsightsEngine (NLTagger analysis)
     ↓
@@ -104,7 +104,7 @@ Core iPhone source files are in `OffRecord/`. Shared watch/iPhone capture models
 | Module | File | Responsibility |
 |---|---|---|
 | **AudioRecorder** | `AudioRecorder.swift` | AVAudioRecorder wrapper. Records AAC at 44.1kHz, provides real-time audio levels. Stores recordings in the app sandbox. |
-| **SpeechTranscriber** | `SpeechTranscriber.swift` | Speech-to-text via Apple Speech after explicit consent. Offline-capable paths require on-device recognition when available; online transcription may be processed by Apple Speech. |
+| **TranscriptionKit** | `Packages/JournalKit/Sources/TranscriptionKit` | iOS 26+ speech-to-text through Apple SpeechAnalyzer. SpeechTranscriber is preferred, DictationTranscriber expands locale coverage, and system-managed models run entirely on-device. |
 | **LocalAIEngine** | `LocalAIEngine.swift` | NLP analysis using NaturalLanguage framework. Sentiment analysis, topic extraction, intent recognition. Maintains a UserProfile for learned patterns. |
 | **InsightsEngine** | `InsightsEngine.swift` | Generates insight cards from journal data. Sentiment trends, topic frequency, journaling patterns. |
 | **FridayAssistantEngine** | `FridayAssistantEngine.swift` | Core personality model with four sub-models (see below). Processes NLTagger output per entry. Serializes to JSON in Core Data (~12 KB). |
@@ -227,7 +227,7 @@ For canonical feature designs, see [SEMANTIC_MEMORY_FRIDAY.md](SEMANTIC_MEMORY_F
 
 1. Open `OffRecord/OffRecord.xcodeproj` in Xcode 15+
 2. Select the `OffRecord` scheme
-3. Build and run on an iOS 17+ Simulator or device
+3. Build and run on an iOS 26+ Simulator or device
 4. Tests: `OffRecordTests` (unit) and `OffRecordUITests` (UI)
 
 Apple Watch support requires the watchOS 26.2 platform/runtime installed from Xcode Settings > Components for full embedded app and simulator builds. Without that runtime, source typechecks may pass while full `OffRecord` or `OffRecordWatch` builds fail during watch content compilation/thinning.
