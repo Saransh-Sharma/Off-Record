@@ -1983,9 +1983,9 @@ struct MoodTests {
             #expect(!mood.miniMoodAssetName.isEmpty)
             #expect(!mood.moodGlowAssetName.isEmpty)
             #if canImport(UIKit)
-            #expect(UIImage(named: mood.largeMoodAssetName) != nil, "Missing large asset for \(mood.displayName)")
-            #expect(UIImage(named: mood.miniMoodAssetName) != nil, "Missing mini asset for \(mood.displayName)")
-            #expect(UIImage(named: mood.moodGlowAssetName) != nil, "Missing glow asset for \(mood.displayName)")
+            #expect(UIImage(named: mood.largeMoodAssetName, in: Mood.assetBundle, with: nil) != nil, "Missing large asset for \(mood.displayName)")
+            #expect(UIImage(named: mood.miniMoodAssetName, in: Mood.assetBundle, with: nil) != nil, "Missing mini asset for \(mood.displayName)")
+            #expect(UIImage(named: mood.moodGlowAssetName, in: Mood.assetBundle, with: nil) != nil, "Missing glow asset for \(mood.displayName)")
             #endif
         }
     }
@@ -2108,11 +2108,11 @@ struct EncryptionTests {
         let data = Data("test".utf8)
         let encrypted = try EncryptionService.encrypt(data: data, password: "password")
 
-        // DVX1 magic bytes
+        // DVX2 magic bytes (current format with stored KDF parameters)
         #expect(encrypted[0] == 0x44) // D
         #expect(encrypted[1] == 0x56) // V
         #expect(encrypted[2] == 0x58) // X
-        #expect(encrypted[3] == 0x31) // 1
+        #expect(encrypted[3] == 0x32) // 2
     }
 
     @Test func encryptLargeData() throws {
