@@ -7,7 +7,6 @@ struct TodayHeroMetadataChip: View {
     var fill = OffRecordColor.backgroundSageTint
     var foreground = OffRecordColor.textSage
     var border = OffRecordColor.borderSage
-    var height: CGFloat = 38
 
     var body: some View {
         Label {
@@ -15,17 +14,18 @@ struct TodayHeroMetadataChip: View {
                 Text(title)
                     .font(OffRecordTypography.labelMedium)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.82)
             }
         } icon: {
             Image(systemName: systemImage)
-                .font(.system(size: 14, weight: .semibold))
+                .font(OffRecordTypography.labelMedium)
         }
+        .labelStyle(.titleAndIcon)
         .foregroundStyle(foreground)
-        .padding(.horizontal, iconOnly ? 0 : 14)
-        .frame(width: iconOnly ? height : nil, height: height)
+        .padding(.horizontal, iconOnly ? 0 : OffRecordSpacing.md)
+        .frame(minWidth: OffRecordLayout.minimumTapTarget, minHeight: OffRecordLayout.minimumTapTarget)
         .background(fill.opacity(0.94), in: Capsule())
         .overlay(Capsule().stroke(border, lineWidth: 1))
-        .accessibilityLabel(iconOnly ? title : "\(title)")
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel(title)
     }
 }

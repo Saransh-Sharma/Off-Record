@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct TodayHeroEntryPreviewCard: View {
-    let entry: DiaryEntry
+    @ObservedObject var entry: DiaryEntry
     let isNight: Bool
 
     var body: some View {
@@ -19,6 +19,7 @@ struct TodayHeroEntryPreviewCard: View {
 
                 VStack(alignment: .leading, spacing: 5) {
                     Text("Today's entry")
+                        .accessibilityAddTraits(.isHeader)
                         .font(OffRecordTypography.labelLarge)
                         .foregroundStyle(primaryText)
 
@@ -36,14 +37,15 @@ struct TodayHeroEntryPreviewCard: View {
                 Spacer(minLength: 8)
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(OffRecordTypography.labelLarge)
                     .foregroundStyle(secondaryText)
+                    .accessibilityHidden(true)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 15)
-            .frame(maxWidth: .infinity, minHeight: 98, alignment: .leading)
-            .offRecordContentCard(cornerRadius: 24, fill: cardFill, useGlass: true)
-            .contentShape(RoundedRectangle(cornerRadius: 24))
+            .padding(.horizontal, OffRecordSpacing.lg)
+            .padding(.vertical, OffRecordSpacing.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: cardFill, useGlass: true)
+            .contentShape(RoundedRectangle(cornerRadius: OffRecordRadius.lg))
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .contain)
@@ -70,7 +72,7 @@ struct TodayHeroEntryPreviewCard: View {
         let time = updatedAt.formatted(date: .omitted, time: .shortened)
         let text = entry.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let words = text.isEmpty ? 0 : text.split { $0.isWhitespace || $0.isNewline }.count
-        return "\(time) - \(words) \(words == 1 ? "word" : "words")"
+        return "Updated \(time) · \(words) \(words == 1 ? "word" : "words")"
     }
 
     private var primaryText: Color {
