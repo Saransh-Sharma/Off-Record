@@ -692,7 +692,7 @@ struct OnboardingView: View {
         authorName = Personalization.trimmedName(from: nameDraft)
         response.completedAt = Date()
         store.save(response)
-        withAnimation(.easeInOut(duration: 0.3)) {
+        withOffRecordAnimation(OffRecordMotion.gentle) {
             hasCompletedOnboarding = true
         }
         UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
@@ -1130,7 +1130,7 @@ private struct ConcentricOnboardingPage<Content: View>: View {
                 .onChange(of: isTextInputFocused) { _, isFocused in
                     guard isKeyboardAdaptive, isFocused, let scrollTargetID else { return }
                     DispatchQueue.main.async {
-                        withAnimation(.easeInOut(duration: 0.25)) {
+                        withOffRecordAnimation(OffRecordMotion.snappy) {
                             scrollProxy.scrollTo(scrollTargetID, anchor: .center)
                         }
                     }
@@ -1348,7 +1348,7 @@ private struct FaceIDStep: View {
                         .fill(OffRecordColor.backgroundSageTint.opacity(0.28))
                         .frame(width: 132, height: 132)
                     Image(systemName: isEnabled ? "checkmark.shield.fill" : lockIcon)
-                        .font(.system(size: 54, weight: .semibold))
+                        .font(.system(.largeTitle, weight: .semibold)).imageScale(.large)
                         .foregroundStyle(OnboardingPalette.foreground)
                 }
 
@@ -1383,6 +1383,7 @@ private struct FaceIDStep: View {
 
 private struct ProcessingStep: View {
     @State private var animate = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     var body: some View {
         VStack(spacing: 24) {
@@ -1395,10 +1396,10 @@ private struct ProcessingStep: View {
                     .trim(from: 0.1, to: 0.82)
                     .stroke(OnboardingPalette.foreground, style: StrokeStyle(lineWidth: 18, lineCap: .round))
                     .frame(width: 150, height: 150)
-                    .rotationEffect(.degrees(animate ? 360 : 0))
-                    .animation(.linear(duration: 1.1).repeatForever(autoreverses: false), value: animate)
+                    .rotationEffect(.degrees(animate && !reduceMotion ? 360 : 0))
+                    .animation(reduceMotion ? nil : .linear(duration: 1.1).repeatForever(autoreverses: false), value: animate)
                 Image(systemName: "sparkles")
-                    .font(.system(size: 42, weight: .bold))
+                    .font(.system(.largeTitle, weight: .bold))
                     .foregroundStyle(OnboardingPalette.foreground)
             }
 
@@ -1494,7 +1495,7 @@ private struct FirstEntryStep: View {
                         .fill(isRecording ? OffRecordColor.textCoral : OnboardingPalette.surface)
                         .frame(width: 104, height: 104)
                     Image(systemName: isRecording ? "stop.fill" : "mic.fill")
-                        .font(.system(size: 38, weight: .bold))
+                        .font(.system(.largeTitle, weight: .bold))
                         .foregroundStyle(isRecording ? OffRecordColor.textInverse : OffRecordColor.textAqua)
                 }
 

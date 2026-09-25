@@ -1778,7 +1778,7 @@ private struct ReflectionInsightCard: View {
                         .fill(style.fill)
                         .frame(width: isFeatured ? 42 : 36, height: isFeatured ? 42 : 36)
                     Image(systemName: icon)
-                        .font(.system(size: isFeatured ? 17 : 15, weight: .semibold))
+                        .font(isFeatured ? OffRecordTypography.labelLarge : OffRecordTypography.labelMedium)
                         .foregroundColor(style.foreground)
                 }
 
@@ -1836,7 +1836,7 @@ private struct ReflectionInsightCard: View {
                     }
                 } label: {
                     Image(systemName: "ellipsis.circle")
-                        .font(.system(size: 18, weight: .semibold))
+                        .font(OffRecordTypography.titleSmall)
                         .foregroundColor(OffRecordColor.textTertiary)
                 }
                 .accessibilityIdentifier("proactiveReflection.cardMenu.\(insight.kind.rawValue)")
@@ -2151,7 +2151,7 @@ struct ProactiveReflectionPromptCard: View {
                                 .fill(OffRecordColor.backgroundLavenderTint)
                                 .frame(width: 38, height: 38)
                             Image(systemName: "sparkles")
-                                .font(.system(size: 15, weight: .semibold))
+                                .font(OffRecordTypography.labelMedium)
                                 .foregroundColor(OffRecordColor.textLavender)
                         }
 

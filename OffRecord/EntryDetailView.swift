@@ -1230,7 +1230,7 @@ struct EntryDetailView: View {
     private var aiInsightsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Button(action: {
-                withAnimation(.spring(response: 0.3)) {
+                withOffRecordAnimation(OffRecordMotion.snappy) {
                     showAIInsights.toggle()
                     if showAIInsights && aiAnalysis == nil {
                         aiAnalysis = LocalAIEngine.shared.analyze(text: text)
@@ -1567,7 +1567,7 @@ struct EntryDetailView: View {
                     .font(OffRecordTypography.labelSmall)
             } icon: {
                 Image(systemName: systemImage)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(OffRecordTypography.labelMedium)
                     .symbolRenderingMode(.hierarchical)
             }
             .foregroundStyle(tint)

@@ -113,7 +113,8 @@ struct AudioPlayerView: View {
                     HapticManager.shared.buttonTap()
                 } label: {
                     Image(systemName: controller.isPlaying ? "pause.circle.fill" : "play.circle.fill")
-                        .font(.system(size: 32))
+                        .font(OffRecordTypography.titleLarge)
+                        .contentTransition(.symbolEffect(.replace))
                         .foregroundColor(OffRecordReadableTintStyle.journal.foreground)
                         .frame(width: 44, height: 44)
                         .offRecordGlassControl(
@@ -124,6 +125,7 @@ struct AudioPlayerView: View {
                         )
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(controller.isPlaying ? "Pause recording" : "Play recording")
 
                 VStack(spacing: 4) {
                     Slider(
@@ -133,7 +135,9 @@ struct AudioPlayerView: View {
                         ),
                         in: 0...max(0.01, controller.duration)
                     )
-                    .tint(OffRecordColor.brandAqua)
+                    .tint(OffRecordColor.textAqua)
+                    .accessibilityLabel("Playback position")
+                    .accessibilityValue("\(formatTime(controller.currentTime)) of \(formatTime(controller.duration))")
 
                     HStack {
                         Text(formatTime(controller.currentTime))
@@ -161,8 +165,8 @@ struct AudioPlayerView: View {
                         } label: {
                             Text(speedLabel(speed))
                                 .font(controller.playbackRate == speed ? OffRecordTypography.labelSmall : OffRecordTypography.metadata)
-                                .padding(.horizontal, 8)
-                                .padding(.vertical, 4)
+                                .padding(.horizontal, OffRecordSpacing.md)
+                                .frame(minHeight: 32)
                                 .foregroundColor(controller.playbackRate == speed ? OffRecordReadableTintStyle.growth.foreground : OffRecordColor.textSecondary)
                                 .offRecordGlassControl(
                                     tint: controller.playbackRate == speed ? OffRecordReadableTintStyle.growth.tint : nil,
@@ -172,12 +176,16 @@ struct AudioPlayerView: View {
                                 )
                         }
                         .buttonStyle(.plain)
+                        .frame(minHeight: OffRecordLayout.minimumTapTarget)
+                        .contentShape(Rectangle())
+                        .accessibilityLabel("Playback speed \(speedLabel(speed))")
+                        .accessibilityAddTraits(controller.playbackRate == speed ? .isSelected : [])
                     }
                 }
             }
         }
         .padding()
-        .offRecordContentCard(cornerRadius: 12)
+        .offRecordContentCard(cornerRadius: OffRecordRadius.lg)
         .onAppear {
             do {
                 try controller.load(url: audioURL)
@@ -193,7 +201,7 @@ struct AudioPlayerView: View {
                 HStack(spacing: 10) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundStyle(OffRecordColor.brandCoral)
-                        .font(.system(size: 14, weight: .semibold))
+                        .font(OffRecordTypography.labelMedium)
                     Text(error)
                         .font(OffRecordTypography.labelSmall)
                         .foregroundStyle(OffRecordColor.textCoral)

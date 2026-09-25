@@ -150,7 +150,7 @@ struct WeeklyReflectionHomeCard: View {
                 .fill(OffRecordColor.backgroundSageTint)
                 .frame(width: 42, height: 42)
             Image(systemName: systemName)
-                .font(.system(size: 17, weight: .semibold))
+                .font(OffRecordTypography.labelLarge)
                 .foregroundColor(OffRecordColor.textSage)
         }
     }
