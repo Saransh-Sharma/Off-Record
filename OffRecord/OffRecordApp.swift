@@ -64,6 +64,12 @@ struct OffRecordApp: App {
                     }
                 }
 
+                if lockManager.isEnabled && hasCompletedOnboarding && scenePhase != .active {
+                    PrivacyShieldView()
+                        .zIndex(2)
+                        .transition(.opacity)
+                }
+
                 if isShowingSplash {
                     SplashScreenView {
                         isShowingSplash = false

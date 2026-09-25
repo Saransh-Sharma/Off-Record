@@ -3,7 +3,9 @@ import SwiftUI
 struct LockScreenView: View {
     @ObservedObject private var lockManager = AppLockManager.shared
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
+    @Environment(\.scenePhase) private var scenePhase
     @State private var authFailed = false
+    @State private var isAuthenticating = false
 
     var body: some View {
         ZStack {
@@ -12,12 +14,16 @@ struct LockScreenView: View {
 
             VStack(spacing: 32) {
                 Image(systemName: "lock.shield.fill")
-                    .font(.system(size: horizontalSizeClass == .regular ? 80 : 64))
-                    .foregroundColor(OffRecordColor.brandSageDark)
+                    .font(.system(horizontalSizeClass == .regular ? .largeTitle : .title, design: .rounded, weight: .semibold))
+                    .imageScale(.large)
+                    .foregroundStyle(OffRecordColor.textSage)
+                    .symbolEffect(.bounce, value: authFailed)
+                    .accessibilityHidden(true)
 
                 Text("OffRecord is Locked")
                     .font(OffRecordTypography.titleMedium)
                     .foregroundColor(OffRecordColor.textHeading)
+                    .accessibilityAddTraits(.isHeader)
 
                 Text("Only you can unlock and see your entries.")
                     .font(OffRecordTypography.bodySmall)
@@ -35,11 +41,13 @@ struct LockScreenView: View {
                 .accessibilityLabel("Unlock journal with \(lockManager.biometryTypeName)")
                 .accessibilityHint("Authenticates using biometrics to access your private entries")
                 .accessibilityIdentifier("lockScreen.unlockButton")
+                .disabled(isAuthenticating)
 
                 if authFailed {
-                    Text("Authentication failed. Please try again.")
+                    Text("That didn't work. Try again when you're ready.")
                         .font(OffRecordTypography.metadata)
                         .foregroundColor(OffRecordColor.textCoral)
+                        .transition(.opacity)
                 }
             }
             .frame(maxWidth: 500)
@@ -47,9 +55,17 @@ struct LockScreenView: View {
             .offRecordContentCard(cornerRadius: OffRecordRadius.xl, fill: OffRecordColor.surfaceWarm)
             .padding()
         }
+        .offRecordAnimation(OffRecordMotion.snappy, value: authFailed)
+        .sensoryFeedback(.error, trigger: authFailed) { _, failed in failed }
         .onAppear {
             // Auto-prompt on appear
             unlock()
+        }
+        .onChange(of: scenePhase) { _, phase in
+            // The lock view stays mounted while backgrounded, so prompt again on return.
+            if phase == .active, !lockManager.isUnlocked {
+                unlock()
+            }
         }
     }
 
@@ -63,8 +79,31 @@ struct LockScreenView: View {
     }
 
     private func unlock() {
+        guard !isAuthenticating else { return }
+        isAuthenticating = true
         lockManager.authenticate { success in
+            isAuthenticating = false
             authFailed = !success
         }
+    }
+}
+
+/// Covers journal content in the app switcher snapshot when the privacy lock is on.
+struct PrivacyShieldView: View {
+    var body: some View {
+        ZStack {
+            OffRecordAppBackground()
+            Rectangle().fill(.ultraThinMaterial)
+            VStack(spacing: OffRecordSpacing.md) {
+                Image(systemName: "lock.shield.fill")
+                    .font(OffRecordTypography.titleLarge)
+                    .foregroundStyle(OffRecordColor.textSage)
+                Text("OffRecord")
+                    .font(OffRecordTypography.titleSmall)
+                    .foregroundStyle(OffRecordColor.textHeading)
+            }
+        }
+        .ignoresSafeArea()
+        .accessibilityHidden(true)
     }
 }
