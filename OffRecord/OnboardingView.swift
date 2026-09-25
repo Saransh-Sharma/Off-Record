@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import TranscriptionKit
 import CoreData
 import AVFoundation
 import os.log
@@ -17,6 +18,7 @@ private let onboardingLogger = Logger(subsystem: "com.singularity.offrecord", ca
 
 private struct PendingOnboardingTranscription {
     let entryObjectID: NSManagedObjectID
+    let attachmentObjectID: NSManagedObjectID
     let audioURL: URL
 }
 
@@ -455,12 +457,39 @@ struct OnboardingView: View {
         let byteCount = ((try? FileManager.default.attributesOfItem(atPath: result.url.path)[.size]) as? NSNumber)?.int64Value ?? -1
         onboardingLogger.info("Onboarding audio saved entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) duration=\(result.duration, privacy: .public) fileExists=\(fileExists, privacy: .public) bytes=\(byteCount, privacy: .public) transcriptionStatus=processing")
 
-        beginTranscription(entry: entry, audioURL: result.url)
+        guard let attachment = AudioAttachmentStore.audioAttachment(
+            fileName: result.url.lastPathComponent,
+            entry: entry,
+            in: viewContext
+        ) else {
+            onboardingError = "Your recording was saved, but transcription could not be started."
+            isTranscribing = false
+            return
+        }
+        beginTranscription(
+            entryObjectID: entry.objectID,
+            attachmentObjectID: attachment.objectID,
+            audioURL: result.url
+        )
     }
 
-    private func beginTranscription(entry: DiaryEntry, audioURL: URL) {
+    private func beginTranscription(
+        entryObjectID: NSManagedObjectID,
+        attachmentObjectID: NSManagedObjectID,
+        audioURL: URL
+    ) {
+        guard let entry = try? viewContext.existingObject(with: entryObjectID) as? DiaryEntry,
+              let attachment = try? viewContext.existingObject(with: attachmentObjectID) else {
+            isTranscribing = false
+            return
+        }
         guard SpeechTranscriptionConsent.hasGrantedAppleSpeechProcessing else {
-            pendingTranscription = PendingOnboardingTranscription(entryObjectID: entry.objectID, audioURL: audioURL)
+            pendingTranscription = PendingOnboardingTranscription(
+                entryObjectID: entryObjectID,
+                attachmentObjectID: attachmentObjectID,
+                audioURL: audioURL
+            )
+            attachment.setValue(AudioTranscriptionStatus.none.rawValue, forKey: "transcriptionStatus")
             entry.entryTranscriptionStatus = .none
             try? viewContext.save()
             onboardingLogger.info("Onboarding speech consent required entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) transcriptionStatus=none")
@@ -470,7 +499,11 @@ struct OnboardingView: View {
             return
         }
 
-        transcribeFirstEntry(entry: entry, audioURL: audioURL)
+        transcribeFirstEntry(
+            entryObjectID: entryObjectID,
+            attachmentObjectID: attachmentObjectID,
+            audioURL: audioURL
+        )
     }
 
     private func resumePendingTranscription() {
@@ -489,27 +522,65 @@ struct OnboardingView: View {
         onboardingLogger.info("Resuming onboarding transcription entryID=\(entry.id?.uuidString ?? "missing", privacy: .public)")
         isTranscribing = true
         firstEntryMode = .voice
-        transcribeFirstEntry(entry: entry, audioURL: pendingTranscription.audioURL)
+        transcribeFirstEntry(
+            entryObjectID: entry.objectID,
+            attachmentObjectID: pendingTranscription.attachmentObjectID,
+            audioURL: pendingTranscription.audioURL
+        )
     }
 
-    private func transcribeFirstEntry(entry: DiaryEntry, audioURL: URL) {
+    private func transcribeFirstEntry(
+        entryObjectID: NSManagedObjectID,
+        attachmentObjectID: NSManagedObjectID,
+        audioURL: URL
+    ) {
+        guard let entry = try? viewContext.existingObject(with: entryObjectID) as? DiaryEntry,
+              let attachment = try? viewContext.existingObject(with: attachmentObjectID) else {
+            isTranscribing = false
+            return
+        }
         isTranscribing = true
-        entry.entryTranscriptionStatus = .processing
+        AudioAttachmentStore.markTranscriptionProcessing(attachment)
         try? viewContext.save()
         let fileExists = FileManager.default.fileExists(atPath: audioURL.path)
         let byteCount = ((try? FileManager.default.attributesOfItem(atPath: audioURL.path)[.size]) as? NSNumber)?.int64Value ?? -1
         onboardingLogger.info("Starting onboarding transcription entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) fileExists=\(fileExists, privacy: .public) bytes=\(byteCount, privacy: .public) transcriptionStatus=processing")
-        SpeechTranscriber.shared.transcribe(from: audioURL) { result in
-            DispatchQueue.main.async {
+        Task {
+            let result: Result<FileTranscriptionResult, Error>
+            do {
+                result = .success(try await TranscriptionService.shared.transcribe(from: audioURL))
+            } catch {
+                result = .failure(error)
+            }
+            await MainActor.run {
+                guard let entry = try? viewContext.existingObject(with: entryObjectID) as? DiaryEntry,
+                      let attachment = try? viewContext.existingObject(with: attachmentObjectID) else {
+                    isTranscribing = false
+                    return
+                }
                 switch result {
-                case .success(let text):
+                case .success(let transcription):
+                    let text = transcription.text
                     response.speechChoice = .granted
                     firstEntryDraft = text
                     response.firstEntryText = text
-                    JournalBlockTimelineStore.appendTextBlock(text: text, createdAt: entry.date ?? Date(), to: entry, in: viewContext)
+                    guard let transcriptBlock = JournalBlockTimelineStore.upsertTranscriptBlock(
+                        text: text,
+                        createdAt: entry.date ?? Date(),
+                        attachment: attachment,
+                        to: entry,
+                        in: viewContext
+                    ) else {
+                        isTranscribing = false
+                        return
+                    }
                     JournalBlockTimelineStore.appendMoodBlock(mood: selectedMood, createdAt: entry.date ?? Date(), to: entry, in: viewContext)
-                    entry.entryTranscriptionStatus = .completed
-                    entry.updatedAt = Date()
+                    AudioAttachmentStore.markTranscriptionCompleted(
+                        attachment,
+                        engine: transcription.engine.rawValue,
+                        locale: transcription.locale,
+                        transcriptBlockID: transcriptBlock.blockID
+                    )
                     try? viewContext.save()
                     onboardingLogger.info("Onboarding transcript saved entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) chars=\(text.count, privacy: .public) transcriptionStatus=completed")
                     EntryLearningPipeline.processSavedEntry(
@@ -523,8 +594,7 @@ struct OnboardingView: View {
                     entryCreated = true
                 case .failure(let error):
                     response.speechChoice = .denied
-                    entry.entryTranscriptionStatus = .failed
-                    entry.updatedAt = Date()
+                    AudioAttachmentStore.markTranscriptionFailed(attachment, error: error)
                     try? viewContext.save()
                     let nsError = error as NSError
                     onboardingLogger.error("Onboarding transcription failed entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) domain=\(nsError.domain, privacy: .public) code=\(nsError.code, privacy: .public) transcriptionStatus=failed")

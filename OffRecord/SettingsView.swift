@@ -1,4 +1,5 @@
 import SwiftUI
+import TranscriptionKit
 import CoreData
 import AppIntents
 #if os(iOS)
@@ -388,7 +389,7 @@ struct SettingsView: View {
     private var localAIPrivacySection: some View {
         SettingsCard(
             title: "Local AI & Offline Privacy",
-            subtitle: "Private intelligence stays local unless you allow Apple Speech transcription.",
+            subtitle: "Private intelligence and voice transcription stay on this device.",
             footer: "Optional iCloud Sync is separate and uses your personal Apple iCloud account, not an OffRecord server.",
             systemImage: "cpu.fill",
             tint: OffRecordColor.textLavender,
@@ -403,7 +404,7 @@ struct SettingsView: View {
                 PrivacyInfoRow(
                     icon: "wifi.slash",
                     title: "Core app works offline",
-                    description: "Core journaling and local AI insights work without an internet connection. Voice transcription may use Apple Speech when you allow it."
+                    description: "Journaling, local AI insights, and installed-language transcription work without an internet connection."
                 )
                 PrivacyInfoRow(
                     icon: "person.fill.xmark",
@@ -411,8 +412,15 @@ struct SettingsView: View {
                     description: "No accounts, analytics, tracking, developer AI servers, or non-Apple AI services."
                 )
 
-                Toggle("Apple Speech transcription", isOn: $appleSpeechProcessingConsentGranted)
+                Toggle("On-device transcription", isOn: $appleSpeechProcessingConsentGranted)
                     .accessibilityIdentifier("settings.privacy.appleSpeechConsentToggle")
+                    .onChange(of: appleSpeechProcessingConsentGranted) { _, granted in
+                        if granted {
+                            SpeechTranscriptionConsent.grantAppleSpeechProcessing()
+                        } else {
+                            SpeechTranscriptionConsent.revokeAppleSpeechProcessing()
+                        }
+                    }
 
                 Text(SpeechTranscriptionConsent.settingsDescription)
                     .font(OffRecordTypography.metadata)
@@ -752,8 +760,8 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 12) {
                 PrivacyInfoRow(
                     icon: "waveform",
-                    title: "Apple Speech Transcription",
-                    description: "Voice is converted to text using Apple Speech after you allow it. When online, audio may be processed by Apple."
+                    title: "On-Device Transcription",
+                    description: "Voice is converted to text with Apple SpeechAnalyzer after you allow it. Recognition stays on this device."
                 )
                 PrivacyInfoRow(
                     icon: "server.rack",
