@@ -28,7 +28,7 @@ final class OffRecordUITests: XCTestCase {
         app.launchArguments = ["-UITesting", "-HeroNudgeUITest", "-HeroNudgeEmptyToday"]
         app.launch()
 
-        XCTAssertTrue(app.buttons["tab.today"].firstMatch.waitForExistence(timeout: 10))
+        XCTAssertTrue(offRecordTabButton("today", in: app).firstMatch.waitForExistence(timeout: 10))
         XCTAssertTrue(app.otherElements["homeHero.fullBleed"].waitForExistence(timeout: 8))
         XCTAssertTrue(app.descendants(matching: .any)["todayDock.record"].firstMatch.exists)
     }
@@ -172,7 +172,7 @@ final class OffRecordUITests: XCTestCase {
 
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 4))
 
-        let insightsTab = app.buttons["tab.insights"].firstMatch
+        let insightsTab = offRecordTabButton("insights", in: app).firstMatch
         XCTAssertTrue(insightsTab.waitForExistence(timeout: 4))
         XCTAssertTrue(insightsTab.isHittable)
 
@@ -314,7 +314,7 @@ final class OffRecordUITests: XCTestCase {
         primaryCTA.tap()
         app.tap()
 
-        let recordingMeter = app.descendants(matching: .any)["daypartHero.recordingMeter"].firstMatch
+        let recordingMeter = app.descendants(matching: .any)["capture.panel"].firstMatch
         XCTAssertTrue(recordingMeter.waitForExistence(timeout: 8))
     }
 
@@ -336,7 +336,7 @@ final class OffRecordUITests: XCTestCase {
         XCTAssertTrue(recordCTA.waitForExistence(timeout: 4))
         recordCTA.tap()
 
-        let recordingMeter = app.descendants(matching: .any)["daypartHero.recordingMeter"].firstMatch
+        let recordingMeter = app.descendants(matching: .any)["capture.panel"].firstMatch
         XCTAssertTrue(recordingMeter.waitForExistence(timeout: 8))
     }
 

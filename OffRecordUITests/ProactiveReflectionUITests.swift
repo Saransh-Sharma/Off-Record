@@ -132,12 +132,12 @@ final class ProactiveReflectionUITests: XCTestCase {
             "-ProactiveReflectionUITest"
         ] + extraArguments
         app.launch()
-        XCTAssertTrue(app.buttons["tab.today"].firstMatch.waitForExistence(timeout: 10))
+        XCTAssertTrue(offRecordTabButton("today", in: app).firstMatch.waitForExistence(timeout: 10))
         return app
     }
 
     private func tapTab(_ id: String, in app: XCUIApplication) {
-        let tab = app.buttons["tab.\(id)"].firstMatch
+        let tab = offRecordTabButton(id, in: app).firstMatch
         XCTAssertTrue(tab.waitForExistence(timeout: 8))
         tab.tap()
     }

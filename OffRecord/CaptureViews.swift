@@ -347,6 +347,8 @@ private struct CaptureRecordingView: View {
         .padding(.horizontal, OffRecordSpacing.screenX)
         .padding(.top, OffRecordSpacing.xl)
         .padding(.bottom, OffRecordSpacing.lg)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("capture.panel")
         .confirmationDialog(
             "Discard this recording?",
             isPresented: $isConfirmingDiscard,
@@ -538,6 +540,8 @@ private struct CaptureSavedView: View {
             .padding(.vertical, OffRecordSpacing.xl)
         }
         .scrollBounceBehavior(.basedOnSize)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("capture.saved")
         .onAppear { didAppear = true }
         .fullScreenCover(isPresented: $isShowingDial) {
             MoodDialSheet(selectedMood: $dialMood) {

@@ -10,6 +10,7 @@ import Foundation
 import CoreData
 import SwiftUI
 import CryptoKit
+import JournalSecurityKit
 import UserNotifications
 #if canImport(UIKit)
 import UIKit

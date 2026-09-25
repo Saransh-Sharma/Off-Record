@@ -10,14 +10,26 @@ func launchOffRecord(arguments: [String]) -> XCUIApplication {
         "en_US"
     ]
     app.launch()
-    XCTAssertTrue(app.buttons["tab.today"].firstMatch.waitForExistence(timeout: 10))
+    XCTAssertTrue(offRecordTabButton("today", in: app).firstMatch.waitForExistence(timeout: 10))
     return app
+}
+
+/// The native tab bar button for a tab id such as "today" or "timeline".
+/// Falls back to the sidebar/any button with the tab's title on iPad layouts.
+@MainActor
+func offRecordTabButton(_ id: String, in app: XCUIApplication) -> XCUIElement {
+    let title = id.prefix(1).uppercased() + id.dropFirst()
+    let tabBarButton = app.tabBars.buttons[title].firstMatch
+    if tabBarButton.exists {
+        return tabBarButton
+    }
+    return app.buttons[title].firstMatch
 }
 
 @MainActor
 func tapOffRecordTab(_ id: String, in app: XCUIApplication) {
-    let tab = app.buttons["tab.\(id)"].firstMatch
-    XCTAssertTrue(tab.waitForExistence(timeout: 8), "Missing tab.\(id)")
+    let tab = offRecordTabButton(id, in: app).firstMatch
+    XCTAssertTrue(tab.waitForExistence(timeout: 8), "Missing tab \(id)")
     tab.tap()
 }
 
