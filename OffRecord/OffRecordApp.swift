@@ -39,6 +39,9 @@ struct OffRecordApp: App {
         UITestDataSeeder.seedIfNeeded(context: persistenceController.container.viewContext)
         ReminderManager.shared.reconcileScheduleIfNeeded()
         WatchCaptureImporter.shared.start(context: persistenceController.container.viewContext)
+        WidgetSnapshotExporter.shared.start(container: persistenceController.container)
+        // A fresh process is never mid-capture, so any capture Live Activity is a leftover.
+        Task { await CaptureLiveActivityManager.shared.endOrphanedActivities() }
     }
 
     var body: some Scene {
