@@ -405,3 +405,82 @@ struct PrivacyInfoRow: View {
         )
     }
 }
+
+// MARK: - Privacy at a glance
+
+struct PrivacyGlanceRow: Identifiable {
+    let id: String
+    let systemImage: String
+    let title: String
+    let status: String
+    let isPositive: Bool
+}
+
+/// One place that answers "what leaves my device?" with live status.
+struct PrivacyAtAGlanceCard: View {
+    let rows: [PrivacyGlanceRow]
+    let onSelect: (String) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
+            HStack(spacing: OffRecordSpacing.md) {
+                OffRecordIconBubble(
+                    systemImage: "lock.shield.fill",
+                    tint: OffRecordColor.textSage,
+                    fill: OffRecordColor.surfacePrimary.opacity(0.8),
+                    size: 44,
+                    iconSize: 18
+                )
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Privacy at a glance")
+                        .font(OffRecordTypography.cardTitle)
+                        .foregroundStyle(OffRecordColor.textHeading)
+                        .accessibilityAddTraits(.isHeader)
+                    Text("Your journal, audio, and AI stay on this device.")
+                        .font(OffRecordTypography.metadata)
+                        .foregroundStyle(OffRecordColor.textSecondary)
+                }
+            }
+
+            VStack(spacing: 0) {
+                ForEach(rows) { row in
+                    Button {
+                        onSelect(row.id)
+                    } label: {
+                        HStack(spacing: OffRecordSpacing.md) {
+                            Image(systemName: row.systemImage)
+                                .font(OffRecordTypography.labelMedium)
+                                .foregroundStyle(OffRecordColor.textSage)
+                                .frame(width: 24)
+                                .accessibilityHidden(true)
+                            Text(row.title)
+                                .font(OffRecordTypography.bodyMedium)
+                                .foregroundStyle(OffRecordColor.textPrimary)
+                            Spacer(minLength: OffRecordSpacing.sm)
+                            Text(row.status)
+                                .font(OffRecordTypography.labelSmall)
+                                .foregroundStyle(row.isPositive ? OffRecordColor.textSage : OffRecordColor.textWarm)
+                                .contentTransition(.opacity)
+                            Image(systemName: "chevron.right")
+                                .font(OffRecordTypography.annotation.weight(.semibold))
+                                .foregroundStyle(OffRecordColor.textTertiary)
+                                .accessibilityHidden(true)
+                        }
+                        .frame(minHeight: OffRecordLayout.minimumTapTarget)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityHint("Shows this setting.")
+
+                    if row.id != rows.last?.id {
+                        Divider().overlay(OffRecordColor.borderSage)
+                    }
+                }
+            }
+        }
+        .padding(OffRecordSpacing.xl)
+        .offRecordCard(fill: OffRecordColor.surfaceSage, border: OffRecordColor.borderSage)
+        .accessibilityIdentifier("settings.privacyGlance")
+    }
+}

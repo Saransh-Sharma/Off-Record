@@ -16,6 +16,8 @@ struct SettingsView: View {
     @ObservedObject private var goalManager = GoalManager.shared
     @ObservedObject private var semanticMemory = SemanticMemoryIndexController.shared
     @ObservedObject private var weeklyReflection = WeeklyReflectionController.shared
+    @ObservedObject private var health = HealthStateOfMindWriter.shared
+    @State private var searchText = ""
 
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \DiaryEntry.date, ascending: true)],
@@ -75,6 +77,7 @@ struct SettingsView: View {
 
     var body: some View {
         GeometryReader { proxy in
+            ScrollViewReader { scrollProxy in
             ScrollView {
                 let metrics = OffRecordAdaptiveMetrics(
                     width: proxy.size.width,
@@ -83,52 +86,71 @@ struct SettingsView: View {
                 let columns = metrics.settingsColumns(dynamicTypeSize: dynamicTypeSize)
 
                 VStack(alignment: .leading, spacing: OffRecordSpacing.section) {
-                    SettingsGroup(
+                    if !isSearching {
+                        PrivacyAtAGlanceCard(rows: privacyGlanceRows) { target in
+                            withOffRecordAnimation(OffRecordMotion.gentle) {
+                                scrollProxy.scrollTo(target, anchor: .top)
+                            }
+                        }
+                    }
+
+                    settingsGroup(
                         title: "Journal & Reminders",
-                        subtitle: "Tune the habit-building parts of OffRecord without exposing journal content."
-                    ) {
-                        LazyVGrid(columns: columns, spacing: OffRecordSpacing.lg) {
-                            journalingGoalSection
-                            dailyReminderSection
-                            weeklyReflectionSection
-                        }
-                    }
+                        subtitle: "Tune the habit-building parts of OffRecord without exposing journal content.",
+                        columns: columns,
+                        items: [
+                            .init(id: "goal", keywords: "weekly goal journaling target habit", view: AnyView(journalingGoalSection)),
+                            .init(id: "reminder", keywords: "daily reminder notification time", view: AnyView(dailyReminderSection)),
+                            .init(id: "weekly", keywords: "weekly reflection report notification", view: AnyView(weeklyReflectionSection))
+                        ]
+                    )
 
-                    SettingsGroup(
+                    settingsGroup(
                         title: "Privacy & AI",
-                        subtitle: "Control local intelligence, search surfaces, and device-level privacy."
-                    ) {
-                        LazyVGrid(columns: columns, spacing: OffRecordSpacing.lg) {
-                            securitySection
-                            localAIPrivacySection
-                            semanticMemorySection
-                            systemSearchSection
-                        }
-                    }
+                        subtitle: "Control local intelligence, search surfaces, and device-level privacy.",
+                        columns: columns,
+                        items: [
+                            .init(id: "lock", keywords: "privacy lock face id touch id passcode security", view: AnyView(securitySection)),
+                            .init(id: "localAI", keywords: "local ai transcription speech offline privacy", view: AnyView(localAIPrivacySection)),
+                            .init(id: "health", keywords: "apple health state of mind mood sync", view: AnyView(healthSection)),
+                            .init(id: "semantic", keywords: "semantic memory index search friday rebuild delete", view: AnyView(semanticMemorySection)),
+                            .init(id: "spotlight", keywords: "siri spotlight system search shortcuts", view: AnyView(systemSearchSection))
+                        ]
+                    )
 
-                    SettingsGroup(
+                    settingsGroup(
                         title: "Data & Export",
-                        subtitle: "Export, back up, sync, and review what OffRecord stores on this device."
-                    ) {
-                        LazyVGrid(columns: columns, spacing: OffRecordSpacing.lg) {
-                            exportSection
-                            backupSection
-                            iCloudSection
-                            storageSection
-                        }
-                    }
+                        subtitle: "Export, back up, sync, and review what OffRecord stores on this device.",
+                        columns: columns,
+                        items: [
+                            .init(id: "export", keywords: "export pdf print", view: AnyView(exportSection)),
+                            .init(id: "backup", keywords: "backup encrypted json markdown csv import restore", view: AnyView(backupSection)),
+                            .init(id: "icloud", keywords: "icloud sync cloud devices", view: AnyView(iCloudSection)),
+                            .init(id: "storage", keywords: "storage space audio photos delete", view: AnyView(storageSection))
+                        ]
+                    )
 
-                    SettingsGroup(title: "Appearance") {
-                        LazyVGrid(columns: columns, spacing: OffRecordSpacing.lg) {
-                            appearanceSection
-                        }
-                    }
+                    settingsGroup(
+                        title: "Appearance",
+                        subtitle: nil,
+                        columns: columns,
+                        items: [
+                            .init(id: "theme", keywords: "theme appearance dark light color accent", view: AnyView(appearanceSection))
+                        ]
+                    )
 
-                    SettingsGroup(title: "About") {
-                        LazyVGrid(columns: columns, spacing: OffRecordSpacing.lg) {
-                            privacySection
-                            aboutSection
-                        }
+                    settingsGroup(
+                        title: "About",
+                        subtitle: nil,
+                        columns: columns,
+                        items: [
+                            .init(id: "privacyPolicy", keywords: "privacy policy data not collected", view: AnyView(privacySection)),
+                            .init(id: "about", keywords: "about version support", view: AnyView(aboutSection))
+                        ]
+                    )
+
+                    if isSearching && !hasSearchResults {
+                        ContentUnavailableView.search(text: searchText)
                     }
                 }
                 .frame(maxWidth: metrics.pageMaxWidth)
@@ -136,8 +158,10 @@ struct SettingsView: View {
                 .padding(.horizontal, metrics.pageHorizontalPadding)
                 .padding(.vertical, OffRecordSpacing.screenY)
             }
+            }
         }
         .background(OffRecordAppBackground())
+        .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search settings")
         .onAppear {
             calculateStorage()
         }
@@ -212,6 +236,133 @@ struct SettingsView: View {
     }
 
     // MARK: - Sections
+
+    // MARK: - Search & glance
+
+    private struct SettingsItem: Identifiable {
+        let id: String
+        let keywords: String
+        let view: AnyView
+    }
+
+    private var isSearching: Bool {
+        !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    private func matches(_ item: SettingsItem) -> Bool {
+        guard isSearching else { return true }
+        let terms = searchText.lowercased().split(separator: " ")
+        let haystack = item.keywords.lowercased()
+        return terms.allSatisfy { haystack.contains($0) }
+    }
+
+    private var hasSearchResults: Bool {
+        allSearchKeywords.contains { keywords in
+            let terms = searchText.lowercased().split(separator: " ")
+            return terms.allSatisfy { keywords.contains($0) }
+        }
+    }
+
+    private var allSearchKeywords: [String] {
+        [
+            "weekly goal journaling target habit", "daily reminder notification time", "weekly reflection report notification",
+            "privacy lock face id touch id passcode security", "local ai transcription speech offline privacy",
+            "apple health state of mind mood sync", "semantic memory index search friday rebuild delete",
+            "siri spotlight system search shortcuts", "export pdf print", "backup encrypted json markdown csv import restore",
+            "icloud sync cloud devices", "storage space audio photos delete", "theme appearance dark light color accent",
+            "privacy policy data not collected", "about version support"
+        ]
+    }
+
+    @ViewBuilder
+    private func settingsGroup(
+        title: String,
+        subtitle: String?,
+        columns: [GridItem],
+        items: [SettingsItem]
+    ) -> some View {
+        let visible = items.filter(matches)
+        if !visible.isEmpty {
+            SettingsGroup(title: title, subtitle: isSearching ? nil : subtitle) {
+                LazyVGrid(columns: columns, spacing: OffRecordSpacing.lg) {
+                    ForEach(visible) { item in
+                        item.view.id(item.id)
+                    }
+                }
+            }
+        }
+    }
+
+    private var privacyGlanceRows: [PrivacyGlanceRow] {
+        [
+            PrivacyGlanceRow(
+                id: "lock",
+                systemImage: "lock.shield.fill",
+                title: "Privacy lock",
+                status: lockManager.isEnabled ? "On" : "Off",
+                isPositive: lockManager.isEnabled
+            ),
+            PrivacyGlanceRow(
+                id: "localAI",
+                systemImage: "cpu.fill",
+                title: "AI & transcription",
+                status: "On this device",
+                isPositive: true
+            ),
+            PrivacyGlanceRow(
+                id: "icloud",
+                systemImage: iCloudSyncEnabled ? "icloud.fill" : "icloud.slash",
+                title: "iCloud Sync",
+                status: iCloudSyncEnabled ? "Your iCloud only" : "Off",
+                isPositive: true
+            ),
+            PrivacyGlanceRow(
+                id: "health",
+                systemImage: "heart.text.square.fill",
+                title: "Apple Health",
+                status: health.isEnabled ? "Moods only" : "Off",
+                isPositive: true
+            ),
+            PrivacyGlanceRow(
+                id: "spotlight",
+                systemImage: "magnifyingglass",
+                title: "Spotlight",
+                status: spotlightMetadataIndexingEnabled ? "Metadata only" : "Off",
+                isPositive: true
+            )
+        ]
+    }
+
+    private var healthSection: some View {
+        SettingsCard(
+            title: "Apple Health",
+            subtitle: "Save the moods you pick to Health as State of Mind.",
+            footer: "Only the mood and time are written — never journal text, transcripts, or people. OffRecord doesn't read any Health data.",
+            systemImage: "heart.text.square.fill",
+            tint: OffRecordColor.textBlush,
+            fill: OffRecordColor.surfaceBlush
+        ) {
+            Toggle("Save moods to Apple Health", isOn: Binding(
+                get: { health.isEnabled },
+                set: { newValue in
+                    Task { await health.setEnabled(newValue) }
+                }
+            ))
+            .disabled(!health.isAvailable)
+            .accessibilityIdentifier("settings.health.toggle")
+
+            if !health.isAvailable {
+                Text("Apple Health isn't available on this device.")
+                    .font(OffRecordTypography.metadata)
+                    .foregroundStyle(OffRecordColor.textSecondary)
+            } else if let error = health.lastError {
+                Text(error)
+                    .font(OffRecordTypography.metadata)
+                    .foregroundStyle(OffRecordColor.textCoral)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
 
     @ViewBuilder
     private var exportSection: some View {
@@ -395,21 +546,10 @@ struct SettingsView: View {
             fill: OffRecordColor.surfaceLavender
         ) {
             VStack(alignment: .leading, spacing: 12) {
-                PrivacyInfoRow(
-                    icon: "cpu.fill",
-                    title: "Local AI on your device",
-                    description: "Mood analysis, Friday insights, Semantic Memory, and knowledge graph updates run on this device."
-                )
-                PrivacyInfoRow(
-                    icon: "wifi.slash",
-                    title: "Core app works offline",
-                    description: "Journaling, local AI insights, and installed-language transcription work without an internet connection."
-                )
-                PrivacyInfoRow(
-                    icon: "person.fill.xmark",
-                    title: "No accounts or tracking",
-                    description: "No accounts, analytics, tracking, developer AI servers, or non-Apple AI services."
-                )
+                Text("Mood analysis, Friday, Semantic Memory, and transcription run on this device and work offline. No accounts, analytics, or developer AI servers.")
+                    .font(OffRecordTypography.bodySmall)
+                    .foregroundColor(OffRecordColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Toggle("On-device transcription", isOn: $appleSpeechProcessingConsentGranted)
                     .accessibilityIdentifier("settings.privacy.appleSpeechConsentToggle")
@@ -749,35 +889,15 @@ struct SettingsView: View {
     @ViewBuilder
     private var privacySection: some View {
         SettingsCard(
-            title: "Privacy & Security",
-            subtitle: "A quick summary of OffRecord's privacy posture.",
-            footer: "Your thoughts are yours alone. If enabled, sync uses your personal iCloud account, encrypted with your Apple ID.",
-            systemImage: "lock.shield.fill",
+            title: "Privacy Policy",
+            subtitle: "OffRecord carries Apple's \"Data Not Collected\" label. Your journal stays yours.",
+            systemImage: "hand.raised.fill",
             tint: OffRecordColor.textSage,
             fill: OffRecordColor.surfaceSage
         ) {
-            VStack(alignment: .leading, spacing: 12) {
-                PrivacyInfoRow(
-                    icon: "waveform",
-                    title: "On-Device Transcription",
-                    description: "Voice is converted to text with Apple SpeechAnalyzer after you allow it. Recognition stays on this device."
-                )
-                PrivacyInfoRow(
-                    icon: "server.rack",
-                    title: "No Developer AI Servers",
-                    description: "OffRecord does not send your journal data to developer servers or non-Apple AI services."
-                )
-                PrivacyInfoRow(
-                    icon: "person.fill.xmark",
-                    title: "No Account Required",
-                    description: "No sign-up, no tracking, no analytics."
-                )
-            }
-            .padding(.vertical, 8)
-
             if let privacyPolicyURL = OffRecordExternalLinks.privacyPolicyURL {
                 Link(destination: privacyPolicyURL) {
-                    Label("Privacy Policy", systemImage: "hand.raised.fill")
+                    Label("Read the Privacy Policy", systemImage: "hand.raised.fill")
                 }
                 .buttonStyle(SettingsSecondaryButtonStyle(tint: OffRecordColor.textSage, fill: OffRecordColor.surfacePrimary))
             }
