@@ -119,7 +119,7 @@ extension JournalBlockTimelineItem {
         switch kind {
         case .text: return "square.and.pencil"
         case .audio: return "waveform"
-        case .mood: return "leaf.fill"
+        case .mood: return mood == .none ? "face.smiling" : mood.icon
         case .photo: return "photo"
         }
     }
@@ -187,6 +187,9 @@ struct EntryDetailView: View {
     @State private var newTextBlockText = ""
     @State private var newTextBlockError: String?
     @State private var showDeleteDayConfirm = false
+    @State private var pendingBlockDeletion: JournalBlockTimelineItem?
+    @State private var deeperQuestion: String?
+    @State private var composerPrompt: String?
     @State private var isDeletingDay = false
     private let deleteEmptyDraftOnDisappear: Bool
     private let promptContext: String?
@@ -257,6 +260,9 @@ struct EntryDetailView: View {
                     journalTimelineView
 
                     if !isComposingTextBlock {
+                        if !text.isEmpty {
+                            goDeeperCard
+                        }
                         addToDaySection
                     }
 
@@ -274,6 +280,23 @@ struct EntryDetailView: View {
         }
         .navigationBarBackButtonHidden(true)
         .toolbar(showsDismissButton ? .hidden : .visible, for: .navigationBar)
+        .toolbar(.hidden, for: .tabBar)
+        .confirmationDialog(
+            pendingBlockDeletion?.kind == .audio ? "Delete this recording?" : "Delete this block?",
+            isPresented: Binding(
+                get: { pendingBlockDeletion != nil },
+                set: { if !$0 { pendingBlockDeletion = nil } }
+            ),
+            titleVisibility: .visible,
+            presenting: pendingBlockDeletion
+        ) { item in
+            Button(item.kind == .audio ? "Delete Recording" : "Delete", role: .destructive) {
+                deleteBlock(item)
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: { item in
+            Text(item.kind == .audio ? "The audio and its transcript will be removed from this day." : "This can't be undone.")
+        }
         .confirmationDialog(
             "Delete this day?",
             isPresented: $showDeleteDayConfirm,
@@ -297,8 +320,17 @@ struct EntryDetailView: View {
             currentActivity?.resignCurrent()
             currentActivity = nil
             clearPhotoThumbnails()
+            // Recording from the accessory goes back to today once this day is closed.
+            let capture = CaptureController.shared
+            if !capture.phase.isCapturing {
+                capture.captureDate = Date()
+            }
         }
         .onAppear {
+            // While a day is open, the capture accessory records into that day.
+            if let date = entry.date, !CaptureController.shared.phase.isCapturing {
+                CaptureController.shared.captureDate = date
+            }
             loadPhotos()
             loadBlocks(backfill: true)
             startEntryActivity()
@@ -346,12 +378,12 @@ struct EntryDetailView: View {
                 if showsDismissButton {
                     Button(action: { dismiss() }) {
                         Image(systemName: "chevron.left")
-                            .font(.system(size: 18, weight: .semibold))
+                            .font(OffRecordTypography.labelLarge)
                             .foregroundStyle(OffRecordColor.textBrand)
                             .frame(width: 48, height: 48)
                             .background(OffRecordColor.surfacePrimary, in: Circle())
                             .overlay(Circle().stroke(OffRecordColor.borderSoft, lineWidth: 1))
-                            .shadow(color: OffRecordShadow.cardColor, radius: 14, x: 0, y: 6)
+                            .offRecordShadow(.chip)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Back")
@@ -396,8 +428,10 @@ struct EntryDetailView: View {
                     HStack(spacing: 10) {
                         Button(action: toggleStar) {
                             Image(systemName: entry.isStarred ? "star.fill" : "star")
-                                .font(.system(size: 20, weight: .semibold))
+                                .font(OffRecordTypography.titleSmall)
                                 .foregroundStyle(entry.isStarred ? OffRecordColor.textYellow : OffRecordColor.textBrand)
+                                .contentTransition(.symbolEffect(.replace))
+                                .symbolEffect(.bounce, value: entry.isStarred)
                                 .frame(width: 48, height: 48)
                                 .background(OffRecordColor.surfacePrimary, in: Circle())
                                 .overlay(Circle().stroke(OffRecordColor.borderSoft, lineWidth: 1))
@@ -406,6 +440,19 @@ struct EntryDetailView: View {
                         .accessibilityLabel(entry.isStarred ? "Unstar day" : "Star day")
 
                         Menu {
+                            Button {
+                                showMoodPicker = true
+                            } label: {
+                                Label(selectedMood == .none ? "Add Mood" : "Change Mood", systemImage: "face.smiling")
+                            }
+                            if !text.isEmpty {
+                                Button {
+                                    UIPasteboard.general.string = text
+                                } label: {
+                                    Label("Copy Day's Text", systemImage: "doc.on.doc")
+                                }
+                            }
+                            Divider()
                             Button(role: .destructive) {
                                 showDeleteDayConfirm = true
                             } label: {
@@ -413,7 +460,7 @@ struct EntryDetailView: View {
                             }
                         } label: {
                             Image(systemName: "ellipsis")
-                                .font(.system(size: 20, weight: .bold))
+                                .font(OffRecordTypography.titleSmall)
                                 .foregroundStyle(OffRecordColor.textBrand)
                                 .frame(width: 48, height: 48)
                                 .background(OffRecordColor.surfacePrimary, in: Circle())
@@ -421,7 +468,7 @@ struct EntryDetailView: View {
                         }
                         .accessibilityLabel("More actions")
                     }
-                    .shadow(color: OffRecordShadow.cardColor, radius: 14, x: 0, y: 6)
+                    .offRecordShadow(.chip)
                 }
             }
         }
@@ -452,8 +499,8 @@ struct EntryDetailView: View {
     }
 
     private var daySummaryCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .center, spacing: 12) {
+        VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
+            HStack(alignment: .center, spacing: OffRecordSpacing.md) {
                 OffRecordIconBubble(
                     systemImage: "calendar",
                     tint: selectedMood == .none ? OffRecordColor.textBrand : selectedMood.readableStyle.foreground,
@@ -466,8 +513,7 @@ struct EntryDetailView: View {
                     Text(formattedFullDate)
                         .font(OffRecordTypography.labelLarge)
                         .foregroundStyle(OffRecordColor.textHeading)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.82)
+                        .fixedSize(horizontal: false, vertical: true)
 
                     if let updatedAt = entry.updatedAt {
                         Text("Updated \(formattedTime(updatedAt))")
@@ -475,13 +521,13 @@ struct EntryDetailView: View {
                             .foregroundStyle(OffRecordColor.textSecondary)
                     }
                 }
-                .layoutPriority(1)
-
-                moodHeaderButton
+                Spacer(minLength: 0)
             }
 
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
+                HStack(spacing: OffRecordSpacing.sm) {
+                    moodHeaderButton
+
                     metadataChip(
                         systemImage: "text.word.spacing",
                         text: "\(activeWordCount) words"
@@ -505,47 +551,39 @@ struct EntryDetailView: View {
                 .padding(.vertical, 1)
             }
         }
-        .padding(18)
+        .padding(OffRecordSpacing.lg)
         .background(OffRecordColor.surfaceWarm, in: RoundedRectangle(cornerRadius: OffRecordRadius.xl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: OffRecordRadius.xl, style: .continuous)
                 .stroke(OffRecordColor.borderSoft, lineWidth: 1)
         )
-        .shadow(color: OffRecordShadow.cardColor, radius: 18, x: 0, y: 8)
+        .offRecordShadow(.card)
     }
 
     private var moodHeaderButton: some View {
         Button(action: { showMoodPicker = true }) {
-            if selectedMood == .none {
-                Label("Mood", systemImage: "plus.circle.fill")
-                    .font(OffRecordTypography.labelSmall)
-                    .foregroundColor(OffRecordReadableTintStyle.journal.foreground)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 7)
-                    .offRecordGlassControl(
-                        tint: OffRecordReadableTintStyle.journal.tint,
-                        in: Capsule(),
-                        fallbackFill: OffRecordReadableTintStyle.journal.fill,
-                        border: OffRecordReadableTintStyle.journal.border
-                    )
-            } else {
-                HStack(spacing: 6) {
-                    MiniMoodIcon(mood: selectedMood, size: 16, opacity: 0.92)
+            HStack(spacing: OffRecordSpacing.xs) {
+                if selectedMood == .none {
+                    Image(systemName: "plus.circle.fill")
+                    Text("Add mood")
+                } else {
+                    selectedMood.miniImage
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 22, height: 22)
                     Text(selectedMood.displayName)
-                        .font(OffRecordTypography.labelSmall)
                 }
-                .foregroundColor(selectedMood.readableStyle.foreground)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 7)
-                .offRecordGlassControl(
-                    tint: selectedMood.readableStyle.tint,
-                    in: Capsule(),
-                    fallbackFill: selectedMood.readableStyle.fill,
-                    border: selectedMood.readableStyle.border
-                )
             }
+            .font(OffRecordTypography.labelSmall)
+            .foregroundStyle(selectedMood == .none ? OffRecordReadableTintStyle.journal.foreground : selectedMood.readableStyle.foreground)
+            .padding(.horizontal, OffRecordSpacing.md)
+            .frame(minHeight: OffRecordLayout.minimumTapTarget)
+            .background(selectedMood == .none ? OffRecordReadableTintStyle.journal.fill : selectedMood.readableStyle.fill, in: Capsule())
+            .overlay(Capsule().stroke(selectedMood == .none ? OffRecordReadableTintStyle.journal.border : selectedMood.readableStyle.border, lineWidth: 1))
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(selectedMood == .none ? "Add mood" : "Mood, \(selectedMood.displayName)")
+        .accessibilityHint("Opens the mood dial.")
         .accessibilityIdentifier("entryDetail.moodButton")
     }
 
@@ -553,8 +591,8 @@ struct EntryDetailView: View {
         Label(text, systemImage: systemImage)
             .font(OffRecordTypography.metadata)
             .foregroundStyle(OffRecordColor.textSecondary)
-            .padding(.horizontal, 9)
-            .padding(.vertical, 5)
+            .padding(.horizontal, OffRecordSpacing.md)
+            .frame(minHeight: 32)
             .background(OffRecordColor.surfacePrimary.opacity(0.68), in: Capsule())
             .overlay(Capsule().stroke(OffRecordColor.borderSoft, lineWidth: 1))
     }
@@ -575,16 +613,19 @@ struct EntryDetailView: View {
         VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
             if timelineItems.isEmpty {
                 if isTranscribing {
-                    VStack(spacing: 12) {
-                        ProgressView()
-                            .scaleEffect(1.2)
-                        Text("Transcribing your recording...")
+                    VStack(spacing: OffRecordSpacing.md) {
+                        Image(systemName: "waveform")
+                            .font(OffRecordTypography.titleLarge)
+                            .foregroundStyle(OffRecordColor.textLavender)
+                            .symbolEffect(.variableColor.iterative, isActive: !reduceMotion)
+                            .accessibilityHidden(true)
+                        Text("Transcribing on this device…")
                             .font(OffRecordTypography.bodySmall)
                             .foregroundColor(OffRecordColor.textSecondary)
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 60)
-                    .offRecordContentCard(cornerRadius: 12)
+                    .padding(.vertical, OffRecordSpacing.section)
+                    .offRecordContentCard(cornerRadius: OffRecordRadius.lg)
                 } else {
                     if !isComposingTextBlock {
                         emptyEntryPrompt
@@ -593,10 +634,10 @@ struct EntryDetailView: View {
             } else {
                 switch entryPresentationLayout {
                 case .singleEntry:
-                    sectionLabel("TODAY'S ENTRY")
+                    sectionLabel("\(dayPossessive) entry")
                     singleEntryCanvas
                 case .multiEntry:
-                    sectionLabel("TODAY'S JOURNEY")
+                    sectionLabel("\(dayPossessive) moments")
                     multiEntryTimeline
                 }
             }
@@ -604,12 +645,26 @@ struct EntryDetailView: View {
         .animation(reduceMotion ? .easeOut(duration: 0.01) : .easeOut(duration: 0.22), value: timelineItems.map(\.id))
     }
 
+    /// "Today's", "Yesterday's", or the weekday ("Wednesday's") for older days.
+    private var dayPossessive: String {
+        let date = entry.date ?? Date()
+        let calendar = Calendar.current
+        if calendar.isDateInToday(date) { return "Today's" }
+        if calendar.isDateInYesterday(date) { return "Yesterday's" }
+        if let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: date), to: calendar.startOfDay(for: Date())).day, days < 7 {
+            return "\(date.formatted(.dateTime.weekday(.wide)))'s"
+        }
+        return "This day's"
+    }
+
     private func sectionLabel(_ title: String) -> some View {
         Text(title)
             .font(OffRecordTypography.labelSmall)
             .foregroundStyle(OffRecordColor.textSecondary)
             .textCase(.uppercase)
+            .tracking(0.6)
             .padding(.horizontal, 2)
+            .accessibilityAddTraits(.isHeader)
     }
 
     private var emptyEntryPrompt: some View {
@@ -672,9 +727,79 @@ struct EntryDetailView: View {
         }
     }
 
+    private var goDeeperCard: some View {
+        VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
+            HStack(spacing: OffRecordSpacing.sm) {
+                Image(systemName: "sparkles")
+                    .foregroundStyle(OffRecordColor.textLavender)
+                    .accessibilityHidden(true)
+                Text("Go deeper")
+                    .font(OffRecordTypography.labelLarge)
+                    .foregroundStyle(OffRecordColor.textHeading)
+                Spacer(minLength: 0)
+                Button {
+                    withOffRecordAnimation(OffRecordMotion.gentle) {
+                        deeperQuestion = EntryFollowUpQuestion.make(
+                            text: text,
+                            mood: selectedMood,
+                            excluding: deeperQuestion
+                        )
+                    }
+                    HapticManager.shared.selectionChanged()
+                } label: {
+                    Image(systemName: deeperQuestion == nil ? "questionmark.bubble" : "arrow.triangle.2.circlepath")
+                        .font(OffRecordTypography.labelLarge)
+                        .foregroundStyle(OffRecordColor.textLavender)
+                        .frame(width: OffRecordLayout.minimumTapTarget, height: OffRecordLayout.minimumTapTarget)
+                        .contentTransition(.symbolEffect(.replace))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(deeperQuestion == nil ? "Ask Friday for a follow-up question" : "Another question")
+                .accessibilityIdentifier("entryDetail.goDeeper")
+            }
+
+            if let deeperQuestion {
+                Text(deeperQuestion)
+                    .font(OffRecordTypography.bodyLarge)
+                    .foregroundStyle(OffRecordColor.textBrand)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                    .id(deeperQuestion)
+
+                HStack(spacing: OffRecordSpacing.sm) {
+                    Button {
+                        composerPrompt = deeperQuestion
+                        beginNewTextBlock()
+                    } label: {
+                        Label("Write", systemImage: "square.and.pencil")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(OffRecordSoftButtonStyle(tint: OffRecordColor.textBrand, fill: OffRecordColor.surfacePrimary))
+
+                    Button {
+                        let capture = CaptureController.shared
+                        if let date = entry.date { capture.captureDate = date }
+                        capture.startRecording(prompt: deeperQuestion)
+                    } label: {
+                        Label("Speak", systemImage: "mic.fill")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(OffRecordSoftButtonStyle(tint: OffRecordColor.textOnAccent, fill: OffRecordColor.brandPlum))
+                }
+            } else {
+                Text("Friday can suggest one question based on what you wrote. It stays on this device.")
+                    .font(OffRecordTypography.bodySmall)
+                    .foregroundStyle(OffRecordColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(OffRecordSpacing.lg)
+        .offRecordCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceLavender.opacity(0.7), shadow: false)
+    }
+
     private var addToDaySection: some View {
         VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
-            sectionLabel("ADD TO YOUR DAY")
+            sectionLabel("Add to this day")
             HStack(spacing: OffRecordSpacing.md) {
                 addTextButton
                 addPhotosButton
@@ -749,9 +874,18 @@ struct EntryDetailView: View {
                             .stroke(OffRecordColor.brandSky.opacity(0.28), lineWidth: 1)
                     )
             case .mood:
-                Text(item.mood.displayName)
-                    .font(OffRecordTypography.labelMedium)
-                    .foregroundStyle(OffRecordColor.textPrimary)
+                HStack(spacing: OffRecordSpacing.sm) {
+                    if item.mood != .none {
+                        item.mood.miniImage
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 28, height: 28)
+                            .accessibilityHidden(true)
+                    }
+                    Text(item.mood.displayName)
+                        .font(OffRecordTypography.labelMedium)
+                        .foregroundStyle(OffRecordColor.textPrimary)
+                }
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(item.mood.readableStyle.fill, in: RoundedRectangle(cornerRadius: OffRecordRadius.lg, style: .continuous))
@@ -798,7 +932,7 @@ struct EntryDetailView: View {
                 .fill(item.nodeFill)
                 .overlay(Circle().stroke(item.nodeBorder, lineWidth: 1))
             Image(systemName: item.systemImage)
-                .font(.system(size: size == 44 ? 16 : 14, weight: .semibold))
+                .font(size == 44 ? OffRecordTypography.labelLarge : OffRecordTypography.labelMedium)
                 .foregroundStyle(item.nodeForeground)
         }
         .frame(width: size, height: size)
@@ -814,8 +948,15 @@ struct EntryDetailView: View {
                 Label("Edit Block", systemImage: "pencil")
             }
         }
+        if item.kind == .text, let text = block(for: item)?.textValue, !text.isEmpty {
+            Button {
+                UIPasteboard.general.string = text
+            } label: {
+                Label("Copy Text", systemImage: "doc.on.doc")
+            }
+        }
         Button(role: .destructive) {
-            deleteBlock(item)
+            pendingBlockDeletion = item
         } label: {
             Label("Delete Block", systemImage: "trash")
         }
@@ -1019,7 +1160,7 @@ struct EntryDetailView: View {
 
     private var newTextBlockComposer: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if let promptContext, !promptContext.isEmpty {
+            if let promptContext = composerPrompt ?? promptContext, !promptContext.isEmpty {
                 HStack(alignment: .top, spacing: 10) {
                     Image(systemName: "sparkles")
                         .font(OffRecordTypography.labelMedium)
@@ -1081,66 +1222,6 @@ struct EntryDetailView: View {
         .padding(.bottom, 8)
         .onAppear {
             isTextFocused = true
-        }
-    }
-
-    private var readingView: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            if text.isEmpty {
-                if isTranscribing {
-                    VStack(spacing: 12) {
-                        ProgressView()
-                            .scaleEffect(1.2)
-                        Text("Transcribing your recording...")
-                            .font(OffRecordTypography.bodySmall)
-                            .foregroundColor(OffRecordColor.textSecondary)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 60)
-                } else {
-                    VStack(spacing: 12) {
-                        Image(systemName: "text.cursor")
-                            .font(.system(size: 32))
-                            .foregroundColor(OffRecordColor.textTertiary)
-                        Text("No text yet")
-                            .font(OffRecordTypography.bodySmall)
-                            .foregroundColor(OffRecordColor.textSecondary)
-                    Button("Add text") {
-                        beginNewTextBlock()
-                    }
-                    .font(OffRecordTypography.labelMedium)
-                    .foregroundColor(OffRecordReadableTintStyle.brand.foreground)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
-                    .offRecordGlassControl(
-                        tint: OffRecordReadableTintStyle.brand.tint,
-                        in: Capsule(),
-                        fallbackFill: OffRecordReadableTintStyle.brand.fill,
-                        border: OffRecordReadableTintStyle.brand.border
-                    )
-                }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 60)
-                }
-            } else {
-                Text(text)
-                    .font(OffRecordTypography.journalBody)
-                    .foregroundColor(OffRecordColor.textPrimary)
-                    .lineSpacing(6)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding()
-                    .textSelection(.enabled)
-                    .accessibilityIdentifier("entryDetail.mainText")
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .offRecordContentCard(cornerRadius: 12)
-        .padding(.horizontal)
-        .padding(.vertical, 8)
-        .onTapGesture {
-            if !isTranscribing {
-                beginNewTextBlock()
-            }
         }
     }
 
@@ -1220,7 +1301,10 @@ struct EntryDetailView: View {
                                 }
                             }
                             .frame(height: 8)
-                            
+                            .accessibilityElement()
+                            .accessibilityLabel("Sentiment")
+                            .accessibilityValue(analysis.sentiment > 0.2 ? "Positive" : (analysis.sentiment < -0.2 ? "Negative" : "Neutral"))
+
                             Text(analysis.sentiment > 0.2 ? "Positive" : (analysis.sentiment < -0.2 ? "Negative" : "Neutral"))
                                 .font(OffRecordTypography.metadata)
                                 .foregroundColor(OffRecordColor.textSecondary)
@@ -1289,134 +1373,6 @@ struct EntryDetailView: View {
             }
         }
         .padding(.bottom, 8)
-    }
-
-    // MARK: - Editing View
-
-    private var editingView: some View {
-        VStack(spacing: 0) {
-            if let promptContext, !promptContext.isEmpty {
-                HStack(alignment: .top, spacing: 10) {
-                    Image(systemName: "sparkles")
-                        .font(OffRecordTypography.labelMedium)
-                        .foregroundStyle(OffRecordColor.textLavender)
-                        .padding(.top, 2)
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Writing prompt")
-                            .font(OffRecordTypography.labelSmall)
-                            .foregroundStyle(OffRecordColor.textPeach)
-                        Text(promptContext)
-                            .font(OffRecordTypography.bodySmall)
-                            .foregroundStyle(OffRecordColor.textPrimary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-
-                    Spacer(minLength: 0)
-                }
-                .padding(14)
-                .offRecordContentCard(cornerRadius: 14, fill: OffRecordColor.surfaceLavender)
-                .padding(.horizontal)
-                .padding(.top, 8)
-            }
-
-            TextEditor(text: editableTextBinding)
-                .font(OffRecordTypography.journalBody)
-                .foregroundColor(OffRecordColor.textPrimary)
-                .lineSpacing(6)
-                .focused($isTextFocused)
-                .scrollContentBackground(.hidden)
-                .frame(minHeight: 300)
-                .padding()
-                .offRecordContentCard(cornerRadius: 12)
-                .padding(.horizontal)
-                .padding(.vertical, 8)
-
-            // Keyboard toolbar
-            if isTextFocused {
-                HStack {
-                    Text("\(wordCount) words · \(characterCount) chars")
-                        .font(OffRecordTypography.metadata)
-                        .foregroundColor(OffRecordColor.textSecondary)
-
-                    Spacer()
-
-                    Button("Done") {
-                        saveNewTextBlock()
-                    }
-                    .font(OffRecordTypography.labelMedium)
-                }
-                .padding(.horizontal)
-                .padding(.vertical, 8)
-                .offRecordGlassBar(cornerRadius: 0, fallbackFill: OffRecordColor.surfaceWarm)
-            }
-        }
-        .onAppear {
-            isTextFocused = true
-        }
-    }
-
-    // MARK: - Photo Section
-
-    private var photoSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            #if canImport(UIKit)
-            // Photo thumbnails
-            if !photoImages.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(Array(photoImages.enumerated()), id: \.offset) { index, image in
-                            ZStack(alignment: .topTrailing) {
-                                Image(uiImage: image)
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: isIPad ? 120 : 80, height: isIPad ? 120 : 80)
-                                    .clipShape(RoundedRectangle(cornerRadius: isIPad ? 12 : 8))
-
-                                Button {
-                                    removePhoto(at: index)
-                                } label: {
-                                    Image(systemName: "xmark.circle.fill")
-                                        .font(.system(size: 20))
-                                        .foregroundStyle(OffRecordColor.textInverse, OffRecordColor.brandCoral)
-                                }
-                                .offset(x: 6, y: -6)
-                            }
-                        }
-                    }
-                }
-            }
-            #endif
-
-            // Photo picker
-            PhotosPicker(
-                selection: $selectedPhotos,
-                maxSelectionCount: 5,
-                matching: .images
-            ) {
-                HStack(spacing: 6) {
-                    Image(systemName: "photo.badge.plus")
-                        .font(OffRecordTypography.metadata)
-                    Text(photoAttachments.isEmpty ? "Add Photos" : "Add More")
-                        .font(OffRecordTypography.labelSmall)
-                }
-                .foregroundColor(OffRecordReadableTintStyle.journal.foreground)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .offRecordGlassControl(
-                    tint: OffRecordReadableTintStyle.journal.tint,
-                    in: Capsule(),
-                    fallbackFill: OffRecordReadableTintStyle.journal.fill,
-                    border: OffRecordReadableTintStyle.journal.border
-                )
-            }
-
-            if !photoAttachments.isEmpty {
-                Text("Photos sync with iCloud")
-                    .font(OffRecordTypography.metadata)
-                    .foregroundColor(OffRecordColor.textSecondary)
-            }
-        }
     }
 
     private func loadPhotos() {
@@ -1536,20 +1492,6 @@ struct EntryDetailView: View {
         }
         selectedPhotos = []
         #endif
-    }
-
-    private func removePhoto(at index: Int) {
-        guard index < photoAttachments.count else { return }
-        let attachment = photoAttachments[index]
-        PhotoStorageManager.shared.removePhoto(attachment, from: entry, in: viewContext)
-        photoAttachments.remove(at: index)
-        #if canImport(UIKit)
-        if index < photoImages.count {
-            photoImages.remove(at: index)
-        }
-        #endif
-        savePhotos()
-        HapticManager.shared.entryDeleted()
     }
 
     private func savePhotos() {
@@ -1800,6 +1742,7 @@ struct EntryDetailView: View {
 
     private func cancelNewTextBlock() {
         isTextFocused = false
+        composerPrompt = nil
         isComposingTextBlock = false
         newTextBlockText = ""
         newTextBlockError = nil
