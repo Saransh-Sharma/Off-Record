@@ -4,6 +4,13 @@ import os.log
 
 private let audioAttachmentLogger = Logger(subsystem: "com.singularity.offrecord", category: "AudioAttachments")
 
+enum AudioTranscriptionStatus: String {
+    case none
+    case processing
+    case completed
+    case failed
+}
+
 enum AudioAttachmentStore {
     static let recordingsFolderName = "Recordings"
 
@@ -60,6 +67,8 @@ enum AudioAttachmentStore {
         attachment.setValue(sourceCaptureID, forKey: "sourceCaptureID")
         attachment.setValue(byteCount, forKey: "byteCount")
         attachment.setValue(codec, forKey: "codec")
+        attachment.setValue(AudioTranscriptionStatus.none.rawValue, forKey: "transcriptionStatus")
+        attachment.setValue(Int32(0), forKey: "transcriptionAttemptCount")
         attachment.setValue(entry, forKey: "entry")
 
         if (entry.audioFileName ?? "").trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
@@ -100,6 +109,66 @@ enum AudioAttachmentStore {
         request.predicate = NSPredicate(format: "sourceCaptureID == %@", sourceCaptureID as CVarArg)
         request.fetchLimit = 1
         return try? context.fetch(request).first
+    }
+
+    static func audioAttachment(
+        fileName: String,
+        entry: DiaryEntry,
+        in context: NSManagedObjectContext
+    ) -> NSManagedObject? {
+        guard NSEntityDescription.entity(forEntityName: "AudioAttachment", in: context) != nil else {
+            return nil
+        }
+        let request = NSFetchRequest<NSManagedObject>(entityName: "AudioAttachment")
+        request.predicate = NSPredicate(
+            format: "fileName == %@ AND entry == %@",
+            fileName,
+            entry
+        )
+        request.fetchLimit = 1
+        return try? context.fetch(request).first
+    }
+
+    static func markTranscriptionProcessing(_ attachment: NSManagedObject) {
+        let attempts = attachment.value(forKey: "transcriptionAttemptCount") as? Int32 ?? 0
+        attachment.setValue(AudioTranscriptionStatus.processing.rawValue, forKey: "transcriptionStatus")
+        attachment.setValue(attempts + 1, forKey: "transcriptionAttemptCount")
+        attachment.setValue(nil, forKey: "transcriptionErrorCode")
+        attachment.setValue(Date(), forKey: "transcriptionUpdatedAt")
+        refreshEntryTranscriptionStatus(for: attachment)
+    }
+
+    static func markTranscriptionCompleted(
+        _ attachment: NSManagedObject,
+        engine: String,
+        locale: Locale,
+        transcriptBlockID: UUID
+    ) {
+        attachment.setValue(AudioTranscriptionStatus.completed.rawValue, forKey: "transcriptionStatus")
+        attachment.setValue(engine, forKey: "transcriptionEngine")
+        attachment.setValue(locale.identifier(.bcp47), forKey: "transcriptionLocale")
+        attachment.setValue(nil, forKey: "transcriptionErrorCode")
+        attachment.setValue(transcriptBlockID, forKey: "transcriptBlockID")
+        attachment.setValue(Date(), forKey: "transcriptionUpdatedAt")
+        refreshEntryTranscriptionStatus(for: attachment)
+    }
+
+    static func markTranscriptionFailed(_ attachment: NSManagedObject, error: Error) {
+        let nsError = error as NSError
+        attachment.setValue(AudioTranscriptionStatus.failed.rawValue, forKey: "transcriptionStatus")
+        attachment.setValue("\(nsError.domain):\(nsError.code)", forKey: "transcriptionErrorCode")
+        attachment.setValue(Date(), forKey: "transcriptionUpdatedAt")
+        refreshEntryTranscriptionStatus(for: attachment)
+    }
+
+    static func transcriptionStatus(of attachment: NSManagedObject) -> AudioTranscriptionStatus {
+        AudioTranscriptionStatus(
+            rawValue: attachment.value(forKey: "transcriptionStatus") as? String ?? ""
+        ) ?? .none
+    }
+
+    static func transcriptBlockID(of attachment: NSManagedObject) -> UUID? {
+        attachment.value(forKey: "transcriptBlockID") as? UUID
     }
 
     static func audioURL(for attachment: NSManagedObject) -> URL? {
@@ -181,5 +250,20 @@ enum AudioAttachmentStore {
                 guard let safeName = try? validatedFileName(row.fileName) else { return nil }
                 return directory.appendingPathComponent(safeName)
             }
+    }
+
+    private static func refreshEntryTranscriptionStatus(for attachment: NSManagedObject) {
+        guard let entry = attachment.value(forKey: "entry") as? DiaryEntry else { return }
+        let statuses = audioAttachments(for: entry).map(transcriptionStatus)
+        if statuses.contains(.processing) {
+            entry.entryTranscriptionStatus = .processing
+        } else if statuses.contains(.failed) {
+            entry.entryTranscriptionStatus = .failed
+        } else if statuses.contains(.completed) {
+            entry.entryTranscriptionStatus = .completed
+        } else {
+            entry.entryTranscriptionStatus = .none
+        }
+        entry.updatedAt = Date()
     }
 }

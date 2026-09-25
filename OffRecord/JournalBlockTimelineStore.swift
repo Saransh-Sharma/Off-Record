@@ -140,6 +140,47 @@ enum JournalBlockTimelineStore {
         return block
     }
 
+    /// Creates the transcript block once and updates it on retries.
+    @discardableResult
+    static func upsertTranscriptBlock(
+        text: String,
+        createdAt: Date,
+        attachment: NSManagedObject,
+        to entry: DiaryEntry,
+        in context: NSManagedObjectContext,
+        sourceCaptureID: UUID? = nil
+    ) -> JournalBlock? {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+
+        let attachmentID = attachment.value(forKey: "id") as? UUID
+        let transcriptBlockID = AudioAttachmentStore.transcriptBlockID(of: attachment)
+        let existing = blocks(for: entry).first { block in
+            guard block.blockKind == .text else { return false }
+            if let transcriptBlockID, block.blockID == transcriptBlockID {
+                return true
+            }
+            if attachmentID != nil && block.audioAttachmentIDValue == attachmentID {
+                return true
+            }
+            return sourceCaptureID != nil && block.sourceCaptureIDValue == sourceCaptureID
+        }
+
+        let block = existing ?? makeBlock(
+            kind: .text,
+            createdAt: createdAt,
+            entry: entry,
+            context: context
+        )
+        block.textValue = trimmed
+        block.blockUpdatedAt = Date()
+        block.audioAttachmentIDValue = attachmentID
+        block.sourceCaptureIDValue = sourceCaptureID
+        attachment.setValue(block.blockID, forKey: "transcriptBlockID")
+        recomposeLegacyFields(for: entry, touchUpdatedAt: true)
+        return block
+    }
+
     @discardableResult
     static func appendMoodBlock(
         mood: Mood,
