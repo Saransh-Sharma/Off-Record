@@ -216,6 +216,7 @@ struct StatsView: View {
             }
             .padding()
             .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceLavender)
+            .accessibilityElement(children: .contain)
             .accessibilityIdentifier("insights.aiInsights")
         }
     }

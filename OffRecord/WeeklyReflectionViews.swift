@@ -560,6 +560,7 @@ struct WeeklyReflectionReportView: View {
             )
             InsightChartSummary(text: arcSummary)
         }
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("weeklyReflection.arc")
     }
 
