@@ -15,7 +15,6 @@ import UserNotifications
 #if canImport(UIKit)
 import UIKit
 #endif
-import JournalSecurityKit
 @testable import OffRecord
 
 // MARK: - Friday Chat Layout Tests
