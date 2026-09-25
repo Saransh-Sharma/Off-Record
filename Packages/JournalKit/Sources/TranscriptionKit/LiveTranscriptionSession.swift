@@ -151,6 +151,30 @@ public final class LiveTranscriptionSession: @unchecked Sendable {
         }
     }
 
+    /// Starts analysis without owning the microphone. The caller feeds audio
+    /// with `appendExternal(_:)`, which lets one capture engine record a file
+    /// and stream live transcription from the same input.
+    public func startWithExternalInput() async throws {
+        guard !started else { return }
+        started = true
+        startResultsTask()
+
+        do {
+            try await analyzer.prepareToAnalyze(in: analyzerFormat)
+            try await analyzer.start(inputSequence: inputSequence)
+        } catch {
+            await cancel()
+            throw error
+        }
+    }
+
+    /// Feeds a buffer captured by an external audio engine. Safe to call from
+    /// the audio tap thread; buffers are converted to the analyzer format.
+    public func appendExternal(_ buffer: AVAudioPCMBuffer) {
+        guard started else { return }
+        append(buffer)
+    }
+
     public func stop() async throws {
         guard started else { return }
         started = false
