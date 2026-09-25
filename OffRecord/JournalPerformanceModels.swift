@@ -82,6 +82,10 @@ struct JournalInsightSummary: Identifiable, Equatable, Sendable {
     let description: String
     let icon: String
     let colorName: String
+    /// Plain-language note on how the insight was derived.
+    var rationale: String = ""
+    /// `JournalEntrySnapshot.id` values of the entries that support the insight.
+    var supportingEntryIDs: [String] = []
 }
 
 struct JournalDayActivity: Identifiable, Equatable, Sendable {
@@ -301,122 +305,7 @@ actor JournalAnalyticsWorker {
     }
 
     private func makeInsights(from entries: [JournalEntrySnapshot], calendar: Calendar, now: Date) -> [JournalInsightSummary] {
-        var insights: [JournalInsightSummary] = []
-        if let insight = streakInsight(entries: entries, calendar: calendar, now: now) { insights.append(insight) }
-        if let insight = moodInsight(entries: entries, calendar: calendar, now: now) { insights.append(insight) }
-        if let insight = writingPatternInsight(entries: entries, calendar: calendar) { insights.append(insight) }
-        if let insight = productivityInsight(entries: entries, calendar: calendar, now: now) { insights.append(insight) }
-        if let insight = milestoneInsight(entries: entries) { insights.append(insight) }
-        if let insight = sentimentInsight(entries: entries) { insights.append(insight) }
-        return insights
-    }
-
-    private func streakInsight(entries: [JournalEntrySnapshot], calendar: Calendar, now: Date) -> JournalInsightSummary? {
-        let days = Set(entries.compactMap { $0.date.map { calendar.startOfDay(for: $0) } })
-        let streak = currentStreak(days: days, calendar: calendar, today: calendar.startOfDay(for: now))
-        let hasToday = days.contains(calendar.startOfDay(for: now))
-
-        if streak >= 7 {
-            return JournalInsightSummary(id: "streak-7", title: "You're on fire!", description: "You've written for \(streak) days in a row. Keep the momentum going!", icon: "flame.fill", colorName: "orange")
-        } else if streak >= 3 {
-            return JournalInsightSummary(id: "streak-3", title: "Building a habit", description: "\(streak) day streak! You're developing a great journaling habit.", icon: "arrow.up.right", colorName: "green")
-        } else if !hasToday && streak == 0 {
-            return JournalInsightSummary(id: "write-today", title: "Time to write", description: "You haven't journaled today. Even a few words can make a difference!", icon: "pencil.line", colorName: "blue")
-        }
-        return nil
-    }
-
-    private func moodInsight(entries: [JournalEntrySnapshot], calendar: Calendar, now: Date) -> JournalInsightSummary? {
-        let recentMoods = entries.compactMap { entry -> Mood? in
-            guard let date = entry.date,
-                  (calendar.dateComponents([.day], from: date, to: now).day ?? 0) <= 7,
-                  entry.mood != .none else { return nil }
-            return entry.mood
-        }
-        guard recentMoods.count >= 3 else { return nil }
-
-        let positiveMoods: Set<Mood> = [.happy, .excited, .grateful, .calm]
-        let positiveCount = recentMoods.filter { positiveMoods.contains($0) }.count
-        let positiveRatio = Double(positiveCount) / Double(recentMoods.count)
-
-        if positiveRatio >= 0.7 {
-            return JournalInsightSummary(id: "positive-week", title: "Positive week!", description: "You've been feeling great lately. \(Int(positiveRatio * 100))% of your recent moods were positive.", icon: "sun.max.fill", colorName: "yellow")
-        } else if positiveRatio <= 0.3 {
-            return JournalInsightSummary(id: "tough-week", title: "Tough week", description: "It seems like you've had some challenging days. Remember, it's okay to have difficult moments.", icon: "heart.fill", colorName: "pink")
-        }
-        return nil
-    }
-
-    private func writingPatternInsight(entries: [JournalEntrySnapshot], calendar: Calendar) -> JournalInsightSummary? {
-        var morningCount = 0
-        var eveningCount = 0
-
-        for entry in entries.prefix(30) {
-            guard let date = entry.date else { continue }
-            let hour = calendar.component(.hour, from: date)
-            if hour < 12 {
-                morningCount += 1
-            } else if hour >= 18 {
-                eveningCount += 1
-            }
-        }
-
-        if morningCount > eveningCount * 2 {
-            return JournalInsightSummary(id: "morning-writer", title: "Morning writer", description: "You tend to journal in the morning. Starting the day with reflection is a great habit!", icon: "sunrise.fill", colorName: "orange")
-        } else if eveningCount > morningCount * 2 {
-            return JournalInsightSummary(id: "evening-writer", title: "Evening reflector", description: "You prefer journaling in the evening. Reflecting on your day helps process experiences.", icon: "moon.stars.fill", colorName: "indigo")
-        }
-        return nil
-    }
-
-    private func productivityInsight(entries: [JournalEntrySnapshot], calendar: Calendar, now: Date) -> JournalInsightSummary? {
-        let thisMonthWords = entries.reduce(0) { total, entry in
-            guard let date = entry.date, calendar.isDate(date, equalTo: now, toGranularity: .month) else { return total }
-            return total + entry.wordCount
-        }
-        guard let lastMonthDate = calendar.date(byAdding: .month, value: -1, to: now) else { return nil }
-        let lastMonthWords = entries.reduce(0) { total, entry in
-            guard let date = entry.date, calendar.isDate(date, equalTo: lastMonthDate, toGranularity: .month) else { return total }
-            return total + entry.wordCount
-        }
-
-        if lastMonthWords > 0 && thisMonthWords > lastMonthWords {
-            let increase = Int(Double(thisMonthWords - lastMonthWords) / Double(lastMonthWords) * 100)
-            if increase >= 20 {
-                return JournalInsightSummary(id: "writing-more", title: "Writing more!", description: "You've written \(increase)% more this month compared to last month. Great progress!", icon: "chart.line.uptrend.xyaxis", colorName: "green")
-            }
-        }
-        return nil
-    }
-
-    private func milestoneInsight(entries: [JournalEntrySnapshot]) -> JournalInsightSummary? {
-        for milestone in [10, 25, 50, 100, 200, 365, 500, 1000] where entries.count >= milestone && entries.count < milestone + 5 {
-            return JournalInsightSummary(id: "milestone-\(milestone)", title: "\(milestone) entries!", description: "Congratulations! You've reached \(milestone) diary entries. That's amazing dedication!", icon: "trophy.fill", colorName: "yellow")
-        }
-        return nil
-    }
-
-    private func sentimentInsight(entries: [JournalEntrySnapshot]) -> JournalInsightSummary? {
-        let recentTexts = entries.prefix(10).map(\.text).filter { !$0.isEmpty }
-        guard !recentTexts.isEmpty else { return nil }
-
-        let tagger = NLTagger(tagSchemes: [.sentimentScore])
-        var totalSentiment = 0.0
-        for text in recentTexts {
-            tagger.string = text
-            let (sentiment, _) = tagger.tag(at: text.startIndex, unit: .paragraph, scheme: .sentimentScore)
-            if let rawValue = sentiment?.rawValue, let score = Double(rawValue) {
-                totalSentiment += score
-            }
-        }
-
-        let average = totalSentiment / Double(recentTexts.count)
-        if average > 0.3 {
-            return JournalInsightSummary(id: "positive-writing", title: "Positive writing", description: "Your recent entries have a positive tone. Writing about good things reinforces happiness!", icon: "face.smiling.fill", colorName: "green")
-        } else if average < -0.3 {
-            return JournalInsightSummary(id: "gratitude", title: "Try gratitude", description: "Consider writing about things you're grateful for. It can help shift perspective.", icon: "heart.text.square.fill", colorName: "pink")
-        }
-        return nil
+        InsightsEngine.makeInsights(from: entries, calendar: calendar, now: now)
     }
 
     private func weeklySummary(from entries: [JournalEntrySnapshot], calendar: Calendar, now: Date) -> String {
