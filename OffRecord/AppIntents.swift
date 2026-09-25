@@ -14,28 +14,7 @@ private struct JournalIntentPersistenceError: LocalizedError {
 }
 
 @available(iOS 17.0, *)
-enum JournalMoodIntentValue: String, AppEnum {
-    case happy
-    case calm
-    case grateful
-    case excited
-    case tired
-    case anxious
-    case sad
-    case angry
-
-    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Mood"
-    static var caseDisplayRepresentations: [JournalMoodIntentValue: DisplayRepresentation] = [
-        .happy: "Happy",
-        .calm: "Calm",
-        .grateful: "Grateful",
-        .excited: "Excited",
-        .tired: "Tired",
-        .anxious: "Anxious",
-        .sad: "Sad",
-        .angry: "Angry"
-    ]
-
+extension JournalMoodIntentValue {
     var mood: Mood {
         Mood(rawValue: rawValue) ?? .none
     }
@@ -150,19 +129,6 @@ struct JournalEntryQuery: EntityQuery, EntityStringQuery {
 
     func entities(matching string: String) async throws -> [JournalEntryEntity] {
         await DiaryEntryIntentStore.entities(matching: string)
-    }
-}
-
-@available(iOS 17.0, *)
-struct RecordJournalIntent: AppIntent {
-    static var title: LocalizedStringResource = "Record Journal"
-    static var description = IntentDescription("Opens OffRecord to record a private voice journal entry.")
-    static var openAppWhenRun: Bool = true
-    static var authenticationPolicy: IntentAuthenticationPolicy = .requiresLocalDeviceAuthentication
-
-    func perform() async throws -> some IntentResult & ProvidesDialog {
-        OffRecordNavigationRouter.storePendingRoute(.record)
-        return .result(dialog: "Opening OffRecord to record.")
     }
 }
 

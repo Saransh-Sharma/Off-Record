@@ -24,15 +24,19 @@ struct WatchSpeakCaptureView: View {
         ZStack {
             WatchScreenBackground(mood: .lavender)
 
-            VStack(alignment: .leading, spacing: 5) {
-                topBar
-                voiceOrb
-                dictationCard
+            // Scrolls only when larger text sizes need the room.
+            ScrollView {
+                VStack(alignment: .leading, spacing: 6) {
+                    header
+                    voiceOrb
+                    dictationCard
 
-                actionRow
+                    actionRow
+                }
+                .padding(.horizontal, 10)
+                .padding(.bottom, 4)
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 4)
+            .scrollBounceBehavior(.basedOnSize)
 
             if saved {
                 SaveConfirmationToast(title: "Saved")
@@ -40,6 +44,18 @@ struct WatchSpeakCaptureView: View {
             }
         }
         .navigationBarBackButtonHidden(true)
+        .toolbar {
+            // A toolbar item sits beside the system clock instead of underneath it.
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    cancelAndDismiss()
+                } label: {
+                    Image(systemName: "xmark")
+                        .foregroundStyle(WatchPalette.lavenderText)
+                }
+                .accessibilityLabel("Cancel")
+            }
+        }
         .onAppear(perform: startIfNeeded)
         .onDisappear(perform: cleanupIfNeeded)
         .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: recorder.isRecording)
@@ -47,57 +63,47 @@ struct WatchSpeakCaptureView: View {
         .accessibilityLabel("Start dictation")
     }
 
-    private var topBar: some View {
-        HStack(alignment: .center, spacing: 8) {
-            Button {
-                cancelAndDismiss()
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.caption.bold())
-                    .frame(width: 30, height: 30)
-                    .foregroundStyle(WatchPalette.lavenderText)
-                    .background(WatchPalette.lavenderSurface, in: Circle())
-            }
-            .buttonStyle(WatchPressButtonStyle())
-            .accessibilityLabel("Cancel")
-
+    /// Title, prompt, and elapsed time share one row below the system clock.
+    private var header: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
             VStack(alignment: .leading, spacing: 1) {
                 Text(recorder.isRecording ? "Listening" : "Speak")
-                    .font(.callout.bold())
+                    .font(.headline)
                     .foregroundStyle(WatchPalette.text)
                     .lineLimit(1)
+                    .minimumScaleFactor(0.8)
                 Text("Say what's on your mind.")
                     .font(.caption2)
                     .foregroundStyle(WatchPalette.secondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.74)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .frame(maxWidth: 128, alignment: .leading)
+            .accessibilityElement(children: .combine)
 
-            Spacer(minLength: 0)
+            Spacer(minLength: 4)
+
+            Text(format(duration))
+                .font(.headline.monospacedDigit())
+                .foregroundStyle(WatchPalette.text)
+                .lineLimit(1)
+                .layoutPriority(1)
+                .accessibilityLabel("Recording time \(format(duration))")
         }
     }
 
     private var voiceOrb: some View {
-        VStack(spacing: 4) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 34)
-                    .fill(WatchPalette.lavenderSurface.opacity(0.96))
-                    .frame(height: 72)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 34)
-                            .stroke(.white.opacity(0.42), lineWidth: 1)
-                    }
-                    .shadow(color: WatchPalette.lavender.opacity(recorder.isRecording ? 0.36 : 0.16), radius: recorder.isRecording ? 14 : 7)
-                waveform
-            }
-            .scaleEffect(recorder.isRecording && !reduceMotion ? 1.02 : 1)
-
-            Text(format(duration))
-                .font(.headline.monospacedDigit().bold())
-                .foregroundStyle(WatchPalette.text)
-                .accessibilityLabel("Recording time \(format(duration))")
+        ZStack {
+            RoundedRectangle(cornerRadius: 32)
+                .fill(WatchPalette.lavenderSurface.opacity(0.96))
+                .frame(height: 64)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 32)
+                        .stroke(.white.opacity(0.42), lineWidth: 1)
+                }
+                .shadow(color: WatchPalette.lavender.opacity(recorder.isRecording ? 0.36 : 0.16), radius: recorder.isRecording ? 14 : 7)
+            waveform
         }
+        .scaleEffect(recorder.isRecording && !reduceMotion ? 1.02 : 1)
         .frame(maxWidth: .infinity)
     }
 
@@ -110,7 +116,7 @@ struct WatchSpeakCaptureView: View {
                     .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: recorder.level)
             }
         }
-        .frame(height: 54)
+        .frame(height: 56)
         .accessibilityHidden(true)
     }
 
@@ -245,7 +251,7 @@ struct WatchSpeakCaptureView: View {
             return restingHeights[offset] * 0.58
         }
         let multipliers: [CGFloat] = [0.52, 0.72, 1.0, 1.28, 1.54, 1.12, 1.42, 1.06, 0.84, 0.66, 0.48]
-        return max(10, CGFloat(recorder.level) * multipliers[offset] * 54)
+        return min(56, max(10, CGFloat(recorder.level) * multipliers[offset] * 46))
     }
 
     private func format(_ time: TimeInterval) -> String {
