@@ -12,13 +12,12 @@ struct StreakSummaryView: View {
     let dayLabel: String
     let statusMessage: String
     let accentColor: Color
-    let numberSize: CGFloat
 
     var body: some View {
         VStack(alignment: .leading, spacing: OffRecordSpacing.xs) {
             HStack(alignment: .firstTextBaseline, spacing: OffRecordSpacing.xs) {
                 Text("\(currentStreak)")
-                    .font(.system(size: numberSize, weight: .bold, design: .rounded))
+                    .font(OffRecordTypography.numberLarge)
                     .foregroundStyle(accentColor)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
@@ -44,8 +43,7 @@ struct StreakSummaryView: View {
         currentStreak: 7,
         dayLabel: "days",
         statusMessage: "Your writing rhythm is intact.",
-        accentColor: OffRecordColor.textPeach,
-        numberSize: 52
+        accentColor: OffRecordColor.textPeach
     )
     .padding()
 }

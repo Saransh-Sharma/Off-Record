@@ -15,7 +15,6 @@ struct StreakCardView: View {
     let isIPad: Bool
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    @ScaledMetric(relativeTo: .largeTitle) private var streakNumberSize: CGFloat = 52
     @ScaledMetric(relativeTo: .title2) private var fireBaseSize: CGFloat = 118
 
     private var isActive: Bool {
@@ -39,11 +38,11 @@ struct StreakCardView: View {
     }
 
     private var statusTitle: String {
-        isActive ? "Streak alive" : "Ready to restart"
+        isActive ? "On a roll" : "Fresh start"
     }
 
     private var statusMessage: String {
-        isActive ? "Your writing rhythm is intact." : "A single entry restarts your streak."
+        isActive ? "Your writing rhythm is going strong." : "One entry starts a new streak."
     }
 
     private var fireSize: CGFloat {
@@ -56,6 +55,10 @@ struct StreakCardView: View {
 
     private var dayLabel: String {
         currentStreak == 1 ? "day" : "days"
+    }
+
+    private var accessibilitySummary: String {
+        "\(currentStreak) \(dayLabel). \(statusMessage) Longest \(longestStreak) \(longestStreak == 1 ? "day" : "days"), \(entriesThisMonth) \(entriesThisMonth == 1 ? "entry" : "entries") this month, \(totalEntries) total."
     }
 
     var body: some View {
@@ -83,8 +86,7 @@ struct StreakCardView: View {
                         currentStreak: currentStreak,
                         dayLabel: dayLabel,
                         statusMessage: statusMessage,
-                        accentColor: accentColor,
-                        numberSize: streakNumberSize
+                        accentColor: accentColor
                     )
 
                     Spacer(minLength: OffRecordSpacing.md)
@@ -113,8 +115,7 @@ struct StreakCardView: View {
                         currentStreak: currentStreak,
                         dayLabel: dayLabel,
                         statusMessage: statusMessage,
-                        accentColor: accentColor,
-                        numberSize: streakNumberSize
+                        accentColor: accentColor
                     )
                 }
             }
@@ -124,12 +125,12 @@ struct StreakCardView: View {
                     StreakMetricColumnView(title: "Longest", value: "\(longestStreak) \(longestStreak == 1 ? "day" : "days")")
 
                     Divider()
-                        .frame(height: 34)
+                        .frame(maxHeight: 44)
 
                     StreakMetricColumnView(title: "This Month", value: "\(entriesThisMonth) \(entriesThisMonth == 1 ? "entry" : "entries")")
 
                     Divider()
-                        .frame(height: 34)
+                        .frame(maxHeight: 44)
 
                     StreakMetricColumnView(title: "Total", value: "\(totalEntries) \(totalEntries == 1 ? "entry" : "entries")")
                 }
@@ -143,7 +144,9 @@ struct StreakCardView: View {
         }
         .padding()
         .offRecordContentCard(cornerRadius: OffRecordRadius.xl, fill: cardFill)
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Writing streak")
+        .accessibilityValue(accessibilitySummary)
     }
 }
 
