@@ -254,6 +254,7 @@ struct ConcentricPageTransitionView<Content: View>: View {
     private func bottomControls(bottomInset: CGFloat) -> some View {
         VStack(spacing: 14) {
             ConcentricCircleButton(
+                title: ctaTitle,
                 icon: ctaIcon ?? "chevron.forward",
                 circleColor: effectiveCircleColor,
                 foregroundColor: backgroundColor,
@@ -303,6 +304,7 @@ struct ConcentricPageTransitionView<Content: View>: View {
 }
 
 private struct ConcentricCircleButton: View {
+    let title: String
     let icon: String
     let circleColor: Color
     let foregroundColor: Color
@@ -312,8 +314,9 @@ private struct ConcentricCircleButton: View {
 
     private let size: CGFloat = 60
     @State private var glowPulse = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private var isGlowActive: Bool { !isDisabled && !isAnimating }
+    private var isGlowActive: Bool { !isDisabled && !isAnimating && !reduceMotion }
 
     private var iconColor: Color {
         foregroundColor == circleColor ? OffRecordColor.textBrand : foregroundColor
@@ -350,16 +353,18 @@ private struct ConcentricCircleButton: View {
                         x: 0, y: 0
                     )
                 Image(systemName: icon)
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .font(.system(.body, design: .rounded, weight: .bold))
                     .symbolRenderingMode(.monochrome)
                     .foregroundStyle(iconColor)
+                    .contentTransition(.symbolEffect(.replace))
             }
         }
         .buttonStyle(.plain)
         .disabled(isDisabled)
         .opacity(isAnimating ? 0 : (isDisabled ? 0.55 : 1))
         .animation(.easeInOut(duration: 0.15), value: isAnimating)
-        .accessibilityLabel("Next")
+        // VoiceOver reads the same words sighted people see next to the button.
+        .accessibilityLabel(title)
         .accessibilityIdentifier("onboarding.primaryCTA")
         .onAppear { glowPulse = true }
         .onChange(of: isGlowActive) { _, active in

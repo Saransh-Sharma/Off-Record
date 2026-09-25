@@ -60,7 +60,7 @@ struct OnboardingView: View {
     @State private var isFirstReflectionTextFocused = false
 
     private var isIPad: Bool { horizontalSizeClass == .regular }
-    private var onboardingTransitionDuration: Double { reduceMotion ? 0.01 : 0.86 }
+    private var onboardingTransitionDuration: Double { reduceMotion ? 0.01 : 0.7 }
     private var isWelcomeKeyboardLiftActive: Bool {
         step == .welcome && isWelcomeNameFieldFocused
     }
@@ -210,7 +210,17 @@ struct OnboardingView: View {
         case .welcome:
             WelcomeStep(nameDraft: $nameDraft, isCompact: isWelcomeKeyboardLiftActive)
         case .intent:
-            IntentStep(selectedIntents: $response.painPoints)
+            VStack(alignment: .leading, spacing: OffRecordSpacing.xxl) {
+                IntentStep(selectedIntents: $response.painPoints)
+                // Folded in from the former "Tune Friday" step; other preferences keep gentle defaults.
+                PreferencePicker(
+                    title: "What should Friday notice first?",
+                    items: ReflectionFocus.allCases,
+                    selection: $response.reflectionFocus
+                ) { item in
+                    Label(item.title, systemImage: item.icon)
+                }
+            }
         case .privacy:
             PrivacyProofStep()
         case .lock:
@@ -219,8 +229,6 @@ struct OnboardingView: View {
                 isEnabled: lockManager.isEnabled,
                 isAvailable: lockManager.biometricsAvailable
             )
-        case .tuneFriday:
-            PreferencesStep(response: $response)
         case .firstReflection:
             FirstEntryStep(
                 recorder: recorder,
@@ -234,8 +242,6 @@ struct OnboardingView: View {
                 entryCreated: entryCreated,
                 onRecordTap: toggleRecording
             )
-        case .snapshot:
-            ValueRevealStep(response: response, entryText: firstEntryDraft, mood: selectedMood)
         case .habit:
             HabitSetupStep(
                 reminderManager: reminderManager,
@@ -248,7 +254,7 @@ struct OnboardingView: View {
     private var primaryTitle: String {
         switch step {
         case .welcome: return "Continue"
-        case .intent, .privacy, .tuneFriday, .snapshot: return "Continue"
+        case .intent, .privacy: return "Continue"
         case .lock: return lockManager.isEnabled ? "Continue" : lockPrimaryTitle
         case .firstReflection: return firstReflectionPrimaryTitle
         case .habit: return "Start journaling"
@@ -281,7 +287,7 @@ struct OnboardingView: View {
 
     private var primaryIcon: String? {
         switch step {
-        case .welcome, .intent, .privacy, .tuneFriday, .snapshot, .habit:
+        case .welcome, .intent, .privacy, .habit:
             return "arrow.right"
         case .lock:
             return lockManager.isEnabled ? "arrow.right" : "lock.shield.fill"
@@ -314,8 +320,6 @@ struct OnboardingView: View {
         switch step {
         case .intent:
             return response.painPoints.isEmpty
-        case .tuneFriday:
-            return false
         case .firstReflection:
             if isTranscribing { return true }
             if entryCreated { return false }
@@ -388,7 +392,8 @@ struct OnboardingView: View {
         guard nextStep != step, !transitionGate.isLocked else { return }
         transitionGate.isLocked = true
         step = nextStep
-        DispatchQueue.main.asyncAfter(deadline: .now() + onboardingTransitionDuration + 0.16) {
+        // Short guard against double taps; the page transition itself keeps running.
+        DispatchQueue.main.asyncAfter(deadline: .now() + min(0.4, onboardingTransitionDuration + 0.05)) {
             transitionGate.isLocked = false
         }
     }
@@ -715,9 +720,7 @@ enum OnboardingStep: Int, CaseIterable, Identifiable {
     case intent
     case privacy
     case lock
-    case tuneFriday
     case firstReflection
-    case snapshot
     case habit
 
     var id: Int { rawValue }
@@ -748,9 +751,7 @@ enum OnboardingStep: Int, CaseIterable, Identifiable {
         case .intent: return "What brings you here?"
         case .privacy: return "Private by design"
         case .lock: return "Lock your journal"
-        case .tuneFriday: return "Tune Friday"
         case .firstReflection: return "Start with one honest thought"
-        case .snapshot: return "Your first snapshot is ready"
         case .habit: return "Make reflection easy to repeat"
         }
     }
@@ -765,12 +766,8 @@ enum OnboardingStep: Int, CaseIterable, Identifiable {
             return OffRecordColor.moodGood
         case .lock:
             return OffRecordColor.moodCalm
-        case .tuneFriday:
-            return OffRecordColor.moodSad
         case .firstReflection:
             return OffRecordColor.moodCalm
-        case .snapshot:
-            return OffRecordColor.moodGood
         case .habit:
             return OffRecordColor.moodTired
         }
@@ -1286,30 +1283,6 @@ private final class InsetTextField: UITextField {
     }
 }
 
-private struct GoalStep: View {
-    @Binding var selectedGoal: OnboardingGoal?
-
-    var body: some View {
-        OnboardingQuestion(
-            eyebrow: "Your goal",
-            title: "What do you want your journal to help with?",
-            subtitle: "Pick the outcome that would make OffRecord worth opening every day."
-        ) {
-            VStack(spacing: 10) {
-                ForEach(OnboardingGoal.allCases) { goal in
-                    ChoiceRow(
-                        title: goal.title,
-                        icon: goal.icon,
-                        isSelected: selectedGoal == goal
-                    ) {
-                        selectedGoal = goal
-                    }
-                }
-            }
-        }
-    }
-}
-
 private struct IntentStep: View {
     @Binding var selectedIntents: Set<OnboardingPainPoint>
 
@@ -1404,138 +1377,6 @@ private struct FaceIDStep: View {
             return "touchid"
         default:
             return "lock.shield.fill"
-        }
-    }
-}
-
-private struct RelatableStep: View {
-    @Binding var selectedStatements: Set<RelatableStatement>
-
-    var body: some View {
-        OnboardingQuestion(
-            eyebrow: "A quick check",
-            title: "Which statements sound like you?",
-            subtitle: "Tap any that feel true. This helps Friday understand what matters first."
-        ) {
-            VStack(spacing: 12) {
-                ForEach(RelatableStatement.allCases) { statement in
-                    StatementCard(
-                        statement: statement.title,
-                        isSelected: selectedStatements.contains(statement)
-                    ) {
-                        if selectedStatements.contains(statement) {
-                            selectedStatements.remove(statement)
-                        } else {
-                            selectedStatements.insert(statement)
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-private struct PersonalizedSolutionStep: View {
-    let response: OnboardingResponse
-
-    private var rows: [OnboardingPainPoint] {
-        let selected = Array(response.painPoints).prefix(4)
-        return selected.isEmpty ? Array(OnboardingPainPoint.allCases.prefix(4)) : Array(selected)
-    }
-
-    var body: some View {
-        OnboardingQuestion(
-            eyebrow: "Your private setup",
-            title: "A smarter way to reflect, built around you.",
-            subtitle: "Everything below runs locally. No internet connection, account, analytics, or third-party AI server is needed."
-        ) {
-            VStack(spacing: 12) {
-                ForEach(rows) { pain in
-                    SolutionRow(pain: pain)
-                }
-            }
-        }
-    }
-}
-
-private struct PreferencesStep: View {
-    @Binding var response: OnboardingResponse
-
-    var body: some View {
-        OnboardingQuestion(
-            eyebrow: "Make it yours",
-            title: "Tune Friday",
-            subtitle: "Choose what Friday should notice first.",
-            contentSpacing: 18
-        ) {
-            VStack(alignment: .leading, spacing: 22) {
-                PreferencePicker(
-                    title: "Reflection focus",
-                    items: ReflectionFocus.allCases,
-                    selection: $response.reflectionFocus
-                ) { item in
-                    Label(item.title, systemImage: item.icon)
-                }
-
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("How you feel lately")
-                        .font(OffRecordTypography.sectionTitle)
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                        ForEach(MoodChoice.allCases) { item in
-                            Button {
-                                HapticManager.shared.selectionChanged()
-                                response.moodBaseline = item
-                            } label: {
-                                OnboardingPreferenceChip(isSelected: response.moodBaseline == item) {
-                                    Text(item.title)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                }
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                }
-
-                PreferencePicker(
-                    title: "Prompt style",
-                    items: PromptStyle.allCases,
-                    selection: $response.promptStyle
-                ) { item in
-                    Text(item.title)
-                }
-            }
-        }
-    }
-}
-
-private struct PermissionPrimerStep: View {
-    let icon: String
-    let title: String
-    let subtitle: String
-    let bullets: [String]
-
-    var body: some View {
-        OnboardingQuestion(
-            eyebrow: "Before your first entry",
-            title: title,
-            subtitle: subtitle
-        ) {
-            VStack(spacing: 20) {
-                ZStack {
-                    Circle()
-                        .fill(OnboardingPalette.surfaceSubtle)
-                        .frame(width: 128, height: 128)
-                    Image(systemName: icon)
-                        .font(.system(size: 48, weight: .semibold))
-                        .foregroundStyle(OnboardingPalette.foreground)
-                }
-
-                VStack(alignment: .leading, spacing: 12) {
-                    ForEach(bullets, id: \.self) { bullet in
-                        BenefitRow(icon: "checkmark.circle.fill", text: bullet)
-                    }
-                }
-            }
         }
     }
 }
@@ -1731,25 +1572,6 @@ private struct FirstEntryStep: View {
         let minutes = Int(time) / 60
         let seconds = Int(time) % 60
         return String(format: "%d:%02d", minutes, seconds)
-    }
-}
-
-private struct ValueRevealStep: View {
-    let response: OnboardingResponse
-    let entryText: String
-    let mood: Mood
-
-    var body: some View {
-        OnboardingQuestion(
-            eyebrow: "Your starter snapshot",
-            title: "Your first snapshot is ready",
-            subtitle: "Friday has enough to begin noticing patterns privately.",
-            contentSpacing: 16
-        ) {
-            VStack(spacing: 14) {
-                StarterSnapshotCard(response: response, entryText: entryText, mood: mood)
-            }
-        }
     }
 }
 

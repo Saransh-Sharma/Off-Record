@@ -116,7 +116,7 @@ final class OffRecordUITests: XCTestCase {
     }
 
     @MainActor
-    func testOnboardingCompletesThroughEightStepSkipPath() throws {
+    func testOnboardingCompletesThroughSixStepSkipPath() throws {
         let app = launchOnboardingApp()
 
         XCTAssertTrue(app.staticTexts["Your private voice journal"].waitForExistence(timeout: 8))
@@ -139,19 +139,10 @@ final class OffRecordUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["Lock your journal"].waitForExistence(timeout: 4))
         app.buttons["Not now"].firstMatch.tap()
 
-        XCTAssertTrue(app.staticTexts["Tune Friday"].waitForExistence(timeout: 4))
-        XCTAssertTrue(onboardingPrimaryCTA(in: app).isHittable)
-        onboardingPrimaryCTA(in: app).tap()
-
         XCTAssertTrue(app.staticTexts["Start with one honest thought"].waitForExistence(timeout: 4))
         XCTAssertFalse(app.buttons["Type instead"].exists)
         XCTAssertTrue(app.buttons["Skip first entry"].firstMatch.exists)
         app.buttons["Skip first entry"].firstMatch.tap()
-
-        XCTAssertTrue(app.staticTexts["Your first snapshot is ready"].waitForExistence(timeout: 4))
-        attachScreenshot(named: "OnboardingSnapshot", app: app)
-        XCTAssertTrue(onboardingPrimaryCTA(in: app).isHittable)
-        onboardingPrimaryCTA(in: app).tap()
 
         XCTAssertTrue(app.staticTexts["Make reflection easy to repeat"].waitForExistence(timeout: 4))
         attachScreenshot(named: "OnboardingHabit", app: app)
