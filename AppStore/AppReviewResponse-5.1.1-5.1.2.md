@@ -2,10 +2,10 @@
 
 Hello App Review,
 
-Thank you for the clarification. We updated the Speech Recognition permission flow so the custom explanatory message now uses neutral wording before the system permission request.
+Thank you for the clarification. OffRecord has moved transcription to Apple's iOS 26 SpeechAnalyzer stack. Recognition now runs entirely on device and the app no longer requests the separate Speech Recognition permission.
 
-The primary action is now "Continue" instead of "Agree and Transcribe," and the custom message no longer includes a secondary permission-style choice. The user's permission decision is handled by the iOS Speech Recognition permission prompt.
+Before transcription, OffRecord presents a neutral in-app disclosure with a “Continue” action. The only system permission requested for live voice capture is Microphone access.
 
-We also reviewed related Speech Recognition wording in Settings and error states to avoid directive permission language.
+We also updated Settings, privacy copy, and error states to describe the on-device SpeechAnalyzer behavior and possible Apple language-model download.
 
-If Speech Recognition is denied, OffRecord saves the recording locally and lets the user type manually.
+If transcription is disabled or the selected locale is unsupported, OffRecord preserves the recording locally and lets the user type manually. There is no server-recognition fallback.
