@@ -149,6 +149,13 @@ struct TimelineView: View {
         .onChange(of: voiceSearch.transcribedText) { _, newValue in
             if !newValue.isEmpty {
                 searchText = newValue
+            }
+        }
+        .onChange(of: voiceSearch.isListening) { _, listening in
+            isListening = listening
+        }
+        .onChange(of: voiceSearch.errorMessage) { _, error in
+            if error != nil {
                 isListening = false
             }
         }
@@ -394,8 +401,8 @@ struct TimelineView: View {
             Button {
                 toggleVoiceSearch()
             } label: {
-                Image(systemName: isListening ? "mic.fill" : "mic")
-                    .foregroundStyle(isListening ? OffRecordColor.textCoral : OffRecordColor.textBrand)
+                Image(systemName: isListening || voiceSearch.isPreparingModel ? "mic.fill" : "mic")
+                    .foregroundStyle(isListening || voiceSearch.isPreparingModel ? OffRecordColor.textCoral : OffRecordColor.textBrand)
             }
             .accessibilityLabel("Voice search")
             #endif
@@ -503,7 +510,26 @@ struct TimelineView: View {
     #if os(iOS)
     @ViewBuilder
     private var voiceSearchErrorBanner: some View {
-        if let error = voiceSearch.errorMessage {
+        if voiceSearch.isPreparingModel {
+            HStack(spacing: 10) {
+                if let progress = voiceSearch.modelDownloadProgress {
+                    ProgressView(value: progress)
+                        .frame(width: 52)
+                } else {
+                    ProgressView()
+                }
+                Text("Preparing the on-device speech model…")
+                    .font(OffRecordTypography.labelSmall)
+                    .foregroundStyle(OffRecordColor.textSecondary)
+                Spacer()
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(
+                OffRecordColor.surfaceWarm,
+                in: RoundedRectangle(cornerRadius: OffRecordRadius.lg, style: .continuous)
+            )
+        } else if let error = voiceSearch.errorMessage {
             HStack(spacing: 10) {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .foregroundStyle(OffRecordColor.brandCoral)
@@ -760,7 +786,7 @@ struct TimelineView: View {
 
     private func toggleVoiceSearch() {
         #if os(iOS)
-        if isListening {
+        if isListening || voiceSearch.isPreparingModel {
             voiceSearch.stopListening()
             isListening = false
         } else {
@@ -777,7 +803,6 @@ struct TimelineView: View {
         #if os(iOS)
         voiceSearch.startListening()
         guard voiceSearch.errorMessage == nil else { return }
-        isListening = true
         HapticManager.shared.recordingStarted()
         #endif
     }
