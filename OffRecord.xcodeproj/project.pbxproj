@@ -784,6 +784,7 @@
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "OffRecord AI Journal uses Face ID to lock and unlock access to your private journal entries.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "If you turn it on, OffRecord saves the moods you pick to Apple Health as State of Mind. Journal text is never shared with Health.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "OffRecord AI Journal needs microphone access to record your voice journal entries.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "OffRecord AI Journal lets you attach photos to your journal entries. Photos are stored on your device only.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -836,6 +837,7 @@
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "OffRecord AI Journal uses Face ID to lock and unlock access to your private journal entries.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "If you turn it on, OffRecord saves the moods you pick to Apple Health as State of Mind. Journal text is never shared with Health.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "OffRecord AI Journal needs microphone access to record your voice journal entries.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "OffRecord AI Journal lets you attach photos to your journal entries. Photos are stored on your device only.";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
