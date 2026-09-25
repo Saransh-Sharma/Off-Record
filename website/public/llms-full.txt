@@ -8,7 +8,7 @@
 
 OffRecord AI Journal is a free, privacy-first AI voice journal app for iPhone, iPad, and Apple Watch. It supports private voice journaling, mood tracking, quick wrist capture, Weekly Reflection, and a "Friday" personality model — no developer servers, no third-party AI APIs, and no data collection.
 
-- **Platform**: iOS 17.0+ and watchOS 26.0+ companion
+- **Platform**: iOS/iPadOS 26.0+ and watchOS 26.0+ companion
 - **Price**: Free (no in-app purchases, no subscriptions, no ads)
 - **Developer**: OffRecord AI Journal
 - **App Store ID**: 6766499684
@@ -114,7 +114,7 @@ OffRecord AI Journal is built entirely with Apple-native technologies:
 - **Encryption**: AES-256 via Apple CryptoKit
 - **Biometrics**: LocalAuthentication framework (Face ID / Touch ID)
 - **Sync**: CloudKit (optional, Apple-only infrastructure)
-- **Minimum iOS**: 17.0
+- **Minimum iOS**: 26.0
 
 No third-party libraries, no analytics SDKs, no crash reporting tools, no ad frameworks. The app makes zero network requests (unless iCloud sync is enabled, which goes only to Apple's servers).
 
@@ -325,7 +325,7 @@ A: Anyone who wants to journal by voice, wants AI-powered insights about their e
 - **App Store URL**: https://apps.apple.com/app/id6766499684
 - **Price**: Free
 - **In-App Purchases**: None
-- **Compatibility**: iPhone and iPad with iOS 17.0+; Apple Watch companion with watchOS 26.0+
+- **Compatibility**: iPhone and iPad with iOS/iPadOS 26.0+; Apple Watch companion with watchOS 26.0+
 - **App Privacy**: No Data Collected
 
 ---

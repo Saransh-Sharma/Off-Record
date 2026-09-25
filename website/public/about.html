@@ -689,7 +689,7 @@
         </div>
         <p>The problem was: there was no good tool for voice journaling I could trust with my most private thoughts. Every app I found either sent my audio to cloud servers for processing, or charged a subscription, or both.</p>
         <p>I'm a developer. So I built my own.</p>
-        <p><strong>OffRecord AI Journal is simple at its core:</strong> open the app, press record, talk about your day — and <code>SFSpeechRecognizer</code> transcribes everything on-device with <code>requiresOnDeviceRecognition = true</code>. No cloud. No servers. No account. No subscription. Your voice literally never leaves your phone.</p>
+        <p><strong>OffRecord AI Journal is simple at its core:</strong> open the app, press record, talk about your day — and Apple’s <code>SpeechAnalyzer</code> transcribes everything on-device using <code>SpeechTranscriber</code> or <code>DictationTranscriber</code>. No speech server. No account. No subscription. Your voice never leaves your phone for transcription.</p>
         <p>AI tools made this possible as a solo developer. What would have taken a team and months a few years ago, I shipped from idea to the App Store in a fraction of the time. That's the power of this moment in technology — one person with the right tools can build something real.</p>
       </section>
 
@@ -775,7 +775,7 @@
             <div class="rd-body">
               <div class="rd-tag rd-done"><span class="rd-tag-text">Shipped · v1.0</span></div>
               <h3>Voice journaling + on-device AI</h3>
-              <p><strong>Tech:</strong> <code>SFSpeechRecognizer</code> (<code>requiresOnDeviceRecognition = true</code>) for zero-network transcription. <code>NLTagger</code> for sentiment, NER, POS. <code>NSPersistentCloudKitContainer</code> wrapping SQLite. <code>AVFoundation</code> AAC 44.1 kHz capture. <code>CryptoKit</code> AES-256-GCM backups. <code>LocalAuthentication</code> for Face ID / Touch ID. <code>WidgetKit</code> + <code>AppIntents</code>. All inference on Neural Engine.</p>
+              <p><strong>Tech:</strong> <code>SpeechAnalyzer</code> with <code>SpeechTranscriber</code> and <code>DictationTranscriber</code> for on-device transcription. <code>NLTagger</code> for sentiment, NER, POS. <code>NSPersistentCloudKitContainer</code> wrapping SQLite. <code>AVFoundation</code> AAC 44.1 kHz capture. <code>CryptoKit</code> AES-256-GCM backups. <code>LocalAuthentication</code> for Face ID / Touch ID. <code>WidgetKit</code> + <code>AppIntents</code>. All inference stays on-device.</p>
             </div>
           </div>
           <div class="rd-item">
@@ -815,7 +815,7 @@
             <div class="rd-body">
               <div class="rd-tag rd-next"><span class="rd-tag-text">v2.0 · Conversational Friday (iOS 26)</span></div>
               <h3>Foundation Models + tool calling + SpeechAnalyzer</h3>
-              <p><strong>Tech:</strong> Apple's on-device 3B Foundation Model via <code>LanguageModelSession</code>. Friday becomes a real chatbot with multi-turn transcript memory. Autonomous Core Data querying via <code>Tool</code> protocol. Dynamic instructions fed from <code>FridayAssistantEngine</code> for tone matching. <code>@Generable</code> for type-safe structured outputs. <code>streamResponse()</code> for real-time streaming. <code>SpeechAnalyzer</code> replaces <code>SFSpeechRecognizer</code>. Requires iPhone 15 Pro+. Zero network calls.</p>
+              <p><strong>Tech:</strong> Apple's on-device 3B Foundation Model via <code>LanguageModelSession</code>. Friday becomes a real chatbot with multi-turn transcript memory. Autonomous Core Data querying via <code>Tool</code> protocol. Dynamic instructions fed from <code>FridayAssistantEngine</code> for tone matching. <code>@Generable</code> for type-safe structured outputs. <code>streamResponse()</code> for real-time streaming. Requires iPhone 15 Pro+. Zero network calls.</p>
             </div>
           </div>
           <div class="rd-item">
