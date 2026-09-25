@@ -14,41 +14,32 @@ import UserNotifications
 #if canImport(UIKit)
 import UIKit
 #endif
+import JournalSecurityKit
 @testable import OffRecord
 
 // MARK: - Friday Chat Layout Tests
 
 @MainActor
 struct FridayChatLayoutTests {
-    @Test func compactKeyboardVisibleComposerClearsFloatingTabBar() {
+    // The tab bar is hidden in Friday chat, so the composer only keeps a small
+    // gap above the home indicator, and sits flush on the keyboard.
+    @Test func compactKeyboardVisibleComposerSitsOnKeyboard() {
         let clearance = FridayChatLayout.composerBottomClearance(
             horizontalSizeClass: .compact,
             isKeyboardVisible: true
         )
 
-        #expect(clearance == OffRecordCompactTabBarLayout.composerKeyboardVisibleClearance)
-        #expect(OffRecordCompactTabBarLayout.composerGapAboveTabBar == 0)
-        #expect(OffRecordCompactTabBarLayout.composerKeyboardFlushAlignmentOffset == 12)
+        #expect(clearance == 0)
     }
 
-    @Test func compactKeyboardVisibleComposerClearanceDoesNotIncludeKeyboardHeight() {
-        let clearance = FridayChatLayout.composerBottomClearance(
-            horizontalSizeClass: .compact,
-            isKeyboardVisible: true
-        )
-
-        #expect(clearance < 312)
-        #expect(clearance > OffRecordCompactTabBarLayout.reservedContentBottomInset)
-    }
-
-    @Test func compactKeyboardHiddenComposerKeepsExistingVisualSpacing() {
+    @Test func compactKeyboardHiddenComposerKeepsSmallGap() {
         let clearance = FridayChatLayout.composerBottomClearance(
             horizontalSizeClass: .compact,
             isKeyboardVisible: false
         )
 
         #expect(clearance == FridayChatLayout.compactComposerBottomClearance)
-        #expect(clearance == 52)
+        #expect(clearance == 8)
     }
 
     @Test func regularWidthComposerClearanceStaysCompact() {
