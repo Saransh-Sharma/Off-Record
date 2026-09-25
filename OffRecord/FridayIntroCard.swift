@@ -30,7 +30,7 @@ struct FridayIntroCard: View {
             RoundedRectangle(cornerRadius: 28)
                 .stroke(OffRecordColor.borderSoft, lineWidth: 1)
         }
-        .shadow(color: Color.black.opacity(0.06), radius: 28, x: 0, y: 10)
+        .offRecordShadow(.card)
     }
 
     private var title: String {

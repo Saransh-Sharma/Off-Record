@@ -128,10 +128,14 @@ final class SemanticMemoryUITests: XCTestCase {
 
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "identifier BEGINSWITH %@", "friday.answerMessage.")).firstMatch.waitForExistence(timeout: 15))
         XCTAssertTrue(app.descendants(matching: .any)["friday.evidenceRail"].firstMatch.waitForExistence(timeout: 8))
-        XCTAssertTrue(app.descendants(matching: .any)["friday.evidenceChip"].firstMatch.exists)
-        XCTAssertTrue(app.descendants(matching: .any)["friday.evidenceChip.snippet"].firstMatch.label.localizedCaseInsensitiveContains("work"))
-        XCTAssertTrue(app.descendants(matching: .any)["friday.evidenceChip.mood"].firstMatch.waitForExistence(timeout: 4))
-        XCTAssertTrue(app.descendants(matching: .any)["friday.evidenceChip.reason"].firstMatch.waitForExistence(timeout: 4))
+        // Each source chip is a single VoiceOver element: "Source 1, <date>, mood <mood>, <snippet>",
+        // with the match reason as its value.
+        let chip = app.descendants(matching: .any)["friday.evidenceChip"].firstMatch
+        XCTAssertTrue(chip.exists)
+        XCTAssertTrue(chip.label.localizedCaseInsensitiveContains("work"))
+        XCTAssertTrue(chip.label.localizedCaseInsensitiveContains("mood"))
+        XCTAssertFalse((chip.value as? String ?? "").isEmpty)
+        XCTAssertTrue(app.descendants(matching: .any)["friday.evidenceStrength"].firstMatch.waitForExistence(timeout: 4))
     }
 
     func testFridaySuggestedQuestionAttachesEvidence() throws {
@@ -147,7 +151,7 @@ final class SemanticMemoryUITests: XCTestCase {
 
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "identifier BEGINSWITH %@", "friday.answerMessage.")).firstMatch.waitForExistence(timeout: 15))
         XCTAssertTrue(app.descendants(matching: .any)["friday.evidenceRail"].firstMatch.waitForExistence(timeout: 8))
-        XCTAssertTrue(app.descendants(matching: .any)["friday.evidenceChip.snippet"].firstMatch.waitForExistence(timeout: 4))
+        XCTAssertTrue(app.descendants(matching: .any)["friday.evidenceChip"].firstMatch.waitForExistence(timeout: 4))
     }
 
     func testFridaySuggestedQuestionUsesProfileAnswerWhenFallbackHasNoCitationMatch() throws {

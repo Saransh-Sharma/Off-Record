@@ -19,7 +19,7 @@ struct FridayPromptPill: View {
         Button(action: action) {
             HStack(spacing: OffRecordSpacing.md) {
                 Image(systemName: question.icon)
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(OffRecordTypography.labelLarge)
                     .foregroundStyle(isAsked ? OffRecordColor.textTertiary : style.accent)
                     .frame(width: 22)
 

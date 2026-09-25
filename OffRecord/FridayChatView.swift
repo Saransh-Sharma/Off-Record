@@ -62,24 +62,71 @@ enum FridayQuestion: String, CaseIterable, Identifiable {
 
 // MARK: - Chat Message
 
-struct FridayChatMessage: Identifiable {
-    let id = UUID()
-    let text: String
+struct FridayChatMessage: Identifiable, Equatable {
+    let id: UUID
+    let timestamp: Date
+    /// The question for user messages; the lead summary for Friday's answers.
+    let summary: String
     let isUser: Bool
-    let timestamp = Date()
     let evidence: [EvidenceReference]
     let observations: [EvidenceObservation]
     let confidence: Double?
     let limitations: String?
+    let followUps: [FridayFollowUp]
 
-    init(text: String, isUser: Bool, evidence: [EvidenceReference] = [], observations: [EvidenceObservation] = [], confidence: Double? = nil, limitations: String? = nil) {
-        self.text = text
+    /// A user message.
+    init(id: UUID = UUID(), timestamp: Date = Date(), text: String, isUser: Bool) {
+        self.init(id: id, timestamp: timestamp, summary: text, isUser: isUser)
+    }
+
+    init(
+        id: UUID = UUID(),
+        timestamp: Date = Date(),
+        summary: String,
+        isUser: Bool,
+        evidence: [EvidenceReference] = [],
+        observations: [EvidenceObservation] = [],
+        confidence: Double? = nil,
+        limitations: String? = nil,
+        followUps: [FridayFollowUp] = []
+    ) {
+        self.id = id
+        self.timestamp = timestamp
+        self.summary = summary
         self.isUser = isUser
         self.evidence = evidence
         self.observations = observations
         self.confidence = confidence
         self.limitations = limitations
+        self.followUps = followUps
     }
+
+    var segments: [FridayAnswerSegment] {
+        guard !isUser else { return [FridayAnswerSegment(text: summary, citations: [])] }
+        return FridayAnswerComposer.segments(summary: summary, observations: observations, evidence: evidence)
+    }
+
+    /// The message as plain text, without citation markers (for copy, share, and VoiceOver).
+    var text: String {
+        FridayAnswerComposer.plainText(segments)
+    }
+
+    var evidenceStrength: FridayEvidenceStrength? {
+        isUser ? nil : FridayEvidenceStrength.assess(confidence: confidence, evidence: evidence)
+    }
+}
+
+/// A cited entry opened from an evidence chip; `sourceID` drives the zoom transition.
+struct FridayEvidenceSelection: Hashable {
+    let entry: DiaryEntry
+    let sourceID: String
+}
+
+struct FridayChatError: Equatable {
+    /// The question to retry, or nil when the journal index itself failed.
+    let question: String?
+    let profileSummary: String?
+    let detail: String
 }
 
 // MARK: - Response Generator
@@ -161,7 +208,7 @@ struct FridayResponseGenerator {
     private static func talkAboutMostResponse(assistant: FridayAssistantEngine, hasData: Bool) -> String {
         guard hasData else { return insufficientData }
 
-        let people = assistant.knowledgeGraph.topNodes(ofType: .person, limit: 5)
+        let people = assistant.knowledgeGraph.fridayVisibleNodes(ofType: .person, limit: 5)
         guard !people.isEmpty else {
             return "I haven't picked up on specific people in your entries yet. Try mentioning people by name and I'll start tracking who matters most to you."
         }
@@ -207,6 +254,7 @@ struct FridayResponseGenerator {
 
         // Positive triggers
         let positiveTriggers = sig.positiveTriggersTopics
+            .filter { !FridayMemoryPreferences.shared.isForgottenLabel($0.key) }
             .sorted { $0.value > $1.value }
             .prefix(3)
             .map { $0.key.capitalized }
@@ -221,8 +269,11 @@ struct FridayResponseGenerator {
     private static func dominantTopicsResponse(assistant: FridayAssistantEngine, profile: UserProfile, hasData: Bool) -> String {
         guard hasData else { return insufficientData }
 
-        let graphTopics = assistant.knowledgeGraph.topNodes(ofType: .topic, limit: 5)
-        let profileTopics = profile.commonTopics.sorted { $0.value > $1.value }.prefix(5)
+        let graphTopics = assistant.knowledgeGraph.fridayVisibleNodes(ofType: .topic, limit: 5)
+        let profileTopics = profile.commonTopics
+            .filter { !FridayMemoryPreferences.shared.isForgottenLabel($0.key) }
+            .sorted { $0.value > $1.value }
+            .prefix(5)
 
         var allTopics: [String] = []
         for node in graphTopics {
@@ -244,6 +295,7 @@ struct FridayResponseGenerator {
 
         // Add concerns if available
         let concerns = assistant.thoughtPatterns.topConcerns
+            .filter { !FridayMemoryPreferences.shared.isForgottenLabel($0.key) }
             .sorted { $0.value > $1.value }
             .prefix(2)
             .map { $0.key.capitalized }
@@ -337,6 +389,7 @@ struct FridayResponseGenerator {
         guard hasData else { return insufficientData }
 
         let negativeTriggers = assistant.emotionalSignature.negativeTriggersTopics
+            .filter { !FridayMemoryPreferences.shared.isForgottenLabel($0.key) }
             .sorted { $0.value > $1.value }
             .prefix(5)
 
@@ -349,6 +402,7 @@ struct FridayResponseGenerator {
 
         // Contrast with positive
         let positiveTriggers = assistant.emotionalSignature.positiveTriggersTopics
+            .filter { !FridayMemoryPreferences.shared.isForgottenLabel($0.key) }
             .sorted { $0.value > $1.value }
             .prefix(3)
             .map { $0.key.capitalized }
@@ -510,6 +564,7 @@ struct FridayChatView: View {
     @Environment(\.dismiss) private var dismiss
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @ObservedObject private var semanticMemory = SemanticMemoryIndexController.shared
+    @ObservedObject private var assistant = FridayAssistantEngine.shared
     @AppStorage("authorName") private var authorName: String = ""
 
     @FetchRequest(
@@ -523,6 +578,15 @@ struct FridayChatView: View {
     @State private var isAnswering = false
     @State private var appliedInitialQuestion = false
     @State private var isKeyboardVisible = false
+    @State private var hasRestoredHistory = false
+    @State private var revealingMessageID: UUID?
+    @State private var chatError: FridayChatError?
+    @State private var indexErrorDismissed = false
+    @State private var selectedEvidence: FridayEvidenceSelection?
+    @State private var isConfirmingNewChat = false
+    @State private var answerFeedbackTrigger = 0
+    @State private var newChatTrigger = 0
+    @Namespace private var evidenceNamespace
 
     private var startedEntries: [DiaryEntry] { entries.startedEntries }
 
@@ -537,6 +601,7 @@ struct FridayChatView: View {
                 width: geometry.size.width,
                 horizontalSizeClass: horizontalSizeClass
             )
+            let contentWidth = max(0, min(geometry.size.width, metrics.fridayReadableWidth) - horizontalPadding * 2)
 
             ScrollViewReader { proxy in
                 ZStack(alignment: .topLeading) {
@@ -544,7 +609,7 @@ struct FridayChatView: View {
 
                     ScrollView {
                         VStack(spacing: contentSpacing) {
-                            screenContent
+                            screenContent(contentWidth: contentWidth)
 
                             Color.clear
                                 .frame(height: 1)
@@ -557,6 +622,7 @@ struct FridayChatView: View {
                         .frame(maxWidth: .infinity)
                     }
                     .scrollIndicators(.hidden)
+                    .scrollDismissesKeyboard(.interactively)
                     .accessibilityIdentifier("friday.questionChips")
 
                     FridayBackButton {
@@ -578,14 +644,16 @@ struct FridayChatView: View {
                     .padding(.bottom, composerBottomClearance)
                 }
                 .onChange(of: messages.count) { _, _ in
-                    withAnimation(.easeOut(duration: 0.28)) {
-                        proxy.scrollTo("bottom", anchor: .bottom)
-                    }
+                    scrollToBottom(proxy)
                 }
                 .onChange(of: isAnswering) { _, _ in
-                    withAnimation(.easeOut(duration: 0.28)) {
-                        proxy.scrollTo("bottom", anchor: .bottom)
-                    }
+                    scrollToBottom(proxy)
+                }
+                .onChange(of: revealingMessageID) { _, _ in
+                    scrollToBottom(proxy)
+                }
+                .onChange(of: chatError) { _, _ in
+                    scrollToBottom(proxy)
                 }
             }
         }
@@ -594,9 +662,35 @@ struct FridayChatView: View {
         .toolbar(.hidden, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
         .background(OffRecordAppBackground().ignoresSafeArea())
+        .navigationDestination(item: $selectedEvidence) { selection in
+            EntryDetailView(entry: selection.entry)
+                .navigationTransition(.zoom(sourceID: selection.sourceID, in: evidenceNamespace))
+        }
+        .confirmationDialog(
+            "Start a new chat?",
+            isPresented: $isConfirmingNewChat,
+            titleVisibility: .visible
+        ) {
+            Button("New chat", role: .destructive, action: startNewChat)
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This conversation will be cleared from this device. Your journal isn’t affected.")
+        }
+        .sensoryFeedback(.impact(flexibility: .soft), trigger: answerFeedbackTrigger)
+        .sensoryFeedback(.success, trigger: newChatTrigger)
         .task {
+            restoreHistoryIfNeeded()
             semanticMemory.ensureIndexed(entries: startedEntries)
             applyInitialQuestionIfNeeded()
+        }
+        .onChange(of: messages) { _, newMessages in
+            guard hasRestoredHistory else { return }
+            FridayChatHistoryStore.save(newMessages)
+        }
+        .onChange(of: semanticMemory.lastSearchState) { _, state in
+            if case .failed = state {
+                indexErrorDismissed = false
+            }
         }
         #if os(iOS)
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
@@ -609,22 +703,36 @@ struct FridayChatView: View {
     }
 
     @ViewBuilder
-    private var screenContent: some View {
+    private func screenContent(contentWidth: CGFloat) -> some View {
         switch screenMode {
         case .activeChat:
-            FridayActiveChatHeader()
-            FridayMessageList(
-                messages: messages,
-                isAnswering: isAnswering,
-                entryProvider: entry(for:)
-            )
-            FridayPromptSection(
-                title: "Or ask me something",
-                questions: compactQuestions,
-                askedQuestions: askedQuestions,
-                layout: .grid,
-                action: askQuestion
-            )
+            FridayActiveChatHeader(onNewChat: { isConfirmingNewChat = true })
+            messageList(contentWidth: contentWidth)
+            if showsStaticPrompts {
+                FridayPromptSection(
+                    title: "Or ask me something",
+                    questions: compactQuestions,
+                    askedQuestions: askedQuestions,
+                    layout: .grid,
+                    action: askQuestion
+                )
+            }
+        case .error:
+            if messages.isEmpty {
+                FridayChatErrorContent(
+                    detail: activeError?.detail ?? "",
+                    isIndexFailure: activeError?.question == nil,
+                    onRetry: retryAfterError
+                )
+            } else {
+                FridayActiveChatHeader(onNewChat: { isConfirmingNewChat = true })
+                messageList(contentWidth: contentWidth)
+                FridayChatErrorCard(
+                    detail: activeError?.detail ?? "",
+                    isIndexFailure: activeError?.question == nil,
+                    onRetry: retryAfterError
+                )
+            }
         case .loadingIndex:
             FridayWarmMinimalContent(
                 userName: authorName,
@@ -641,7 +749,7 @@ struct FridayChatView: View {
                 mode: .noJournalData,
                 action: askQuestion
             )
-        case .warmMinimal, .error:
+        case .warmMinimal:
             FridayWarmMinimalContent(
                 userName: authorName,
                 questions: landingQuestions,
@@ -652,7 +760,29 @@ struct FridayChatView: View {
         }
     }
 
+    private func messageList(contentWidth: CGFloat) -> some View {
+        FridayMessageList(
+            messages: messages,
+            isAnswering: isAnswering,
+            revealingMessageID: revealingMessageID,
+            showsFollowUps: !isAnswering && activeError == nil,
+            bubbleMaxWidth: contentWidth * 0.78,
+            namespace: evidenceNamespace,
+            entryProvider: entry(for:),
+            onRevealFinished: { id in
+                if revealingMessageID == id {
+                    revealingMessageID = nil
+                }
+            },
+            onFollowUp: askFollowUp,
+            onOpenEvidence: { selectedEvidence = $0 }
+        )
+    }
+
     private var screenMode: FridayChatScreenMode {
+        if activeError != nil {
+            return .error
+        }
         if !messages.isEmpty || isAnswering {
             return .activeChat
         }
@@ -663,6 +793,22 @@ struct FridayChatView: View {
             return .loadingIndex
         }
         return .warmMinimal
+    }
+
+    /// A failed answer, or — on the landing screen — a journal index that could not be searched.
+    private var activeError: FridayChatError? {
+        if let chatError { return chatError }
+        guard messages.isEmpty, !isAnswering, !semanticMemory.isBuilding, !indexErrorDismissed,
+              startedEntries.count >= 5,
+              case .failed(let detail) = semanticMemory.lastSearchState else { return nil }
+        return FridayChatError(question: nil, profileSummary: nil, detail: detail)
+    }
+
+    /// Static prompts are a fallback; answers normally carry their own follow-ups.
+    private var showsStaticPrompts: Bool {
+        guard !isAnswering else { return false }
+        guard let last = messages.last(where: { !$0.isUser }) else { return true }
+        return last.followUps.isEmpty
     }
 
     private var landingQuestions: [FridayQuestion] {
@@ -677,19 +823,27 @@ struct FridayChatView: View {
         [.bestJournalTime, .communicationStyle, .moodPattern, .dominantTopics]
     }
 
+    private var followUpFallbackQuestions: [FridayQuestion] {
+        [.moodPattern, .stressTriggers, .happiestWhen, .talkAboutMost, .dominantTopics, .moodOverTime]
+            .filter { !askedQuestions.contains($0) }
+    }
+
     private var horizontalPadding: CGFloat {
         horizontalSizeClass == .compact ? OffRecordSpacing.xxl : 40
     }
 
     private var topContentPadding: CGFloat {
-        if screenMode == .activeChat {
+        if screenMode == .activeChat || (screenMode == .error && !messages.isEmpty) {
             return horizontalSizeClass == .compact ? 82 : 72
         }
         return horizontalSizeClass == .compact ? 48 : 64
     }
 
     private var contentSpacing: CGFloat {
-        screenMode == .activeChat ? 18 : 0
+        switch screenMode {
+        case .activeChat, .error: return 18
+        default: return 0
+        }
     }
 
     private var composerBottomClearance: CGFloat {
@@ -706,6 +860,38 @@ struct FridayChatView: View {
     private var scrollBottomPadding: CGFloat {
         horizontalSizeClass == .compact ? 260 : 160
     }
+
+    private func scrollToBottom(_ proxy: ScrollViewProxy) {
+        withOffRecordAnimation(OffRecordMotion.gentle) {
+            proxy.scrollTo("bottom", anchor: .bottom)
+        }
+    }
+
+    // MARK: History
+
+    private func restoreHistoryIfNeeded() {
+        guard !hasRestoredHistory else { return }
+        let restored = FridayChatHistoryStore.load(resolving: entry(for:))
+        if !restored.isEmpty {
+            messages = restored
+            let askedTexts = Set(restored.filter(\.isUser).map(\.summary))
+            askedQuestions = Set(FridayQuestion.allCases.filter { askedTexts.contains($0.rawValue) })
+        }
+        hasRestoredHistory = true
+    }
+
+    private func startNewChat() {
+        withOffRecordAnimation(OffRecordMotion.gentle) {
+            messages = []
+            askedQuestions = []
+            chatError = nil
+            revealingMessageID = nil
+        }
+        FridayChatHistoryStore.clear()
+        newChatTrigger += 1
+    }
+
+    // MARK: Asking
 
     private func applyInitialQuestionIfNeeded() {
         guard !appliedInitialQuestion else { return }
@@ -724,6 +910,14 @@ struct FridayChatView: View {
         askedQuestions.insert(question)
     }
 
+    private func askFollowUp(_ followUp: FridayFollowUp) {
+        if let question = followUp.question {
+            askQuestion(question)
+        } else {
+            askEvidenceQuestion(followUp.prompt, profileSummary: nil)
+        }
+    }
+
     private var canSendFreeform: Bool {
         !inputText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && !isAnswering && !semanticMemory.isBuilding
     }
@@ -737,32 +931,145 @@ struct FridayChatView: View {
 
     private func askEvidenceQuestion(_ question: String, profileSummary: String?) {
         guard !isAnswering else { return }
-        // Add user message
-        let userMessage = FridayChatMessage(text: question, isUser: true)
-        messages.append(userMessage)
+        chatError = nil
+        messages.append(FridayChatMessage(text: question, isUser: true))
+        answer(question, profileSummary: profileSummary)
+    }
+
+    private func retryAfterError() {
+        guard let error = activeError else { return }
+        if let question = error.question {
+            chatError = nil
+            answer(question, profileSummary: error.profileSummary)
+        } else {
+            indexErrorDismissed = true
+            semanticMemory.rebuildIndex(entries: startedEntries)
+        }
+    }
+
+    private func answer(_ question: String, profileSummary: String?) {
+        guard !isAnswering else { return }
         isAnswering = true
         let entrySnapshot = startedEntries
+        let askedPrompts = Set(messages.filter(\.isUser).map { $0.summary.lowercased() })
 
         Task {
             let answer = await EvidenceFridayEngine.answer(question: question, entries: entrySnapshot, profileSummary: profileSummary)
-            let text = ([answer.summary] + answer.observations.map(\.text)).joined(separator: " ")
+
+            if case .failed(let detail) = semanticMemory.lastSearchState,
+               answer.evidence.isEmpty, answer.confidence == 0 {
+                withOffRecordAnimation(OffRecordMotion.gentle) {
+                    isAnswering = false
+                    chatError = FridayChatError(question: question, profileSummary: profileSummary, detail: detail)
+                }
+                return
+            }
+
+            let followUps = FridayFollowUpBuilder.followUps(
+                question: question,
+                evidence: answer.evidence,
+                knownNames: knownNames,
+                askedPrompts: askedPrompts,
+                fallbackQuestions: followUpFallbackQuestions
+            )
             let fridayMessage = FridayChatMessage(
-                text: text,
+                summary: answer.summary,
                 isUser: false,
                 evidence: answer.evidence,
                 observations: answer.observations,
                 confidence: answer.confidence,
-                limitations: answer.limitations
+                limitations: answer.limitations,
+                followUps: followUps
             )
-            withAnimation(.easeIn(duration: 0.2)) {
+            revealingMessageID = fridayMessage.id
+            withOffRecordAnimation(OffRecordMotion.fade) {
                 messages.append(fridayMessage)
                 isAnswering = false
             }
+            answerFeedbackTrigger += 1
+        }
+    }
+
+    /// People, places, and themes Friday may suggest follow-ups about, most important first.
+    /// `match` is the name as written in entries; `display` honors any rename.
+    private var knownNames: [(match: String, display: String)] {
+        let preferences = FridayMemoryPreferences.shared
+        let graph = assistant.knowledgeGraph
+        let ordered: [PersonalKnowledgeGraph.KnowledgeNode.NodeType] = [.person, .place, .topic]
+        return ordered.flatMap { type in
+            graph.topNodes(ofType: type, limit: 12)
+                .filter { !preferences.isForgotten($0) }
+                .map { (match: $0.label, display: preferences.displayName(for: $0)) }
         }
     }
 
     private func entry(for id: UUID) -> DiaryEntry? {
         startedEntries.first { $0.id == id }
+    }
+}
+
+// MARK: - Error states
+
+private struct FridayChatErrorCard: View {
+    let detail: String
+    let isIndexFailure: Bool
+    let onRetry: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
+            HStack(alignment: .top, spacing: OffRecordSpacing.md) {
+                OffRecordIconBubble(
+                    systemImage: "exclamationmark.bubble.fill",
+                    tint: OffRecordColor.textCoral,
+                    fill: OffRecordColor.backgroundBlushTint,
+                    size: 36,
+                    iconSize: 15
+                )
+                VStack(alignment: .leading, spacing: OffRecordSpacing.xs) {
+                    Text(isIndexFailure ? "I couldn’t open your journal memory" : "I couldn’t search your journal just now")
+                        .font(OffRecordTypography.labelLarge)
+                        .foregroundStyle(OffRecordColor.textHeading)
+                    Text("Nothing left your device. Trying again usually helps.")
+                        .font(OffRecordTypography.bodySmall)
+                        .foregroundStyle(OffRecordColor.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if !detail.isEmpty {
+                        Text(detail)
+                            .font(OffRecordTypography.annotation)
+                            .foregroundStyle(OffRecordColor.textTertiary)
+                            .lineLimit(3)
+                    }
+                }
+            }
+
+            Button(action: onRetry) {
+                Label(isIndexFailure ? "Rebuild and try again" : "Try again", systemImage: "arrow.clockwise")
+                    .frame(maxWidth: .infinity)
+            }
+            .buttonStyle(OffRecordSoftButtonStyle(tint: OffRecordColor.textOnAccent, fill: OffRecordColor.brandLavenderDark))
+            .accessibilityIdentifier("friday.error.retry")
+        }
+        .padding(OffRecordSpacing.lg)
+        .offRecordCard(cornerRadius: OffRecordRadius.xl, fill: OffRecordColor.surfacePrimary)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("friday.error")
+    }
+}
+
+private struct FridayChatErrorContent: View {
+    let detail: String
+    let isIndexFailure: Bool
+    let onRetry: () -> Void
+
+    var body: some View {
+        VStack(spacing: OffRecordSpacing.xl) {
+            FridayChatHeroHeader(subtitle: "Something got in the way on my side. Your entries are safe on this device.")
+
+            FridayMascotView(pose: .thinking, size: 120)
+                .accessibilityHidden(true)
+
+            FridayChatErrorCard(detail: detail, isIndexFailure: isIndexFailure, onRetry: onRetry)
+        }
     }
 }
 
