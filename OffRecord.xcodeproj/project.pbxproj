@@ -952,6 +952,7 @@
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "If you turn it on, OffRecord saves the moods you pick to Apple Health as State of Mind. Journal text is never shared with Health.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "OffRecord AI Journal needs microphone access to record your voice journal entries.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "OffRecord AI Journal lets you attach photos to your journal entries. Photos are stored on your device only.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -1005,6 +1006,7 @@
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "If you turn it on, OffRecord saves the moods you pick to Apple Health as State of Mind. Journal text is never shared with Health.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "OffRecord AI Journal needs microphone access to record your voice journal entries.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "OffRecord AI Journal lets you attach photos to your journal entries. Photos are stored on your device only.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;

@@ -125,7 +125,9 @@ final class CaptureController: ObservableObject {
     static let liveTranscriptPreferenceKey = "offrecord.capture.showsLiveTranscript"
     static let longRecordingWarningSeconds: TimeInterval = 30 * 60
 
-    @Published private(set) var phase: CapturePhase = .idle
+    @Published private(set) var phase: CapturePhase = .idle {
+        didSet { CaptureLiveActivityManager.shared.captureDidChange(from: oldValue, to: phase) }
+    }
     @Published var isPanelPresented = false
     @Published var captureDate = Date()
     /// The prompt the person chose to answer, shown in the panel while they speak.
