@@ -329,10 +329,12 @@ struct EntryDetailView: View {
         }
         .fullScreenCover(isPresented: compactMoodPickerBinding) {
             MoodDialSheet(selectedMood: $selectedMood, onSave: saveMood)
+                .offRecordMoodDialEnvironment()
         }
         .sheet(isPresented: regularMoodPickerBinding) {
             MoodDialSheet(selectedMood: $selectedMood, onSave: saveMood)
                 .presentationDetents([.large])
+                .offRecordMoodDialEnvironment()
         }
     }
 
