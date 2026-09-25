@@ -2,21 +2,18 @@
 //  FridayEvidenceChip.swift
 //  OffRecord
 //
-//  Compact evidence card for a cited journal memory.
+//  Compact, numbered evidence card for a cited journal memory.
 //
 
 import SwiftUI
 
 struct FridayEvidenceChip: View {
     let evidence: EvidenceReference
-    var chipAccessibilityIdentifier: String? = "friday.evidenceChip"
+    var number: Int?
 
     var body: some View {
         HStack(alignment: .top, spacing: OffRecordSpacing.md) {
-            Image(systemName: evidence.matchReason == .exact ? "text.magnifyingglass" : "quote.bubble.fill")
-                .font(OffRecordTypography.metadata)
-                .foregroundStyle(OffRecordColor.textLavender)
-                .frame(width: 18)
+            numberBadge
 
             VStack(alignment: .leading, spacing: OffRecordSpacing.xs) {
                 HStack(spacing: OffRecordSpacing.sm) {
@@ -28,41 +25,62 @@ struct FridayEvidenceChip: View {
                         Text(mood.capitalized)
                             .font(OffRecordTypography.labelSmall)
                             .foregroundStyle(OffRecordColor.textSecondary)
-                            .accessibilityIdentifier("friday.evidenceChip.mood")
                     }
+
+                    Spacer(minLength: 0)
+
+                    Image(systemName: "arrow.up.right")
+                        .font(OffRecordTypography.annotation)
+                        .foregroundStyle(OffRecordColor.textTertiary)
                 }
 
                 Text(evidence.snippet)
                     .font(OffRecordTypography.metadata)
                     .foregroundStyle(OffRecordColor.textSecondary)
                     .lineLimit(3)
-                    .accessibilityIdentifier("friday.evidenceChip.snippet")
+                    .multilineTextAlignment(.leading)
 
-                Text(evidence.matchReason.rawValue)
-                    .font(OffRecordTypography.labelSmall)
+                Label(evidence.matchReason.rawValue, systemImage: evidence.matchReason == .exact ? "text.magnifyingglass" : "quote.bubble")
+                    .font(OffRecordTypography.annotation)
                     .foregroundStyle(OffRecordColor.textLavender)
-                    .accessibilityIdentifier("friday.evidenceChip.reason")
             }
         }
         .padding(OffRecordSpacing.md)
-        .background(OffRecordColor.backgroundLavenderTint.opacity(0.72), in: RoundedRectangle(cornerRadius: 14))
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(OffRecordColor.backgroundLavenderTint.opacity(0.72), in: RoundedRectangle(cornerRadius: OffRecordRadius.sm, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 14)
+            RoundedRectangle(cornerRadius: OffRecordRadius.sm, style: .continuous)
                 .stroke(OffRecordColor.borderSoft, lineWidth: 1)
         }
-        .accessibilityElement(children: .contain)
-        .modifier(OptionalAccessibilityIdentifier(identifier: chipAccessibilityIdentifier))
+        .contentShape(RoundedRectangle(cornerRadius: OffRecordRadius.sm, style: .continuous))
     }
-}
 
-private struct OptionalAccessibilityIdentifier: ViewModifier {
-    let identifier: String?
-
-    func body(content: Content) -> some View {
-        if let identifier {
-            content.accessibilityIdentifier(identifier)
+    @ViewBuilder
+    private var numberBadge: some View {
+        if let number {
+            Text("\(number)")
+                .font(OffRecordTypography.labelSmall.monospacedDigit())
+                .foregroundStyle(OffRecordColor.textOnAccent)
+                .frame(minWidth: 22, minHeight: 22)
+                .background(OffRecordColor.brandLavenderDark, in: Circle())
         } else {
-            content
+            Image(systemName: "quote.bubble.fill")
+                .font(OffRecordTypography.metadata)
+                .foregroundStyle(OffRecordColor.textLavender)
+                .frame(width: 22)
         }
+    }
+
+    static func spokenDate(_ date: Date) -> String {
+        date.formatted(date: .long, time: .omitted)
+    }
+
+    static func accessibilityLabel(for evidence: EvidenceReference, number: Int) -> String {
+        var parts = ["Source \(number)", spokenDate(evidence.date)]
+        if let mood = evidence.mood, !mood.isEmpty {
+            parts.append("mood \(mood.capitalized)")
+        }
+        parts.append(evidence.snippet)
+        return parts.joined(separator: ", ")
     }
 }
