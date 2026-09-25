@@ -144,8 +144,8 @@ struct FridayProfileGenerator {
         }
 
         // Top person & topic from knowledge graph
-        let topPerson = assistant.knowledgeGraph.topNodes(ofType: .person, limit: 1).first?.label
-        let topTopic = assistant.knowledgeGraph.topNodes(ofType: .topic, limit: 1).first?.label
+        let topPerson = assistant.knowledgeGraph.fridayVisibleNodes(ofType: .person, limit: 1).first?.label
+        let topTopic = assistant.knowledgeGraph.fridayVisibleNodes(ofType: .topic, limit: 1).first?.label
 
         return FridayProfile(
             traits: traits,
@@ -172,52 +172,103 @@ struct FridayProfileGenerator {
 
 // MARK: - Profile Card View (in-app)
 
+/// The single place to view and share the personality card. It appears once
+/// Friday has enough entries for the traits to mean something.
 struct FridayProfileCardSection: View {
+    static let minimumEntries = 10
+
     @State private var profile: FridayProfile?
     @State private var showShareSheet = false
     @State private var shareImage: UIImage?
-    @State private var showFormatPicker = false
+    @State private var shareTrigger = 0
 
     var body: some View {
         Group {
-            if let profile = profile, profile.totalEntries >= 3 {
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        FridayMascotView(pose: .idle, size: 34)
-                        Text("Your Personality Card")
-                            .font(OffRecordTypography.sectionTitle)
-                        Spacer()
-                        Button {
-                            shareProfile(profile, format: .story)
-                        } label: {
-                            HStack(spacing: 4) {
-                                Image(systemName: "square.and.arrow.up")
-                                Text("Share")
-                            }
-                            .font(OffRecordTypography.labelSmall)
-                            .foregroundColor(OffRecordColor.textAqua)
-                        }
-                    }
-
-                    FridayProfileCardContent(profile: profile)
-                }
-                .sheet(isPresented: $showShareSheet) {
-                    if let image = shareImage {
-                        ShareSheet(activityItems: [
-                            image,
-                            PersonalityCardRenderer.shareText
-                        ])
-                    }
+            if let profile {
+                if profile.totalEntries >= Self.minimumEntries {
+                    unlockedCard(profile)
+                } else if profile.totalEntries > 0 {
+                    lockedHint(entries: profile.totalEntries)
                 }
             }
         }
         .onAppear { profile = FridayProfileGenerator.generate() }
+        .sheet(isPresented: $showShareSheet) {
+            if let image = shareImage {
+                ShareSheet(activityItems: [
+                    image,
+                    PersonalityCardRenderer.shareText
+                ])
+            }
+        }
+        .sensoryFeedback(.impact(weight: .light), trigger: shareTrigger)
+    }
+
+    private func unlockedCard(_ profile: FridayProfile) -> some View {
+        VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
+            HStack(spacing: OffRecordSpacing.sm) {
+                FridayMascotView(pose: .idle, size: 34)
+                    .accessibilityHidden(true)
+                Text("Your Personality Card")
+                    .font(OffRecordTypography.sectionTitle)
+                    .foregroundStyle(OffRecordColor.textHeading)
+                Spacer(minLength: OffRecordSpacing.sm)
+                Menu {
+                    Button {
+                        shareProfile(profile, format: .story)
+                    } label: {
+                        Label("Tall card (stories)", systemImage: "rectangle.portrait")
+                    }
+                    Button {
+                        shareProfile(profile, format: .landscape)
+                    } label: {
+                        Label("Wide card (posts)", systemImage: "rectangle")
+                    }
+                } label: {
+                    Label("Share", systemImage: "square.and.arrow.up")
+                        .font(OffRecordTypography.labelSmall)
+                        .foregroundStyle(OffRecordColor.textAqua)
+                        .frame(minWidth: OffRecordLayout.minimumTapTarget, minHeight: OffRecordLayout.minimumTapTarget)
+                }
+                .accessibilityLabel("Share personality card")
+                .accessibilityHint("Choose a tall or wide image")
+                .accessibilityIdentifier("friday.shareProfileCard")
+            }
+
+            FridayProfileCardContent(profile: profile)
+        }
+    }
+
+    private func lockedHint(entries: Int) -> some View {
+        HStack(spacing: OffRecordSpacing.md) {
+            OffRecordIconBubble(
+                systemImage: "person.text.rectangle",
+                tint: OffRecordColor.textLavender,
+                fill: OffRecordColor.backgroundLavenderTint,
+                size: 36,
+                iconSize: 15
+            )
+            VStack(alignment: .leading, spacing: OffRecordSpacing.xxs) {
+                Text("Personality card")
+                    .font(OffRecordTypography.labelMedium)
+                    .foregroundStyle(OffRecordColor.textHeading)
+                Text("Friday shares this after \(Self.minimumEntries) entries, so it reflects you. \(entries) of \(Self.minimumEntries) so far.")
+                    .font(OffRecordTypography.metadata)
+                    .foregroundStyle(OffRecordColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(OffRecordSpacing.lg)
+        .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceLavender)
+        .accessibilityElement(children: .combine)
     }
 
     private func shareProfile(_ profile: FridayProfile, format: PersonalityCardFormat) {
         Task { @MainActor in
             if let image = PersonalityCardRenderer.renderCard(profile: profile, format: format) {
                 shareImage = image
+                shareTrigger += 1
                 showShareSheet = true
             }
         }
@@ -363,7 +414,7 @@ private struct FridayProfileCardExport: View {
             // Header
             HStack(spacing: 8) {
                 Image(systemName: "person.text.rectangle")
-                    .font(.system(size: 12, weight: .semibold))
+                    .font(OffRecordExportTypography.label)
                 Text("My Personality Profile")
                     .font(OffRecordExportTypography.label)
                     .textCase(.uppercase)
