@@ -70,7 +70,7 @@ final class WeeklyReflectionUITests: XCTestCase {
         let app = launchWeeklyReflectionApp()
         openReportFromInsightsHistory(in: app)
 
-        openSourcesSheetFromReportMenu(in: app)
+        openSourcesSheet(in: app)
 
         let includeToggle = app.switches["weeklyReflection.sources.includeToggle"].firstMatch
         scrollUntilHittable(includeToggle, in: app, maxSwipes: 10)
@@ -84,7 +84,7 @@ final class WeeklyReflectionUITests: XCTestCase {
         let app = launchWeeklyReflectionApp()
         openReportFromInsightsHistory(in: app)
 
-        openSourcesSheetFromReportMenu(in: app)
+        openSourcesSheet(in: app)
 
         let sourceButton = app.buttons["weeklyReflection.sources.openEntry"].firstMatch
         scrollUntilHittable(sourceButton, in: app, maxSwipes: 10)
@@ -216,12 +216,12 @@ final class WeeklyReflectionUITests: XCTestCase {
         menu.tap()
     }
 
-    private func openSourcesSheetFromReportMenu(in app: XCUIApplication) {
-        openReportMenu(in: app)
-        let menuItem = app.buttons["Privacy & sources"].firstMatch
-        XCTAssertTrue(menuItem.waitForExistence(timeout: 4))
-        menuItem.tap()
-        XCTAssertTrue(app.navigationBars["Privacy & Sources"].waitForExistence(timeout: 6))
+    private func openSourcesSheet(in app: XCUIApplication) {
+        let sourcesButton = app.buttons["weeklyReflection.sources.openSheet"].firstMatch
+        scrollUntilHittable(sourcesButton, in: app, maxSwipes: 4)
+        XCTAssertTrue(sourcesButton.waitForExistence(timeout: 4))
+        sourcesButton.tap()
+        XCTAssertTrue(app.navigationBars["Sources & Privacy"].waitForExistence(timeout: 6))
     }
 
     private func tapTab(_ id: String, in app: XCUIApplication) {

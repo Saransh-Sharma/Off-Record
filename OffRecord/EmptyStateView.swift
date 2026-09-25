@@ -14,41 +14,27 @@ struct EmptyStateView: View {
     var actionTitle: String? = nil
     var action: (() -> Void)? = nil
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
-        VStack(spacing: 24) {
-            // Animated icon
-            ZStack {
-                Circle()
-                    .fill(OffRecordColor.backgroundLavenderTint)
-                    .frame(width: 120, height: 120)
+        VStack(spacing: OffRecordSpacing.xxl) {
+            illustration
+                .accessibilityHidden(true)
 
-                Circle()
-                    .fill(OffRecordColor.backgroundPeachTint.opacity(0.7))
-                    .frame(width: 160, height: 160)
-
-                Image(systemName: icon)
-                    .font(.system(size: 48))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [OffRecordColor.brandLavenderDark, OffRecordColor.brandPeach],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-            }
-
-            VStack(spacing: 8) {
+            VStack(spacing: OffRecordSpacing.sm) {
                 Text(title)
                     .font(OffRecordTypography.titleMedium)
-                    .foregroundColor(OffRecordColor.textHeading)
+                    .foregroundStyle(OffRecordColor.textHeading)
                     .multilineTextAlignment(.center)
+                    .accessibilityAddTraits(.isHeader)
 
                 Text(subtitle)
                     .font(OffRecordTypography.bodySmall)
-                    .foregroundColor(OffRecordColor.textSecondary)
+                    .foregroundStyle(OffRecordColor.textSecondary)
                     .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: 400)
-                    .padding(.horizontal, 40)
+                    .padding(.horizontal, OffRecordSpacing.xxl)
             }
 
             if let actionTitle = actionTitle, let action = action {
@@ -56,10 +42,51 @@ struct EmptyStateView: View {
                     Text(actionTitle)
                         .offRecordPillButton()
                 }
+                .buttonStyle(.plain)
             }
         }
         .padding()
         .accessibilityElement(children: .combine)
+    }
+
+    /// A soft peach halo behind a lavender disc, with the symbol on top.
+    private var illustration: some View {
+        ZStack {
+            Circle()
+                .fill(OffRecordColor.backgroundPeachTint)
+                .frame(width: 160, height: 160)
+
+            Circle()
+                .fill(OffRecordColor.backgroundLavenderTint)
+                .frame(width: 120, height: 120)
+                .overlay(Circle().stroke(OffRecordColor.borderSoft, lineWidth: 1))
+
+            floatingSymbol
+        }
+    }
+
+    @ViewBuilder
+    private var floatingSymbol: some View {
+        let symbol = Image(systemName: icon)
+            .font(OffRecordTypography.screenTitle)
+            .imageScale(.large)
+            .foregroundStyle(
+                LinearGradient(
+                    colors: [OffRecordColor.brandLavenderDark, OffRecordColor.brandPeach],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+
+        if reduceMotion {
+            symbol
+        } else {
+            symbol.phaseAnimator([false, true]) { content, isUp in
+                content.offset(y: isUp ? -6 : 2)
+            } animation: { _ in
+                .easeInOut(duration: 2.4)
+            }
+        }
     }
 }
 
@@ -93,8 +120,8 @@ extension EmptyStateView {
     static var noInsights: EmptyStateView {
         EmptyStateView(
             icon: "chart.line.uptrend.xyaxis",
-            title: "Insights Coming Soon",
-            subtitle: "Keep journaling to unlock personalized insights about your writing patterns"
+            title: "Your Insights Will Grow Here",
+            subtitle: "Write or record a few entries and OffRecord will start noticing patterns, privately and on your device."
         )
     }
 
@@ -188,12 +215,16 @@ struct OffRecordLoadingView: View {
                 .font(OffRecordTypography.labelSmall)
                 .foregroundStyle(OffRecordColor.textSecondary)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
+        .padding(.horizontal, OffRecordSpacing.lg)
+        .padding(.vertical, OffRecordSpacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(
             OffRecordColor.surfaceWarm,
             in: RoundedRectangle(cornerRadius: OffRecordRadius.lg, style: .continuous)
+        )
+        .overlay(
+            RoundedRectangle(cornerRadius: OffRecordRadius.lg, style: .continuous)
+                .stroke(OffRecordColor.borderSoft, lineWidth: 1)
         )
         .accessibilityElement(children: .combine)
     }
