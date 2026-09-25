@@ -8,6 +8,7 @@
 //
 
 import Foundation
+import JournalSecurityKit
 import CoreData
 import UniformTypeIdentifiers
 #if canImport(UIKit)
@@ -45,6 +46,13 @@ struct ExportableAudioAttachment: Codable, Identifiable {
     let byteCount: Int64
     let codec: String?
     let audioData: Data?
+    let transcriptBlockID: UUID?
+    let transcriptionAttemptCount: Int32?
+    let transcriptionEngine: String?
+    let transcriptionErrorCode: String?
+    let transcriptionLocale: String?
+    let transcriptionStatus: String?
+    let transcriptionUpdatedAt: Date?
 
     init(from attachment: NSManagedObject) {
         self.id = attachment.value(forKey: "id") as? UUID ?? UUID()
@@ -55,6 +63,13 @@ struct ExportableAudioAttachment: Codable, Identifiable {
         self.byteCount = attachment.value(forKey: "byteCount") as? Int64 ?? 0
         self.codec = attachment.value(forKey: "codec") as? String
         self.audioData = nil
+        self.transcriptBlockID = attachment.value(forKey: "transcriptBlockID") as? UUID
+        self.transcriptionAttemptCount = attachment.value(forKey: "transcriptionAttemptCount") as? Int32
+        self.transcriptionEngine = attachment.value(forKey: "transcriptionEngine") as? String
+        self.transcriptionErrorCode = attachment.value(forKey: "transcriptionErrorCode") as? String
+        self.transcriptionLocale = attachment.value(forKey: "transcriptionLocale") as? String
+        self.transcriptionStatus = attachment.value(forKey: "transcriptionStatus") as? String
+        self.transcriptionUpdatedAt = attachment.value(forKey: "transcriptionUpdatedAt") as? Date
     }
 
     private init(
@@ -65,7 +80,14 @@ struct ExportableAudioAttachment: Codable, Identifiable {
         sourceCaptureID: UUID?,
         byteCount: Int64,
         codec: String?,
-        audioData: Data?
+        audioData: Data?,
+        transcriptBlockID: UUID?,
+        transcriptionAttemptCount: Int32?,
+        transcriptionEngine: String?,
+        transcriptionErrorCode: String?,
+        transcriptionLocale: String?,
+        transcriptionStatus: String?,
+        transcriptionUpdatedAt: Date?
     ) {
         self.id = id
         self.fileName = fileName
@@ -75,6 +97,13 @@ struct ExportableAudioAttachment: Codable, Identifiable {
         self.byteCount = byteCount
         self.codec = codec
         self.audioData = audioData
+        self.transcriptBlockID = transcriptBlockID
+        self.transcriptionAttemptCount = transcriptionAttemptCount
+        self.transcriptionEngine = transcriptionEngine
+        self.transcriptionErrorCode = transcriptionErrorCode
+        self.transcriptionLocale = transcriptionLocale
+        self.transcriptionStatus = transcriptionStatus
+        self.transcriptionUpdatedAt = transcriptionUpdatedAt
     }
 
     func embeddingAudioPayload() -> ExportableAudioAttachment {
@@ -91,7 +120,14 @@ struct ExportableAudioAttachment: Codable, Identifiable {
             sourceCaptureID: sourceCaptureID,
             byteCount: byteCount,
             codec: codec,
-            audioData: data
+            audioData: data,
+            transcriptBlockID: transcriptBlockID,
+            transcriptionAttemptCount: transcriptionAttemptCount,
+            transcriptionEngine: transcriptionEngine,
+            transcriptionErrorCode: transcriptionErrorCode,
+            transcriptionLocale: transcriptionLocale,
+            transcriptionStatus: transcriptionStatus,
+            transcriptionUpdatedAt: transcriptionUpdatedAt
         )
     }
 }
@@ -783,6 +819,13 @@ final class BackupService {
             attachment.setValue(audio.sourceCaptureID, forKey: "sourceCaptureID")
             attachment.setValue(audio.byteCount, forKey: "byteCount")
             attachment.setValue(audio.codec, forKey: "codec")
+            attachment.setValue(audio.transcriptBlockID, forKey: "transcriptBlockID")
+            attachment.setValue(audio.transcriptionAttemptCount ?? 0, forKey: "transcriptionAttemptCount")
+            attachment.setValue(audio.transcriptionEngine, forKey: "transcriptionEngine")
+            attachment.setValue(audio.transcriptionErrorCode, forKey: "transcriptionErrorCode")
+            attachment.setValue(audio.transcriptionLocale, forKey: "transcriptionLocale")
+            attachment.setValue(audio.transcriptionStatus ?? AudioTranscriptionStatus.none.rawValue, forKey: "transcriptionStatus")
+            attachment.setValue(audio.transcriptionUpdatedAt, forKey: "transcriptionUpdatedAt")
             attachment.setValue(entry, forKey: "entry")
         }
     }
