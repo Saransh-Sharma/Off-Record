@@ -20,6 +20,7 @@
 		A20000000000000000000010 /* WatchCaptureKit in Frameworks */ = {isa = PBXBuildFile; productRef = A2000000000000000000000F /* WatchCaptureKit */; };
 		A20000000000000000000012 /* JournalSecurityKit in Frameworks */ = {isa = PBXBuildFile; productRef = A20000000000000000000011 /* JournalSecurityKit */; };
 		A20000000000000000000014 /* WatchCaptureKit in Frameworks */ = {isa = PBXBuildFile; productRef = A20000000000000000000013 /* WatchCaptureKit */; };
+		A30000000000000000000005 /* OffRecordWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A30000000000000000000004 /* OffRecordWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -51,6 +52,13 @@
 			remoteGlobalIDString = CFF97BED2EDE056600ED7317;
 			remoteInfo = OffRecord;
 		};
+		A30000000000000000000007 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CFF97BE62EDE056600ED7317 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A30000000000000000000009;
+			remoteInfo = OffRecordWidgetExtension;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -76,6 +84,17 @@
 			name = "Embed Watch Content";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A30000000000000000000006 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				A30000000000000000000005 /* OffRecordWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
@@ -85,6 +104,7 @@
 		CFF97BEE2EDE056600ED7317 /* OffRecord.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OffRecord.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CFF97C042EDE056900ED7317 /* OffRecordTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OffRecordTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		CFF97C0E2EDE056900ED7317 /* OffRecordUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OffRecordUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A30000000000000000000004 /* OffRecordWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = OffRecordWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -108,6 +128,13 @@
 				Info.plist,
 			);
 			target = CFF97BED2EDE056600ED7317 /* OffRecord */;
+		};
+		A30000000000000000000003 /* Exceptions for "OffRecordWidget" folder in "OffRecordWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = A30000000000000000000009 /* OffRecordWidgetExtension */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -149,6 +176,19 @@
 		CFF97C112EDE056900ED7317 /* OffRecordUITests */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			path = OffRecordUITests;
+			sourceTree = "<group>";
+		};
+		A30000000000000000000001 /* OffRecordWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				A30000000000000000000003 /* Exceptions for "OffRecordWidget" folder in "OffRecordWidgetExtension" target */,
+			);
+			path = OffRecordWidget;
+			sourceTree = "<group>";
+		};
+		A30000000000000000000002 /* OffRecordSystemShared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = OffRecordSystemShared;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -199,6 +239,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A3000000000000000000000B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -209,6 +256,8 @@
 				A10000000000000000000001 /* OffRecordShared */,
 				A10000000000000000000002 /* OffRecordWatch */,
 				A10000000000000000000003 /* OffRecordWatchWidget */,
+				A30000000000000000000001 /* OffRecordWidget */,
+				A30000000000000000000002 /* OffRecordSystemShared */,
 				A10000000000000000000004 /* OffRecord/Assets.xcassets */,
 				CFF97C072EDE056900ED7317 /* OffRecordTests */,
 				CFF97C112EDE056900ED7317 /* OffRecordUITests */,
@@ -222,6 +271,7 @@
 				CFF97BEE2EDE056600ED7317 /* OffRecord.app */,
 				A10000000000000000000005 /* OffRecordWatch.app */,
 				A10000000000000000000006 /* OffRecordWatchWidget.appex */,
+				A30000000000000000000004 /* OffRecordWidgetExtension.appex */,
 				CFF97C042EDE056900ED7317 /* OffRecordTests.xctest */,
 				CFF97C0E2EDE056900ED7317 /* OffRecordUITests.xctest */,
 			);
@@ -279,6 +329,29 @@
 			productReference = A10000000000000000000006 /* OffRecordWatchWidget.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		A30000000000000000000009 /* OffRecordWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A3000000000000000000000D /* Build configuration list for PBXNativeTarget "OffRecordWidgetExtension" */;
+			buildPhases = (
+				A3000000000000000000000A /* Sources */,
+				A3000000000000000000000B /* Frameworks */,
+				A3000000000000000000000C /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				A30000000000000000000001 /* OffRecordWidget */,
+				A30000000000000000000002 /* OffRecordSystemShared */,
+			);
+			name = OffRecordWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = OffRecordWidgetExtension;
+			productReference = A30000000000000000000004 /* OffRecordWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		CFF97BED2EDE056600ED7317 /* OffRecord */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = CFF97C182EDE056900ED7317 /* Build configuration list for PBXNativeTarget "OffRecord" */;
@@ -287,14 +360,17 @@
 				CFF97BEB2EDE056600ED7317 /* Frameworks */,
 				CFF97BEC2EDE056600ED7317 /* Resources */,
 				A1000000000000000000001A /* Embed Watch Content */,
+				A30000000000000000000006 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				A1000000000000000000001C /* PBXTargetDependency */,
+				A30000000000000000000008 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				A10000000000000000000001 /* OffRecordShared */,
+				A30000000000000000000002 /* OffRecordSystemShared */,
 				CFF97BF02EDE056600ED7317 /* OffRecord */,
 			);
 			name = OffRecord;
@@ -375,6 +451,9 @@
 					A10000000000000000000013 = {
 						CreatedOnToolsVersion = 26.3;
 					};
+					A30000000000000000000009 = {
+						CreatedOnToolsVersion = 26.3;
+					};
 					CFF97BED2EDE056600ED7317 = {
 						CreatedOnToolsVersion = 16.2;
 					};
@@ -410,6 +489,7 @@
 				CFF97BED2EDE056600ED7317 /* OffRecord */,
 				A10000000000000000000012 /* OffRecordWatch */,
 				A10000000000000000000013 /* OffRecordWatchWidget */,
+				A30000000000000000000009 /* OffRecordWidgetExtension */,
 				CFF97C032EDE056900ED7317 /* OffRecordTests */,
 				CFF97C0D2EDE056900ED7317 /* OffRecordUITests */,
 			);
@@ -447,6 +527,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		CFF97C0C2EDE056900ED7317 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A3000000000000000000000C /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -491,6 +578,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A3000000000000000000000A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -515,6 +609,12 @@
 			isa = PBXTargetDependency;
 			target = CFF97BED2EDE056600ED7317 /* OffRecord */;
 			targetProxy = CFF97C0F2EDE056900ED7317 /* PBXContainerItemProxy */;
+		};
+		A30000000000000000000008 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = OffRecordWidgetExtension;
+			target = A30000000000000000000009 /* OffRecordWidgetExtension */;
+			targetProxy = A30000000000000000000007 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -636,6 +736,71 @@
 				TARGETED_DEVICE_FAMILY = 4;
 				VALIDATE_PRODUCT = YES;
 				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
+		A3000000000000000000000E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = OffRecordWidget/OffRecordWidget.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 14;
+				DEVELOPMENT_TEAM = CJ43UNM3AR;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = OffRecordWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = OffRecord;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.4.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.singularity.offrecord.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "OFFRECORD_WIDGET_EXTENSION $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A3000000000000000000000F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = OffRecordWidget/OffRecordWidget.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 14;
+				DEVELOPMENT_TEAM = CJ43UNM3AR;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = OffRecordWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = OffRecord;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.4.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.singularity.offrecord.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "OFFRECORD_WIDGET_EXTENSION $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
 		};
@@ -967,6 +1132,15 @@
 			buildConfigurations = (
 				A10000000000000000000018 /* Debug */,
 				A10000000000000000000019 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A3000000000000000000000D /* Build configuration list for PBXNativeTarget "OffRecordWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A3000000000000000000000E /* Debug */,
+				A3000000000000000000000F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
