@@ -380,6 +380,10 @@ Recommended gradients:
 - Friday glow: radial `#FFE6EA → #F4EEFF → transparent`
 - AI insight card: `#F4EEFF → #FFF8F0`
 
+### Dark Mode
+
+Every surface, text, and border token has a dark variant, and the "System" appearance follows the device setting. Dark mode keeps the same warmth: deep plum-charcoal backgrounds instead of pure black, softened pastel surfaces, and lighter `text*` accents so tinted labels stay readable. Never hard-code a light color in a view; use the semantic tokens so both appearances work.
+
 ### Color Accessibility
 
 Pastel backgrounds should not carry low-contrast pastel text. Use `text-primary`, `text-heading`, or `text-brand` on pastel surfaces. White text is only allowed on dark plum, dark lavender, or dark sage buttons.
@@ -471,7 +475,7 @@ Use an 8pt rhythm with a few softer in-between values:
 
 #### Today
 
-Today should feel like the user’s daily ritual. Use a warm hero card for the current moment, then nudges, then a voice/write capture panel. The record action should be visually important but not aggressive.
+Today should feel like the user’s daily ritual. Use a compact hero with Speak, Write, and "another prompt", then at most one contextual card (for example On This Day or the weekly reflection), then nudges that each offer Speak and Write. The streak appears as a gentle strip, never as loss framing. Recording itself lives in the shared Record bar, so Today doesn't need its own capture panel.
 
 Core elements to preserve:
 
@@ -484,7 +488,7 @@ Core elements to preserve:
 
 #### Timeline
 
-Timeline should feel like a visual memory archive, not a plain settings-like list. Use a centered readable archive column on the warm app background gradient, with compact search, monthly context, date grouping, quiet metadata, mood artwork, and soft dividers that imply passage of time.
+Timeline should feel like a visual memory archive, not a plain settings-like list. It offers three views: List, Calendar (month grid and year-in-pixels coloured by mood), and Media (photo grid). Use a centered readable archive column on the warm app background gradient, with compact search, monthly context, date grouping, quiet metadata, mood artwork, and soft dividers that imply passage of time.
 
 Core elements to preserve:
 
@@ -492,7 +496,8 @@ Core elements to preserve:
 - Monthly summary card with entry count, word count, and a soft lavender-peach trend chart.
 - Month sections with a calendar icon, section entry count, date spine, circular pastel day badges, and differentiated entry cards.
 - Entry previews with mood icon, word count, photo/star metadata, highlighted matching text, semantic evidence labels, and large mood artwork.
-- Edit mode with a visible destructive delete affordance only when editing.
+- Swipe to star or delete, context menus with previews, and a 6-second Undo after any delete.
+- A first-entry empty state that differs from "no search results", and a "Best matches" section for semantic search.
 - Small decorative Timeline planter illustration in the top-right. It may shake on tap and use haptics, but it must respect Reduce Motion and must never carry essential information.
 
 #### Insights
@@ -506,7 +511,9 @@ Core elements to preserve:
 - Weekly goal
 - Mood trend
 - Writing stats
-- Weekly reflection
+- Weekly reflection, as one card: this week's report on top, earlier weeks as rows
+- A "Why?" button on every AI insight that shows how it was worked out and the supporting entries
+- Streak milestones celebrated with confetti, or a static badge under Reduce Motion
 
 #### Friday
 
@@ -520,10 +527,12 @@ Core elements to preserve:
 - Overview, Personality, Emotions, My World tabs
 - Insight cards
 - On-device privacy note
+- Chat kept between visits on this device only, with numbered citations, an evidence-strength label, and 2–3 local follow-up suggestions
+- "What Friday remembers", where each item can be forgotten or renamed
 
 #### Settings
 
-Settings should feel trustworthy and readable. Keep privacy and export sections highly legible. Do not over-decorate sensitive controls like Face ID, export, or iCloud Sync.
+Settings should feel trustworthy and readable. Open with a "Privacy at a glance" card that shows the live state of the lock, local AI, iCloud, Apple Health, and Spotlight, and jumps to each control. Settings are searchable. Keep privacy and export sections highly legible. Do not over-decorate sensitive controls like Face ID, export, or iCloud Sync.
 
 Core elements to preserve:
 
@@ -535,6 +544,7 @@ Core elements to preserve:
 - Reminder settings
 - Storage
 - Optional iCloud Sync
+- Optional Apple Health State of Mind (moods only, write-only)
 
 ## Elevation & Depth
 
@@ -556,6 +566,23 @@ Shadow rules:
 - Use Liquid Glass only for compact controls such as chips, filters, segmented tabs, and small bars; pair it with semantic readable tint styles and 1px soft borders.
 - Cards may use a 1px soft border plus subtle shadow.
 - Floating tab bar should feel elevated but not oversized.
+
+## Motion
+
+Motion should feel calm and physical, never showy. Always use the tokens in `OffRecordMotion` through `withOffRecordAnimation` or `.offRecordAnimation(_:value:)`; they swap in a short fade when Reduce Motion is on.
+
+- **snappy** (0.28s): toggles, chips, selection, small state changes.
+- **gentle** (0.4s smooth): the default for layout and content changes.
+- **bouncy** (spring): saves, celebrations, mascot reactions.
+- **hero** (spring): large container morphs such as the capture sheet.
+- **fade** (0.2s): dissolves, and the Reduce Motion substitute for every other curve.
+
+Rules:
+
+- Never write a raw `withAnimation(.easeInOut(...))` in a view.
+- Repeating or decorative motion (breathing auras, floating symbols, glow pulses) must stop under Reduce Motion.
+- Use SF Symbol effects (`.contentTransition(.symbolEffect(.replace))`, `.symbolEffect(.bounce)`) for icon state changes instead of cross-fading views.
+- Pair meaningful moments with haptics through `.sensoryFeedback`, not on every tap.
 
 ## Shapes
 
@@ -673,36 +700,25 @@ Chip rules:
 
 ### Bottom Navigation
 
-The bottom navigation should feel native, floating, and friendly.
-
-Tabs:
-
-- Today
-- Timeline
-- Insights
-- Friday
-- Settings
+Use the native iOS 26 Liquid Glass tab bar with five tabs: Today, Timeline, Insights, Friday, Settings. Don't build a custom tab bar.
 
 Rules:
 
-- Use a soft white floating pill.
-- Selected tab gets a rounded pill background.
-- Use semantic active colors per tab.
-- Inactive icons use softened black, not gray-blue.
-- Labels must remain readable.
-- Avoid oversized icons that compete with content.
+- The Record bar sits above the tab bar as its bottom accessory, so recording is one tap away on every tab.
+- Hide the tab bar for focused tasks (an open entry, Friday chat) and bring it back on return.
+- Labels must remain readable at every Dynamic Type size.
 
-### Voice Capture Panel
+### Voice Capture
 
-The capture panel is the emotional and functional center of Today.
+The Record bar opens the capture sheet, the emotional and functional center of the app.
 
 Rules:
 
-- Use a warm blush-to-lavender gradient.
-- Show three clear actions: write, record, photo.
+- The bar shows "Record a moment" with "Private · on this device", plus photo and write shortcuts.
+- The sheet shows a live waveform, the elapsed time, an optional live transcript, Pause/Resume, Discard (which asks first), and a date picker for recording into another day.
+- After saving, a card offers a quick mood pick, Undo, and Open entry.
+- While recording, the Lock Screen and Dynamic Island show a Live Activity with a timer and Pause/Stop, never the prompt or transcript.
 - The microphone can be visually dominant, but not alarm-like.
-- Always include privacy reassurance: “Private • On your device” or similar.
-- Keep the panel low enough for thumb reach.
 
 ### Insight Charts
 
@@ -710,6 +726,8 @@ Charts should be soft and readable.
 
 Rules:
 
+- Build charts with Swift Charts: smoothed lines with a soft gradient fill, rounded bars, and mood icons on axes where they help.
+- Every chart has a one-sentence plain-language summary and an `accessibilityChartDescriptor`.
 - Use aqua/green for progress and trend lines.
 - Use muted gridlines or no gridlines.
 - Use emoji/mood dots only when they simplify understanding.
@@ -739,6 +757,7 @@ Rules:
 - Use sage for enabled privacy or sync states.
 - Use clear helper text under sensitive options.
 - Do not hide privacy details in tiny text.
+- Say each privacy fact once, in the card it belongs to; the glance card summarises and links rather than repeating.
 - Export actions should use sky/document metaphors.
 
 ## Do's and Don'ts
@@ -757,6 +776,9 @@ Rules:
 - Use AI language carefully: supportive, local, private, non-judgmental.
 - Design charts for understanding, not decoration.
 - Make the UI feel native to iOS.
+- Use typography tokens (Dynamic Type) everywhere; never `.font(.system(size:))` outside export and share-card rendering.
+- Keep every tappable control at least 44pt, and give icon-only buttons an accessibility label that matches their visible meaning.
+- Hide journal content in the app switcher when the privacy lock is on.
 
 ### Don't
 
