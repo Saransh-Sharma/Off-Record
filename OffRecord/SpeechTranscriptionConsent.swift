@@ -2,10 +2,11 @@
 //  SpeechTranscriptionConsent.swift
 //  OffRecord
 //
-//  Shared disclosure and consent state for Apple Speech transcription.
+//  Shared disclosure and consent state for on-device SpeechAnalyzer transcription.
 //
 
 import Foundation
+import TranscriptionKit
 
 enum SpeechTranscriptionConsent {
     static let appleSpeechProcessingKey = "offrecord.appleSpeechProcessingConsentGranted"
@@ -16,21 +17,35 @@ enum SpeechTranscriptionConsent {
 
     static func grantAppleSpeechProcessing() {
         UserDefaults.standard.set(true, forKey: appleSpeechProcessingKey)
+        #if os(iOS)
+        TranscriptionService.prewarmPreferredModelIfNeeded()
+        #endif
     }
 
     static func revokeAppleSpeechProcessing() {
         UserDefaults.standard.set(false, forKey: appleSpeechProcessingKey)
+        #if os(iOS)
+        if #available(iOS 26.0, *) {
+            Task {
+                await TranscriptionAssetManager.shared.releaseReservedModels()
+            }
+        }
+        #endif
     }
 
-    static let disclosureTitle = "Apple Speech Transcription"
+    static let disclosureTitle = "On-Device Transcription"
 
-    static let disclosureMessage = """
-    OffRecord uses Apple Speech to turn your voice into text. When your device is online, your voice audio may be sent to Apple for speech recognition, and Apple returns the transcript. The transcript is saved in your journal.
+    static var disclosureMessage: String {
+        return """
+        OffRecord uses Apple’s SpeechAnalyzer to turn your voice into text entirely on your device. Apple may download a language model to your device when needed. If your language is not supported, your recording stays saved and OffRecord will not send it to a server for transcription.
 
-    OffRecord does not send your journal or audio to developer servers or non-Apple AI services.
-    """
+        The transcript is saved in your journal. OffRecord does not send your journal or audio to developer servers, speech-recognition servers, or non-Apple AI services.
+        """
+    }
 
-    static let settingsDescription = "When this is on, voice audio may be processed by Apple Speech when your device is online. OffRecord stores the returned transcript in your journal and does not send your data to developer servers or non-Apple AI services."
+    static var settingsDescription: String {
+        "Voice transcription runs entirely on your device with Apple SpeechAnalyzer. Apple may download a language model when needed; unsupported languages never fall back to server transcription."
+    }
 }
 
 enum OffRecordExternalLinks {

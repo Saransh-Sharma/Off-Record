@@ -7,6 +7,7 @@
 //
 
 import SwiftUI
+import TranscriptionKit
 import CoreData
 import AVFoundation
 import UIKit
@@ -39,6 +40,7 @@ private enum TodayDateFormatters {
 
 private struct PendingTodayTranscription {
     let entryObjectID: NSManagedObjectID
+    let attachmentObjectID: NSManagedObjectID
     let audioURL: URL
     let capturedAt: Date
 }
@@ -1472,20 +1474,37 @@ struct TodayView: View {
         }
 
         #if os(iOS)
-        beginTranscription(entryObjectID: entry.objectID, audioURL: audioURL, capturedAt: now)
+        beginTranscription(
+            entryObjectID: entry.objectID,
+            attachmentObjectID: attachment.objectID,
+            audioURL: audioURL,
+            capturedAt: now
+        )
         #else
         recordingState = .idle
         #endif
     }
 
-    private func beginTranscription(entryObjectID: NSManagedObjectID, audioURL: URL, capturedAt: Date) {
-        guard let entry = try? viewContext.existingObject(with: entryObjectID) as? DiaryEntry else {
+    private func beginTranscription(
+        entryObjectID: NSManagedObjectID,
+        attachmentObjectID: NSManagedObjectID,
+        audioURL: URL,
+        capturedAt: Date
+    ) {
+        guard let entry = try? viewContext.existingObject(with: entryObjectID) as? DiaryEntry,
+              let attachment = try? viewContext.existingObject(with: attachmentObjectID) else {
             recordingState = .idle
             return
         }
 
         guard SpeechTranscriptionConsent.hasGrantedAppleSpeechProcessing else {
-            pendingTranscription = PendingTodayTranscription(entryObjectID: entryObjectID, audioURL: audioURL, capturedAt: capturedAt)
+            pendingTranscription = PendingTodayTranscription(
+                entryObjectID: entryObjectID,
+                attachmentObjectID: attachmentObjectID,
+                audioURL: audioURL,
+                capturedAt: capturedAt
+            )
+            attachment.setValue(AudioTranscriptionStatus.none.rawValue, forKey: "transcriptionStatus")
             entry.entryTranscriptionStatus = .none
             try? viewContext.save()
             logger.info("Speech consent required before transcription entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) transcriptionStatus=none")
@@ -1494,7 +1513,12 @@ struct TodayView: View {
             return
         }
 
-        transcribeSavedEntry(entryObjectID: entryObjectID, audioURL: audioURL, capturedAt: capturedAt)
+        transcribeSavedEntry(
+            entryObjectID: entryObjectID,
+            attachmentObjectID: attachmentObjectID,
+            audioURL: audioURL,
+            capturedAt: capturedAt
+        )
     }
 
     private func resumePendingTranscription() {
@@ -1512,41 +1536,68 @@ struct TodayView: View {
 
         logger.info("Resuming pending transcription entryID=\(entry.id?.uuidString ?? "missing", privacy: .public)")
         recordingState = .processing
-        transcribeSavedEntry(entryObjectID: entry.objectID, audioURL: pendingTranscription.audioURL, capturedAt: pendingTranscription.capturedAt)
+        transcribeSavedEntry(
+            entryObjectID: entry.objectID,
+            attachmentObjectID: pendingTranscription.attachmentObjectID,
+            audioURL: pendingTranscription.audioURL,
+            capturedAt: pendingTranscription.capturedAt
+        )
     }
 
-    private func transcribeSavedEntry(entryObjectID: NSManagedObjectID, audioURL: URL, capturedAt: Date) {
-        guard let entry = try? viewContext.existingObject(with: entryObjectID) as? DiaryEntry else {
+    private func transcribeSavedEntry(
+        entryObjectID: NSManagedObjectID,
+        attachmentObjectID: NSManagedObjectID,
+        audioURL: URL,
+        capturedAt: Date
+    ) {
+        guard let entry = try? viewContext.existingObject(with: entryObjectID) as? DiaryEntry,
+              let attachment = try? viewContext.existingObject(with: attachmentObjectID) else {
             recordingState = .idle
             return
         }
         recordingState = .processing
-        entry.entryTranscriptionStatus = .processing
+        AudioAttachmentStore.markTranscriptionProcessing(attachment)
         try? viewContext.save()
         let fileExists = FileManager.default.fileExists(atPath: audioURL.path)
         let byteCount = ((try? FileManager.default.attributesOfItem(atPath: audioURL.path)[.size]) as? NSNumber)?.int64Value ?? -1
         logger.info("Starting transcription for saved entry entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) fileExists=\(fileExists, privacy: .public) bytes=\(byteCount, privacy: .public) transcriptionStatus=processing")
-        SpeechTranscriber.shared.transcribe(from: audioURL) { result in
-            Task { @MainActor in
-                guard let entry = try? viewContext.existingObject(with: entryObjectID) as? DiaryEntry else {
+        Task {
+            let result: Result<FileTranscriptionResult, Error>
+            do {
+                result = .success(try await TranscriptionService.shared.transcribe(from: audioURL))
+            } catch {
+                result = .failure(error)
+            }
+            await MainActor.run {
+                guard let entry = try? viewContext.existingObject(with: entryObjectID) as? DiaryEntry,
+                      let attachment = try? viewContext.existingObject(with: attachmentObjectID) else {
                     logger.info("Skipped transcription result because entry was deleted.")
                     recordingState = .idle
                     return
                 }
                 PerformanceSignposts.event("TranscriptionCompleted")
                 switch result {
-                case .success(let textSegment):
-                    JournalBlockTimelineStore.appendTextBlock(
+                case .success(let transcription):
+                    let textSegment = transcription.text
+                    guard let transcriptBlock = JournalBlockTimelineStore.upsertTranscriptBlock(
                         text: textSegment,
                         createdAt: capturedAt,
+                        attachment: attachment,
                         to: entry,
                         in: viewContext
+                    ) else {
+                        recordingState = .idle
+                        return
+                    }
+                    AudioAttachmentStore.markTranscriptionCompleted(
+                        attachment,
+                        engine: transcription.engine.rawValue,
+                        locale: transcription.locale,
+                        transcriptBlockID: transcriptBlock.blockID
                     )
-                    entry.updatedAt = Date()
-                    entry.entryTranscriptionStatus = .completed
                     do {
                         try viewContext.save()
-                        logger.info("Transcript saved entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) chars=\(textSegment.count, privacy: .public) transcriptionStatus=completed")
+                        logger.info("Transcript saved entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) chars=\(textSegment.count, privacy: .public) engine=\(transcription.engine.rawValue, privacy: .public) transcriptionStatus=completed")
                         heroStore.recordPromptResponse(
                             promptID: activeHeroPromptID,
                             wordCount: wordCount(for: textSegment)
@@ -1570,11 +1621,10 @@ struct TodayView: View {
                 case .failure(let error):
                     let nsError = error as NSError
                     logger.error("Transcription failed entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) domain=\(nsError.domain, privacy: .public) code=\(nsError.code, privacy: .public)")
-                    entry.entryTranscriptionStatus = .failed
-                    entry.updatedAt = Date()
+                    AudioAttachmentStore.markTranscriptionFailed(attachment, error: error)
                     try? viewContext.save()
                     // Show user-friendly message for offline/transcription errors
-                    if let transcriptionError = error as? SpeechTranscriber.TranscriptionError {
+                    if let transcriptionError = error as? TranscriptionError {
                         self.errorMessage = transcriptionError.errorDescription
                     } else {
                         self.errorMessage = "Transcription failed. Your recording is saved—tap the entry to add text manually."
