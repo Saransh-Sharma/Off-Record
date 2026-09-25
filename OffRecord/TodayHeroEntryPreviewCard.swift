@@ -80,7 +80,7 @@ struct TodayHeroEntryPreviewCard: View {
     }
 
     private var secondaryText: Color {
-        isNight ? OffRecordColor.backgroundSecondary : OffRecordColor.textSecondary
+        isNight ? Color(hex: 0xD9CFDD) : OffRecordColor.textSecondary
     }
 
     private var cardFill: Color {
