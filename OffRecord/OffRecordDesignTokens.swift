@@ -19,8 +19,17 @@ extension Color {
     }
 }
 
+extension Color {
+    /// A color that resolves per trait collection so tokens adapt to light and dark appearances.
+    init(light: UInt32, dark: UInt32) {
+        self.init(uiColor: UIColor { traits in
+            UIColor(Color(hex: traits.userInterfaceStyle == .dark ? dark : light))
+        })
+    }
+}
+
 enum OffRecordColor {
-    static let brandPlum = Color(hex: 0x342044)
+    static let brandPlum = Color(light: 0x342044, dark: 0x6E4F9E)
     static let pastelMint = Color(hex: 0xA8D8BE)
     static let pastelSage = Color(hex: 0x7FA08A)
     static let pastelAqua = Color(hex: 0x6FC6B8)
@@ -42,52 +51,58 @@ enum OffRecordColor {
     static let brandYellow = pastelYellow
     static let brandCoral = pastelCoral
 
-    static let backgroundPrimary = Color(hex: 0xFFF8F0)
-    static let backgroundSecondary = Color(hex: 0xF7F1EA)
-    static let backgroundLavenderTint = Color(hex: 0xF4EEFF)
-    static let backgroundBlushTint = Color(hex: 0xFFF0F3)
-    static let backgroundSageTint = Color(hex: 0xEEF6EF)
-    static let backgroundPeachTint = Color(hex: 0xFFF1E5)
-    static let backgroundSkyTint = Color(hex: 0xEEF8FF)
-    static let backgroundElevated = Color(hex: 0xFFFFFF)
+    static let backgroundPrimary = Color(light: 0xFFF8F0, dark: 0x16111B)
+    static let backgroundSecondary = Color(light: 0xF7F1EA, dark: 0x1D1723)
+    static let backgroundLavenderTint = Color(light: 0xF4EEFF, dark: 0x281F36)
+    static let backgroundBlushTint = Color(light: 0xFFF0F3, dark: 0x30202A)
+    static let backgroundSageTint = Color(light: 0xEEF6EF, dark: 0x1C2922)
+    static let backgroundPeachTint = Color(light: 0xFFF1E5, dark: 0x2F241C)
+    static let backgroundSkyTint = Color(light: 0xEEF8FF, dark: 0x1B2630)
+    static let backgroundElevated = Color(light: 0xFFFFFF, dark: 0x241D2B)
 
-    static let surfacePrimary = Color(hex: 0xFFFFFF)
-    static let surfaceWarm = Color(hex: 0xFFFBF7)
-    static let surfacePeach = Color(hex: 0xFFF1E5)
-    static let surfaceBlush = Color(hex: 0xFFF0F3)
-    static let surfaceLavender = Color(hex: 0xF4EEFF)
-    static let surfaceSage = Color(hex: 0xEEF6EF)
-    static let surfaceMint = Color(hex: 0xEFFAF4)
-    static let surfaceBlue = Color(hex: 0xEEF8FF)
+    static let surfacePrimary = Color(light: 0xFFFFFF, dark: 0x211A28)
+    static let surfaceWarm = Color(light: 0xFFFBF7, dark: 0x251E2C)
+    static let surfacePeach = Color(light: 0xFFF1E5, dark: 0x2F241C)
+    static let surfaceBlush = Color(light: 0xFFF0F3, dark: 0x30202A)
+    static let surfaceLavender = Color(light: 0xF4EEFF, dark: 0x281F36)
+    static let surfaceSage = Color(light: 0xEEF6EF, dark: 0x1C2922)
+    static let surfaceMint = Color(light: 0xEFFAF4, dark: 0x1B2A24)
+    static let surfaceBlue = Color(light: 0xEEF8FF, dark: 0x1B2630)
 
-    static let textPrimary = Color(hex: 0x18131D)
-    static let textHeading = Color(hex: 0x241730)
-    static let textBrand = Color(hex: 0x342044)
-    static let textSecondary = Color(hex: 0x716A75)
+    static let textPrimary = Color(light: 0x18131D, dark: 0xF3EDF5)
+    static let textHeading = Color(light: 0x241730, dark: 0xF7F1FA)
+    static let textBrand = Color(light: 0x342044, dark: 0xE4D6F2)
+    static let textSecondary = Color(light: 0x716A75, dark: 0xB5ACBA)
     static let textSecondaryDark = Color(hex: 0xA8A0AC)
-    static let textOnTinted = Color(hex: 0x554E58)
-    static let textTertiary = Color(hex: 0x9B949E)
+    static let textOnTinted = Color(light: 0x554E58, dark: 0xCBC2CF)
+    static let textTertiary = Color(light: 0x9B949E, dark: 0x8D8592)
     static let textInverse = Color(hex: 0xFFFFFF)
-    static let textSage = Color(hex: 0x5F806B)
-    static let textWarm = Color(hex: 0xC97836)
+    /// White foreground for saturated accent fills (plum, lavender-dark, sage-dark) in both appearances.
+    static let textOnAccent = Color.white
+    /// Rim highlight for glass controls: bright on light surfaces, subdued on dark.
+    static let glassRim = Color(uiColor: UIColor { traits in
+        traits.userInterfaceStyle == .dark ? UIColor.white.withAlphaComponent(0.14) : UIColor.white.withAlphaComponent(0.58)
+    })
+    static let textSage = Color(light: 0x5F806B, dark: 0x9DC6A9)
+    static let textWarm = Color(light: 0xC97836, dark: 0xEAA66B)
 
     // Readable semantic foregrounds for pastel accents. The brand colors remain
     // soft fills; these aliases are for text and small symbols on light surfaces.
-    static let textAqua = Color(hex: 0x2D7168)
-    static let textBlush = Color(hex: 0x9B4357)
-    static let textCoral = Color(hex: 0x9F4036)
-    static let textLavender = brandLavenderDark
-    static let textMint = Color(hex: 0x4C775B)
-    static let textPeach = Color(hex: 0x8D4F1E)
-    static let textSky = Color(hex: 0x386C84)
-    static let textYellow = Color(hex: 0x735F1E)
+    static let textAqua = Color(light: 0x2D7168, dark: 0x84D4C7)
+    static let textBlush = Color(light: 0x9B4357, dark: 0xF2A7B8)
+    static let textCoral = Color(light: 0x9F4036, dark: 0xF4A294)
+    static let textLavender = Color(light: 0x7B5CAF, dark: 0xC7B2F2)
+    static let textMint = Color(light: 0x4C775B, dark: 0x9FD1B0)
+    static let textPeach = Color(light: 0x8D4F1E, dark: 0xF1BA8D)
+    static let textSky = Color(light: 0x386C84, dark: 0x9FCFE7)
+    static let textYellow = Color(light: 0x735F1E, dark: 0xEBD38B)
 
-    static let borderSoft = Color(hex: 0xEEE7EF)
-    static let borderWarm = Color(hex: 0xF2E2D5)
-    static let borderSage = Color(hex: 0xD8E6DC)
+    static let borderSoft = Color(light: 0xEEE7EF, dark: 0x3A3143)
+    static let borderWarm = Color(light: 0xF2E2D5, dark: 0x40342A)
+    static let borderSage = Color(light: 0xD8E6DC, dark: 0x2F4137)
     static let borderDark = Color(hex: 0x4A3A5A)
-    static let divider = Color(hex: 0xE8E1E8)
-    static let hairline = Color(hex: 0xF0ECF1)
+    static let divider = Color(light: 0xE8E1E8, dark: 0x352C3E)
+    static let hairline = Color(light: 0xF0ECF1, dark: 0x2B2432)
 
     static let moodGreat = pastelMint
     static let moodGood = pastelSage
@@ -103,13 +118,13 @@ enum OffRecordColor {
     static let darkSurfaceElevated = Color(hex: 0x342044)
 
     static let appBackgroundGradient = LinearGradient(
-        colors: [backgroundPrimary, Color(hex: 0xF8F1F7), Color(hex: 0xF3F6EF)],
+        colors: [backgroundPrimary, Color(light: 0xF8F1F7, dark: 0x1A1420), Color(light: 0xF3F6EF, dark: 0x151A17)],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
 
     static let todayCaptureGradient = LinearGradient(
-        colors: [Color(hex: 0xFFE3DD), Color(hex: 0xF6E8FF)],
+        colors: [Color(light: 0xFFE3DD, dark: 0x3A2430), Color(light: 0xF6E8FF, dark: 0x2D2340)],
         startPoint: .topLeading,
         endPoint: .bottomTrailing
     )
@@ -189,6 +204,108 @@ enum OffRecordShadow {
     static let cardColor = Color.black.opacity(0.06)
     static let floatingColor = Color.black.opacity(0.08)
     static let tabColor = Color.black.opacity(0.10)
+}
+
+/// Soft paper-like elevation levels from OffRecord Design.md § Elevation & Depth.
+enum OffRecordElevation {
+    case none
+    case chip
+    case card
+    case floating
+    case bar
+
+    var color: Color {
+        switch self {
+        case .none: return .clear
+        case .chip: return Color.black.opacity(0.04)
+        case .card: return OffRecordShadow.cardColor
+        case .floating: return OffRecordShadow.floatingColor
+        case .bar: return OffRecordShadow.tabColor
+        }
+    }
+
+    var radius: CGFloat {
+        switch self {
+        case .none: return 0
+        case .chip: return 6
+        case .card: return 18
+        case .floating: return 24
+        case .bar: return 30
+        }
+    }
+
+    var y: CGFloat {
+        switch self {
+        case .none: return 0
+        case .chip: return 2
+        case .card: return 8
+        case .floating: return 10
+        case .bar: return 8
+        }
+    }
+}
+
+/// Shared motion vocabulary. Route animations through these so Reduce Motion is honored consistently.
+enum OffRecordMotion {
+    /// Quick UI feedback: toggles, chips, selection.
+    static let snappy = Animation.snappy(duration: 0.28)
+    /// Default for layout and content changes.
+    static let gentle = Animation.smooth(duration: 0.4)
+    /// Playful, slightly springy moments: saves, celebrations, mascot reactions.
+    static let bouncy = Animation.spring(response: 0.42, dampingFraction: 0.7)
+    /// Large container morphs such as the capture panel expanding.
+    static let hero = Animation.spring(response: 0.5, dampingFraction: 0.86)
+    /// Fades and dissolves; also the Reduce Motion substitute for every other curve.
+    static let fade = Animation.easeInOut(duration: 0.2)
+
+    static var prefersReducedMotion: Bool {
+        UIAccessibility.isReduceMotionEnabled
+    }
+
+    /// Returns `animation`, or a short dissolve when Reduce Motion is on.
+    static func resolved(_ animation: Animation, reduceMotion: Bool = prefersReducedMotion) -> Animation {
+        reduceMotion ? fade : animation
+    }
+}
+
+@discardableResult
+func withOffRecordAnimation<Result>(
+    _ animation: Animation = OffRecordMotion.gentle,
+    _ body: () throws -> Result
+) rethrows -> Result {
+    try withAnimation(OffRecordMotion.resolved(animation), body)
+}
+
+private struct OffRecordAnimationModifier<V: Equatable>: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    let animation: Animation
+    let value: V
+
+    func body(content: Content) -> some View {
+        content.animation(OffRecordMotion.resolved(animation, reduceMotion: reduceMotion), value: value)
+    }
+}
+
+private struct OffRecordShadowModifier: ViewModifier {
+    @Environment(\.colorScheme) private var colorScheme
+    let elevation: OffRecordElevation
+
+    func body(content: Content) -> some View {
+        // Dark surfaces separate by tone, so shadows are softened to avoid muddy halos.
+        content.shadow(
+            color: elevation.color.opacity(colorScheme == .dark ? 0.6 : 1),
+            radius: elevation.radius,
+            x: 0,
+            y: elevation.y
+        )
+    }
+}
+
+enum OffRecordLayout {
+    /// Minimum interactive size from the HIG.
+    static let minimumTapTarget: CGFloat = 44
+    static let pillButtonHeight: CGFloat = 52
+    static let readableContentWidth: CGFloat = 720
 }
 
 struct OffRecordReadableTintStyle {
@@ -283,7 +400,7 @@ struct OffRecordCardModifier: ViewModifier {
                         RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                             .stroke(border, lineWidth: 1)
                     )
-                    .shadow(color: shadow ? OffRecordShadow.cardColor : .clear, radius: 18, x: 0, y: 8)
+                    .offRecordShadow(shadow ? .card : .none)
             )
     }
 }
@@ -296,13 +413,22 @@ struct OffRecordPillButtonModifier: ViewModifier {
         content
             .font(OffRecordTypography.labelMedium)
             .foregroundStyle(foreground)
-            .frame(minHeight: 52)
+            .frame(minHeight: OffRecordLayout.pillButtonHeight)
             .padding(.horizontal, OffRecordSpacing.lg)
             .background(fill, in: Capsule())
     }
 }
 
 extension View {
+    /// Animates changes to `value` with an OffRecord motion token, degrading to a dissolve under Reduce Motion.
+    func offRecordAnimation<V: Equatable>(_ animation: Animation = OffRecordMotion.gentle, value: V) -> some View {
+        modifier(OffRecordAnimationModifier(animation: animation, value: value))
+    }
+
+    func offRecordShadow(_ elevation: OffRecordElevation) -> some View {
+        modifier(OffRecordShadowModifier(elevation: elevation))
+    }
+
     func offRecordCard(
         cornerRadius: CGFloat = OffRecordRadius.xl,
         fill: Color = OffRecordColor.surfacePrimary,
@@ -322,19 +448,19 @@ extension View {
     func offRecordFridayButton() -> some View {
         modifier(OffRecordPillButtonModifier(
             fill: OffRecordColor.brandLavenderDark,
-            foreground: OffRecordColor.textInverse
+            foreground: OffRecordColor.textOnAccent
         ))
     }
 
     func offRecordPrivacyButton() -> some View {
         modifier(OffRecordPillButtonModifier(
             fill: OffRecordColor.brandSageDark,
-            foreground: OffRecordColor.textInverse
+            foreground: OffRecordColor.textOnAccent
         ))
     }
 
     func offRecordScreenBackground() -> some View {
-        background(OffRecordColor.appBackgroundGradient.ignoresSafeArea())
+        background(OffRecordAppBackground().ignoresSafeArea())
     }
 
     func offRecordReadablePill(
@@ -388,15 +514,28 @@ struct OffRecordIconBubble: View {
     var fill: Color? = nil
     var size: CGFloat = 40
     var iconSize: CGFloat = 16
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+
+    private var scale: CGFloat {
+        switch dynamicTypeSize {
+        case ...DynamicTypeSize.large: return 1
+        case .xLarge, .xxLarge: return 1.1
+        case .xxxLarge: return 1.2
+        default: return 1.35
+        }
+    }
+
+    private var scaledIconSize: CGFloat { iconSize * scale }
 
     var body: some View {
         ZStack {
             Circle()
                 .fill(fill ?? tint.opacity(0.14))
             Image(systemName: systemImage)
-                .font(.system(size: iconSize, weight: .semibold))
+                .font(.system(size: scaledIconSize, weight: .semibold))
                 .foregroundStyle(tint)
         }
-        .frame(width: size, height: size)
+        .frame(width: size * scale, height: size * scale)
+        .accessibilityHidden(true)
     }
 }

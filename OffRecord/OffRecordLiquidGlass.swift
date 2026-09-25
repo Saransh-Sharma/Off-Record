@@ -87,13 +87,62 @@ private struct OffRecordClearGlassModifier<S: Shape>: ViewModifier {
     }
 }
 
+private struct OffRecordGlassControlModifier<S: Shape>: ViewModifier {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    let shape: S
+    let tint: Color?
+    let fallbackFill: Color
+    let border: Color?
+
+    private var strokeColor: Color {
+        (border ?? tint ?? OffRecordColor.borderSoft).opacity(border == nil ? 0.35 : 1)
+    }
+
+    func body(content: Content) -> some View {
+        if reduceTransparency {
+            content
+                .background(fallbackFill, in: shape)
+                .overlay(shape.stroke(strokeColor, lineWidth: 1))
+        } else {
+            content
+                .background(fallbackFill.opacity(0.92), in: shape)
+                .glassEffect(.regular.tint(tint).interactive(), in: shape)
+                .overlay(shape.stroke(strokeColor, lineWidth: 1))
+        }
+    }
+}
+
+private struct OffRecordGlassBarModifier: ViewModifier {
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
+
+    let cornerRadius: CGFloat
+    let fallbackFill: Color
+
+    func body(content: Content) -> some View {
+        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+        if reduceTransparency {
+            content
+                .background(fallbackFill, in: shape)
+                .overlay(shape.stroke(OffRecordColor.borderSoft, lineWidth: 1))
+                .offRecordShadow(.floating)
+        } else {
+            content
+                .background(fallbackFill.opacity(0.96), in: shape)
+                .glassEffect(.regular, in: shape)
+                .overlay(shape.stroke(OffRecordColor.borderSoft, lineWidth: 1))
+                .offRecordShadow(.floating)
+        }
+    }
+}
+
 extension View {
     func offRecordClearGlassSurface<S: Shape>(
         in shape: S,
         fallbackFill: Color = OffRecordColor.surfacePrimary,
         clearFill: Color = OffRecordColor.surfacePrimary.opacity(0.22),
         dimmingOpacity: Double = 0.055,
-        stroke: Color = Color.white.opacity(0.58),
+        stroke: Color = OffRecordColor.glassRim,
         lineWidth: CGFloat = 1,
         shadowColor: Color = OffRecordShadow.floatingColor,
         shadowRadius: CGFloat = 24,
@@ -118,7 +167,7 @@ extension View {
         in shape: S,
         fallbackFill: Color = OffRecordColor.surfaceWarm,
         clearFill: Color = OffRecordColor.surfacePrimary.opacity(0.18),
-        stroke: Color = Color.white.opacity(0.54)
+        stroke: Color = OffRecordColor.glassRim
     ) -> some View {
         offRecordClearGlassSurface(
             in: shape,
@@ -132,25 +181,13 @@ extension View {
         )
     }
 
-    @ViewBuilder
     func offRecordGlassControl<S: Shape>(
         tint: Color? = nil,
         in shape: S,
         fallbackFill: Color = OffRecordColor.surfaceWarm,
         border: Color? = nil
     ) -> some View {
-        if #available(iOS 26.0, *) {
-            background(fallbackFill.opacity(0.92), in: shape)
-                .glassEffect(.regular.tint(tint).interactive(), in: shape)
-                .overlay(
-                    shape.stroke((border ?? tint ?? OffRecordColor.borderSoft).opacity(border == nil ? 0.35 : 1), lineWidth: 1)
-                )
-        } else {
-            background(fallbackFill, in: shape)
-                .overlay(
-                    shape.stroke((border ?? tint ?? OffRecordColor.borderSoft).opacity(border == nil ? 0.35 : 1), lineWidth: 1)
-                )
-        }
+        modifier(OffRecordGlassControlModifier(shape: shape, tint: tint, fallbackFill: fallbackFill, border: border))
     }
 
     func offRecordReadableGlassControl<S: Shape>(
@@ -166,22 +203,11 @@ extension View {
             )
     }
 
-    @ViewBuilder
     func offRecordGlassBar(
-        cornerRadius: CGFloat = 28,
+        cornerRadius: CGFloat = OffRecordRadius.xl,
         fallbackFill: Color = OffRecordColor.surfacePrimary
     ) -> some View {
-        let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-        if #available(iOS 26.0, *) {
-            background(fallbackFill.opacity(0.96), in: shape)
-                .glassEffect(.regular, in: shape)
-                .overlay(shape.stroke(OffRecordColor.borderSoft, lineWidth: 1))
-                .shadow(color: OffRecordShadow.floatingColor, radius: 24, x: 0, y: 10)
-        } else {
-            background(fallbackFill, in: shape)
-                .overlay(shape.stroke(OffRecordColor.borderSoft, lineWidth: 1))
-                .shadow(color: OffRecordShadow.floatingColor, radius: 24, x: 0, y: 10)
-        }
+        modifier(OffRecordGlassBarModifier(cornerRadius: cornerRadius, fallbackFill: fallbackFill))
     }
 
     func offRecordContentCard(
