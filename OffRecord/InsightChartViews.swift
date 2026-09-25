@@ -669,9 +669,7 @@ struct MoodTimeHeatmapCard: View {
 
             if snapshot.heatmapIsReady {
                 InsightChartSummary(text: summary)
-                chart
-                    .frame(height: CGFloat(moods.count) * rowHeight + 28)
-                    .accessibilityChartDescriptor(MoodTimeAXDescriptor(cells: cells, moods: moods, summary: summary))
+                heatmap
                 Text("Deeper color means that mood came up more often.")
                     .font(OffRecordTypography.annotation)
                     .foregroundStyle(OffRecordColor.textSecondary)
@@ -717,29 +715,44 @@ struct MoodTimeHeatmapCard: View {
         }
         .chartXScale(domain: InsightTimeOfDay.allCases.map(\.label))
         .chartYScale(domain: moods.map(\.displayName))
-        .chartXAxis {
-            AxisMarks(position: .bottom) { value in
-                AxisValueLabel {
-                    if let label = value.as(String.self) {
-                        Text(InsightTimeOfDay.allCases.first { $0.label == label }?.shortLabel ?? label)
+        .chartXAxis(.hidden)
+        .chartYAxis(.hidden)
+    }
+
+    /// Row and column labels are laid out beside the plot (axes hidden) so each
+    /// label lines up exactly with its band.
+    private var heatmap: some View {
+        HStack(alignment: .top, spacing: OffRecordSpacing.sm) {
+            VStack(alignment: .leading, spacing: 0) {
+                ForEach(moods) { mood in
+                    HStack(spacing: OffRecordSpacing.xs) {
+                        MiniMoodIcon(mood: mood, size: 16, opacity: 0.9)
+                        Text(mood.displayName)
                             .font(OffRecordTypography.annotation)
                             .foregroundStyle(OffRecordColor.textSecondary)
+                            .lineLimit(1)
+                            .fixedSize()
                     }
+                    .frame(height: rowHeight, alignment: .leading)
                 }
             }
-        }
-        .chartYAxis {
-            AxisMarks(position: .leading) { value in
-                AxisValueLabel {
-                    if let name = value.as(String.self), let mood = moods.first(where: { $0.displayName == name }) {
-                        HStack(spacing: OffRecordSpacing.xs) {
-                            MiniMoodIcon(mood: mood, size: 16, opacity: 0.9)
-                            Text(name)
-                                .font(OffRecordTypography.annotation)
-                                .foregroundStyle(OffRecordColor.textSecondary)
-                        }
+            .accessibilityHidden(true)
+
+            VStack(spacing: OffRecordSpacing.xs) {
+                chart
+                    .frame(height: CGFloat(moods.count) * rowHeight)
+                    .accessibilityChartDescriptor(MoodTimeAXDescriptor(cells: cells, moods: moods, summary: summary))
+                HStack(spacing: 0) {
+                    ForEach(InsightTimeOfDay.allCases) { time in
+                        Text(time.shortLabel)
+                            .font(OffRecordTypography.annotation)
+                            .foregroundStyle(OffRecordColor.textSecondary)
+                            .lineLimit(1)
+                            .minimumScaleFactor(0.8)
+                            .frame(maxWidth: .infinity)
                     }
                 }
+                .accessibilityHidden(true)
             }
         }
     }

@@ -303,36 +303,26 @@ struct ShareInsightPreviewSheet: View {
 
 struct WeeklyInsightsSection: View {
     let entries: [DiaryEntry]
-    @State private var insights: [ShareableInsight] = []
+    let insights: [ShareableInsight]
     @State private var currentID: UUID?
     @State private var sharingInsight: ShareableInsight?
     @State private var evidenceContext: InsightEvidenceContext?
-
-    private var entriesSignature: String {
-        var hasher = Hasher()
-        for entry in entries {
-            hasher.combine(entry.insightEvidenceKey)
-            hasher.combine(entry.updatedAt?.timeIntervalSinceReferenceDate ?? 0)
-        }
-        return String(hasher.finalize())
-    }
 
     private var currentIndex: Int {
         insights.firstIndex { $0.id == currentID } ?? 0
     }
 
     var body: some View {
-        Group {
-            if !insights.isEmpty {
-                insightsContent
-            }
-        }
-        .task(id: entriesSignature) { generateInsights() }
-        .sheet(item: $sharingInsight) { insight in
-            ShareInsightPreviewSheet(insight: insight)
-        }
-        .sheet(item: $evidenceContext) { context in
-            InsightEvidenceSheet(context: context)
+        if !insights.isEmpty {
+            insightsContent
+                .onAppear { currentID = currentID ?? insights.first?.id }
+                .onChange(of: insights.map(\.id)) { _, ids in currentID = ids.first }
+                .sheet(item: $sharingInsight) { insight in
+                    ShareInsightPreviewSheet(insight: insight)
+                }
+                .sheet(item: $evidenceContext) { context in
+                    InsightEvidenceSheet(context: context)
+                }
         }
     }
 
@@ -380,11 +370,6 @@ struct WeeklyInsightsSection: View {
             rationale: insight.rationale,
             entries: entries.resolvingInsightEvidence(insight.supportingEntryIDs)
         )
-    }
-
-    private func generateInsights() {
-        insights = ShareableInsightGenerator.generateWeeklyInsights(from: entries)
-        currentID = insights.first?.id
     }
 }
 

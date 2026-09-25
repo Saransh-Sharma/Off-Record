@@ -32,6 +32,7 @@ struct StatsView: View {
     @State private var startedEntriesForCards: [DiaryEntry] = []
     @State private var selectedWeeklyReflection: WeeklyReflectionReport?
     @State private var evidenceContext: InsightEvidenceContext?
+    @State private var shareInsights: [ShareableInsight] = []
     @ScaledMetric(relativeTo: .title2) private var goalRingSize: CGFloat = 104
 
     private var isIPad: Bool { horizontalSizeClass == .regular }
@@ -136,7 +137,7 @@ struct StatsView: View {
         MoodTrendChartCard(points: charts.moodTrend)
         aiInsightsCard
         WeeklyReflectionHistorySection(entries: weeklyReflectionRouteEntries)
-        WeeklyInsightsSection(entries: startedEntriesForCards)
+        WeeklyInsightsSection(entries: startedEntriesForCards, insights: shareInsights)
     }
 
     private var deepDiveSection: some View {
@@ -338,6 +339,7 @@ struct StatsView: View {
         startedEntriesForCards = currentEntries
         stats = nextStats
         charts = InsightChartsSnapshot.make(from: snapshots, now: now)
+        shareInsights = ShareableInsightGenerator.generateWeeklyInsights(from: currentEntries)
         proactiveReflection.refreshIfNeeded(entries: currentEntries)
         weeklyReflection.refreshIfNeeded(entries: currentEntries)
         if let milestone = goalManager.checkMilestone(currentStreak: nextStats.currentStreak) {
