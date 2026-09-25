@@ -482,7 +482,7 @@ struct FridayResponseGenerator {
 enum FridayChatLayout {
     static let compactBackButtonTopPadding: CGFloat = 32
     static let regularBackButtonTopPadding: CGFloat = 24
-    static let compactComposerBottomClearance: CGFloat = 52
+    static let compactComposerBottomClearance: CGFloat = 8
     static let regularComposerBottomClearance: CGFloat = 16
     static let minimumTapTarget: CGFloat = 44
 
@@ -498,11 +498,9 @@ enum FridayChatLayout {
             return regularComposerBottomClearance
         }
 
-        guard isKeyboardVisible else {
-            return compactComposerBottomClearance
-        }
-
-        return OffRecordCompactTabBarLayout.composerKeyboardVisibleClearance
+        // The tab bar is hidden in chat, so the composer only needs a small gap
+        // above the home indicator or keyboard.
+        return isKeyboardVisible ? 0 : compactComposerBottomClearance
     }
 }
 
@@ -594,7 +592,8 @@ struct FridayChatView: View {
         .navigationTitle("")
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
-        .background(OffRecordColor.appBackgroundGradient.ignoresSafeArea())
+        .toolbar(.hidden, for: .tabBar)
+        .background(OffRecordAppBackground().ignoresSafeArea())
         .task {
             semanticMemory.ensureIndexed(entries: startedEntries)
             applyInitialQuestionIfNeeded()
