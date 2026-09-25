@@ -13,7 +13,7 @@ struct FridayChatBackground: View {
             LinearGradient(
                 colors: [
                     OffRecordColor.backgroundPrimary,
-                    Color(hex: 0xF8F1F7),
+                    Color(light: 0xF8F1F7, dark: 0x1A1420),
                     OffRecordColor.backgroundPrimary
                 ],
                 startPoint: .topLeading,
