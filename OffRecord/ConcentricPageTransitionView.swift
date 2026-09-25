@@ -154,13 +154,13 @@ struct ConcentricPageTransitionView<Content: View>: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { notification in
             if let frame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect {
-                withAnimation(.easeOut(duration: 0.25)) {
+                withOffRecordAnimation(OffRecordMotion.snappy) {
                     keyboardHeight = frame.height
                 }
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
-            withAnimation(.easeOut(duration: 0.25)) {
+            withOffRecordAnimation(OffRecordMotion.snappy) {
                 keyboardHeight = 0
             }
         }

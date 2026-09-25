@@ -768,7 +768,7 @@ struct TimelineView: View {
 
                     ForEach(Mood.allCases.filter { $0 != .none }, id: \.self) { mood in
                         Button {
-                            withAnimation {
+                            withOffRecordAnimation(OffRecordMotion.snappy) {
                                 selectedMoodFilter = selectedMoodFilter == mood ? nil : mood
                             }
                             HapticManager.shared.selectionChanged()
@@ -805,7 +805,7 @@ struct TimelineView: View {
 
                 if startDate != nil || endDate != nil {
                     Button("Clear Dates") {
-                        withAnimation {
+                        withOffRecordAnimation(OffRecordMotion.snappy) {
                             startDate = nil
                             endDate = nil
                         }
@@ -1054,7 +1054,7 @@ struct TimelineView: View {
     }
 
     private func clearAllFilters() {
-        withAnimation {
+        withOffRecordAnimation(OffRecordMotion.snappy) {
             showStarredOnly = false
             selectedMoodFilter = nil
             startDate = nil
@@ -1286,7 +1286,7 @@ struct FilterChip: View {
             Text(label)
                 .font(OffRecordTypography.metadata)
             Button {
-                withAnimation {
+                withOffRecordAnimation(OffRecordMotion.snappy) {
                     onRemove()
                 }
                 HapticManager.shared.buttonTap()
