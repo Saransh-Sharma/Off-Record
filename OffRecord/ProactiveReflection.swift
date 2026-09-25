@@ -2025,7 +2025,7 @@ private struct ReflectionInsightDetailView: View {
                 }
                 .padding(OffRecordSpacing.xxl)
             }
-            .background(OffRecordColor.appBackgroundGradient.ignoresSafeArea())
+            .background(OffRecordAppBackground().ignoresSafeArea())
             .navigationTitle("Reflection")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {

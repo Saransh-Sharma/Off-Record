@@ -110,7 +110,7 @@ struct TimelineView: View {
             }
         }
         .background {
-            OffRecordColor.appBackgroundGradient
+            OffRecordAppBackground()
                 .ignoresSafeArea()
         }
         .navigationTitle("Timeline")
@@ -282,7 +282,7 @@ struct TimelineView: View {
                 }
             )
             .frame(width: metrics.timelineListWidth)
-            .background(OffRecordColor.appBackgroundGradient)
+            .background(OffRecordAppBackground())
 
             Divider()
                 .overlay(OffRecordColor.borderSoft)
@@ -773,7 +773,7 @@ struct TimelineView: View {
                     clearAllFilters()
                 }
                 .font(OffRecordTypography.bodySmall)
-                .foregroundColor(OffRecordColor.brandPlum)
+                .foregroundColor(OffRecordColor.textBrand)
             }
         }
         .frame(maxWidth: .infinity)

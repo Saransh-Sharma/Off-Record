@@ -177,7 +177,7 @@ struct BackupExportView: View {
             .padding(.horizontal, OffRecordSpacing.screenX)
             .padding(.vertical, OffRecordSpacing.screenY)
         }
-        .background(OffRecordColor.appBackgroundGradient)
+        .background(OffRecordAppBackground())
         .navigationTitle("Export Data")
         .navigationBarTitleDisplayMode(.inline)
         .alert("Export Error", isPresented: $showError) {
@@ -328,7 +328,7 @@ struct ImportBackupView: View {
             .padding(.horizontal, OffRecordSpacing.screenX)
             .padding(.vertical, OffRecordSpacing.screenY)
         }
-        .background(OffRecordColor.appBackgroundGradient)
+        .background(OffRecordAppBackground())
         .navigationTitle("Import Backup")
         .navigationBarTitleDisplayMode(.inline)
         .fileImporter(
@@ -368,7 +368,7 @@ struct ImportBackupView: View {
                     }
                     .padding(OffRecordSpacing.screenX)
                 }
-                .background(OffRecordColor.appBackgroundGradient)
+                .background(OffRecordAppBackground())
                 .navigationTitle("Encrypted Backup")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {

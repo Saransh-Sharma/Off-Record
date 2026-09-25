@@ -35,15 +35,24 @@ enum AppTheme: String, CaseIterable, Identifiable {
         }
     }
 
+    /// `nil` follows the device appearance. Only Light and Dark force a scheme;
+    /// accent themes (Sage, Lavender, …) adapt to the system setting.
     var colorScheme: ColorScheme? {
         switch self {
+        case .light: return .light
         case .dark: return .dark
-        default: return .light
+        default: return nil
         }
     }
 
-    /// Primary accent color for buttons and highlights
+    /// Global tint for system controls. Uses readable accents so pastel themes
+    /// never produce low-contrast toggles, links, or button labels.
     var accentColor: Color {
+        readableAccentColor
+    }
+
+    /// Soft fill color used for theme swatches and decorative accents.
+    var swatchColor: Color {
         switch self {
         case .system, .light:
             return OffRecordColor.brandPlum
@@ -58,8 +67,28 @@ enum AppTheme: String, CaseIterable, Identifiable {
         case .warm:
             return OffRecordColor.brandPeach
         case .dark:
-            return OffRecordColor.brandLavender
+            return OffRecordColor.darkSurfaceElevated
         }
+    }
+
+    /// Screen background wash for this theme, adapting to light and dark appearance.
+    var backgroundGradient: LinearGradient {
+        let stops: [Color]
+        switch self {
+        case .system, .light, .dark:
+            return OffRecordColor.appBackgroundGradient
+        case .sage:
+            stops = [Color(light: 0xF6F8F1, dark: 0x141A16), Color(light: 0xEEF6EF, dark: 0x18211C), Color(light: 0xF8F4EA, dark: 0x161A17)]
+        case .lavender:
+            stops = [Color(light: 0xF9F4FF, dark: 0x1A1424), Color(light: 0xF4EEFF, dark: 0x221A30), Color(light: 0xFFF8F0, dark: 0x16111B)]
+        case .rose:
+            stops = [Color(light: 0xFFF6F5, dark: 0x1D1418), Color(light: 0xFFF0F3, dark: 0x261A20), Color(light: 0xFFF8F0, dark: 0x16111B)]
+        case .ocean:
+            stops = [Color(light: 0xF2FAFA, dark: 0x121A1E), Color(light: 0xEEF8FF, dark: 0x162229), Color(light: 0xF3F6EF, dark: 0x151A17)]
+        case .warm:
+            stops = [Color(light: 0xFFF7EC, dark: 0x1C1611), Color(light: 0xFFF1E5, dark: 0x241B14), Color(light: 0xFFF8F0, dark: 0x16111B)]
+        }
+        return LinearGradient(colors: stops, startPoint: .topLeading, endPoint: .bottomTrailing)
     }
 
     /// Text-safe version of the theme accent. Pastel brand colors are fills,
@@ -84,20 +113,15 @@ enum AppTheme: String, CaseIterable, Identifiable {
     var swatchForegroundColor: Color {
         switch self {
         case .system, .light, .sage, .lavender, .dark:
-            return OffRecordColor.textInverse
+            return OffRecordColor.textOnAccent
         case .rose, .ocean, .warm:
-            return OffRecordColor.textBrand
+            return Color(hex: 0x342044)
         }
-    }
-
-    /// Secondary color for subtle accents
-    var secondaryAccent: Color {
-        accentColor.opacity(0.15)
     }
 
     /// Preview color for theme picker
     var previewColor: Color {
-        accentColor
+        swatchColor
     }
 }
 
@@ -118,27 +142,6 @@ final class ThemeManager: ObservableObject {
         self.selectedTheme = AppTheme(rawValue: saved) ?? .system
     }
 
-    // MARK: - Semantic Colors
-
-    private var isDark: Bool { selectedTheme == .dark }
-
-    var backgroundColor: Color {
-        isDark ? OffRecordColor.darkBackground : OffRecordColor.backgroundPrimary
-    }
-
-    var textColor: Color {
-        isDark ? OffRecordColor.textInverse : OffRecordColor.textPrimary
-    }
-
-    var secondaryTextColor: Color {
-        isDark ? OffRecordColor.textSecondaryDark : OffRecordColor.textSecondary
-    }
-
-    var cardBackgroundColor: Color {
-        isDark ? OffRecordColor.darkSurface : OffRecordColor.surfacePrimary
-    }
-
-    /// Theme-aware accent color for UI elements
     var accentColor: Color {
         selectedTheme.accentColor
     }
@@ -146,37 +149,16 @@ final class ThemeManager: ObservableObject {
     var readableAccentColor: Color {
         selectedTheme.readableAccentColor
     }
+}
 
-    /// Data visualization color (charts, meters, bars)
-    var dataColor: Color {
-        OffRecordColor.brandAqua
-    }
+// MARK: - Themed background
 
-    var elevatedCardBackgroundColor: Color {
-        isDark ? OffRecordColor.darkSurfaceElevated : OffRecordColor.surfaceWarm
-    }
+/// The app's screen background. Observes the selected theme so every screen
+/// picks up theme changes live, and adapts to light/dark appearance.
+struct OffRecordAppBackground: View {
+    @ObservedObject private var themeManager = ThemeManager.shared
 
-    var borderColor: Color {
-        isDark ? OffRecordColor.borderDark : OffRecordColor.borderSoft
-    }
-
-    var privacyColor: Color {
-        OffRecordColor.brandSageDark
-    }
-
-    var fridayColor: Color {
-        OffRecordColor.brandLavenderDark
-    }
-
-    var journalColor: Color {
-        OffRecordColor.brandPeach
-    }
-
-    var exportColor: Color {
-        OffRecordColor.brandSky
-    }
-
-    var warningColor: Color {
-        OffRecordColor.brandCoral
+    var body: some View {
+        themeManager.selectedTheme.backgroundGradient
     }
 }

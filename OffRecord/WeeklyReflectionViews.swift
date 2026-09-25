@@ -270,7 +270,7 @@ struct WeeklyReflectionReportView: View {
             .frame(maxWidth: 720)
             .frame(maxWidth: .infinity)
         }
-        .background(OffRecordColor.appBackgroundGradient.ignoresSafeArea())
+        .background(OffRecordAppBackground().ignoresSafeArea())
         .navigationTitle("Weekly Reflection")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {

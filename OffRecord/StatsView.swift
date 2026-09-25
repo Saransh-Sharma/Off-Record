@@ -60,7 +60,7 @@ struct StatsView: View {
                     .frame(maxWidth: .infinity)
             }
         }
-        .background(OffRecordColor.appBackgroundGradient)
+        .background(OffRecordAppBackground())
         .navigationTitle("Insights")
         .overlay {
             if let milestone = showMilestone {

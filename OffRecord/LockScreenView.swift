@@ -7,7 +7,7 @@ struct LockScreenView: View {
 
     var body: some View {
         ZStack {
-            OffRecordColor.appBackgroundGradient
+            OffRecordAppBackground()
                 .ignoresSafeArea()
 
             VStack(spacing: 32) {

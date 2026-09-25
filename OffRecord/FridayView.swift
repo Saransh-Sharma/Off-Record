@@ -57,7 +57,7 @@ struct FridayView: View {
             }
         }
         .navigationTitle("Friday")
-        .background(OffRecordColor.appBackgroundGradient.ignoresSafeArea())
+        .background(OffRecordAppBackground().ignoresSafeArea())
         .onAppear {
             animateMascot = true
             startFridayPredictionActivity()

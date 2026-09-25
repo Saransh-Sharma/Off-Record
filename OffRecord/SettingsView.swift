@@ -137,7 +137,7 @@ struct SettingsView: View {
                 .padding(.vertical, OffRecordSpacing.screenY)
             }
         }
-        .background(OffRecordColor.appBackgroundGradient)
+        .background(OffRecordAppBackground())
         .onAppear {
             calculateStorage()
         }
@@ -317,8 +317,8 @@ struct SettingsView: View {
     @ViewBuilder
     private var appearanceSection: some View {
         SettingsCard(
-            title: "Accent Color",
-            subtitle: "Choose the accent used for buttons, highlights, and selected states.",
+            title: "Theme",
+            subtitle: "Sets the background wash and accent. System follows your device's light or dark appearance.",
             systemImage: "paintpalette",
             tint: themeManager.selectedTheme.readableAccentColor,
             fill: OffRecordColor.surfacePrimary
@@ -329,9 +329,8 @@ struct SettingsView: View {
                         theme: theme,
                         isSelected: themeManager.selectedTheme == theme
                     ) {
-                        withAnimation(.easeInOut(duration: 0.2)) {
+                        withOffRecordAnimation(OffRecordMotion.fade) {
                             themeManager.selectedTheme = theme
-                            HapticManager.shared.themeChanged()
                         }
                     }
                 }

@@ -285,31 +285,47 @@ struct ThemeButton: View {
     let isSelected: Bool
     let action: () -> Void
 
+    @ScaledMetric(relativeTo: .body) private var tileHeight: CGFloat = 64
+
     var body: some View {
         Button(action: action) {
             VStack(spacing: OffRecordSpacing.sm) {
-                ZStack {
-                    Color.clear
-                        .frame(width: 48, height: 48)
-                        .offRecordGlassControl(
-                            tint: isSelected ? theme.accentColor : nil,
-                            in: Circle(),
-                            fallbackFill: theme.accentColor.opacity(0.2)
-                        )
+                // A miniature of the theme: its background wash, a card, and its accent.
+                ZStack(alignment: .bottomTrailing) {
+                    RoundedRectangle(cornerRadius: OffRecordRadius.md, style: .continuous)
+                        .fill(theme.backgroundGradient)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Capsule().fill(OffRecordColor.textSecondary.opacity(0.35)).frame(width: 26, height: 4)
+                        Capsule().fill(OffRecordColor.textSecondary.opacity(0.22)).frame(width: 18, height: 4)
+                    }
+                    .padding(6)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 
                     Circle()
-                        .fill(theme.accentColor.opacity(isSelected ? 1 : 0.8))
-                        .frame(width: 32, height: 32)
-
-                    Image(systemName: theme.icon)
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(theme.swatchForegroundColor)
+                        .fill(theme.swatchColor)
+                        .frame(width: 22, height: 22)
+                        .overlay {
+                            Image(systemName: theme.icon)
+                                .font(OffRecordTypography.annotation.weight(.semibold))
+                                .foregroundStyle(theme.swatchForegroundColor)
+                                .imageScale(.small)
+                        }
+                        .padding(6)
                 }
+                .frame(height: tileHeight)
                 .overlay {
+                    RoundedRectangle(cornerRadius: OffRecordRadius.md, style: .continuous)
+                        .stroke(isSelected ? theme.readableAccentColor : OffRecordColor.borderSoft, lineWidth: isSelected ? 2 : 1)
+                }
+                .overlay(alignment: .topTrailing) {
                     if isSelected {
-                        Circle()
-                            .stroke(theme.accentColor, lineWidth: 2)
-                            .frame(width: 52, height: 52)
+                        Image(systemName: "checkmark.circle.fill")
+                            .symbolRenderingMode(.palette)
+                            .foregroundStyle(OffRecordColor.textOnAccent, theme.readableAccentColor)
+                            .font(OffRecordTypography.labelMedium)
+                            .offset(x: 6, y: -6)
+                            .transition(.scale.combined(with: .opacity))
                     }
                 }
 
@@ -321,12 +337,13 @@ struct ThemeButton: View {
                     .minimumScaleFactor(0.85)
             }
             .frame(maxWidth: .infinity)
-            .frame(minHeight: 76)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .offRecordPointerLift()
-        .accessibilityLabel(theme.rawValue)
-        .accessibilityValue(isSelected ? "Selected" : "Not selected")
+        .offRecordAnimation(OffRecordMotion.snappy, value: isSelected)
+        .sensoryFeedback(.selection, trigger: isSelected) { _, new in new }
+        .accessibilityLabel("\(theme.rawValue) theme")
         .accessibilityAddTraits(isSelected ? [.isSelected] : [])
     }
 }
