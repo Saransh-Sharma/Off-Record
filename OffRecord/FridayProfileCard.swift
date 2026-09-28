@@ -121,9 +121,9 @@ struct FridayProfileGenerator {
         } else if formality < 0.4 && expr > 0.6 {
             communicationStyle = "Casual & Expressive"
         } else if direct > 0.6 && expr < 0.4 {
-            communicationStyle = "Blunt & Reserved"
+            communicationStyle = "Direct & Reserved"
         } else if formality < 0.4 && direct < 0.4 {
-            communicationStyle = "Soft & Indirect"
+            communicationStyle = "Soft-Spoken"
         } else {
             communicationStyle = "Adaptive"
         }
@@ -159,7 +159,7 @@ struct FridayProfileGenerator {
             thinkingStyle: thinkingStyle,
             topPerson: topPerson,
             topTopic: topTopic,
-            maturityLevel: assistant.summary.maturityLevel.rawValue.capitalized
+            maturityLevel: assistant.summary.maturityLevel.displayName
         )
     }
 
@@ -209,7 +209,7 @@ struct FridayProfileCardSection: View {
             HStack(spacing: OffRecordSpacing.sm) {
                 FridayMascotView(pose: .idle, size: 34)
                     .accessibilityHidden(true)
-                Text("Your Personality Card")
+                Text("Personality Card")
                     .font(OffRecordTypography.sectionTitle)
                     .foregroundStyle(OffRecordColor.textHeading)
                 Spacer(minLength: OffRecordSpacing.sm)
@@ -217,12 +217,12 @@ struct FridayProfileCardSection: View {
                     Button {
                         shareProfile(profile, format: .story)
                     } label: {
-                        Label("Tall card (stories)", systemImage: "rectangle.portrait")
+                        Label("Tall (Stories)", systemImage: "rectangle.portrait")
                     }
                     Button {
                         shareProfile(profile, format: .landscape)
                     } label: {
-                        Label("Wide card (posts)", systemImage: "rectangle")
+                        Label("Wide (Posts)", systemImage: "rectangle")
                     }
                 } label: {
                     Label("Share", systemImage: "square.and.arrow.up")
@@ -230,8 +230,8 @@ struct FridayProfileCardSection: View {
                         .foregroundStyle(OffRecordColor.textAqua)
                         .frame(minWidth: OffRecordLayout.minimumTapTarget, minHeight: OffRecordLayout.minimumTapTarget)
                 }
-                .accessibilityLabel("Share personality card")
-                .accessibilityHint("Choose a tall or wide image")
+                .accessibilityLabel("Share Personality Card")
+                .accessibilityHint("Shares the card as a tall or wide image.")
                 .accessibilityIdentifier("friday.shareProfileCard")
             }
 
@@ -249,10 +249,10 @@ struct FridayProfileCardSection: View {
                 iconSize: 15
             )
             VStack(alignment: .leading, spacing: OffRecordSpacing.xxs) {
-                Text("Personality card")
+                Text("Personality Card")
                     .font(OffRecordTypography.labelMedium)
                     .foregroundStyle(OffRecordColor.textHeading)
-                Text("Friday shares this after \(Self.minimumEntries) entries, so it reflects you. \(entries) of \(Self.minimumEntries) so far.")
+                Text("I’ll make this after \(Self.minimumEntries) entries. You have \(entries).")
                     .font(OffRecordTypography.metadata)
                     .foregroundStyle(OffRecordColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -318,8 +318,8 @@ struct FridayProfileCardContent: View {
             // Stats row
             HStack(spacing: 0) {
                 miniStat(value: profile.peakTime, label: "Peak Time")
-                miniStat(value: profile.dominantMood, label: "Dominant Mood")
-                miniStat(value: profile.emotionalRange, label: "Emotional Range")
+                miniStat(value: profile.dominantMood, label: "Top Mood")
+                miniStat(value: profile.emotionalRange, label: "Range")
             }
         }
         .padding(20)
@@ -415,7 +415,7 @@ private struct FridayProfileCardExport: View {
             HStack(spacing: 8) {
                 Image(systemName: "person.text.rectangle")
                     .font(OffRecordExportTypography.label)
-                Text("My Personality Profile")
+                Text("My Personality Card")
                     .font(OffRecordExportTypography.label)
                     .textCase(.uppercase)
                     .tracking(1.0)
@@ -464,17 +464,14 @@ private struct FridayProfileCardExport: View {
             // Branding
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("OffRecord AI Journal")
+                    Text("OffRecord")
                         .font(OffRecordExportTypography.brand)
                         .foregroundColor(OffRecordColor.textInverse.opacity(0.78))
-                    Text("AI Voice Diary")
+                    Text("Private voice journal")
                         .font(OffRecordExportTypography.micro)
                         .foregroundColor(OffRecordColor.textInverse.opacity(0.68))
                 }
                 Spacer()
-                Text("OffRecord")
-                    .font(OffRecordExportTypography.monospaced)
-                    .foregroundColor(OffRecordColor.textInverse.opacity(0.68))
             }
         }
         .padding(28)

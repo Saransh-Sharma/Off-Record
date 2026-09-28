@@ -50,13 +50,24 @@ struct FridaySummary: Codable {
         case established = "established" // 50-100 entries
         case deep = "deep"              // 100+ entries
 
+        /// Shown in the UI. Raw values are persisted in the saved summary, so they stay fixed.
+        var displayName: String {
+            switch self {
+            case .nascent: return "New"
+            case .emerging: return "Learning"
+            case .developing: return "Growing"
+            case .established: return "Solid"
+            case .deep: return "Deep"
+            }
+        }
+
         var description: String {
             switch self {
-            case .nascent: return "Just getting to know you"
-            case .emerging: return "Starting to see patterns"
-            case .developing: return "Understanding is growing"
-            case .established: return "Friday knows your patterns well"
-            case .deep: return "Friday has deep context"
+            case .nascent: return "I’m just getting to know you."
+            case .emerging: return "I’m starting to see patterns."
+            case .developing: return "I’m getting a clearer picture."
+            case .established: return "I know your patterns well."
+            case .deep: return "I know you well."
             }
         }
 
@@ -620,20 +631,20 @@ final class FridayAssistantEngine: ObservableObject {
         if thoughtPatterns.growthMindsetScore > 0.6 { traits.append("growth-oriented") }
         if thoughtPatterns.gratitudeTendency > 0.5 { traits.append("grateful") }
 
-        summary.personalitySnapshot = traits.isEmpty ? "Still learning about you..." : "You come across as \(traits.joined(separator: ", "))."
+        summary.personalitySnapshot = traits.isEmpty ? "Still learning." : "You come across as \(traits.formatted(.list(type: .and)))."
 
         // Communication snapshot
         if communicationStyle.analysisCount > 3 {
-            let wordStyle = communicationStyle.averageSentenceLength > 15 ? "detailed" : "concise"
-            let toneStyle = communicationStyle.expressiveness > 0.5 ? "emotionally rich" : "measured"
-            summary.communicationSnapshot = "Your writing style is \(wordStyle) and \(toneStyle), with an average of \(Int(communicationStyle.averageSentenceLength)) words per sentence."
+            let wordStyle = communicationStyle.averageSentenceLength > 15 ? "in detail" : "briefly"
+            let toneStyle = communicationStyle.expressiveness > 0.5 ? "with feeling" : "evenly"
+            summary.communicationSnapshot = "You write \(wordStyle) and \(toneStyle). About \(Int(communicationStyle.averageSentenceLength)) words per sentence."
         }
 
         // Emotional snapshot
         if emotionalSignature.analysisCount > 3 {
-            let valenceLabel = emotionalSignature.baselineValence > 0.1 ? "generally positive" : (emotionalSignature.baselineValence < -0.1 ? "going through some challenges" : "balanced")
-            let trendLabel = emotionalSignature.sentimentTrend > 0.05 ? "trending upward" : (emotionalSignature.sentimentTrend < -0.05 ? "trending downward" : "staying steady")
-            summary.emotionalSnapshot = "Your emotional baseline is \(valenceLabel) and \(trendLabel)."
+            let valenceLabel = emotionalSignature.baselineValence > 0.1 ? "mostly positive" : (emotionalSignature.baselineValence < -0.1 ? "mostly low" : "mixed")
+            let trendLabel = emotionalSignature.sentimentTrend > 0.05 ? "improving" : (emotionalSignature.sentimentTrend < -0.05 ? "dipping" : "holding steady")
+            summary.emotionalSnapshot = "Your mood is \(valenceLabel) and \(trendLabel)."
         }
 
         // Life snapshot
@@ -641,17 +652,17 @@ final class FridayAssistantEngine: ObservableObject {
         let topTopics = knowledgeGraph.topNodes(ofType: .topic, limit: 3)
         var lifeItems: [String] = []
         if !topPeople.isEmpty {
-            lifeItems.append("Key people: \(topPeople.map { $0.label }.joined(separator: ", "))")
+            lifeItems.append("People: \(topPeople.map { $0.label }.joined(separator: ", ")).")
         }
         if !topTopics.isEmpty {
-            lifeItems.append("Main themes: \(topTopics.map { $0.label }.joined(separator: ", "))")
+            lifeItems.append("Topics: \(topTopics.map { $0.label }.joined(separator: ", ")).")
         }
-        summary.lifeSnapshot = lifeItems.joined(separator: ". ")
+        summary.lifeSnapshot = lifeItems.joined(separator: " ")
 
         // Growth snapshot
         if behavioralPatterns.totalEntries > 5 {
-            let consistency = behavioralPatterns.consistencyScore > 0.5 ? "consistent" : "occasional"
-            summary.growthSnapshot = "You're a \(consistency) journaler with \(behavioralPatterns.totalEntries) entries. \(summary.maturityLevel.description)."
+            let consistency = behavioralPatterns.consistencyScore > 0.5 ? "regularly" : "now and then"
+            summary.growthSnapshot = String(AttributedString(localized: "^[\(behavioralPatterns.totalEntries) entry](inflect: true) so far. You write \(consistency).").characters)
         }
 
         summary.lastUpdated = Date()
@@ -848,6 +859,9 @@ final class FridayAssistantEngine: ObservableObject {
                 knowledgeGraph = payload.knowledgeGraph
                 behavioralPatterns = payload.behavioralPatterns
                 summary = payload.summary
+                // The snapshot sentences are derived copy, so rebuild them from the loaded
+                // models; otherwise a saved summary keeps old wording until the next entry.
+                updateSummary()
                 if state.type == "digital_twin" {
                     save()
                 }

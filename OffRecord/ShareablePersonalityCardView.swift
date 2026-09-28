@@ -47,7 +47,7 @@ struct PersonalityCardRenderer {
     }
 
     /// Share text to include alongside the image
-    static let shareText = "My Friday personality from OffRecord AI Journal \u{2014} free AI voice journal. https://saransh-sharma.github.io/Off-Record"
+    static let shareText = "My personality card from OffRecord, a private voice journal. https://saransh-sharma.github.io/Off-Record"
 }
 
 // MARK: - Story Format Export (1080x1920 at 3x)
@@ -74,14 +74,14 @@ private struct ShareablePersonalityCardExport: View {
                 Image(systemName: "waveform.circle.fill")
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundColor(OffRecordColor.brandAqua)
-                Text("OffRecord AI Journal")
+                Text("OffRecord")
                     .font(OffRecordExportTypography.brand)
                     .foregroundColor(OffRecordColor.textInverse.opacity(0.78))
             }
             .padding(.bottom, 20)
 
             // Header
-            Text("FRIDAY NOTICED")
+            Text("BY FRIDAY")
                 .font(OffRecordExportTypography.eyebrow)
                 .tracking(2.5)
                 .foregroundColor(OffRecordColor.brandAqua)
@@ -112,7 +112,7 @@ private struct ShareablePersonalityCardExport: View {
                 Circle()
                     .fill(OffRecordColor.brandAqua)
                     .frame(width: 8, height: 8)
-                Text("Dominant Mood")
+                Text("Top Mood")
                     .font(OffRecordExportTypography.label)
                     .foregroundColor(OffRecordColor.textInverse.opacity(0.78))
                     .textCase(.uppercase)
@@ -144,7 +144,7 @@ private struct ShareablePersonalityCardExport: View {
             // Signature words
             if !profile.signatureWords.isEmpty {
                 VStack(alignment: .leading, spacing: 8) {
-                    Text("SIGNATURE WORDS")
+                    Text("MY WORDS")
                         .font(OffRecordExportTypography.label)
                         .tracking(1.2)
                         .foregroundColor(OffRecordColor.textInverse.opacity(0.76))
@@ -167,7 +167,7 @@ private struct ShareablePersonalityCardExport: View {
             Spacer()
 
             // Entry count
-            Text("Built from \(profile.totalEntries) journal entries")
+            Text("From ^[\(profile.totalEntries) entry](inflect: true)")
                 .font(OffRecordExportTypography.metadata)
                 .foregroundColor(OffRecordColor.textInverse.opacity(0.70))
                 .padding(.bottom, 8)
@@ -175,17 +175,14 @@ private struct ShareablePersonalityCardExport: View {
             // Bottom branding
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("OffRecord AI Journal")
+                    Text("OffRecord")
                         .font(OffRecordExportTypography.brand)
                         .foregroundColor(OffRecordColor.textInverse.opacity(0.76))
-                    Text("AI Voice Journal")
+                    Text("Private voice journal")
                         .font(OffRecordExportTypography.micro)
                         .foregroundColor(OffRecordColor.textInverse.opacity(0.66))
                 }
                 Spacer()
-                Text("OffRecord")
-                    .font(OffRecordExportTypography.microMonospaced)
-                    .foregroundColor(OffRecordColor.textInverse.opacity(0.66))
             }
         }
         .padding(28)
@@ -226,12 +223,12 @@ private struct ShareablePersonalityCardExport: View {
                     Image(systemName: "waveform.circle.fill")
                         .font(OffRecordExportTypography.label)
                         .foregroundColor(OffRecordColor.brandAqua)
-                    Text("OffRecord AI Journal")
+                    Text("OffRecord")
                         .font(OffRecordExportTypography.micro)
                         .foregroundColor(OffRecordColor.textInverse.opacity(0.76))
                 }
 
-                Text("FRIDAY NOTICED")
+                Text("BY FRIDAY")
                     .font(OffRecordExportTypography.metadata)
                     .tracking(2.0)
                     .foregroundColor(OffRecordColor.brandAqua)
@@ -253,7 +250,7 @@ private struct ShareablePersonalityCardExport: View {
                     }
                 }
 
-                Text("Built from \(profile.totalEntries) entries")
+                Text("From ^[\(profile.totalEntries) entry](inflect: true)")
                     .font(OffRecordExportTypography.micro)
                     .foregroundColor(OffRecordColor.textInverse.opacity(0.66))
             }
@@ -272,8 +269,8 @@ private struct ShareablePersonalityCardExport: View {
                         .font(OffRecordExportTypography.micro)
                         .foregroundColor(OffRecordColor.textInverse)
                     Spacer()
-                    Text("OffRecord")
-                        .font(OffRecordExportTypography.microMonospaced)
+                    Text("Private voice journal")
+                        .font(OffRecordExportTypography.micro)
                         .foregroundColor(OffRecordColor.textInverse.opacity(0.66))
                 }
             }

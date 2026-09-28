@@ -105,11 +105,11 @@ extension PersonalKnowledgeGraph {
 
 enum FridayMemoryTone {
     static func sentimentLabel(_ sentiment: Double) -> String {
-        if sentiment > 0.3 { return "Mostly warm" }
+        if sentiment > 0.3 { return "Mostly positive" }
         if sentiment > 0.1 { return "Leans positive" }
-        if sentiment > -0.1 { return "Mixed or neutral" }
+        if sentiment > -0.1 { return "Mixed" }
         if sentiment > -0.3 { return "Leans heavy" }
-        return "Often heavy"
+        return "Mostly heavy"
     }
 
     static func sentimentFill(_ sentiment: Double) -> Color {
@@ -129,16 +129,16 @@ enum FridayMemoryTone {
     }
 
     static func importanceLabel(_ importance: Double) -> String {
-        if importance >= 0.66 { return "On your mind a lot" }
+        if importance >= 0.66 { return "Comes up a lot" }
         if importance >= 0.33 { return "Comes up sometimes" }
-        return "Now and then"
+        return "Comes up rarely"
     }
 
     static func typeNoun(_ type: PersonalKnowledgeGraph.KnowledgeNode.NodeType) -> String {
         switch type {
         case .person: return "person"
         case .place: return "place"
-        case .topic: return "theme"
+        case .topic: return "topic"
         case .goal: return "goal"
         case .fear: return "worry"
         case .activity: return "activity"
@@ -240,13 +240,13 @@ struct FridayMemoryRow: View {
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(node.label)
         .accessibilityValue("\(mentionText), \(FridayMemoryTone.sentimentLabel(node.sentimentAssociation)), importance \(Int((max(0, min(1, node.importance)) * 100).rounded())) percent")
-        .accessibilityHint("Shows details and options")
+        .accessibilityHint("Shows details and options.")
         .accessibilityAddTraits(.isButton)
         .accessibilityIdentifier("friday.memoryRow.\(node.id)")
     }
 
     private var mentionText: String {
-        node.mentions == 1 ? "1 mention" : "\(node.mentions) mentions"
+        String(AttributedString(localized: "^[\(node.mentions) mention](inflect: true)").characters)
     }
 }
 
@@ -273,7 +273,6 @@ struct FridayMemoryDetailSheet: View {
                         .padding(OffRecordSpacing.lg)
                         .offRecordCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceWarm, shadow: false)
                     actions
-                    privacyNote
                 }
                 .padding(.horizontal, OffRecordSpacing.xxl)
                 .padding(.vertical, OffRecordSpacing.lg)
@@ -286,15 +285,15 @@ struct FridayMemoryDetailSheet: View {
                     Button("Done") { dismiss() }
                 }
             }
-            .alert("Rename \(FridayMemoryTone.typeNoun(node.type))", isPresented: $isRenaming) {
+            .alert("Rename \(FridayMemoryTone.typeNoun(node.type).capitalized)", isPresented: $isRenaming) {
                 TextField("Name", text: $renameText)
                 Button("Save") { preferences.rename(node, to: renameText) }
                 if preferences.aliases[node.id] != nil {
-                    Button("Use original name") { preferences.rename(node, to: node.label) }
+                    Button("Reset Name") { preferences.rename(node, to: node.label) }
                 }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("Friday will use this name when she talks about it. Your entries stay as you wrote them.")
+                Text("I’ll use this name from now on. Your entries won’t change.")
             }
             .confirmationDialog(
                 "Forget \(preferences.displayName(for: node))?",
@@ -308,7 +307,7 @@ struct FridayMemoryDetailSheet: View {
                 }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("Friday will stop showing or mentioning this. Your journal entries aren’t changed, and you can restore it later from My World.")
+                Text("I’ll stop bringing this up. Your entries won’t change, and you can restore it in My World.")
             }
             .sensoryFeedback(.success, trigger: forgetTrigger)
         }
@@ -352,12 +351,12 @@ struct FridayMemoryDetailSheet: View {
             )
             statTile(
                 value: FridayMemoryTone.sentimentLabel(node.sentimentAssociation),
-                label: "How it feels",
+                label: "Tone",
                 valueColor: FridayMemoryTone.sentimentText(node.sentimentAssociation)
             )
             statTile(
                 value: node.lastSeen.formatted(.dateTime.month(.abbreviated).day()),
-                label: "Last mentioned",
+                label: "Last Mentioned",
                 valueColor: OffRecordColor.textPrimary
             )
         }
@@ -385,11 +384,11 @@ struct FridayMemoryDetailSheet: View {
                 dismiss()
                 OffRecordNavigationRouter.shared.route(.timeline(query: node.label), canNavigate: true)
             } label: {
-                Label("See entries", systemImage: "text.magnifyingglass")
+                Label("Show Entries", systemImage: "text.magnifyingglass")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(OffRecordSoftButtonStyle(tint: OffRecordColor.textOnAccent, fill: OffRecordColor.brandLavenderDark))
-            .accessibilityHint("Searches your timeline for \(node.label)")
+            .accessibilityHint("Searches your timeline for \(node.label).")
             .accessibilityIdentifier("friday.memory.seeEntries")
 
             HStack(spacing: OffRecordSpacing.sm) {
@@ -410,15 +409,9 @@ struct FridayMemoryDetailSheet: View {
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(OffRecordSoftButtonStyle(tint: OffRecordColor.textCoral, fill: OffRecordColor.surfacePrimary))
-                .accessibilityHint("Hides this from Friday. Your entries aren’t changed.")
+                .accessibilityHint("Hides this from Friday.")
                 .accessibilityIdentifier("friday.memory.forget")
             }
         }
-    }
-
-    private var privacyNote: some View {
-        Label("Names and choices here stay on this device.", systemImage: "lock.shield.fill")
-            .font(OffRecordTypography.metadata)
-            .foregroundStyle(OffRecordColor.textSage)
     }
 }

@@ -147,7 +147,7 @@ final class ScreenshotTests: XCTestCase {
         tapOffRecordTab("friday", in: app)
         XCTAssertTrue(app.buttons["friday.talk"].firstMatch.waitForExistence(timeout: 10))
         openFridaySection("Emotions")
-        XCTAssertTrue(app.staticTexts["Emotional Signature"].firstMatch.waitForExistence(timeout: 6))
+        XCTAssertTrue(app.staticTexts["Your Usual Mood"].firstMatch.waitForExistence(timeout: 6))
         takeScreenshot(named: "10_FridayEmotions")
     }
 

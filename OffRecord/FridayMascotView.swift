@@ -38,7 +38,7 @@ enum FridayMascotPose {
         case .listening: return "Friday listening"
         case .thinking: return "Friday thinking"
         case .walking: return "Friday walking"
-        case .confiding: return "Friday sitting with you"
+        case .confiding: return "Friday"
         }
     }
 }
