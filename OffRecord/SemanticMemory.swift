@@ -271,7 +271,7 @@ enum EvidenceFridayEngine {
                 observations: [EvidenceObservation(text: "\(message) \(Int(progress * 100))% complete.", evidenceIDs: [])],
                 evidence: [],
                 confidence: 0,
-                followUpPrompt: "Try again when indexing finishes.",
+                followUpPrompt: nil,
                 limitations: "Friday will not answer from a partially built index."
             )
         case .unavailable(let reason):
@@ -287,7 +287,7 @@ enum EvidenceFridayEngine {
                 observations: [EvidenceObservation(text: reason, evidenceIDs: [])],
                 evidence: [],
                 confidence: 0,
-                followUpPrompt: "What part of this do you want to start tracking?",
+                followUpPrompt: nil,
                 limitations: "Friday only answers from entries stored on this device."
             )
         case .failed(let message):
@@ -303,7 +303,7 @@ enum EvidenceFridayEngine {
                 observations: [EvidenceObservation(text: message, evidenceIDs: [])],
                 evidence: [],
                 confidence: 0,
-                followUpPrompt: "Try rebuilding Semantic Memory in Settings.",
+                followUpPrompt: nil,
                 limitations: "No claims were generated because retrieval failed."
             )
         case .ready(let evidence):
@@ -330,7 +330,7 @@ enum EvidenceFridayEngine {
                 observations: [EvidenceObservation(text: "Try asking after a few more entries, or search for a person, topic, mood, or time period you have written about.", evidenceIDs: [])],
                 evidence: [],
                 confidence: 0,
-                followUpPrompt: "What part of this do you want to start tracking?",
+                followUpPrompt: nil,
                 limitations: "Friday only answers from retrieved journal evidence."
             )
         }
@@ -345,7 +345,7 @@ enum EvidenceFridayEngine {
             observations: observations,
             evidence: topEvidence,
             confidence: confidence,
-            followUpPrompt: "Do you want to open one of these entries and reflect on it?",
+            followUpPrompt: nil,
             limitations: confidence < 0.65 ? "This is a low-confidence answer based on a small set of matching entries." : nil
         )
 
@@ -392,7 +392,7 @@ enum EvidenceFridayEngine {
             observations: [],
             evidence: [],
             confidence: 0.45,
-            followUpPrompt: "Ask about a specific person, topic, mood, or time period if you want citations.",
+            followUpPrompt: nil,
             limitations: limitation
         )
     }

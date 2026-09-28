@@ -84,7 +84,6 @@ struct OnboardingView: View {
         // The full-bleed pastel pages are light-only artwork; keep text and fields readable on them.
         .environment(\.colorScheme, .light)
         .onAppear {
-            response = response.normalizedForCurrentOnboarding()
             nameDraft = authorName
             firstEntryDraft = response.firstEntryText
             if response.microphoneChoice == .denied {
@@ -768,25 +767,13 @@ enum OnboardingStep: Int, CaseIterable, Identifiable {
 }
 
 struct OnboardingResponse: Codable, Equatable {
-    var goal: OnboardingGoal?
     var painPoints: Set<OnboardingPainPoint> = []
-    var relatableStatements: Set<RelatableStatement> = []
-    var reflectionFocus: ReflectionFocus? = .emotions
-    var promptStyle: PromptStyle? = .gentle
-    var moodBaseline: MoodChoice = .mixed
     var firstEntryText: String = ""
     var firstEntrySkipped: Bool = false
     var faceIDChoice: PermissionChoice = .notAsked
     var microphoneChoice: PermissionChoice = .notAsked
     var speechChoice: PermissionChoice = .notAsked
     var completedAt: Date?
-
-    func normalizedForCurrentOnboarding() -> OnboardingResponse {
-        var response = self
-        response.reflectionFocus = response.reflectionFocus ?? .emotions
-        response.promptStyle = response.promptStyle ?? .gentle
-        return response
-    }
 }
 
 struct OnboardingStore {
@@ -801,13 +788,13 @@ struct OnboardingStore {
         let arguments = ProcessInfo.processInfo.arguments
         if arguments.contains("-UITesting"), arguments.contains("-OnboardingUITest") {
             // Each UI test starts from a clean slate instead of answers saved by an earlier run.
-            return OnboardingResponse().normalizedForCurrentOnboarding()
+            return OnboardingResponse()
         }
         guard let data = UserDefaults.standard.data(forKey: responseKey),
               let response = try? JSONDecoder().decode(OnboardingResponse.self, from: data) else {
-            return OnboardingResponse().normalizedForCurrentOnboarding()
+            return OnboardingResponse()
         }
-        return response.normalizedForCurrentOnboarding()
+        return response
     }
 }
 
@@ -842,39 +829,6 @@ private enum OnboardingPalette {
     static let selectedBorder = OffRecordColor.textBrand.opacity(0.78)
 }
 
-enum OnboardingGoal: String, CaseIterable, Codable, Identifiable {
-    case moodPatterns
-    case clearerThoughts
-    case privateVenting
-    case consistency
-    case peopleTopics
-    case fridayInsights
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .moodPatterns: return "Understand my mood patterns"
-        case .clearerThoughts: return "Clear my head faster"
-        case .privateVenting: return "Vent without worrying"
-        case .consistency: return "Build a journaling habit"
-        case .peopleTopics: return "See people and topics over time"
-        case .fridayInsights: return "Let Friday notice patterns"
-        }
-    }
-
-    var icon: String {
-        switch self {
-        case .moodPatterns: return "chart.line.uptrend.xyaxis"
-        case .clearerThoughts: return "brain.head.profile"
-        case .privateVenting: return "lock.shield.fill"
-        case .consistency: return "flame.fill"
-        case .peopleTopics: return "point.3.connected.trianglepath.dotted"
-        case .fridayInsights: return "sparkles"
-        }
-    }
-}
-
 enum OnboardingPainPoint: String, CaseIterable, Codable, Identifiable {
     case typingSlow
     case detailsFade
@@ -896,16 +850,6 @@ enum OnboardingPainPoint: String, CaseIterable, Codable, Identifiable {
         }
     }
 
-    var solutionTitle: String {
-        switch self {
-        case .typingSlow: return "Speak naturally and let OffRecord transcribe."
-        case .detailsFade: return "Capture the honest version while it is fresh."
-        case .privacyWorry: return "Friday works on this device, not a developer server."
-        case .blankPage: return "Private prompts make the first sentence easier."
-        case .manualMood: return "Mood trends emerge from entries over time."
-        case .hardToSearch: return "Friday connects people, topics, and themes."
-        }
-    }
 
     var icon: String {
         switch self {
@@ -915,96 +859,6 @@ enum OnboardingPainPoint: String, CaseIterable, Codable, Identifiable {
         case .blankPage: return "bubble.left.and.bubble.right.fill"
         case .manualMood: return "heart.text.square"
         case .hardToSearch: return "point.3.connected.trianglepath.dotted"
-        }
-    }
-}
-
-enum RelatableStatement: String, CaseIterable, Codable, Identifiable {
-    case honestVersion
-    case cloudConcern
-    case patternWish
-    case voiceEasier
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .honestVersion: return "I lose the honest version when I wait to write."
-        case .cloudConcern: return "I avoid journaling when I think an app might upload it."
-        case .patternWish: return "I want to see patterns without tagging everything manually."
-        case .voiceEasier: return "I can say more in 30 seconds than I can type in minutes."
-        }
-    }
-}
-
-enum ReflectionFocus: String, CaseIterable, Codable, Identifiable {
-    case emotions
-    case relationships
-    case decisions
-    case growth
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .emotions: return "Emotions"
-        case .relationships: return "People"
-        case .decisions: return "Decisions"
-        case .growth: return "Growth"
-        }
-    }
-
-    var icon: String {
-        switch self {
-        case .emotions: return "heart.fill"
-        case .relationships: return "person.2.fill"
-        case .decisions: return "arrow.triangle.branch"
-        case .growth: return "leaf.fill"
-        }
-    }
-}
-
-enum PromptStyle: String, CaseIterable, Codable, Identifiable {
-    case gentle
-    case direct
-    case gratitude
-    case evening
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .gentle: return "Gentle check-ins"
-        case .direct: return "Straight questions"
-        case .gratitude: return "Gratitude prompts"
-        case .evening: return "End-of-day recaps"
-        }
-    }
-}
-
-enum MoodChoice: String, CaseIterable, Codable, Identifiable {
-    case calm
-    case mixed
-    case stretched
-    case hopeful
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .calm: return "Calm"
-        case .mixed: return "Mixed"
-        case .stretched: return "Stretched"
-        case .hopeful: return "Hopeful"
-        }
-    }
-
-    var mood: Mood {
-        switch self {
-        case .calm: return .calm
-        case .mixed: return .tired
-        case .stretched: return .anxious
-        case .hopeful: return .grateful
         }
     }
 }
@@ -1286,8 +1140,6 @@ private struct IntentStep: View {
 
     var body: some View {
         OnboardingQuestion(
-            eyebrow: "Intent",
-            title: "What brings you here?",
             subtitle: "Pick what matters most. Choose one or more.",
             contentSpacing: 18
         ) {
@@ -1314,8 +1166,6 @@ private struct IntentStep: View {
 private struct PrivacyProofStep: View {
     var body: some View {
         OnboardingQuestion(
-            eyebrow: "Privacy proof",
-            title: "Private by design",
             subtitle: "Your journal stays on this device. Voice transcription only starts after you allow it.",
             contentSpacing: 16
         ) {
@@ -1335,8 +1185,6 @@ private struct FaceIDStep: View {
 
     var body: some View {
         OnboardingQuestion(
-            eyebrow: "Privacy lock",
-            title: "Lock your journal",
             subtitle: "Use \(biometryName) or your device passcode when opening OffRecord.",
             contentSpacing: 18
         ) {
@@ -1380,40 +1228,6 @@ private struct FaceIDStep: View {
     }
 }
 
-private struct ProcessingStep: View {
-    @State private var animate = false
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
-
-    var body: some View {
-        VStack(spacing: 24) {
-            Spacer(minLength: 80)
-            ZStack {
-                Circle()
-                    .stroke(OnboardingPalette.surfaceBarelyVisible, lineWidth: 18)
-                    .frame(width: 150, height: 150)
-                Circle()
-                    .trim(from: 0.1, to: 0.82)
-                    .stroke(OnboardingPalette.foreground, style: StrokeStyle(lineWidth: 18, lineCap: .round))
-                    .frame(width: 150, height: 150)
-                    .rotationEffect(.degrees(animate && !reduceMotion ? 360 : 0))
-                    .animation(reduceMotion ? nil : .linear(duration: 1.1).repeatForever(autoreverses: false), value: animate)
-                Image(systemName: "sparkles")
-                    .font(.system(.largeTitle, weight: .bold))
-                    .foregroundStyle(OnboardingPalette.foreground)
-            }
-
-            VStack(spacing: 10) {
-                Text("No account needed. OffRecord is preparing your first reflection.")
-                    .font(OffRecordTypography.labelMedium)
-                    .foregroundStyle(OnboardingPalette.secondaryForeground)
-                    .multilineTextAlignment(.center)
-            }
-            Spacer(minLength: 80)
-        }
-        .onAppear { animate = true }
-    }
-}
-
 private struct FirstEntryStep: View {
     @ObservedObject var recorder: AudioRecorder
     let isRecording: Bool
@@ -1430,8 +1244,6 @@ private struct FirstEntryStep: View {
 
     var body: some View {
         OnboardingQuestion(
-            eyebrow: "First entry",
-            title: "Start with one honest thought",
             subtitle: "Record a short thought. If recording is unavailable, you can type instead.",
             contentSpacing: 16
         ) {
@@ -1582,8 +1394,6 @@ private struct HabitSetupStep: View {
 
     var body: some View {
         OnboardingQuestion(
-            eyebrow: "Build the habit",
-            title: "Make reflection easy to repeat.",
             subtitle: "Optional reminders and a weekly goal can help you build the habit. You can change these anytime.",
             contentSpacing: 18
         ) {
@@ -1641,29 +1451,6 @@ private struct HabitSetupStep: View {
                         .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
             }
-        }
-    }
-}
-
-private struct FinishStep: View {
-    var body: some View {
-        VStack(spacing: 24) {
-            Spacer(minLength: 80)
-            ZStack {
-                Circle()
-                    .fill(OnboardingPalette.surfaceSubtle)
-                    .frame(width: 150, height: 150)
-                FridayMascotView(pose: .wave, size: 104)
-            }
-
-            VStack(spacing: 12) {
-                Text("Record, reflect, and let Friday notice patterns entirely on this device. No internet connection required for the core experience.")
-                    .font(OffRecordTypography.titleSmall)
-                    .foregroundStyle(OnboardingPalette.secondaryForeground)
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(4)
-            }
-            Spacer(minLength: 80)
         }
     }
 }
@@ -1785,8 +1572,6 @@ private struct OnboardingQuestion<Content: View>: View {
     let content: Content
 
     init(
-        eyebrow _: String,
-        title _: String,
         subtitle: String,
         contentSpacing: CGFloat = 24,
         @ViewBuilder content: () -> Content
@@ -1865,67 +1650,6 @@ private struct ChoiceRow: View {
     }
 }
 
-private struct StatementCard: View {
-    let statement: String
-    let isSelected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button {
-            HapticManager.shared.selectionChanged()
-            action()
-        } label: {
-            OnboardingSelectableContainer(isSelected: isSelected, cornerRadius: 20, padding: 18) {
-                HStack(alignment: .top, spacing: 14) {
-                    Image(systemName: isSelected ? "checkmark.circle.fill" : "quote.opening")
-                        .font(OffRecordTypography.titleSmall)
-                        .foregroundStyle(OnboardingPalette.foreground)
-                    Text(statement)
-                        .font(isSelected ? OffRecordTypography.titleSmall : OffRecordTypography.labelLarge)
-                        .lineSpacing(3)
-                    Spacer()
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-private struct PrivacyComparisonRow: View {
-    let label: String
-    let offRecord: String
-    let other: String
-
-    var body: some View {
-        HStack(spacing: 10) {
-            Text(label)
-                .font(OffRecordTypography.labelMedium)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            Text(offRecord)
-                .font(OffRecordTypography.labelSmall)
-                .foregroundStyle(OffRecordColor.textPrimary)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(OnboardingPalette.surface)
-                .clipShape(Capsule())
-
-            Text(other)
-                .font(OffRecordTypography.labelSmall)
-                .foregroundStyle(OnboardingPalette.secondaryForeground)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(OnboardingPalette.surfaceSubtle)
-                .clipShape(Capsule())
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .background(OnboardingPalette.surfaceBarelyVisible)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-    }
-}
-
 private struct PrivacyProofRow: View {
     let icon: String
     let title: String
@@ -1955,34 +1679,6 @@ private struct PrivacyProofRow: View {
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(OnboardingPalette.surfaceSoft)
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-    }
-}
-
-private struct SolutionRow: View {
-    let pain: OnboardingPainPoint
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 14) {
-            Image(systemName: pain.icon)
-                .font(OffRecordTypography.sectionTitle)
-                .foregroundStyle(OnboardingPalette.foreground)
-                .frame(width: 34, height: 34)
-                .background(OnboardingPalette.surfaceSubtle)
-                .clipShape(Circle())
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(pain.title)
-                    .font(OffRecordTypography.labelSmall)
-                    .foregroundStyle(OnboardingPalette.secondaryForeground)
-                Text(pain.solutionTitle)
-                    .font(OffRecordTypography.sectionTitle)
-                    .foregroundStyle(OnboardingPalette.foreground)
-            }
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(OnboardingPalette.surfaceBarelyVisible)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 }
@@ -2023,70 +1719,6 @@ private struct BenefitRow: View {
     }
 }
 
-private struct LocalAIBadge: View {
-    var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "cpu.fill")
-            Text("On device")
-            Circle().fill(OnboardingPalette.tertiaryForeground).frame(width: 4, height: 4)
-            Text("Core works offline")
-        }
-        .font(OffRecordTypography.labelSmall)
-        .foregroundStyle(OffRecordColor.textPrimary)
-        .lineLimit(1)
-        .minimumScaleFactor(0.78)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(OnboardingPalette.surface)
-        .clipShape(Capsule())
-    }
-}
-
-private struct JournalPreviewCard: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Label("Today", systemImage: "mic.fill")
-                    .font(OffRecordTypography.sectionTitle)
-                Spacer()
-                OfflineIndicator()
-            }
-
-            Text("I finally said the thing I kept editing in my head...")
-                .font(OffRecordTypography.titleSmall)
-                .lineSpacing(3)
-
-            HStack(spacing: 10) {
-                PreviewPill(icon: "heart.fill", text: "Calm")
-                PreviewPill(icon: "person.2.fill", text: "People")
-                PreviewPill(icon: "sparkles", text: "Friday")
-            }
-        }
-        .padding(18)
-        .background(OnboardingPalette.surfaceSubtle)
-        .overlay(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(OnboardingPalette.border, lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-    }
-}
-
-private struct PreviewPill: View {
-    let icon: String
-    let text: String
-
-    var body: some View {
-        Label(text, systemImage: icon)
-            .font(OffRecordTypography.labelSmall)
-            .foregroundStyle(OnboardingPalette.secondaryForeground)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 7)
-            .background(OnboardingPalette.surfaceSubtle)
-            .clipShape(Capsule())
-    }
-}
-
 private struct WaveformMeter: View {
     let level: Float
 
@@ -2114,171 +1746,6 @@ private struct WaveformMeter: View {
     }
 }
 
-private struct StarterSnapshotCard: View {
-    let response: OnboardingResponse
-    let entryText: String
-    let mood: Mood
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Label("Friday snapshot", systemImage: "sparkles")
-                .font(OffRecordTypography.sectionTitle)
-                .foregroundStyle(OnboardingPalette.foreground)
-
-            Text(snapshotText)
-                .font(OffRecordTypography.bodyLarge)
-                .lineSpacing(4)
-
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], alignment: .leading, spacing: 8) {
-                PreviewPill(icon: "lock.shield.fill", text: "Stored locally")
-                PreviewPill(icon: "person.crop.circle.badge.xmark", text: "No account")
-                PreviewPill(icon: "heart.fill", text: mood.displayName)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .padding(18)
-        .background(OnboardingPalette.surfaceSubtle)
-        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-    }
-
-    private var snapshotText: String {
-        let goal = response.goal?.title ?? "reflect more clearly"
-        let focus = response.reflectionFocus?.title.lowercased() ?? "patterns"
-        if entryText.trimmed.isEmpty {
-            return "You want a clearer place to think. Friday will start by watching for \(focus) across your entries while keeping your journal on this device."
-        }
-        return "You want to \(goal.lowercased()). From your first entry, Friday will start watching for \(focus) while keeping everything private."
-    }
-}
-
-private struct TopicGraphCard: View {
-    let response: OnboardingResponse
-    let entryText: String
-
-    private var nodes: [String] {
-        var values = [
-            response.reflectionFocus?.title ?? "Reflection",
-            response.goal?.title.components(separatedBy: " ").suffix(2).joined(separator: " ") ?? "Patterns",
-            response.promptStyle?.title ?? "Prompts"
-        ]
-
-        let words = entryText
-            .split { !$0.isLetter }
-            .map(String.init)
-            .filter { $0.count > 4 }
-            .prefix(2)
-        values.append(contentsOf: words)
-        return Array(values.prefix(5))
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Label("Sample People and Topics", systemImage: "point.3.connected.trianglepath.dotted")
-                .font(OffRecordTypography.sectionTitle)
-                .foregroundStyle(OnboardingPalette.foreground)
-
-            ZStack {
-                ForEach(Array(nodes.enumerated()), id: \.offset) { index, node in
-                    TopicNode(title: node, index: index)
-                }
-            }
-            .frame(height: 210)
-            .frame(maxWidth: .infinity)
-
-            Text("As you journal, OffRecord connects recurring people, places, moods, and themes locally. These connections stay on this device.")
-                .font(OffRecordTypography.labelMedium)
-                .foregroundStyle(OnboardingPalette.secondaryForeground)
-        }
-        .padding(18)
-        .background(OnboardingPalette.surfaceSubtle)
-        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-    }
-}
-
-private struct TopicNode: View {
-    let title: String
-    let index: Int
-
-    private var position: CGPoint {
-        switch index {
-        case 0: return CGPoint(x: 0.50, y: 0.18)
-        case 1: return CGPoint(x: 0.22, y: 0.50)
-        case 2: return CGPoint(x: 0.76, y: 0.48)
-        case 3: return CGPoint(x: 0.36, y: 0.82)
-        default: return CGPoint(x: 0.66, y: 0.78)
-        }
-    }
-
-    var body: some View {
-        GeometryReader { proxy in
-            ZStack {
-                if index != 0 {
-                    Path { path in
-                        path.move(to: CGPoint(x: proxy.size.width * 0.50, y: proxy.size.height * 0.18))
-                        path.addLine(to: CGPoint(x: proxy.size.width * position.x, y: proxy.size.height * position.y))
-                    }
-                    .stroke(OnboardingPalette.tertiaryForeground, lineWidth: 2)
-                }
-
-                Text(title)
-                    .font(OffRecordTypography.labelSmall)
-                    .foregroundStyle(OnboardingPalette.foreground)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.72)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 9)
-                    .background(index == 0 ? OnboardingPalette.surface : OnboardingPalette.surfaceSubtle)
-                    .clipShape(Capsule())
-                    .position(x: proxy.size.width * position.x, y: proxy.size.height * position.y)
-            }
-        }
-    }
-}
-
-// MARK: - Privacy Badge Component
-
-struct PrivacyBadge: View {
-    var compact: Bool = false
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "lock.shield.fill")
-                .font(compact ? OffRecordTypography.annotation : OffRecordTypography.bodySmall)
-                .foregroundColor(OffRecordColor.textSage)
-
-            if !compact {
-                Text("100% Private")
-                    .font(OffRecordTypography.labelSmall)
-                    .foregroundColor(OffRecordColor.textSage)
-            }
-        }
-        .padding(.horizontal, compact ? 8 : 12)
-        .padding(.vertical, compact ? 4 : 6)
-        .background(OffRecordColor.backgroundSageTint)
-        .overlay(Capsule().stroke(OffRecordColor.borderSage, lineWidth: 1))
-        .clipShape(Capsule())
-    }
-}
-
-// MARK: - Offline Indicator
-
-struct OfflineIndicator: View {
-    var body: some View {
-        HStack(spacing: 4) {
-            Circle()
-                .fill(OffRecordColor.brandSageDark)
-                .frame(width: 6, height: 6)
-            Text("Offline")
-                .font(OffRecordTypography.labelSmall)
-                .foregroundColor(OffRecordColor.textSage)
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(OffRecordColor.backgroundSageTint)
-        .overlay(Capsule().stroke(OffRecordColor.borderSage, lineWidth: 1))
-        .clipShape(Capsule())
-    }
-}
 
 private extension String {
     var trimmed: String {
