@@ -108,31 +108,31 @@ enum UserIntent: String, CaseIterable {
     
     var description: String {
         switch self {
-        case .journaling: return "Recording daily thoughts"
-        case .venting: return "Expressing frustration or stress"
-        case .reflection: return "Deep thinking about life"
-        case .planning: return "Setting goals or making plans"
-        case .gratitude: return "Appreciating good things"
-        case .problemSolving: return "Working through a challenge"
-        case .celebration: return "Sharing good news"
-        case .processing: return "Making sense of emotions"
-        case .seeking: return "Looking for guidance"
-        case .unknown: return "General expression"
+        case .journaling: return "Daily log"
+        case .venting: return "Venting"
+        case .reflection: return "Thinking it through"
+        case .planning: return "Planning"
+        case .gratitude: return "Gratitude"
+        case .problemSolving: return "Working through something"
+        case .celebration: return "Good news"
+        case .processing: return "Processing feelings"
+        case .seeking: return "Looking for advice"
+        case .unknown: return "General"
         }
     }
     
     var suggestedFollowUp: String {
         switch self {
-        case .journaling: return "How did that make you feel?"
-        case .venting: return "What would help you feel better right now?"
-        case .reflection: return "What insight stands out to you?"
-        case .planning: return "What's the first small step you could take?"
-        case .gratitude: return "How can you carry this feeling forward?"
-        case .problemSolving: return "What resources do you have to help?"
-        case .celebration: return "Who would you like to share this with?"
-        case .processing: return "What does this experience teach you?"
-        case .seeking: return "What does your intuition say?"
-        case .unknown: return "Tell me more about what's on your mind."
+        case .journaling: return "How did that feel?"
+        case .venting: return "What would help right now?"
+        case .reflection: return "What stands out to you?"
+        case .planning: return "What’s a first small step?"
+        case .gratitude: return "How can you keep this feeling?"
+        case .problemSolving: return "Who could help?"
+        case .celebration: return "Who would you tell?"
+        case .processing: return "What did this teach you?"
+        case .seeking: return "What does your gut say?"
+        case .unknown: return "What else is on your mind?"
         }
     }
 }
@@ -166,15 +166,15 @@ enum DetectedEmotion: String, CaseIterable {
     
     var supportiveMessage: String {
         switch self {
-        case .joy: return "It's wonderful to see you feeling good!"
-        case .sadness: return "It's okay to feel this way. Your feelings are valid."
-        case .anger: return "I hear your frustration. Taking a moment to breathe can help."
-        case .fear: return "Acknowledging fear is brave. What small step feels manageable?"
-        case .surprise: return "Life certainly keeps us on our toes!"
-        case .disgust: return "Sometimes we need to process difficult feelings."
-        case .anticipation: return "The future holds possibilities. What excites you most?"
-        case .trust: return "Building connections is meaningful work."
-        case .neutral: return "Sometimes a calm mind is exactly what we need."
+        case .joy: return "Sounds like a good day."
+        case .sadness: return "That sounds hard."
+        case .anger: return "That sounds frustrating."
+        case .fear: return "That sounds scary."
+        case .surprise: return "That was unexpected."
+        case .disgust: return "That’s a lot to work through."
+        case .anticipation: return "Sounds like you’re looking ahead."
+        case .trust: return "Sounds like you have people to lean on."
+        case .neutral: return "Sounds like a calm day."
         }
     }
 }
@@ -471,7 +471,7 @@ final class LocalAIEngine: ObservableObject {
         // Personalize based on user history
         if userProfile.totalEntries > 10 {
             if let frequentTopic = topics.first(where: { userProfile.commonTopics[$0, default: 0] > 3 }) {
-                response += " I notice '\(frequentTopic)' comes up often for you."
+                response += " \(frequentTopic) comes up a lot for you."
             }
         }
         

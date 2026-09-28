@@ -54,7 +54,7 @@ final class CaptureFlowUITests: XCTestCase {
         save.tap()
         XCTAssertTrue(waitForElementToDisappear(panel, timeout: 5))
         XCTAssertTrue(recordButton.waitForExistence(timeout: 4))
-        XCTAssertEqual(recordButton.label, "Start recording")
+        XCTAssertEqual(recordButton.label, "Record")
     }
 
     func testRecordingWithoutSpeechConsentShowsDisclosureAfterLocalSave() throws {
@@ -66,8 +66,8 @@ final class CaptureFlowUITests: XCTestCase {
         XCTAssertTrue(app.descendants(matching: .any)["capture.panel"].firstMatch.waitForExistence(timeout: 8))
         app.buttons["capture.save"].firstMatch.tap()
 
-        XCTAssertTrue(app.alerts["On-Device Transcription"].waitForExistence(timeout: 8))
-        XCTAssertTrue(app.alerts.buttons["Transcribe on Device"].exists)
+        XCTAssertTrue(app.alerts["Transcribe Recordings?"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.alerts.buttons["Transcribe"].exists)
         XCTAssertTrue(app.alerts.buttons["Not Now"].exists)
         app.alerts.buttons["Not Now"].tap()
 
@@ -80,7 +80,7 @@ final class CaptureFlowUITests: XCTestCase {
         app.descendants(matching: .any)["todayDock.record"].firstMatch.tap()
         XCTAssertTrue(app.buttons["capture.save"].firstMatch.waitForExistence(timeout: 8))
         app.buttons["capture.save"].firstMatch.tap()
-        if app.alerts["On-Device Transcription"].waitForExistence(timeout: 4) {
+        if app.alerts["Transcribe Recordings?"].waitForExistence(timeout: 4) {
             app.alerts.buttons["Not Now"].tap()
         }
 

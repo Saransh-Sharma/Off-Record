@@ -96,18 +96,18 @@ struct CaptureAccessoryBar: View {
                         .frame(width: 30, height: 30)
                         .background(OffRecordColor.brandPlum, in: Circle())
                     VStack(alignment: .leading, spacing: 0) {
-                        Text(isInline ? "Record" : "Record a moment")
+                        Text("Record")
                             .font(OffRecordTypography.labelMedium)
                             .foregroundStyle(OffRecordColor.textPrimary)
-                        if !isInline {
+                        if !isInline && !capture.isCaptureDateToday {
                             // Text stays in the primary color so it reads on any glass backdrop;
-                            // the small icon carries the privacy (sage) or other-day (warm) cue.
+                            // the small warm icon carries the other-day cue.
                             Label {
-                                Text(capture.isCaptureDateToday ? "Private · on this device" : "For \(capture.captureDate.formatted(.dateTime.month(.abbreviated).day()))")
+                                Text("For \(capture.captureDate.formatted(.dateTime.month(.abbreviated).day()))")
                                     .foregroundStyle(OffRecordColor.textPrimary)
                             } icon: {
-                                Image(systemName: capture.isCaptureDateToday ? "lock.fill" : "calendar")
-                                    .foregroundStyle(capture.isCaptureDateToday ? OffRecordColor.textSage : OffRecordColor.textWarm)
+                                Image(systemName: "calendar")
+                                    .foregroundStyle(OffRecordColor.textWarm)
                                     .accessibilityHidden(true)
                             }
                             .labelStyle(.titleAndIcon)
@@ -120,8 +120,8 @@ struct CaptureAccessoryBar: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Start recording")
-            .accessibilityHint("Records a private voice entry for \(capture.isCaptureDateToday ? "today" : "the chosen day").")
+            .accessibilityLabel("Record")
+            .accessibilityHint("Adds a recording to \(capture.isCaptureDateToday ? "today" : "that day")’s entry.")
             .accessibilityIdentifier("todayDock.record")
 
             if !isInline {
@@ -135,7 +135,7 @@ struct CaptureAccessoryBar: View {
                     capture.importPhotos(items)
                     photoItems = []
                 }
-                .accessibilityLabel("Add photos")
+                .accessibilityLabel("Add Photos")
                 .accessibilityIdentifier("todayDock.photo")
             }
 
@@ -147,7 +147,7 @@ struct CaptureAccessoryBar: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Write note")
+            .accessibilityLabel("Write")
             .accessibilityIdentifier("todayDock.write")
         }
     }
@@ -174,7 +174,7 @@ struct CaptureAccessoryBar: View {
         HStack(spacing: OffRecordSpacing.sm) {
             ProgressView()
                 .controlSize(.small)
-            Text("Getting the mic ready…")
+            Text("Starting…")
                 .font(OffRecordTypography.labelMedium)
                 .foregroundStyle(OffRecordColor.textSecondary)
             Spacer(minLength: 0)
@@ -225,7 +225,7 @@ struct CaptureAccessoryBar: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Stop and save recording")
+            .accessibilityLabel("Stop and Save")
             .accessibilityIdentifier("todayDock.stop")
         }
     }
@@ -327,12 +327,12 @@ private struct CaptureRecordingView: View {
                 }
 
                 if recorder.wasInterrupted && isPaused {
-                    Text("Paused because something else used the microphone. Resume when you're ready.")
+                    Text("Paused. Another app used the microphone.")
                         .font(OffRecordTypography.metadata)
                         .foregroundStyle(OffRecordColor.textSecondary)
                         .multilineTextAlignment(.center)
                 } else if recorder.currentTime >= CaptureController.longRecordingWarningSeconds {
-                    Text("Long recording — consider saving and starting a new one.")
+                    Text("Long recording. Save and start a new one?")
                         .font(OffRecordTypography.metadata)
                         .foregroundStyle(OffRecordColor.textWarm)
                 }
@@ -359,24 +359,24 @@ private struct CaptureRecordingView: View {
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("capture.panel")
         .confirmationDialog(
-            "Discard this recording?",
+            "Discard Recording?",
             isPresented: $isConfirmingDiscard,
             titleVisibility: .visible
         ) {
-            Button("Discard Recording", role: .destructive) {
+            Button("Discard", role: .destructive) {
                 capture.discardRecording()
             }
             Button("Keep Recording", role: .cancel) {}
         } message: {
-            Text("It hasn't been saved to your journal yet.")
+            Text("It hasn’t been saved yet.")
         }
     }
 
     private var statusTitle: String {
         switch capture.phase {
-        case .starting: return "Getting ready…"
+        case .starting: return "Starting…"
         case .paused: return "Paused"
-        default: return "Listening"
+        default: return "Recording"
         }
     }
 
@@ -391,10 +391,10 @@ private struct CaptureRecordingView: View {
             }
             .buttonStyle(.plain)
             .frame(minHeight: OffRecordLayout.minimumTapTarget)
-            .accessibilityLabel("Journal day, \(dateLabel)")
-            .accessibilityHint("Choose which day this recording belongs to.")
+            .accessibilityLabel("Date, \(dateLabel)")
+            .accessibilityHint("Changes the entry date.")
             .popover(isPresented: $isChoosingDate) {
-                DatePicker("Journal day", selection: $capture.captureDate, in: ...Date(), displayedComponents: .date)
+                DatePicker("Date", selection: $capture.captureDate, in: ...Date(), displayedComponents: .date)
                     .datePickerStyle(.graphical)
                     .padding()
                     .frame(minWidth: 320)
@@ -416,10 +416,8 @@ private struct CaptureRecordingView: View {
                         .contentTransition(.symbolEffect(.replace))
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(capture.showsLiveTranscript ? "Hide live transcript" : "Show live transcript")
+                .accessibilityLabel(capture.showsLiveTranscript ? "Hide Transcript" : "Show Transcript")
             }
-
-            OffRecordPrivacyBadge(compact: false, title: "On this device")
         }
     }
 
@@ -435,7 +433,7 @@ private struct CaptureRecordingView: View {
         if capture.showsLiveTranscript && (capture.isLiveTranscriptActive || !capture.liveTranscript.isEmpty) {
             ScrollViewReader { proxy in
                 ScrollView {
-                    Text(capture.liveTranscript.isEmpty ? "Your words will appear here as you speak." : capture.liveTranscript)
+                    Text(capture.liveTranscript.isEmpty ? "Transcript appears here." : capture.liveTranscript)
                         .font(OffRecordTypography.journalBody)
                         .foregroundStyle(capture.liveTranscript.isEmpty ? OffRecordColor.textTertiary : OffRecordColor.textPrimary)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -449,7 +447,7 @@ private struct CaptureRecordingView: View {
                 .onChange(of: capture.liveTranscript) { _, _ in
                     proxy.scrollTo("transcript", anchor: .bottom)
                 }
-                .accessibilityLabel("Live transcript")
+                .accessibilityLabel("Transcript")
                 .accessibilityValue(capture.liveTranscript)
             }
             .transition(.opacity.combined(with: .move(edge: .bottom)))
@@ -575,7 +573,7 @@ private struct CaptureSavedView: View {
                 Text("Saved to \(saved.dayLabel)")
                     .font(OffRecordTypography.titleMedium)
                     .foregroundStyle(OffRecordColor.textHeading)
-                Text("\(CaptureFormat.shortDuration(saved.duration)) voice note · stays on this device")
+                Text("\(CaptureFormat.shortDuration(saved.duration)) recording")
                     .font(OffRecordTypography.metadata)
                     .foregroundStyle(OffRecordColor.textSecondary)
             }
@@ -600,7 +598,7 @@ private struct CaptureSavedView: View {
         VStack(alignment: .leading, spacing: OffRecordSpacing.sm) {
             switch saved.transcription {
             case .waiting, .transcribing:
-                Label("Transcribing on this device…", systemImage: "waveform")
+                Label("Transcribing…", systemImage: "waveform")
                     .symbolEffect(.variableColor.iterative, isActive: true)
                     .font(OffRecordTypography.labelSmall)
                     .foregroundStyle(OffRecordColor.textLavender)
@@ -616,29 +614,29 @@ private struct CaptureSavedView: View {
                 Label("Transcript", systemImage: "text.quote")
                     .font(OffRecordTypography.labelSmall)
                     .foregroundStyle(OffRecordColor.textLavender)
-                Text(text.isEmpty ? "No words were detected — your audio is saved." : text)
+                Text(text.isEmpty ? "No speech detected. The recording is saved." : text)
                     .font(OffRecordTypography.bodyMedium)
                     .foregroundStyle(text.isEmpty ? OffRecordColor.textSecondary : OffRecordColor.textPrimary)
                     .lineLimit(5)
                     .transition(.opacity)
             case .needsConsent:
-                Label("Transcription is off", systemImage: "waveform.slash")
+                Label("Transcription Off", systemImage: "waveform.slash")
                     .font(OffRecordTypography.labelSmall)
                     .foregroundStyle(OffRecordColor.textSecondary)
-                Text("Your audio is saved. Turn on on-device transcription to turn it into text.")
+                Text("Turn it on to get text from recordings.")
                     .font(OffRecordTypography.bodySmall)
                     .foregroundStyle(OffRecordColor.textSecondary)
-                Button("Transcribe on this device") {
+                Button("Transcribe") {
                     capture.grantSpeechConsentAndTranscribe()
                 }
                 .font(OffRecordTypography.labelMedium)
                 .foregroundStyle(OffRecordColor.textLavender)
                 .frame(minHeight: OffRecordLayout.minimumTapTarget)
             case .failed(let reason):
-                Label("Transcript unavailable", systemImage: "exclamationmark.bubble")
+                Label("No Transcript", systemImage: "exclamationmark.bubble")
                     .font(OffRecordTypography.labelSmall)
                     .foregroundStyle(OffRecordColor.textWarm)
-                Text("\(reason) Your audio is saved.")
+                Text("\(reason) The recording is saved.")
                     .font(OffRecordTypography.bodySmall)
                     .foregroundStyle(OffRecordColor.textSecondary)
             }
@@ -657,14 +655,13 @@ private struct CaptureSavedView: View {
                     .font(OffRecordTypography.cardTitle)
                     .foregroundStyle(OffRecordColor.textHeading)
                 Spacer()
-                Button("More") {
+                Button("More Moods") {
                     dialMood = saved.mood ?? .none
                     isShowingDial = true
                 }
                 .font(OffRecordTypography.labelSmall)
                 .foregroundStyle(OffRecordColor.textLavender)
                 .frame(minHeight: OffRecordLayout.minimumTapTarget)
-                .accessibilityLabel("Open mood dial")
             }
 
             MoodQuickStrip(selected: saved.mood) { mood in
@@ -683,7 +680,7 @@ private struct CaptureSavedView: View {
                 Text("Save moods to Apple Health?")
                     .font(OffRecordTypography.labelMedium)
                     .foregroundStyle(OffRecordColor.textPrimary)
-                Text("Only the mood and time are shared as State of Mind — never what you said.")
+                Text("Only the mood and time are shared, never what you said.")
                     .font(OffRecordTypography.metadata)
                     .foregroundStyle(OffRecordColor.textSecondary)
                 HStack(spacing: OffRecordSpacing.md) {
@@ -721,7 +718,7 @@ private struct CaptureSavedView: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(OffRecordSoftButtonStyle(tint: OffRecordColor.textCoral, fill: OffRecordColor.surfacePrimary.opacity(0.8)))
-            .accessibilityHint("Removes this recording from your journal.")
+            .accessibilityHint("Deletes this recording.")
 
             Button {
                 let id = saved.entryID
@@ -734,7 +731,7 @@ private struct CaptureSavedView: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(OffRecordSoftButtonStyle(tint: OffRecordColor.textBrand, fill: OffRecordColor.surfacePrimary.opacity(0.8)))
-            .accessibilityLabel("Open entry")
+            .accessibilityLabel("Open Entry")
 
             Button {
                 capture.dismissSaved()
@@ -882,7 +879,7 @@ private struct CaptureAlertsModifier: ViewModifier {
                     set: { capture.isSpeechConsentPromptPresented = $0 }
                 )
             ) {
-                Button("Transcribe on Device") {
+                Button("Transcribe") {
                     capture.grantSpeechConsentAndTranscribe()
                 }
                 Button("Not Now", role: .cancel) {

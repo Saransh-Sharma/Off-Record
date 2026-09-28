@@ -294,9 +294,9 @@ final class OffRecordUITests: XCTestCase {
         let writeCTA = app.descendants(matching: .any)["todayDock.write"].firstMatch
 
         XCTAssertTrue(primaryCTA.waitForExistence(timeout: 4))
-        XCTAssertEqual(primaryCTA.label, "Start recording")
+        XCTAssertEqual(primaryCTA.label, "Record")
         XCTAssertTrue(writeCTA.exists)
-        XCTAssertEqual(writeCTA.label, "Write note")
+        XCTAssertEqual(writeCTA.label, "Write")
         XCTAssertFalse(app.descendants(matching: .any)["daypartHero.primaryCTA"].firstMatch.exists)
         XCTAssertFalse(app.descendants(matching: .any)["daypartHero.writeCTA"].firstMatch.exists)
     }

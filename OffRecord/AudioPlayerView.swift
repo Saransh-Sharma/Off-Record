@@ -125,7 +125,7 @@ struct AudioPlayerView: View {
                         )
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(controller.isPlaying ? "Pause recording" : "Play recording")
+                .accessibilityLabel(controller.isPlaying ? "Pause" : "Play")
 
                 VStack(spacing: 4) {
                     Slider(
@@ -190,7 +190,7 @@ struct AudioPlayerView: View {
             do {
                 try controller.load(url: audioURL)
             } catch {
-                loadError = "Unable to load audio."
+                loadError = "Couldn’t load the recording."
             }
         }
         .onDisappear {
@@ -212,11 +212,11 @@ struct AudioPlayerView: View {
                             do {
                                 try controller.load(url: audioURL)
                             } catch {
-                                loadError = "Unable to load audio."
+                                loadError = "Couldn’t load the recording."
                             }
                         }
                     } label: {
-                        Text("Retry")
+                        Text("Try Again")
                             .font(OffRecordTypography.labelSmall)
                             .foregroundStyle(OffRecordColor.textCoral)
                     }

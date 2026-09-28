@@ -37,26 +37,26 @@ enum EntryFollowUpQuestion {
             result.append("What does your time with \(person) tend to bring out in you?")
         }
         if let topic = topics.first {
-            result.append("What about \(topic) is still on your mind?")
-            result.append("If \(topic) went exactly the way you hoped, what would be different?")
+            result.append("What’s still on your mind about \(topic)?")
+            result.append("If \(topic) went the way you hoped, what would change?")
         }
 
         switch mood {
         case .tired, .sad, .anxious:
-            result.append("What would make tomorrow feel a little lighter?")
-            result.append("What do you need right now that you haven't asked for?")
+            result.append("What would make tomorrow easier?")
+            result.append("What do you need right now?")
         case .angry:
-            result.append("What boundary might this feeling be pointing to?")
+            result.append("Is this feeling pointing to a boundary?")
         case .happy, .grateful, .excited:
-            result.append("What made this possible, and how could you invite more of it?")
-            result.append("Who would you like to share this with?")
+            result.append("What made this possible?")
+            result.append("Who would you tell about this?")
         case .calm:
             result.append("What helped you feel settled today?")
         case .none:
             break
         }
 
-        result.append("What part of this do you want to understand better?")
+        result.append("What part of this do you want to understand?")
         result.append("What would you tell a friend who wrote this?")
         return result
     }

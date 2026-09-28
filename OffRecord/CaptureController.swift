@@ -79,31 +79,29 @@ enum CaptureAlert: Identifiable, Equatable {
 
     var title: String {
         switch self {
-        case .microphoneDenied: return "Microphone Access Needed"
-        case .recordingFailed: return "Couldn't Start Recording"
+        case .microphoneDenied: return "Microphone Access Is Off"
+        case .recordingFailed: return "Couldn’t Start Recording"
         case .saveFailed: return "Recording Not Saved"
-        case .transcriptionFailed: return "Transcription Unavailable"
-        case .photoImportFailed: return "Some Photos Weren't Added"
-        case .entryCreationFailed: return "Couldn't Open Today's Entry"
+        case .transcriptionFailed: return "No Transcript"
+        case .photoImportFailed: return "Some Photos Weren’t Added"
+        case .entryCreationFailed: return "Couldn’t Open Today’s Entry"
         }
     }
 
     var message: String {
         switch self {
         case .microphoneDenied:
-            return "Allow microphone access in Settings to record voice entries. You can still write or add photos."
+            return "Turn on microphone access in Settings to record."
         case .recordingFailed:
-            return "Another app may be using the microphone. Try again in a moment."
+            return "Another app might be using the microphone."
         case .saveFailed:
-            return "OffRecord couldn't save that recording to your journal. Please try again."
+            return "Try recording again."
         case .transcriptionFailed(let reason):
-            return "\(reason) Your recording is saved — open the entry to listen or add text."
+            return "\(reason) You can still listen or add text."
         case .photoImportFailed(let failed):
-            return failed == 1
-                ? "One photo couldn't be imported. Try choosing it again."
-                : "\(failed) photos couldn't be imported. Try choosing them again."
+            return String(AttributedString(localized: "^[\(failed) photo](inflect: true) couldn’t be added. Try choosing again.").characters)
         case .entryCreationFailed:
-            return "Please try again."
+            return "Try again."
         }
     }
 
@@ -522,12 +520,12 @@ final class CaptureController: ObservableObject {
                     JournalSpotlightIndexer.shared.upsert(entry: entry)
                 } catch {
                     captureLogger.error("Failed to store transcript: \(error.localizedDescription, privacy: .public)")
-                    self.updateSaved(captureID) { $0.transcription = .failed("The transcript couldn't be saved.") }
+                    self.updateSaved(captureID) { $0.transcription = .failed("The transcript couldn’t be added.") }
                 }
             case .failure(let error):
                 AudioAttachmentStore.markTranscriptionFailed(attachment, error: error)
                 try? context.save()
-                let reason = (error as? TranscriptionError)?.errorDescription ?? "Transcription didn't finish."
+                let reason = (error as? TranscriptionError)?.errorDescription ?? "Transcription didn’t finish."
                 self.updateSaved(captureID) { $0.transcription = .failed(reason) }
                 // Only interrupt with an alert when the saved card is no longer visible.
                 if self.savedCapture?.id != captureID || !self.isPanelPresented {
