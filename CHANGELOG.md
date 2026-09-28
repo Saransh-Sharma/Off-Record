@@ -7,16 +7,17 @@ All notable changes to OffRecord AI Journal are documented here.
 ### Added
 - **Native Liquid Glass tab bar** with a Record bar above it on every tab.
 - **New capture sheet**: live waveform, optional live transcript, Pause/Resume, Discard, and recording into another day. After saving, a card offers a quick mood pick, Undo, and Open entry.
-- **Timeline views**: List, Calendar (month grid and year-in-pixels by mood), and Media. Swipe to star or delete, context menus with previews, Undo after delete, and "Best matches" for semantic search.
-- **Go deeper**: an entry can suggest one local follow-up question to write or speak about.
-- **Friday**: chats are kept on this device between visits, answers cite numbered sources with an evidence-strength label, follow-up questions are suggested, and "What Friday remembers" supports Forget and Rename.
+- **Timeline views**: List, Calendar (month grid and year-in-pixels by mood), and Photos. Swipe to star or delete, context menus with previews, Undo after delete, and "Top Results" for search by meaning.
+- **Go Deeper**: an entry can suggest one local follow-up question to write or record about.
+- **Friday**: chats are kept on this device between visits, answers cite numbered sources with an evidence-strength label, follow-up questions are suggested, and "What I Remember" supports Forget and Rename.
 - **Insights**: Swift Charts mood trends with a range picker, a time-of-day mood heatmap, a "Why?" sheet for every insight, one Weekly Reflection card, and streak milestone celebrations.
 - **Widgets and system surfaces**: the iOS widgets now ship in their own extension. New Year in Pixels and tappable mood widgets, a Record control for Control Center and the Lock Screen, and a Live Activity while recording.
-- **Settings**: a "Privacy at a glance" card, settings search, and an optional Apple Health State of Mind toggle.
+- **Settings**: a Privacy card, settings search, and an optional Apple Health State of Mind toggle.
 - **Dark mode** across the app; "System" appearance follows the device.
 
 ### Changed
-- Today has a shorter hero with Speak, Write, and another prompt, one contextual card (including On This Day), and a gentler streak strip.
+- **Copy**: every screen, widget, watch face, Siri phrase, and export is rewritten to one standard (see the Voice section of `OffRecord Design.md`): shorter, plain words, one name per thing, privacy stated once where it matters, and Friday speaking in first person. `scripts/copy-lint.sh` checks the mechanical rules.
+- Today has a shorter hero with Record, Write, and another prompt, one contextual card (including On This Day), and a calmer streak strip.
 - Onboarding is six steps instead of eight; Friday's focus is picked on the intent step.
 - The Lock screen asks again when you come back to the app.
 - The Watch record screen keeps its header clear of the clock.

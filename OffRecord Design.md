@@ -470,7 +470,7 @@ Copy should be short, specific, and calm. It should read like a well-made Apple 
 #### Capitalization and punctuation
 
 - **Title Case:** tabs, navigation titles, buttons, menu items, toggles and row labels, section and card headers, alert titles, empty-state titles, widget names, intent titles, notification titles.
-- **Sentence case:** body text, subtitles, footers, placeholders, prompts, Friday’s speech, insight titles, accessibility hints, notification bodies.
+- **Sentence case:** body text, subtitles, footers, placeholders, prompts, Friday’s speech, insight titles, onboarding page headlines, accessibility hints, notification bodies.
 - Use `…` (one character) only for progress text and commands that open more input. Placeholders get no ellipsis.
 - No em dashes in UI strings; split the sentence. Use an en dash for ranges (`Sep 22–28`).
 - `·` is the only separator. Use curly apostrophes and quotes (’ “ ”).
@@ -573,7 +573,7 @@ Core elements to preserve:
 
 #### Timeline
 
-Timeline should feel like a visual memory archive, not a plain settings-like list. It offers three views: List, Calendar (month grid and year-in-pixels coloured by mood), and Media (photo grid). Use a centered readable archive column on the warm app background gradient, with compact search, monthly context, date grouping, quiet metadata, mood artwork, and soft dividers that imply passage of time.
+Timeline should feel like a visual memory archive, not a plain settings-like list. It offers three views: List, Calendar (month grid and year-in-pixels coloured by mood), and Photos (photo grid). Use a centered readable archive column on the warm app background gradient, with compact search, monthly context, date grouping, quiet metadata, mood artwork, and soft dividers that imply passage of time.
 
 Core elements to preserve:
 
@@ -582,7 +582,7 @@ Core elements to preserve:
 - Month sections with a calendar icon, section entry count, date spine, circular pastel day badges, and differentiated entry cards.
 - Entry previews with mood icon, word count, photo/star metadata, highlighted matching text, semantic evidence labels, and large mood artwork.
 - Swipe to star or delete, context menus with previews, and a 6-second Undo after any delete.
-- A first-entry empty state that differs from "no search results", and a "Best matches" section for semantic search.
+- A first-entry empty state that differs from "no search results", and a "Top Results" section for search by meaning.
 - Small decorative Timeline planter illustration in the top-right. It may shake on tap and use haptics, but it must respect Reduce Motion and must never carry essential information.
 
 #### Insights
