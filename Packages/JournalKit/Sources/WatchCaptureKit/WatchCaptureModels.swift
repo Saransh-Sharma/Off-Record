@@ -176,21 +176,21 @@ public struct WatchRecentCapture: Codable, Identifiable, Hashable, Sendable {
     public var title: String {
         switch envelope.kind {
         case .mood:
-            return "Mood"
+            return String(localized: "Mood", bundle: .module)
         case .speak:
-            return "Thought"
+            return String(localized: "Dictation", bundle: .module)
         case .audio:
-            return "Raw voice"
+            return String(localized: "Recording", bundle: .module)
         }
     }
 
     public var statusText: String {
         switch syncState {
-        case .saved: return "Saved on watch"
-        case .queued: return "Held for later"
-        case .sending: return "Sending"
-        case .synced: return "On your iPhone"
-        case .failed: return lastError ?? "Retry"
+        case .saved: return String(localized: "On Watch", bundle: .module)
+        case .queued: return String(localized: "Waiting", bundle: .module)
+        case .sending: return String(localized: "Sending", bundle: .module)
+        case .synced: return String(localized: "On iPhone", bundle: .module)
+        case .failed: return lastError ?? String(localized: "Try Again", bundle: .module)
         }
     }
 }
@@ -305,14 +305,14 @@ public struct WatchCaptureEnvelope: Codable, Identifiable, Hashable, Sendable {
     public var privacySafePreview: String {
         switch kind {
         case .mood:
-            return moodValue ?? "Mood"
+            return moodValue.map { $0.prefix(1).uppercased() + $0.dropFirst() } ?? String(localized: "Mood", bundle: .module)
         case .speak:
-            return textPreview?.isEmpty == false ? textPreview! : "Dictated thought"
+            return textPreview?.isEmpty == false ? textPreview! : String(localized: "Dictation", bundle: .module)
         case .audio:
             if let duration = audioManifest?.duration {
-                return "Audio \(Self.durationFormatter.string(from: duration) ?? "")"
+                return String(localized: "Recording, \(Self.durationFormatter.string(from: duration) ?? "")", bundle: .module)
             }
-            return "Audio note"
+            return String(localized: "Recording", bundle: .module)
         }
     }
 

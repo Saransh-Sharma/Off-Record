@@ -15,7 +15,7 @@ public struct MoodDialHeader: View {
     public var body: some View {
         VStack(spacing: 12) {
             HStack {
-                Button("Cancel", action: cancel)
+                Button(String(localized: "Cancel", bundle: .module), action: cancel)
                     .font(theme.labelFont)
                     .foregroundStyle(theme.accent)
                     .frame(width: 96, height: 52)
@@ -25,7 +25,7 @@ public struct MoodDialHeader: View {
 
                 Spacer()
 
-                Button("Done", action: done)
+                Button(String(localized: "Done", bundle: .module), action: done)
                     .font(theme.labelFont)
                     .foregroundStyle(theme.accentContrast)
                     .frame(width: 100, height: 52)

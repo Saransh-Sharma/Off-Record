@@ -33,10 +33,10 @@ public struct EvidenceReference: Identifiable, Codable, Equatable, Sendable {
 
         public var displayName: String {
             switch self {
-            case .meaning: return "Similar meaning"
-            case .exact: return "Exact words"
-            case .entity: return "Same person or topic"
-            case .recent: return "Recent"
+            case .meaning: return String(localized: "Similar meaning", bundle: .module)
+            case .exact: return String(localized: "Exact words", bundle: .module)
+            case .entity: return String(localized: "Same person or topic", bundle: .module)
+            case .recent: return String(localized: "Recent", bundle: .module)
             }
         }
     }

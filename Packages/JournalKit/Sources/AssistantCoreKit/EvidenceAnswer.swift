@@ -80,12 +80,14 @@ public enum DeterministicEvidenceAnswerBuilder {
         }
         let confidence = min(0.72, 0.3 + Double(evidence.count) * 0.07)
         return EvidenceBackedAnswer(
-            summary: persona.noticed("\(evidence.count) \(evidence.count == 1 ? "entry relates" : "entries relate") to this."),
+            summary: persona.noticed(evidence.count == 1
+                ? String(localized: "1 entry relates to this.", bundle: .module)
+                : String(localized: "\(evidence.count) entries relate to this.", bundle: .module)),
             observations: observations,
             evidence: top,
             confidence: confidence,
             followUpPrompt: nil,
-            limitations: evidence.count < 3 ? "Based on only a few entries." : nil
+            limitations: evidence.count < 3 ? String(localized: "Based on only a few entries.", bundle: .module) : nil
         )
     }
 }

@@ -15,6 +15,7 @@ import PackageDescription
 
 let package = Package(
     name: "JournalKit",
+    defaultLocalization: "en",
     platforms: [
         .iOS(.v17),
         .watchOS(.v10),
@@ -38,6 +39,9 @@ let package = Package(
         ),
         .target(
             name: "TranscriptionKit",
+            resources: [
+                .process("Localizable.xcstrings")
+            ],
             swiftSettings: [
                 .swiftLanguageMode(.v5)
             ]
@@ -55,6 +59,9 @@ let package = Package(
         .target(
             name: "SemanticMemoryKit",
             dependencies: ["JournalFoundation"],
+            resources: [
+                .process("Localizable.xcstrings")
+            ],
             swiftSettings: [
                 .swiftLanguageMode(.v5)
             ]
@@ -76,12 +83,18 @@ let package = Package(
         .target(
             name: "AssistantCoreKit",
             dependencies: ["JournalFoundation", "SemanticMemoryKit", "KnowledgeGraphKit", "ReflectionKit"],
+            resources: [
+                .process("Localizable.xcstrings")
+            ],
             swiftSettings: [
                 .swiftLanguageMode(.v5)
             ]
         ),
         .target(
             name: "WatchCaptureKit",
+            resources: [
+                .process("Localizable.xcstrings")
+            ],
             swiftSettings: [
                 .swiftLanguageMode(.v5)
             ]

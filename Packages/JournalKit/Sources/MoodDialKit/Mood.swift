@@ -24,15 +24,15 @@ public enum Mood: String, CaseIterable, Identifiable, Sendable, Codable {
 
     public var displayName: String {
         switch self {
-        case .none: return "No mood"
-        case .happy: return "Happy"
-        case .calm: return "Calm"
-        case .grateful: return "Grateful"
-        case .excited: return "Excited"
-        case .tired: return "Tired"
-        case .anxious: return "Anxious"
-        case .sad: return "Sad"
-        case .angry: return "Angry"
+        case .none: return String(localized: "No mood", bundle: .module)
+        case .happy: return String(localized: "Happy", bundle: .module)
+        case .calm: return String(localized: "Calm", bundle: .module)
+        case .grateful: return String(localized: "Grateful", bundle: .module)
+        case .excited: return String(localized: "Excited", bundle: .module)
+        case .tired: return String(localized: "Tired", bundle: .module)
+        case .anxious: return String(localized: "Anxious", bundle: .module)
+        case .sad: return String(localized: "Sad", bundle: .module)
+        case .angry: return String(localized: "Angry", bundle: .module)
         }
     }
 
@@ -72,15 +72,15 @@ public enum Mood: String, CaseIterable, Identifiable, Sendable, Codable {
 
     public var moodSentence: String {
         switch self {
-        case .none: return "I feel neutral."
-        case .happy: return "I feel happy."
-        case .calm: return "I feel calm."
-        case .grateful: return "I feel grateful."
-        case .excited: return "I feel excited."
-        case .tired: return "I feel tired."
-        case .anxious: return "I feel anxious."
-        case .sad: return "I feel sad."
-        case .angry: return "I feel angry."
+        case .none: return String(localized: "I feel neutral.", bundle: .module)
+        case .happy: return String(localized: "I feel happy.", bundle: .module)
+        case .calm: return String(localized: "I feel calm.", bundle: .module)
+        case .grateful: return String(localized: "I feel grateful.", bundle: .module)
+        case .excited: return String(localized: "I feel excited.", bundle: .module)
+        case .tired: return String(localized: "I feel tired.", bundle: .module)
+        case .anxious: return String(localized: "I feel anxious.", bundle: .module)
+        case .sad: return String(localized: "I feel sad.", bundle: .module)
+        case .angry: return String(localized: "I feel angry.", bundle: .module)
         }
     }
 

@@ -46,9 +46,9 @@ public struct MoodDialWheel: View {
         }
         .frame(width: metrics.size.width, height: metrics.size.height)
         .accessibilityElement()
-        .accessibilityLabel("Mood dial")
+        .accessibilityLabel(Text("Mood Dial", bundle: .module))
         .accessibilityValue(selectedMood.displayName)
-        .accessibilityHint("Swipe up or down to change mood.")
+        .accessibilityHint(Text("Swipe up or down to change the mood.", bundle: .module))
         .accessibilityAdjustableAction { direction in
             adjustSelection(direction)
         }

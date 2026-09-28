@@ -1,0 +1,24 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%lld of ^[%lld entry](inflect: true)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld of ^[%2$lld entry](inflect: true)"
+          }
+        }
+      }
+    },
+    "Building…" : {},
+    "Couldn’t search" : {},
+    "Exact words" : {},
+    "Not ready yet" : {},
+    "Paused to save power" : {},
+    "Recent" : {},
+    "Same person or topic" : {},
+    "Similar meaning" : {}
+  },
+  "version" : "1.0"
+}

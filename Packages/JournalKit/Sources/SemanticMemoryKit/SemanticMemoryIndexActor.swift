@@ -50,7 +50,7 @@ public actor SemanticMemoryIndexActor {
 
     public func rebuildAll(records: [IndexableEntry], progress: @Sendable @escaping (SemanticIndexProgress) async -> Void) async throws -> MemoryIndexSnapshot {
         try Task.checkCancellation()
-        await progress(SemanticIndexProgress(progress: 0, message: "Building…"))
+        await progress(SemanticIndexProgress(progress: 0, message: String(localized: "Building…", bundle: .module)))
         guard !records.isEmpty else {
             try store.deleteAll()
             chunks = []
@@ -79,7 +79,7 @@ public actor SemanticMemoryIndexActor {
                 try await Task.sleep(nanoseconds: 1_000_000_000)
             }
             if shouldPauseForSystemConditions {
-                await progress(SemanticIndexProgress(progress: Double(entryIndex) / Double(total), message: "Paused to save power"))
+                await progress(SemanticIndexProgress(progress: Double(entryIndex) / Double(total), message: String(localized: "Paused to save power", bundle: .module)))
                 try await Task.sleep(nanoseconds: 800_000_000)
             }
 
@@ -87,7 +87,7 @@ public actor SemanticMemoryIndexActor {
             builtChunks.append(contentsOf: entryChunks)
             textByChunkID.merge(entryTexts) { _, new in new }
 
-            await progress(SemanticIndexProgress(progress: Double(entryIndex + 1) / Double(total), message: "\(entryIndex + 1) of \(records.count) \(records.count == 1 ? "entry" : "entries")"))
+            await progress(SemanticIndexProgress(progress: Double(entryIndex + 1) / Double(total), message: String(AttributedString(localized: "\(entryIndex + 1) of ^[\(records.count) entry](inflect: true)", bundle: .module).characters)))
         }
 
         try store.replaceAll(chunks: builtChunks, textByChunkID: textByChunkID)
@@ -126,7 +126,7 @@ public actor SemanticMemoryIndexActor {
     public func search(query: String, records: [IndexableEntry], limit: Int) async -> SemanticMemorySearchResult {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return .ready([]) }
-        guard !chunks.isEmpty else { return .unavailable("Not ready yet") }
+        guard !chunks.isEmpty else { return .unavailable(String(localized: "Not ready yet", bundle: .module)) }
 
         let provider = providerForCurrentIndex()
         let language = NLLanguageRecognizer.dominantLanguage(for: trimmed)
@@ -135,7 +135,7 @@ public actor SemanticMemoryIndexActor {
             embedded = try await provider.embedding(for: trimmed, language: language)
         } catch {
             semanticMemoryLogger.error("Query embedding failed: \(error.localizedDescription, privacy: .public)")
-            return .failed("Couldn’t search")
+            return .failed(String(localized: "Couldn’t search", bundle: .module))
         }
 
         let recordByID = Dictionary(uniqueKeysWithValues: records.map { ($0.id, $0) })
@@ -144,7 +144,7 @@ public actor SemanticMemoryIndexActor {
             lexicalIDs = try store.lexicalSearch(query: trimmed, limit: max(limit * 3, 24))
         } catch {
             semanticMemoryLogger.error("Lexical search failed: \(error.localizedDescription, privacy: .public)")
-            return .failed("Couldn’t search")
+            return .failed(String(localized: "Couldn’t search", bundle: .module))
         }
 
         let lexicalCandidateIDs = Set(lexicalIDs)
