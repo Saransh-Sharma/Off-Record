@@ -16,6 +16,8 @@ enum DayPart: String, CaseIterable, Codable, Identifiable {
     var id: String { rawValue }
 
     static func current(for date: Date = .now, calendar: Calendar = .current) -> DayPart {
+        // App Store screenshots show a 9:41 status bar, so keep the hero and greeting in the morning.
+        if ProcessInfo.processInfo.arguments.contains("-ScreenshotMode") { return .morning }
         let hour = calendar.component(.hour, from: date)
         switch hour {
         case 5..<12: return .morning

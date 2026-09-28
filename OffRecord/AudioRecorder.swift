@@ -407,6 +407,18 @@ final class AudioRecorder: NSObject, ObservableObject {
         currentTime = recordedDuration()
     }
 
+    /// Fills the meters with a natural-looking speech pattern for App Store screenshots.
+    func showScreenshotSample(duration: TimeInterval) {
+        currentTime = duration
+        levelHistory = (0..<Self.levelHistoryCapacity).map { index in
+            let t = Double(index)
+            let phrase = 0.6 + 0.35 * sin(t / 5) * sin(t / 11 + 1)
+            let syllable = 0.45 + 0.55 * abs(sin(t * 1.7))
+            return Float(max(0.08, min(1, phrase * syllable)))
+        }
+        level = levelHistory.last ?? 0
+    }
+
     private func recordedDuration() -> TimeInterval {
         if let fallbackRecorder {
             return fallbackRecorder.currentTime

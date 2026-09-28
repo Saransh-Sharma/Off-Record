@@ -98,13 +98,12 @@ struct TodayView: View {
     }
 
     private var greeting: String {
-        let hour = Calendar.current.component(.hour, from: Date())
         let baseGreeting: String
-        switch hour {
-        case 5..<12: baseGreeting = "Good morning"
-        case 12..<17: baseGreeting = "Good afternoon"
-        case 17..<21: baseGreeting = "Good evening"
-        default: baseGreeting = "Good night"
+        switch DayPart.current() {
+        case .morning: baseGreeting = "Good morning"
+        case .afternoon: baseGreeting = "Good afternoon"
+        case .evening: baseGreeting = "Good evening"
+        case .night: baseGreeting = "Good night"
         }
         return Personalization.appendFirstName(to: baseGreeting, name: authorName)
     }

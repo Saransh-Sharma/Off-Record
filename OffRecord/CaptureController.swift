@@ -210,6 +210,14 @@ final class CaptureController: ObservableObject {
             return
         }
 
+        // App Store screenshots: a recording in progress, without the microphone.
+        if ProcessInfo.processInfo.arguments.contains("-ScreenshotMode") {
+            phase = .recording
+            recorder.showScreenshotSample(duration: 83)
+            liveTranscript = "Quick check-in before work. I slept properly for the first time this week, and the walk this morning really helped. I think I'm finally ready to tell Mike I want to lead the next launch"
+            return
+        }
+
         AVAudioApplication.requestRecordPermission { granted in
             Task { @MainActor in
                 guard self.phase == .starting else { return }
