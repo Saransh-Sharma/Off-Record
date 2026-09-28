@@ -578,6 +578,9 @@ struct FridayChatView: View {
     @State private var isAnswering = false
     @State private var appliedInitialQuestion = false
     @State private var isKeyboardVisible = false
+    /// How far the keyboard reaches up from the bottom of the screen.
+    @State private var keyboardHeight: CGFloat = 0
+    @State private var screenHeight: CGFloat = 0
     @State private var hasRestoredHistory = false
     @State private var revealingMessageID: UUID?
     @State private var chatError: FridayChatError?
@@ -617,7 +620,7 @@ struct FridayChatView: View {
                         }
                         .padding(.horizontal, horizontalPadding)
                         .padding(.top, topContentPadding)
-                        .padding(.bottom, scrollBottomPadding)
+                        .padding(.bottom, scrollBottomPadding + keyboardLift(containerBottom: geometry.frame(in: .global).maxY))
                         .frame(maxWidth: metrics.fridayReadableWidth)
                         .frame(maxWidth: .infinity)
                     }
@@ -631,7 +634,7 @@ struct FridayChatView: View {
                     .padding(.leading, OffRecordSpacing.xxl)
                     .padding(.top, backButtonTopPadding)
                 }
-                .safeAreaInset(edge: .bottom) {
+                .overlay(alignment: .bottom) {
                     FridayComposer(
                         text: $inputText,
                         isAnswering: isAnswering,
@@ -642,6 +645,11 @@ struct FridayChatView: View {
                         onSend: askFreeformQuestion
                     )
                     .padding(.bottom, composerBottomClearance)
+                    // Cover the clearance too, so chat content doesn't show through below the composer.
+                    .background(OffRecordColor.backgroundPrimary.opacity(0.98).ignoresSafeArea())
+                    // Automatic keyboard avoidance doesn't reliably reach this screen inside the tab
+                    // view, so the composer is lifted by exactly the part of it the keyboard covers.
+                    .offset(y: -keyboardLift(containerBottom: geometry.frame(in: .global).maxY))
                 }
                 .onChange(of: messages.count) { _, _ in
                     scrollToBottom(proxy)
@@ -661,6 +669,11 @@ struct FridayChatView: View {
         .navigationBarTitleDisplayMode(.inline)
         .toolbar(.hidden, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
+        // Inside the tab view with the tab bar hidden, automatic keyboard avoidance doesn't
+        // reliably lift the composer, so the chat lifts it itself from the keyboard frame.
+        .ignoresSafeArea(.keyboard)
+        .onAppear { OffRecordNavigationRouter.shared.hidesCaptureAccessory = true }
+        .onDisappear { OffRecordNavigationRouter.shared.hidesCaptureAccessory = false }
         .background(OffRecordAppBackground().ignoresSafeArea())
         .navigationDestination(item: $selectedEvidence) { selection in
             EntryDetailView(entry: selection.entry)
@@ -696,8 +709,19 @@ struct FridayChatView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
             isKeyboardVisible = true
         }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillChangeFrameNotification)) { notification in
+            guard let frame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect else { return }
+            let height = (notification.object as? UIScreen)?.bounds.height ?? frame.maxY
+            withOffRecordAnimation(OffRecordMotion.snappy) {
+                screenHeight = height
+                keyboardHeight = max(0, height - frame.minY)
+            }
+        }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
             isKeyboardVisible = false
+            withOffRecordAnimation(OffRecordMotion.snappy) {
+                keyboardHeight = 0
+            }
         }
         #endif
     }
@@ -844,6 +868,15 @@ struct FridayChatView: View {
         case .activeChat, .error: return 18
         default: return 0
         }
+    }
+
+    /// How far to raise the composer so it sits just above the keyboard. Measured against
+    /// where this view actually ends on screen rather than an assumed safe area.
+    private func keyboardLift(containerBottom: CGFloat) -> CGFloat {
+        guard keyboardHeight > 0 else { return 0 }
+        let keyboardTop = screenHeight - keyboardHeight
+        let restingBottom = containerBottom - composerBottomClearance
+        return max(0, restingBottom - (keyboardTop - OffRecordSpacing.sm))
     }
 
     private var composerBottomClearance: CGFloat {

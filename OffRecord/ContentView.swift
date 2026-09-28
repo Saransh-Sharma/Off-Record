@@ -22,10 +22,8 @@ struct ContentView: View {
         tabs
             .tabViewStyle(.sidebarAdaptable)
             .tabBarMinimizeBehavior(.onScrollDown)
-            .tabViewBottomAccessory {
-                CaptureAccessoryBar {
-                    navigationRouter.requestTypedNote()
-                }
+            .captureAccessory(isHidden: navigationRouter.hidesCaptureAccessory) {
+                navigationRouter.requestTypedNote()
             }
             .sheet(isPresented: $capture.isPanelPresented, onDismiss: capture.panelDidDismiss) {
                 CapturePanelView()
@@ -157,4 +155,21 @@ enum OffRecordTab: String, CaseIterable, Identifiable {
 
 #Preview {
     ContentView().environment(\.managedObjectContext, PersistenceController.preview.container.viewContext)
+}
+
+private extension View {
+    /// The Record bar as the tab bar's bottom accessory. iOS 26.1 can hide it for screens
+    /// with their own composer; on 26.0 it simply stays.
+    @ViewBuilder
+    func captureAccessory(isHidden: Bool, onWrite: @escaping () -> Void) -> some View {
+        if #available(iOS 26.1, *) {
+            tabViewBottomAccessory(isEnabled: !isHidden) {
+                CaptureAccessoryBar(onWrite: onWrite)
+            }
+        } else {
+            tabViewBottomAccessory {
+                CaptureAccessoryBar(onWrite: onWrite)
+            }
+        }
+    }
 }

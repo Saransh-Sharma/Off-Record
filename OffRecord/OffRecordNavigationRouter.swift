@@ -30,6 +30,9 @@ final class OffRecordNavigationRouter: ObservableObject {
     @Published var routedWeeklyReflectionID: UUID?
     @Published var shouldOpenCurrentWeeklyReflection = false
     @Published var shouldStartRecording = false
+    /// True while a screen with its own composer (Friday chat) is showing, so the
+    /// Record bar doesn't sit on top of it or ride up over it with the keyboard.
+    @Published var hidesCaptureAccessory = false
     /// Set when Write is tapped outside Today; Today opens the editor and clears it.
     @Published var pendingTypedNote: TypedNoteRequest?
 
