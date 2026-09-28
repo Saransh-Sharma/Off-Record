@@ -51,6 +51,8 @@ struct UITestDataSeeder {
             FridayAssistantEngine.shared.resetForUITesting()
             LocalAIEngine.shared.userProfile = UserProfile()
             seedProactiveReflectionEntries(in: context)
+            // Today shows one contextual card; keep the weekly card out of the way of the prompt under test.
+            WeeklyReflectionController.shared.updateSettings { $0.showHomeCard = false }
             if arguments.contains("-ProactiveReflectionHasToday") {
                 insertEntry(daysAgo: 0, text: "Today I already checked in and wrote a few grounded lines.", mood: "calm", starred: false, context: context)
             }

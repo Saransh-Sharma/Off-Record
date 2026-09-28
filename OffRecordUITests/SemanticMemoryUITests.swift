@@ -43,8 +43,12 @@ final class SemanticMemoryUITests: XCTestCase {
         XCTAssertTrue(app.staticTexts["semanticMemory.statusMessage"].label.localizedCaseInsensitiveContains("deleted"))
 
         offRecordTabButton("timeline", in: app).firstMatch.tap()
+        // Timeline keeps its search across tabs; clear it to see every entry.
+        clearTimelineSearch(in: app)
         XCTAssertTrue(app.staticTexts.matching(labelContaining: "quarterly review").firstMatch.waitForExistence(timeout: 8))
-        XCTAssertTrue(app.staticTexts.matching(labelContaining: "Bangalore cafe").firstMatch.waitForExistence(timeout: 4))
+        let bangalore = app.staticTexts.matching(labelContaining: "Bangalore cafe").firstMatch
+        scrollUntilExists(bangalore, in: app)
+        XCTAssertTrue(bangalore.waitForExistence(timeout: 4))
     }
 
     func testDeletingSemanticIndexShowsUnavailableSettingsCopy() throws {
@@ -245,7 +249,7 @@ final class SemanticMemoryUITests: XCTestCase {
         XCTAssertTrue(chip.waitForExistence(timeout: 8))
         chip.tap()
 
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "identifier BEGINSWITH %@", "friday.userMessage.")).firstMatch.waitForExistence(timeout: 4))
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH %@", "friday.userMessage.")).firstMatch.waitForExistence(timeout: 4))
         XCTAssertTrue(app.staticTexts["Friday"].firstMatch.waitForExistence(timeout: 4))
         XCTAssertTrue(app.descendants(matching: .any)["friday.askField"].firstMatch.exists)
     }
@@ -358,6 +362,17 @@ final class SemanticMemoryUITests: XCTestCase {
         searchField.typeText(text)
     }
 
+    private func clearTimelineSearch(in app: XCUIApplication) {
+        let field = app.searchFields.firstMatch
+        guard field.waitForExistence(timeout: 4),
+              let value = field.value as? String,
+              !value.isEmpty,
+              value != "Search entries" else { return }
+        field.tap()
+        field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: value.count))
+        dismissKeyboardIfNeeded(in: app)
+    }
+
     private func waitForSearchResult(containing text: String, in app: XCUIApplication, timeout: TimeInterval) -> Bool {
         app.staticTexts.matching(labelContaining: text).firstMatch.waitForExistence(timeout: timeout)
     }
@@ -373,7 +388,7 @@ final class SemanticMemoryUITests: XCTestCase {
         let askButton = app.descendants(matching: .any)["friday.askButton"].firstMatch
         XCTAssertTrue(askButton.waitForExistence(timeout: 4))
         askButton.tap()
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "identifier BEGINSWITH %@", "friday.userMessage.")).firstMatch.waitForExistence(timeout: 4))
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH %@", "friday.userMessage.")).firstMatch.waitForExistence(timeout: 4))
     }
 
     private func openFridayChat(_ app: XCUIApplication) {

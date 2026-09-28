@@ -26,7 +26,7 @@ final class DeepLinkAndPrivacyUITests: XCTestCase {
         )
 
         XCTAssertTrue(app.descendants(matching: .any)["friday.askField"].firstMatch.waitForExistence(timeout: 10))
-        let userMessage = app.staticTexts.matching(NSPredicate(format: "identifier BEGINSWITH %@", "friday.userMessage.")).firstMatch
+        let userMessage = app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH %@", "friday.userMessage.")).firstMatch
         XCTAssertTrue(userMessage.waitForExistence(timeout: 8))
         XCTAssertTrue(userMessage.label.localizedCaseInsensitiveContains("work stress"))
     }

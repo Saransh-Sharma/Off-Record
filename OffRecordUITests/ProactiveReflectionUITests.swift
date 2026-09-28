@@ -47,7 +47,10 @@ final class ProactiveReflectionUITests: XCTestCase {
         reflect.tap()
         XCTAssertTrue(app.staticTexts["Writing prompt"].waitForExistence(timeout: 4))
 
-        app.navigationBars.buttons.firstMatch.tap()
+        // Entry detail hides the navigation bar and shows its own Back button.
+        let back = app.buttons["entryDetail.backButton"].firstMatch
+        XCTAssertTrue(back.waitForExistence(timeout: 4))
+        back.tap()
         tapTab("friday", in: app)
 
         let evidencePredicate = NSPredicate(format: "identifier BEGINSWITH %@", "proactiveReflection.openEvidence.")

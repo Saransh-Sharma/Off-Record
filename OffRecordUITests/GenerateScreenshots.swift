@@ -30,37 +30,12 @@ class ScreenshotTests: XCTestCase {
 
     // MARK: - Navigation Helper
 
-    /// Navigate to a tab by name. Handles the custom floating iPhone tab bar plus iPad system tab/sidebar layouts.
-    /// Uses .firstMatch to handle iPadOS where tab buttons appear as nested duplicates.
+    /// Navigate to a tab through the native tab bar (see `offRecordTabButton`).
     private func navigateToTab(_ name: String) {
-        let identifiedButton = app.buttons["tab.\(name.lowercased())"].firstMatch
-        if identifiedButton.waitForExistence(timeout: 3) {
-            identifiedButton.tap()
-            return
+        // XCTest runs these screenshot tests on the main thread.
+        MainActor.assumeIsolated {
+            tapOffRecordTab(name.lowercased(), in: app)
         }
-
-        // iPhone: custom floating tab bar exposes each tab as an accessibility button.
-        let customButton = app.buttons[name].firstMatch
-        if customButton.waitForExistence(timeout: 3) {
-            customButton.tap()
-            return
-        }
-
-        // iPad/system fallback: native tab bars expose tab items here.
-        let tabButton = app.tabBars.buttons[name]
-        if tabButton.waitForExistence(timeout: 3) {
-            tabButton.tap()
-            return
-        }
-
-        // Fallback: look for a static text and tap it
-        let text = app.staticTexts[name].firstMatch
-        if text.waitForExistence(timeout: 3) {
-            text.tap()
-            return
-        }
-
-        XCTFail("Could not find tab: \(name)")
     }
 
     // MARK: - Screenshot 1: Today View
