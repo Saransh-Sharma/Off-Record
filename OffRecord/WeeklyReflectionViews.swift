@@ -74,7 +74,11 @@ struct WeeklyReflectionHomeCard: View {
                 } label: {
                     Image(systemName: "ellipsis.circle")
                         .foregroundColor(OffRecordColor.textTertiary)
+                        .frame(width: OffRecordLayout.minimumTapTarget, height: OffRecordLayout.minimumTapTarget)
+                        .contentShape(Rectangle())
                 }
+                .padding(.top, -OffRecordSpacing.md)
+                .padding(.trailing, -OffRecordSpacing.md)
                 .accessibilityLabel("Weekly reflection options")
             }
 
@@ -409,6 +413,8 @@ struct WeeklyReflectionReportView: View {
         .background(OffRecordAppBackground().ignoresSafeArea())
         .navigationTitle("Weekly Reflection")
         .navigationBarTitleDisplayMode(.inline)
+        // A focused reading view, like an open entry.
+        .toolbar(.hidden, for: .tabBar)
         .onAppear {
             controller.markSeen(displayedReport)
             takeawayText = displayedReport.savedTakeaway ?? suggestedTakeaway

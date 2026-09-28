@@ -70,6 +70,8 @@ struct SettingsCard<Content: View>: View {
         .padding(OffRecordSpacing.xl)
         .offRecordContentCard(cornerRadius: OffRecordRadius.xl, fill: fill)
         .offRecordPointerLift()
+        // Keeps a section identifier set by callers on the card instead of its controls.
+        .accessibilityElement(children: .contain)
     }
 }
 
@@ -481,6 +483,7 @@ struct PrivacyAtAGlanceCard: View {
         }
         .padding(OffRecordSpacing.xl)
         .offRecordCard(fill: OffRecordColor.surfaceSage, border: OffRecordColor.borderSage)
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("settings.privacyGlance")
     }
 }

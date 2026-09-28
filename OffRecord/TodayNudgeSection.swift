@@ -17,7 +17,8 @@ struct TodayNudgeSection: View {
                 .accessibilityIdentifier("today.nudgeSection")
 
             ScrollView(.horizontal) {
-                LazyHStack(spacing: OffRecordSpacing.md) {
+                // Only a handful of prompts, so build them all up front; VoiceOver can reach every card.
+                HStack(spacing: OffRecordSpacing.md) {
                     ForEach(Array(prompts.enumerated()), id: \.element.id) { index, prompt in
                         nudgeCard(prompt: prompt, index: index)
                             .scrollTransition(.interactive, axis: .horizontal) { card, phase in

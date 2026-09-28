@@ -33,7 +33,6 @@ public struct MoodDialView: View {
 
                 MoodDialWheel(selectedMood: $selectedMood, isDragging: $isWheelDragging, metrics: metrics)
                     .frame(width: proxy.size.width, height: proxy.size.height)
-                    .accessibilityIdentifier("moodDial.surface")
                     .zIndex(1)
             }
         }
@@ -69,6 +68,8 @@ public struct MoodDialSheet: View {
             .padding(.top, 16)
         }
         .interactiveDismissDisabled()
+        // Keep the sheet's identifier on the container so the wheel keeps its own.
+        .accessibilityElement(children: .contain)
         .accessibilityIdentifier("moodDial.sheet")
         .onAppear {
             MoodDialSignposts.event("MoodDialSheetPresented")
