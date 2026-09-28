@@ -85,7 +85,9 @@ struct TimelineEntryCard: View {
                         .foregroundStyle(OffRecordColor.textLavender)
                         .multilineTextAlignment(.trailing)
                 }
-                .frame(maxWidth: 74)
+                // The preview text has layout priority; without a minimum width this label
+                // gets squeezed until it wraps one letter per line.
+                .frame(minWidth: 64, maxWidth: 74)
                 .accessibilityIdentifier("timeline.evidenceReason.\(evidence.matchReason.rawValue)")
             }
 
