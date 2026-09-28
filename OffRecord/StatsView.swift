@@ -93,13 +93,19 @@ struct StatsView: View {
             openPendingWeeklyReflectionRouteIfNeeded()
         }
         .onChange(of: navigationRouter.routedWeeklyReflectionID) { _, id in
-            guard let id else { return }
-            selectedWeeklyReflection = weeklyReflection.report(id: id)
-            navigationRouter.routedWeeklyReflectionID = nil
+            guard id != nil else { return }
+            openPendingWeeklyReflectionRouteIfNeeded()
         }
     }
 
+    /// Routes can arrive before this view exists (a cold launch from a notification or link),
+    /// so both the change handlers and `onAppear` consume them.
     private func openPendingWeeklyReflectionRouteIfNeeded() {
+        if let id = navigationRouter.routedWeeklyReflectionID {
+            selectedWeeklyReflection = weeklyReflection.report(id: id)
+            navigationRouter.routedWeeklyReflectionID = nil
+            return
+        }
         guard navigationRouter.shouldOpenCurrentWeeklyReflection else { return }
         selectedWeeklyReflection = weeklyReflection.openCurrentReport(entries: weeklyReflectionRouteEntries)
         navigationRouter.shouldOpenCurrentWeeklyReflection = false
