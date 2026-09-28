@@ -81,6 +81,8 @@ struct OnboardingView: View {
             )
         }
         .foregroundStyle(OffRecordColor.textBrand)
+        // The full-bleed pastel pages are light-only artwork; keep text and fields readable on them.
+        .environment(\.colorScheme, .light)
         .onAppear {
             response = response.normalizedForCurrentOnboarding()
             nameDraft = authorName
@@ -210,17 +212,8 @@ struct OnboardingView: View {
         case .welcome:
             WelcomeStep(nameDraft: $nameDraft, isCompact: isWelcomeKeyboardLiftActive)
         case .intent:
-            VStack(alignment: .leading, spacing: OffRecordSpacing.xxl) {
-                IntentStep(selectedIntents: $response.painPoints)
-                // Folded in from the former "Tune Friday" step; other preferences keep gentle defaults.
-                PreferencePicker(
-                    title: "What should Friday notice first?",
-                    items: ReflectionFocus.allCases,
-                    selection: $response.reflectionFocus
-                ) { item in
-                    Label(item.title, systemImage: item.icon)
-                }
-            }
+            // Friday's reflection focus and prompt style keep their gentle defaults.
+            IntentStep(selectedIntents: $response.painPoints)
         case .privacy:
             PrivacyProofStep()
         case .lock:
@@ -805,6 +798,11 @@ struct OnboardingStore {
     }
 
     static func load() -> OnboardingResponse {
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("-UITesting"), arguments.contains("-OnboardingUITest") {
+            // Each UI test starts from a clean slate instead of answers saved by an earlier run.
+            return OnboardingResponse().normalizedForCurrentOnboarding()
+        }
         guard let data = UserDefaults.standard.data(forKey: responseKey),
               let response = try? JSONDecoder().decode(OnboardingResponse.self, from: data) else {
             return OnboardingResponse().normalizedForCurrentOnboarding()
@@ -1361,6 +1359,7 @@ private struct FaceIDStep: View {
                     Text("Biometrics are unavailable on this device. You can continue with your passcode or skip for now.")
                         .font(OffRecordTypography.metadata)
                         .foregroundStyle(OnboardingPalette.secondaryForeground)
+                        .fixedSize(horizontal: false, vertical: true)
                         .padding()
                         .background(OnboardingPalette.surfaceSubtle)
                         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -1780,35 +1779,6 @@ private struct OnboardingSelectedAccessibility: ViewModifier {
     }
 }
 
-private struct OnboardingPreferenceChip<Content: View>: View {
-    let isSelected: Bool
-    let content: Content
-
-    init(isSelected: Bool, @ViewBuilder content: () -> Content) {
-        self.isSelected = isSelected
-        self.content = content()
-    }
-
-    var body: some View {
-        OnboardingSelectableContainer(isSelected: isSelected, cornerRadius: 14, padding: 10) {
-            HStack(spacing: 8) {
-                content
-                    .font(isSelected ? OffRecordTypography.labelLarge : OffRecordTypography.labelMedium)
-                    .foregroundStyle(OnboardingPalette.foreground)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.82)
-
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(OffRecordTypography.labelMedium)
-                        .foregroundStyle(OnboardingPalette.foreground)
-                }
-            }
-            .frame(maxWidth: .infinity, minHeight: 46)
-        }
-    }
-}
-
 private struct OnboardingQuestion<Content: View>: View {
     let subtitle: String
     let contentSpacing: CGFloat
@@ -2049,34 +2019,6 @@ private struct BenefitRow: View {
                 .font(OffRecordTypography.labelMedium)
                 .foregroundStyle(OnboardingPalette.secondaryForeground)
                 .fixedSize(horizontal: false, vertical: true)
-        }
-    }
-}
-
-private struct PreferencePicker<Item: Identifiable & Equatable, Label: View>: View {
-    let title: String
-    let items: [Item]
-    @Binding var selection: Item?
-    let label: (Item) -> Label
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(title)
-                .font(OffRecordTypography.sectionTitle)
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                ForEach(items) { item in
-                    Button {
-                        HapticManager.shared.selectionChanged()
-                        selection = item
-                    } label: {
-                        OnboardingPreferenceChip(isSelected: selection == item) {
-                            label(item)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
         }
     }
 }
