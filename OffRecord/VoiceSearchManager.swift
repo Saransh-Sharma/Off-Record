@@ -34,7 +34,7 @@ final class VoiceSearchManager: ObservableObject {
 
     func startListening() {
         guard SpeechTranscriptionConsent.hasGrantedAppleSpeechProcessing else {
-            errorMessage = TranscriptionError.appleSpeechConsentRequired.errorDescription
+            errorMessage = VoiceSearchError.transcriptionConsentRequired.errorDescription
             return
         }
 
@@ -142,9 +142,15 @@ final class VoiceSearchManager: ObservableObject {
 
 private enum VoiceSearchError: LocalizedError {
     case microphonePermissionDenied
+    case transcriptionConsentRequired
 
     var errorDescription: String? {
-        "Microphone access is required for voice search."
+        switch self {
+        case .microphonePermissionDenied:
+            return "Turn on microphone access in Settings to search by voice."
+        case .transcriptionConsentRequired:
+            return "Turn on transcription in Settings to search by voice."
+        }
     }
 }
 #endif

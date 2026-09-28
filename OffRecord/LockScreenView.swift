@@ -20,15 +20,10 @@ struct LockScreenView: View {
                     .symbolEffect(.bounce, value: authFailed)
                     .accessibilityHidden(true)
 
-                Text("OffRecord is Locked")
+                Text("Journal Locked")
                     .font(OffRecordTypography.titleMedium)
                     .foregroundColor(OffRecordColor.textHeading)
                     .accessibilityAddTraits(.isHeader)
-
-                Text("Only you can unlock and see your entries.")
-                    .font(OffRecordTypography.bodySmall)
-                    .foregroundColor(OffRecordColor.textSecondary)
-                    .multilineTextAlignment(.center)
 
                 Button(action: unlock) {
                     HStack {
@@ -38,13 +33,12 @@ struct LockScreenView: View {
                     .frame(maxWidth: 320)
                     .offRecordPrivacyButton()
                 }
-                .accessibilityLabel("Unlock journal with \(lockManager.biometryTypeName)")
-                .accessibilityHint("Authenticates using biometrics to access your private entries")
+                .accessibilityLabel("Unlock with \(lockManager.biometryTypeName)")
                 .accessibilityIdentifier("lockScreen.unlockButton")
                 .disabled(isAuthenticating)
 
                 if authFailed {
-                    Text("That didn't work. Try again when you're ready.")
+                    Text("Couldn’t unlock. Try again.")
                         .font(OffRecordTypography.metadata)
                         .foregroundColor(OffRecordColor.textCoral)
                         .transition(.opacity)

@@ -90,7 +90,7 @@ final class OffRecordUITests: XCTestCase {
 
         let saveButton = onboardingPrimaryCTA(in: app)
         XCTAssertTrue(saveButton.waitForExistence(timeout: 4))
-        XCTAssertEqual(saveButton.label, "Save entry")
+        XCTAssertEqual(saveButton.label, "Save")
         XCTAssertFalse(saveButton.isEnabled)
 
         entryField.typeText("Today I need to say this honestly.")
@@ -108,9 +108,9 @@ final class OffRecordUITests: XCTestCase {
     func testOnboardingFirstEntryVoiceStateHasNoTypeInsteadButton() throws {
         let app = launchOnboardingApp(arguments: ["-OnboardingFirstEntryVoiceUITest"])
 
-        XCTAssertTrue(app.staticTexts["Start with one honest thought"].waitForExistence(timeout: 8))
-        XCTAssertTrue(app.staticTexts["Record privately"].waitForExistence(timeout: 4))
-        XCTAssertTrue(app.buttons["Skip first entry"].firstMatch.exists)
+        XCTAssertTrue(app.staticTexts["Say one thing about today"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.staticTexts["Record"].waitForExistence(timeout: 4))
+        XCTAssertTrue(app.buttons["Skip"].firstMatch.exists)
         XCTAssertFalse(app.buttons["Type instead"].exists)
         XCTAssertFalse(app.descendants(matching: .any)["onboarding.firstEntry.textField"].exists)
     }
@@ -127,15 +127,15 @@ final class OffRecordUITests: XCTestCase {
         XCTAssertTrue(waitForButton(clearMyHead, toBeEnabled: true))
         XCTAssertFalse(onboardingPrimaryCTA(in: app).isEnabled)
         clearMyHead.tap()
-        advanceOnboarding(tapping: onboardingPrimaryCTA(in: app), to: "Private by design", in: app)
+        advanceOnboarding(tapping: onboardingPrimaryCTA(in: app), to: "Stays on your iPhone", in: app)
         advanceOnboarding(tapping: onboardingPrimaryCTA(in: app), to: "Lock your journal", in: app)
-        advanceOnboarding(tapping: app.buttons["Not now"].firstMatch, to: "Start with one honest thought", in: app)
+        advanceOnboarding(tapping: app.buttons["Not Now"].firstMatch, to: "Say one thing about today", in: app)
 
         XCTAssertFalse(app.buttons["Type instead"].exists)
-        advanceOnboarding(tapping: app.buttons["Skip first entry"].firstMatch, to: "Make reflection easy to repeat", in: app)
+        advanceOnboarding(tapping: app.buttons["Skip"].firstMatch, to: "Make it a habit", in: app)
 
         let startJournaling = onboardingPrimaryCTA(in: app)
-        XCTAssertTrue(wait(for: startJournaling, matching: NSPredicate(format: "label == %@", "Start journaling"), timeout: 4))
+        XCTAssertTrue(wait(for: startJournaling, matching: NSPredicate(format: "label == %@", "Start Journaling"), timeout: 4))
         attachScreenshot(named: "OnboardingHabit", app: app)
         for _ in 0..<2 where !app.tabBars.firstMatch.exists {
             if startJournaling.exists, waitForButton(startJournaling, toBeEnabled: true, timeout: 6) {

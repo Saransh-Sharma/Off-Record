@@ -102,7 +102,7 @@ struct OnboardingView: View {
                 isFirstReflectionTextFocused = false
             }
         }
-        .alert("OffRecord could not continue", isPresented: Binding(
+        .alert("Something Went Wrong", isPresented: Binding(
             get: { onboardingError != nil },
             set: { if !$0 { onboardingError = nil } }
         )) {
@@ -110,13 +110,13 @@ struct OnboardingView: View {
         } message: {
             Text(onboardingError ?? "")
         }
-        .alert("Notifications Disabled", isPresented: $showNotificationDeniedAlert) {
+        .alert("Notifications Are Off", isPresented: $showNotificationDeniedAlert) {
             Button("OK", role: .cancel) { }
         } message: {
-            Text("You can enable reminders later in Settings. OffRecord still works fully offline.")
+            Text("You can turn on reminders later in Settings.")
         }
         .alert(SpeechTranscriptionConsent.disclosureTitle, isPresented: $showSpeechConsentPrompt) {
-            Button("Continue") {
+            Button("Transcribe") {
                 SpeechTranscriptionConsent.grantAppleSpeechProcessing()
                 resumePendingTranscription()
             }
@@ -211,7 +211,7 @@ struct OnboardingView: View {
         case .welcome:
             WelcomeStep(nameDraft: $nameDraft, isCompact: isWelcomeKeyboardLiftActive)
         case .intent:
-            // Friday's reflection focus and prompt style keep their gentle defaults.
+            // Friday's reflection focus and prompt style keep their defaults.
             IntentStep(selectedIntents: $response.painPoints)
         case .privacy:
             PrivacyProofStep()
@@ -249,31 +249,23 @@ struct OnboardingView: View {
         case .intent, .privacy: return "Continue"
         case .lock: return lockManager.isEnabled ? "Continue" : lockPrimaryTitle
         case .firstReflection: return firstReflectionPrimaryTitle
-        case .habit: return "Start journaling"
+        case .habit: return "Start Journaling"
         }
     }
 
+    /// "Use Face ID", "Use Touch ID", "Use Optic ID", or "Use Passcode".
     private var lockPrimaryTitle: String {
-        switch lockManager.biometryTypeName {
-        case "Face ID":
-            return "Enable Face ID"
-        case "Touch ID":
-            return "Enable Touch ID"
-        case "Passcode":
-            return "Enable Passcode Lock"
-        default:
-            return "Enable \(lockManager.biometryTypeName)"
-        }
+        "Use \(lockManager.biometryTypeName)"
     }
 
     private var firstReflectionPrimaryTitle: String {
-        if isTranscribing { return "Transcribing..." }
+        if isTranscribing { return "Transcribing…" }
         if entryCreated { return "Continue" }
         switch firstEntryMode {
         case .voice:
-            return isRecording ? "Stop recording" : "Record privately"
+            return isRecording ? "Stop Recording" : "Record"
         case .textFallback:
-            return "Save entry"
+            return "Save"
         }
     }
 
@@ -298,11 +290,11 @@ struct OnboardingView: View {
     private var secondaryTitle: String? {
         switch step {
         case .lock:
-            return lockManager.isEnabled ? nil : "Not now"
+            return lockManager.isEnabled ? nil : "Not Now"
         case .firstReflection:
-            return (isRecording || isTranscribing) ? nil : "Skip first entry"
+            return (isRecording || isTranscribing) ? nil : "Skip"
         case .habit:
-            return "Skip reminders"
+            return "Skip"
         default:
             return nil
         }
@@ -398,7 +390,7 @@ struct OnboardingView: View {
                 goForward()
             } else {
                 response.faceIDChoice = .failed
-                onboardingError = "Face ID was not enabled. You can try again or skip it for now."
+                onboardingError = "\(lockManager.biometryTypeName) wasn’t turned on. You can turn it on in Settings."
             }
         }
     }
@@ -426,14 +418,14 @@ struct OnboardingView: View {
                     HapticManager.shared.recordingStarted()
                 } catch {
                     firstEntryMode = .textFallback
-                    onboardingError = "Unable to start recording. Please type your first entry instead."
+                    onboardingError = "Recording didn’t start. You can type instead."
                     HapticManager.shared.error()
                 }
             }
         }
         #else
         firstEntryMode = .textFallback
-        onboardingError = "Recording is only available on iOS."
+        onboardingError = "Recording didn’t start. You can type instead."
         #endif
     }
 
@@ -459,7 +451,7 @@ struct OnboardingView: View {
             entry: entry,
             in: viewContext
         ) else {
-            onboardingError = "Your recording was saved, but transcription could not be started."
+            onboardingError = "Recording saved. Transcription didn’t start."
             isTranscribing = false
             return
         }
@@ -595,7 +587,7 @@ struct OnboardingView: View {
                     try? viewContext.save()
                     let nsError = error as NSError
                     onboardingLogger.error("Onboarding transcription failed entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) domain=\(nsError.domain, privacy: .public) code=\(nsError.code, privacy: .public) transcriptionStatus=failed")
-                    onboardingError = "Your recording was saved, but transcription did not finish. You can type a few words before continuing."
+                    onboardingError = "Recording saved. Add a few words before continuing."
                     firstEntryMode = .textFallback
                 }
                 isTranscribing = false
@@ -737,14 +729,15 @@ enum OnboardingStep: Int, CaseIterable, Identifiable {
         "\(rawValue + 1) of \(Self.allCases.count)"
     }
 
+    @MainActor
     var pageTitle: String {
         switch self {
         case .welcome: return "Your private voice journal"
         case .intent: return "What brings you here?"
-        case .privacy: return "Private by design"
+        case .privacy: return "Stays on your \(DeviceNoun.current)"
         case .lock: return "Lock your journal"
-        case .firstReflection: return "Start with one honest thought"
-        case .habit: return "Make reflection easy to repeat"
+        case .firstReflection: return "Say one thing about today"
+        case .habit: return "Make it a habit"
         }
     }
 
@@ -842,11 +835,11 @@ enum OnboardingPainPoint: String, CaseIterable, Codable, Identifiable {
     var title: String {
         switch self {
         case .typingSlow: return "Clear my head"
-        case .detailsFade: return "Remember moments"
-        case .privacyWorry: return "Vent privately"
+        case .detailsFade: return "Remember my days"
+        case .privacyWorry: return "Vent"
         case .blankPage: return "Talk things through"
         case .manualMood: return "Track my mood"
-        case .hardToSearch: return "Understand patterns"
+        case .hardToSearch: return "Spot patterns"
         }
     }
 
@@ -1037,7 +1030,7 @@ private struct WelcomeStep: View {
                 .accessibilityHidden(true)
             }
 
-            Text("Speak or write freely. Your journal stays on this device.")
+            Text("Talk or type. It all stays on your \(DeviceNoun.current).")
                 .font(OffRecordTypography.bodyMedium)
                 .foregroundStyle(OnboardingPalette.secondaryForeground)
                 .multilineTextAlignment(.center)
@@ -1140,7 +1133,7 @@ private struct IntentStep: View {
 
     var body: some View {
         OnboardingQuestion(
-            subtitle: "Pick what matters most. Choose one or more.",
+            subtitle: "Choose any.",
             contentSpacing: 18
         ) {
             VStack(spacing: 10) {
@@ -1166,13 +1159,13 @@ private struct IntentStep: View {
 private struct PrivacyProofStep: View {
     var body: some View {
         OnboardingQuestion(
-            subtitle: "Your journal stays on this device. Voice transcription only starts after you allow it.",
+            subtitle: "Nothing leaves your \(DeviceNoun.current) unless you export it or turn on iCloud.",
             contentSpacing: 16
         ) {
             VStack(spacing: 10) {
-                PrivacyProofRow(icon: "person.crop.circle.badge.xmark", title: "No account required", detail: "Start journaling without a cloud profile.")
-                PrivacyProofRow(icon: "server.rack", title: "No server journal processing", detail: "Entries and Friday insights stay in OffRecord.")
-                PrivacyProofRow(icon: "chart.bar.xaxis", title: "No ads or tracking", detail: "Your reflections are not used for ads.")
+                PrivacyProofRow(icon: "person.crop.circle.badge.xmark", title: "No account", detail: "Open the app and start.")
+                PrivacyProofRow(icon: "server.rack", title: "No OffRecord servers", detail: "Transcription and Friday run on your \(DeviceNoun.current).")
+                PrivacyProofRow(icon: "chart.bar.xaxis", title: "No ads or tracking", detail: "Nothing you write is used for ads.")
             }
         }
     }
@@ -1185,7 +1178,7 @@ private struct FaceIDStep: View {
 
     var body: some View {
         OnboardingQuestion(
-            subtitle: "Use \(biometryName) or your device passcode when opening OffRecord.",
+            subtitle: "Require \(biometryNameInSentence) to open OffRecord.",
             contentSpacing: 18
         ) {
             VStack(spacing: 16) {
@@ -1199,12 +1192,11 @@ private struct FaceIDStep: View {
                 }
 
                 VStack(alignment: .leading, spacing: 12) {
-                    BenefitRow(icon: "lock.fill", text: "Require \(biometryName) or passcode before showing your journal.")
-                    BenefitRow(icon: "iphone", text: "Lock automatically when OffRecord leaves the foreground.")
+                    BenefitRow(icon: "lock.fill", text: "Locks again when you leave the app.")
                 }
 
                 if !isAvailable {
-                    Text("Biometrics are unavailable on this device. You can continue with your passcode or skip for now.")
+                    Text(unavailableMessage)
                         .font(OffRecordTypography.metadata)
                         .foregroundStyle(OnboardingPalette.secondaryForeground)
                         .fixedSize(horizontal: false, vertical: true)
@@ -1214,6 +1206,17 @@ private struct FaceIDStep: View {
                 }
             }
         }
+    }
+
+    /// "Face ID" reads as a name; a bare "Passcode" doesn't, so it becomes "your passcode".
+    private var biometryNameInSentence: String {
+        biometryName == "Passcode" ? "your passcode" : biometryName
+    }
+
+    private var unavailableMessage: String {
+        biometryName == "Passcode"
+            ? "OffRecord will use your passcode."
+            : "\(biometryName) isn’t set up. Your passcode will be used instead."
     }
 
     private var lockIcon: String {
@@ -1244,7 +1247,7 @@ private struct FirstEntryStep: View {
 
     var body: some View {
         OnboardingQuestion(
-            subtitle: "Record a short thought. If recording is unavailable, you can type instead.",
+            subtitle: "A sentence is enough.",
             contentSpacing: 16
         ) {
             VStack(spacing: 18) {
@@ -1256,7 +1259,7 @@ private struct FirstEntryStep: View {
                 }
 
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("Add a starting mood")
+                    Text("How are you feeling?")
                         .font(OffRecordTypography.sectionTitle)
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                         ForEach(Mood.selectableMoods.prefix(6)) { mood in
@@ -1314,23 +1317,20 @@ private struct FirstEntryStep: View {
                     Text(formatTime(elapsedTime))
                         .font(OffRecordTypography.numberMedium)
                     WaveformMeter(level: level)
-                    Text("Tap to stop")
+                    Text("Recording")
                         .font(OffRecordTypography.labelMedium)
                         .foregroundStyle(OnboardingPalette.secondaryForeground)
                 } else if isTranscribing {
-                    ProgressView("Transcribing on this device...")
+                    ProgressView("Transcribing…")
                         .tint(OnboardingPalette.foreground)
                         .foregroundStyle(OnboardingPalette.foreground)
                 } else if entryCreated {
-                    Label("First entry saved", systemImage: "checkmark.circle.fill")
+                    Label("Saved", systemImage: "checkmark.circle.fill")
                         .font(OffRecordTypography.sectionTitle)
                         .foregroundStyle(OnboardingPalette.foreground)
                 } else {
-                    Text("Record privately")
+                    Text("Record")
                         .font(OffRecordTypography.sectionTitle)
-                    Text("Your recording is stored locally.")
-                        .font(OffRecordTypography.bodySmall)
-                        .foregroundStyle(OnboardingPalette.secondaryForeground)
                 }
             }
             .frame(maxWidth: .infinity)
@@ -1348,9 +1348,9 @@ private struct FirstEntryStep: View {
 
     private var textFallbackEditor: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Type your first entry")
+            Text("Write it down")
                 .font(OffRecordTypography.sectionTitle)
-            TextField("Write your first entry...", text: $draft, axis: .vertical)
+            TextField("Today I…", text: $draft, axis: .vertical)
                 .focused($isTextEditorFocused)
                 .id(OnboardingScrollTarget.firstEntryTextField)
                 .accessibilityIdentifier("onboarding.firstEntry.textField")
@@ -1394,7 +1394,7 @@ private struct HabitSetupStep: View {
 
     var body: some View {
         OnboardingQuestion(
-            subtitle: "Optional reminders and a weekly goal can help you build the habit. You can change these anytime.",
+            subtitle: "Optional. You can change these in Settings.",
             contentSpacing: 18
         ) {
             VStack(spacing: 16) {
@@ -1415,7 +1415,7 @@ private struct HabitSetupStep: View {
                         }
                     }
                 )) {
-                    Label("Remind me once a day", systemImage: "bell.badge.fill")
+                    Label("Daily Reminder", systemImage: "bell.badge.fill")
                 }
                 .tint(OffRecordColor.textBrand)
                 .padding()
@@ -1424,7 +1424,7 @@ private struct HabitSetupStep: View {
 
                 if reminderManager.isEnabled {
                     DatePicker(
-                        "Reminder time",
+                        "Time",
                         selection: Binding(
                             get: { reminderManager.reminderTime },
                             set: { reminderManager.reminderTime = $0 }
@@ -1437,7 +1437,7 @@ private struct HabitSetupStep: View {
                 }
 
                 Toggle(isOn: $goalManager.isEnabled) {
-                    Label("Set a weekly journaling goal", systemImage: "flame.fill")
+                    Label("Weekly Goal", systemImage: "flame.fill")
                 }
                 .tint(.orange)
                 .padding()
@@ -1445,10 +1445,12 @@ private struct HabitSetupStep: View {
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
 
                 if goalManager.isEnabled {
-                    Stepper("Target: \(goalManager.weeklyTarget) entries/week", value: $goalManager.weeklyTarget, in: 1...7)
-                        .padding()
-                        .background(OnboardingPalette.surfaceSubtle)
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    Stepper(value: $goalManager.weeklyTarget, in: 1...7) {
+                        Text("^[\(goalManager.weeklyTarget) day](inflect: true) a week")
+                    }
+                    .padding()
+                    .background(OnboardingPalette.surfaceSubtle)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
             }
         }
@@ -1475,6 +1477,7 @@ private struct OnboardingProgressHeader: View {
                         .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Back")
                 .disabled(!canGoBack)
                 .opacity(canGoBack ? 1 : 0)
                 .frame(width: sideWidth, alignment: .leading)

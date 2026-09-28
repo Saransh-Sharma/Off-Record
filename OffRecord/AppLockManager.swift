@@ -65,7 +65,7 @@ final class AppLockManager: ObservableObject {
     /// Authenticate the user using Face ID / Touch ID, with passcode as fallback.
     func authenticate(completion: @escaping (Bool) -> Void) {
         let context = LAContext()
-        let reason = "Unlock OffRecord AI Journal to access your diary."
+        let reason = "Unlock your journal."
 
         // Check if biometrics are available
         var error: NSError?
@@ -93,7 +93,7 @@ final class AppLockManager: ObservableObject {
 
     private func authenticateWithPasscode(completion: @escaping (Bool) -> Void) {
         let context = LAContext()
-        let reason = "Enter your passcode to unlock OffRecord AI Journal."
+        let reason = "Unlock your journal."
 
         context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason) { success, _ in
             DispatchQueue.main.async {

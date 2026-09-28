@@ -33,18 +33,14 @@ enum SpeechTranscriptionConsent {
         #endif
     }
 
-    static let disclosureTitle = "On-Device Transcription"
+    static let disclosureTitle = "Transcribe Recordings?"
 
     static var disclosureMessage: String {
-        return """
-        OffRecord uses Apple’s SpeechAnalyzer to turn your voice into text entirely on your device. Apple may download a language model to your device when needed. If your language is not supported, your recording stays saved and OffRecord will not send it to a server for transcription.
-
-        The transcript is saved in your journal. OffRecord does not send your journal or audio to developer servers, speech-recognition servers, or non-Apple AI services.
-        """
+        "OffRecord uses Apple’s on-device speech recognition. Your audio is never sent to a server. iOS may download a language file first."
     }
 
     static var settingsDescription: String {
-        "Voice transcription runs entirely on your device with Apple SpeechAnalyzer. Apple may download a language model when needed; unsupported languages never fall back to server transcription."
+        "Uses Apple’s on-device speech recognition. Unsupported languages keep the recording without a transcript."
     }
 }
 
