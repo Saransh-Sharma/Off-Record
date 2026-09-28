@@ -126,15 +126,17 @@ struct TodayView: View {
         case onThisDay
     }
 
-    /// One contextual card at a time, in priority order.
+    /// One contextual card at a time, in priority order. A high-priority reflection prompt
+    /// only appears before today's entry, so it goes first; the weekly report takes the
+    /// slot once today is written and always stays reachable from Insights.
     private var contextualCard: ContextualCard? {
+        if effectiveLatestEntry == nil, proactiveReflection.selectedPrompt?.priority == .high {
+            return .proactivePrompt
+        }
         if weeklyReflection.settings.isEnabled,
            weeklyReflection.settings.showHomeCard,
            weeklyReflection.currentReport?.isVisibleOnHome == true {
             return .weeklyReflection
-        }
-        if effectiveLatestEntry == nil, proactiveReflection.selectedPrompt?.priority == .high {
-            return .proactivePrompt
         }
         if !onThisDayEntries.isEmpty {
             return .onThisDay
