@@ -412,29 +412,59 @@ enum WeeklyReflectionGenerationService {
         let stopWords: Set<String> = [
             "about", "after", "again", "also", "and", "because", "been", "but", "could", "from",
             "have", "into", "just", "like", "more", "much", "that", "the", "this", "was", "were",
-            "with", "would", "your", "their", "there", "today", "week", "really", "felt", "feel"
+            "with", "would", "your", "their", "there", "today", "week", "really", "felt", "feel",
+            "thing", "things", "time", "times", "something", "anything", "everything", "nothing",
+            "morning", "evening", "night", "afternoon", "yesterday", "tomorrow", "lot", "bit", "way", "day", "days"
+        ]
+        let fallbackStopWords: Set<String> = [
+            "feels", "feeling", "gave", "give", "over", "went", "going", "made", "make", "making", "looked", "looking",
+            "said", "told", "took", "take", "came", "come", "coming", "seemed", "seems", "been", "being", "doing",
+            "done", "getting", "keeps", "kept", "started", "starting", "think", "thought", "know", "knew", "need",
+            "want", "wanted", "finally", "always", "never", "still", "even", "some", "what", "when", "where", "which",
+            "while", "them", "they", "then", "than", "these", "those", "very", "great", "good", "better", "best",
+            "little", "first", "last", "next", "every", "other", "through", "around", "before", "since", "until"
         ]
         var counts: [String: Int] = [:]
-        let tokenizer = NLTokenizer(unit: .word)
+        var fallbackCounts: [String: Int] = [:]
+        var sawLexicalClass = false
+        var names: [String: String] = [:]
+        // Themes are things people write about, so only nouns count; verbs like "gave" and
+        // "feels" otherwise top the list and read as nonsense ("mostly about feels").
+        let tagger = NLTagger(tagSchemes: [.lexicalClass, .nameType])
+        let options: NLTagger.Options = [.omitWhitespace, .omitPunctuation]
+        let nameTags: Set<NLTag> = [.personalName, .placeName, .organizationName]
         for entry in entries {
-            let text = entry.text.lowercased()
-            tokenizer.string = text
-            tokenizer.enumerateTokens(in: text.startIndex..<text.endIndex) { range, _ in
-                let token = String(text[range])
-                    .trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+            let text = entry.text
+            tagger.string = text
+            tagger.enumerateTags(in: text.startIndex..<text.endIndex, unit: .word, scheme: .lexicalClass, options: options) { tag, range in
+                let original = String(text[range]).trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+                let token = original.lowercased()
                 guard token.count >= 4, !stopWords.contains(token), token.rangeOfCharacter(from: .decimalDigits) == nil else {
                     return true
                 }
+                if tag != nil { sawLexicalClass = true }
+                if !fallbackStopWords.contains(token) {
+                    fallbackCounts[token, default: 0] += 1
+                }
+                guard tag == .noun else { return true }
                 counts[token, default: 0] += 1
+                // Keep names capitalized ("Sarah"), but not ordinary nouns that start a sentence.
+                if let nameTag = tagger.tag(at: range.lowerBound, unit: .word, scheme: .nameType).0, nameTags.contains(nameTag) {
+                    names[token] = original
+                }
                 return true
             }
+        }
+        // Without a part-of-speech model (some simulators), fall back to plain words minus common verbs.
+        if !sawLexicalClass || counts.isEmpty {
+            counts = fallbackCounts
         }
         return counts.sorted {
             if $0.value == $1.value { return $0.key < $1.key }
             return $0.value > $1.value
         }
         .prefix(limit)
-        .map(\.key)
+        .map { names[$0.key] ?? $0.key }
     }
 }
 
