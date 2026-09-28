@@ -51,6 +51,22 @@ final class ScreenshotTests: XCTestCase {
         app.launch()
     }
 
+    /// Starts the search index with a Timeline search, as the search tests do, and waits until
+    /// Settings shows indexed passages so Friday can answer with sources.
+    private func buildSearchIndex() {
+        tapOffRecordTab("timeline", in: app)
+        let search = app.searchFields["timeline.searchField"].firstMatch
+        XCTAssertTrue(search.waitForExistence(timeout: 10))
+        search.tap()
+        search.typeText("work stress\n")
+
+        tapOffRecordTab("settings", in: app)
+        let count = app.staticTexts["semanticMemory.chunkCount"].firstMatch
+        scrollUntilVisible(count, in: app)
+        let indexed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label MATCHES %@", "[1-9][0-9]*"), object: count)
+        XCTAssertEqual(XCTWaiter().wait(for: [indexed], timeout: 90), .completed, "The search index never finished")
+    }
+
     // MARK: - Screenshots
 
     func test01_Today() throws {
@@ -122,6 +138,7 @@ final class ScreenshotTests: XCTestCase {
         let encoded = question.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? question
         let route = URL(string: "offrecord://friday?question=\(encoded)")!
         launch()
+        buildSearchIndex()
         tapOffRecordTab("friday", in: app)
         XCTAssertTrue(app.buttons["friday.talk"].firstMatch.waitForExistence(timeout: 10))
 
@@ -135,8 +152,16 @@ final class ScreenshotTests: XCTestCase {
             app.open(route)
             XCTAssertTrue(answer.waitForExistence(timeout: 20))
             guard stillIndexing.exists else { break }
+            // Chats persist between visits, so clear the "still reading" reply before asking again.
+            app.buttons["friday.newChat"].firstMatch.tap()
+            let confirm = app.buttons
+                .matching(NSPredicate(format: "label == %@ AND identifier != %@", "New Chat", "friday.newChat"))
+                .firstMatch
+            XCTAssertTrue(confirm.waitForExistence(timeout: 4))
+            confirm.tap()
             app.buttons["friday.backButton"].firstMatch.tap()
         }
+        XCTAssertTrue(answer.exists, "Friday chat isn't showing an answer")
         XCTAssertFalse(stillIndexing.exists, "Friday was still indexing")
         dismissKeyboardIfNeeded(in: app)
         takeScreenshot(named: "09_FridayChat")

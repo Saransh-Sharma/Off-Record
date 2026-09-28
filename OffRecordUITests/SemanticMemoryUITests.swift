@@ -461,6 +461,11 @@ final class SemanticMemoryUITests: XCTestCase {
     private func openFirstEvidenceChip(_ app: XCUIApplication) {
         let chip = app.descendants(matching: .any)["friday.evidenceChip"].firstMatch
         XCTAssertTrue(chip.waitForExistence(timeout: 12))
+        // A short answer can leave the chip behind the composer and keyboard; scroll it clear first.
+        let composer = app.descendants(matching: .any)["friday.askField"].firstMatch
+        for _ in 0..<3 where composer.exists && chip.frame.maxY > composer.frame.minY - 12 {
+            app.scrollViews["friday.questionChips"].firstMatch.swipeUp()
+        }
         chip.tap()
     }
 
