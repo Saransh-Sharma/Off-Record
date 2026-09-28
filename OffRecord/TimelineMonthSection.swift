@@ -61,7 +61,6 @@ struct TimelineDayRow: View {
             .buttonStyle(.plain)
             .frame(maxWidth: .infinity, alignment: .leading)
             .accessibilityIdentifier(entryAccessibilityIdentifier)
-            .accessibilityHint("Opens the entry. Swipe for star and delete.")
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

@@ -32,7 +32,7 @@ struct TimelineEntryCard: View {
     }
 
     private var accessiblePreviewText: String {
-        previewText.isEmpty ? "Tap to add text" : previewText
+        previewText.isEmpty ? "No text" : previewText
     }
 
     var body: some View {
@@ -43,10 +43,10 @@ struct TimelineEntryCard: View {
                         mood: mood,
                         size: 18,
                         opacity: mood == .none ? 0.5 : 0.82,
-                        accessibilityLabel: "\(mood.displayName) mood"
+                        accessibilityLabel: mood == .none ? mood.displayName : "\(mood.displayName) mood"
                     )
 
-                    Text("\(wordCount) words")
+                    Text("^[\(wordCount) word](inflect: true)")
                         .font(OffRecordTypography.metadata)
                         .foregroundStyle(OffRecordColor.textBrand.opacity(0.76))
 
@@ -117,7 +117,7 @@ struct TimelineEntryCard: View {
     @ViewBuilder
     private func highlightedText(_ text: String) -> some View {
         if text.isEmpty {
-            Text("Tap to add text")
+            Text("No text")
                 .foregroundStyle(OffRecordColor.textSecondary)
                 .italic()
         } else if searchText.isEmpty {

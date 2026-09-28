@@ -16,6 +16,15 @@ enum TimelineLens: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    /// The segment label. The raw value stays fixed because it is the identity.
+    var displayName: String {
+        switch self {
+        case .list: return "List"
+        case .calendar: return "Calendar"
+        case .media: return "Photos"
+        }
+    }
+
     var systemImage: String {
         switch self {
         case .list: return "list.bullet"
@@ -108,20 +117,20 @@ struct TimelineCalendarView: View {
                         Image(systemName: "chevron.left")
                             .frame(width: OffRecordLayout.minimumTapTarget, height: OffRecordLayout.minimumTapTarget)
                     }
-                    .accessibilityLabel("Previous month")
+                    .accessibilityLabel("Previous Month")
 
                     Button { shiftMonth(by: 1) } label: {
                         Image(systemName: "chevron.right")
                             .frame(width: OffRecordLayout.minimumTapTarget, height: OffRecordLayout.minimumTapTarget)
                     }
                     .disabled(isShowingCurrentMonth)
-                    .accessibilityLabel("Next month")
+                    .accessibilityLabel("Next Month")
                 }
             }
             .font(OffRecordTypography.labelLarge)
             .foregroundStyle(OffRecordColor.textBrand)
 
-            Picker("Calendar scale", selection: $scale) {
+            Picker("Calendar Scale", selection: $scale) {
                 ForEach(Scale.allCases) { scale in
                     Text(scale.rawValue).tag(scale)
                 }
@@ -244,7 +253,6 @@ struct TimelineCalendarView: View {
             .buttonStyle(.plain)
             .disabled(entry == nil)
             .accessibilityLabel(dayAccessibilityLabel(day, entry: entry, mood: mood))
-            .accessibilityHint(entry == nil ? "" : "Opens the entry.")
         case .pixel:
             RoundedRectangle(cornerRadius: 2, style: .continuous)
                 .fill(fill)
@@ -282,7 +290,7 @@ struct TimelineCalendarView: View {
                 .buttonStyle(.plain)
                 .disabled(month > Date())
                 .opacity(month > Date() ? 0.4 : 1)
-                .accessibilityLabel("\(month.formatted(.dateTime.month(.wide))), \(journaledDays(in: month)) days journaled")
+                .accessibilityLabel(String(AttributedString(localized: "\(month.formatted(.dateTime.month(.wide))), ^[\(journaledDays(in: month)) day](inflect: true) journaled").characters))
             }
         }
     }
@@ -297,8 +305,8 @@ struct TimelineCalendarView: View {
         let moods = inRange.values.compactMap { Mood(rawValue: $0.mood ?? "") }.filter { $0 != .none }
         let common = Dictionary(grouping: moods, by: { $0 }).max { $0.value.count < $1.value.count }?.key
         let period = scale == .month ? displayedMonth.formatted(.dateTime.month(.wide)) : displayedMonth.formatted(.dateTime.year())
-        var text = "\(inRange.count) \(inRange.count == 1 ? "day" : "days") journaled in \(period)"
-        if let common { text += " · most often \(common.displayName.lowercased())" }
+        var text = String(AttributedString(localized: "^[\(inRange.count) day](inflect: true) in \(period)").characters)
+        if let common { text += " · mostly \(common.displayName.lowercased())" }
         return Text(text)
             .font(OffRecordTypography.metadata)
             .foregroundStyle(OffRecordColor.textSecondary)
@@ -330,8 +338,8 @@ struct TimelineMediaGrid: View {
         if items.isEmpty {
             TimelineLensEmptyState(
                 systemImage: "photo.on.rectangle.angled",
-                title: "No photos yet",
-                message: "Photos you add to entries appear here. They stay on this device."
+                title: "No Photos",
+                message: "Photos you add to entries show up here."
             )
         } else {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: 4)], spacing: 4) {

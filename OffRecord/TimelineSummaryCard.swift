@@ -38,7 +38,7 @@ struct MonthSummaryCard: View {
         .padding(.vertical, OffRecordSpacing.xl)
         .offRecordContentCard(cornerRadius: OffRecordRadius.xl, fill: OffRecordColor.surfacePrimary)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("\(title): \(totalEntries) \(totalEntries == 1 ? "entry" : "entries"), \(totalWords) words")
+        .accessibilityLabel(String(AttributedString(localized: "\(title): ^[\(totalEntries) entry](inflect: true), ^[\(totalWords) word](inflect: true)").characters))
     }
 
     private var stats: some View {

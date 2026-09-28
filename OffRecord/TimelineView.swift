@@ -140,7 +140,7 @@ struct TimelineView: View {
         .overlay(alignment: .bottom) {
             if let pendingDeletion {
                 TimelineUndoToast(
-                    message: "Entry from \(pendingDeletion.dateLabel) deleted",
+                    message: "Entry deleted",
                     onUndo: undoPendingDeletion
                 )
                 .padding(.horizontal, OffRecordSpacing.screenX)
@@ -233,7 +233,7 @@ struct TimelineView: View {
     }
 
     private var timelineKeyboardShortcuts: some View {
-        Button("Search timeline") {
+        Button("Search") {
             isSearchFocused = true
         }
         .keyboardShortcut("f", modifiers: .command)
@@ -312,7 +312,7 @@ struct TimelineView: View {
     private var lensPicker: some View {
         Picker("View", selection: $lens) {
             ForEach(TimelineLens.allCases) { lens in
-                Label(lens.rawValue, systemImage: lens.systemImage).tag(lens)
+                Label(lens.displayName, systemImage: lens.systemImage).tag(lens)
             }
         }
         .pickerStyle(.segmented)
@@ -329,9 +329,9 @@ struct TimelineView: View {
     }
 
     private var summaryTitle: String {
-        guard let date = summaryEntriesCache.first?.date else { return "This month" }
+        guard let date = summaryEntriesCache.first?.date else { return "This Month" }
         if Calendar.current.isDate(date, equalTo: Date(), toGranularity: .month) {
-            return "This month"
+            return "This Month"
         }
         return date.formatted(.dateTime.month(.wide).year())
     }
@@ -356,7 +356,7 @@ struct TimelineView: View {
                         entryRow(entry, index: index, isLast: index == bestMatches.count - 1, maxWidth: maxWidth, selectedEntryID: selectedEntryID, onSelect: onSelect, transitionSuffix: "best")
                     }
                 } header: {
-                    TimelineSectionHeader(title: "Best matches", count: nil, systemImage: "sparkle.magnifyingglass")
+                    TimelineSectionHeader(title: "Top Results", count: nil, systemImage: "sparkle.magnifyingglass")
                         .timelineHeaderLayout(maxWidth: maxWidth)
                 }
             }
@@ -369,7 +369,7 @@ struct TimelineView: View {
                         }
                     } header: {
                         TimelineSectionHeader(
-                            title: bestMatches.isEmpty ? sectionTitle(for: key) : "\(sectionTitle(for: key)) · by date",
+                            title: sectionTitle(for: key),
                             count: sectionEntries.count,
                             systemImage: nil
                         )
@@ -505,15 +505,9 @@ struct TimelineView: View {
                 iconSize: 24
             )
 
-            Text("Select an entry")
+            Text("No Entry Selected")
                 .font(OffRecordTypography.titleMedium)
                 .foregroundStyle(OffRecordColor.textHeading)
-
-            Text("Your timeline stays open while you read, edit, or review a day.")
-                .font(OffRecordTypography.bodySmall)
-                .foregroundStyle(OffRecordColor.textSecondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 320)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(OffRecordColor.backgroundPrimary.opacity(0.82))
@@ -546,8 +540,7 @@ struct TimelineView: View {
             x: -16,
             y: dynamicTypeSize.isAccessibilitySize ? 28 : -66
         )
-        .accessibilityLabel("Planter")
-        .accessibilityHint("Plays a subtle shake")
+        .accessibilityHidden(true)
         .task(id: planterShakeTrigger) {
             await runPlanterShake()
         }
@@ -590,7 +583,7 @@ struct TimelineView: View {
                 .foregroundStyle(showStarredOnly ? OffRecordColor.textYellow : OffRecordColor.textBrand)
                 .contentTransition(.symbolEffect(.replace))
         }
-        .accessibilityLabel("Show starred only")
+        .accessibilityLabel("Starred")
         .accessibilityAddTraits(showStarredOnly ? .isSelected : [])
     }
 
@@ -605,7 +598,7 @@ struct TimelineView: View {
                     .symbolEffect(.pulse, isActive: isListening)
                     .contentTransition(.symbolEffect(.replace))
             }
-            .accessibilityLabel("Voice search")
+            .accessibilityLabel("Voice Search")
             #endif
 
             Button {
@@ -618,8 +611,8 @@ struct TimelineView: View {
                     .foregroundStyle(OffRecordColor.textLavender)
                     .contentTransition(.symbolEffect(.replace))
             }
-            .accessibilityLabel(showFilters ? "Hide filters" : "Show filters")
-            .accessibilityValue(hasActiveFilters ? "Filters active" : "")
+            .accessibilityLabel("Filters")
+            .accessibilityValue(hasActiveFilters ? "On" : "")
         }
     }
 
@@ -677,7 +670,7 @@ struct TimelineView: View {
             HStack(spacing: 10) {
                 ProgressView(value: semanticMemory.progress)
                     .frame(width: 44)
-                Text("Building semantic memory")
+                Text("Updating Search")
                     .font(OffRecordTypography.labelSmall)
                     .foregroundColor(OffRecordColor.textSecondary)
                 Spacer()
@@ -712,7 +705,7 @@ struct TimelineView: View {
                 } else {
                     ProgressView()
                 }
-                Text("Preparing the on-device speech model…")
+                Text("Preparing voice search…")
                     .font(OffRecordTypography.labelSmall)
                     .foregroundStyle(OffRecordColor.textSecondary)
                 Spacer()
@@ -741,7 +734,7 @@ struct TimelineView: View {
                         .frame(width: OffRecordLayout.minimumTapTarget, height: OffRecordLayout.minimumTapTarget)
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Dismiss voice search error")
+                .accessibilityLabel("Dismiss")
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
@@ -762,7 +755,7 @@ struct TimelineView: View {
         VStack(spacing: 12) {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    Text("Mood:")
+                    Text("Mood")
                         .font(OffRecordTypography.metadata)
                         .foregroundColor(OffRecordColor.textSecondary)
 
@@ -779,7 +772,7 @@ struct TimelineView: View {
                                     size: 14,
                                     opacity: selectedMoodFilter == mood ? 0.92 : 0.72
                                 )
-                                Text(mood.rawValue)
+                                Text(mood.displayName)
                             }
                             .font(OffRecordTypography.metadata)
                             .padding(.horizontal, 10)
@@ -836,7 +829,7 @@ struct TimelineView: View {
                 }
 
                 if let mood = selectedMoodFilter {
-                    FilterChip(label: mood.rawValue, mood: mood, style: mood.readableStyle) {
+                    FilterChip(label: mood.displayName, mood: mood, style: mood.readableStyle) {
                         selectedMoodFilter = nil
                     }
                 }
@@ -873,7 +866,7 @@ struct TimelineView: View {
                 .symbolEffect(.pulse, isActive: semanticMemory.isBuilding)
                 .accessibilityHidden(true)
 
-            Text(semanticMemory.isBuilding ? "Building semantic memory" : "No matching entries")
+            Text(semanticMemory.isBuilding ? "Updating Search" : "No Results")
                 .font(OffRecordTypography.sectionTitle)
                 .foregroundColor(OffRecordColor.textHeading)
                 .accessibilityIdentifier(semanticMemory.isBuilding ? "semanticMemory.buildingTitle" : "timeline.emptyTitle")
@@ -881,7 +874,7 @@ struct TimelineView: View {
             if semanticMemory.isBuilding {
                 ProgressView(value: semanticMemory.progress)
                     .frame(maxWidth: 220)
-                Text("Friday is indexing your journal locally. Search results will improve as this finishes.")
+                Text("Results will improve when it’s done.")
                     .font(OffRecordTypography.metadata)
                     .foregroundColor(OffRecordColor.textSecondary)
                     .multilineTextAlignment(.center)
@@ -1008,7 +1001,7 @@ struct TimelineView: View {
             await MainActor.run {
                 isSemanticSearching = true
                 semanticSearchQuery = query
-                semanticSearchMessage = "Searching semantic memory..."
+                semanticSearchMessage = "Searching…"
             }
             let searchResult = await semanticMemory.search(query: query, entries: entrySnapshot, limit: 48)
             guard !Task.isCancelled else { return }
@@ -1190,9 +1183,8 @@ struct TimelineView: View {
     private func requestDelete(_ entry: DiaryEntry) {
         // Only one deletion waits for undo at a time; an earlier one is committed now.
         commitPendingDeletion()
-        let label = (entry.date ?? Date()).formatted(.dateTime.month(.abbreviated).day())
         withOffRecordAnimation(OffRecordMotion.snappy) {
-            pendingDeletion = PendingTimelineDeletion(objectID: entry.objectID, entryID: entry.id, dateLabel: label)
+            pendingDeletion = PendingTimelineDeletion(objectID: entry.objectID, entryID: entry.id)
         }
         if selectedEntry?.objectID == entry.objectID {
             selectedEntry = nil
@@ -1294,6 +1286,7 @@ struct FilterChip: View {
                 Image(systemName: "xmark.circle.fill")
                     .font(OffRecordTypography.metadata)
             }
+            .accessibilityLabel("Remove \(label)")
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
@@ -1386,7 +1379,6 @@ struct PendingTimelineDeletion: Equatable {
     let id = UUID()
     let objectID: NSManagedObjectID
     let entryID: UUID?
-    let dateLabel: String
 }
 
 struct TimelineUndoToast: View {
@@ -1441,7 +1433,7 @@ struct TimelineSectionHeader: View {
                 .accessibilityAddTraits(.isHeader)
             Spacer(minLength: 0)
             if let count {
-                Text("\(count) \(count == 1 ? "entry" : "entries")")
+                Text("^[\(count) entry](inflect: true)")
                     .font(OffRecordTypography.labelMedium)
                     .foregroundStyle(OffRecordColor.textSecondary)
             }
@@ -1459,12 +1451,12 @@ private struct TimelineFirstEntryState: View {
             FridayMascotView(pose: .wave, size: 88)
                 .accessibilityHidden(true)
             VStack(spacing: OffRecordSpacing.sm) {
-                Text("Your timeline starts with one entry")
+                Text("No Entries Yet")
                     .font(OffRecordTypography.titleSmall)
                     .foregroundStyle(OffRecordColor.textHeading)
                     .multilineTextAlignment(.center)
                     .accessibilityIdentifier("timeline.emptyTitle")
-                Text("Record or write a moment and it will appear here, grouped by month. Everything stays on this device.")
+                Text("Your entries will show up here.")
                     .font(OffRecordTypography.bodySmall)
                     .foregroundStyle(OffRecordColor.textSecondary)
                     .multilineTextAlignment(.center)
@@ -1472,7 +1464,7 @@ private struct TimelineFirstEntryState: View {
             Button {
                 capture.startRecording()
             } label: {
-                Label("Record your first entry", systemImage: "mic.fill")
+                Label("Record", systemImage: "mic.fill")
                     .offRecordPillButton()
             }
             .buttonStyle(.plain)
@@ -1503,7 +1495,7 @@ private struct TimelineEntryContextPreview: View {
                     .foregroundStyle(OffRecordColor.textSecondary)
             }
             Text(TimelineEntryPreviewSanitizer.sanitize(entry.text ?? "").isEmpty
-                 ? "No text yet."
+                 ? "No text"
                  : TimelineEntryPreviewSanitizer.sanitize(entry.text ?? ""))
                 .font(OffRecordTypography.journalBody)
                 .foregroundStyle(OffRecordColor.textPrimary)
