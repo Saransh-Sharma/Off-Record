@@ -88,7 +88,7 @@ struct YearInPixelsView: View {
 
     /// The unit under the day count, which is drawn as its own larger number.
     private var dayUnit: String {
-        summary.journaledDays == 1 ? "day" : "days"
+        summary.journaledDays == 1 ? String(localized: "day") : String(localized: "days")
     }
 
     private var accessibilitySummary: String {

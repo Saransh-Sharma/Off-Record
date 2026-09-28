@@ -14,8 +14,8 @@ struct QuickCaptureHomeView: View {
                     header
 
                     QuickCaptureActionCard(
-                        title: "Mood",
-                        subtitle: "Log how you feel",
+                        title: String(localized: "Mood"),
+                        subtitle: String(localized: "Log how you feel"),
                         systemImage: "leaf.fill",
                         fill: WatchPalette.mintSurface,
                         foreground: WatchPalette.sageText,
@@ -25,8 +25,8 @@ struct QuickCaptureHomeView: View {
                     }
 
                     QuickCaptureActionCard(
-                        title: "Speak",
-                        subtitle: "Say what’s on your mind",
+                        title: String(localized: "Speak"),
+                        subtitle: String(localized: "Say what’s on your mind"),
                         systemImage: "quote.bubble.fill",
                         fill: WatchPalette.lavenderSurface,
                         foreground: WatchPalette.lavenderText,

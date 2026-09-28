@@ -139,11 +139,11 @@ struct WatchRecentCaptureRow: View {
     private var title: String {
         switch item.envelope.kind {
         case .mood:
-            return "Mood: \(preview)"
+            return String(localized: "Mood: \(preview)")
         case .speak:
-            return "Dictation"
+            return String(localized: "Dictation")
         case .audio:
-            return "Recording"
+            return String(localized: "Recording")
         }
     }
 
@@ -158,13 +158,13 @@ struct WatchRecentCaptureRow: View {
     private var statusText: String {
         switch item.syncState {
         case .saved, .queued:
-            return "On Watch"
+            return String(localized: "On Watch")
         case .sending:
-            return "Sending"
+            return String(localized: "Sending")
         case .synced:
-            return "On iPhone"
+            return String(localized: "On iPhone")
         case .failed:
-            return "Retrying"
+            return String(localized: "Retrying")
         }
     }
 

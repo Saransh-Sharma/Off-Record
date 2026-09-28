@@ -28,7 +28,7 @@ struct WatchMoodCaptureView: View {
                 }
 
                 WatchPrimaryButton(
-                    title: saved ? "Saved" : "Save",
+                    title: saved ? String(localized: "Saved") : String(localized: "Save"),
                     systemImage: saved ? "checkmark.circle.fill" : "heart.fill",
                     fill: WatchPalette.sage,
                     foreground: WatchPalette.sageText,
@@ -41,7 +41,7 @@ struct WatchMoodCaptureView: View {
             .padding(.vertical, 8)
 
             if saved {
-                SaveConfirmationToast(title: "Saved")
+                SaveConfirmationToast(title: String(localized: "Saved"))
                     .transition(.scale.combined(with: .opacity))
             }
         }

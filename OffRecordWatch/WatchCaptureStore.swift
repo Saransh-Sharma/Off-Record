@@ -45,7 +45,7 @@ final class WatchCaptureStore: ObservableObject {
 
     var syncLine: String {
         if queueCount == 0 {
-            return "All synced"
+            return String(localized: "All synced")
         }
         if connectivity.isReachable {
             return "\(queueCount) sending to iPhone"
@@ -119,12 +119,13 @@ final class WatchCaptureStore: ObservableObject {
         case .mood:
             return item.envelope.moodValue.flatMap { WatchMoodValue(rawValue: $0)?.displayName } ?? "Mood"
         case .speak:
-            return "Dictation"
+            return String(localized: "Dictation")
         case .audio:
             if let duration = item.envelope.audioManifest?.duration {
-                return "Recording, \(Self.durationFormatter.string(from: duration) ?? "")"
+                let formatted = Self.durationFormatter.string(from: duration) ?? ""
+                return String(localized: "Recording, \(formatted)")
             }
-            return "Recording"
+            return String(localized: "Recording")
         }
     }
 
@@ -148,7 +149,7 @@ final class WatchCaptureStore: ObservableObject {
         if envelope.kind == .audio {
             guard let fileURL = knownAudioURL ?? audioFileURL(for: envelope),
                   FileManager.default.fileExists(atPath: fileURL.path) else {
-                markFailed(envelope.captureID, message: "Recording not found.", missingFile: true)
+                markFailed(envelope.captureID, message: String(localized: "Recording not found."), missingFile: true)
                 return
             }
             markTransferAttempt(for: envelope.captureID, kind: .audioFile)
@@ -274,7 +275,7 @@ final class WatchCaptureStore: ObservableObject {
                 }
                 if let captureIndex = outbox.firstIndex(where: { $0.envelope.audioManifest?.fileName == file.url.lastPathComponent }) {
                     outbox[captureIndex].syncState = .failed
-                    outbox[captureIndex].lastError = "Watch storage is full."
+                    outbox[captureIndex].lastError = String(localized: "Watch storage is full.")
                     outbox[captureIndex].updatedAtUTC = Date()
                 }
             }

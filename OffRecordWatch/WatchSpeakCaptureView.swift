@@ -39,7 +39,7 @@ struct WatchSpeakCaptureView: View {
             .scrollBounceBehavior(.basedOnSize)
 
             if saved {
-                SaveConfirmationToast(title: "Saved")
+                SaveConfirmationToast(title: String(localized: "Saved"))
                     .transition(.scale.combined(with: .opacity))
             }
         }
@@ -148,7 +148,7 @@ struct WatchSpeakCaptureView: View {
     private var actionRow: some View {
         HStack(spacing: 8) {
             WatchSecondaryButton(
-                title: recorder.isRecording ? "Stop" : "Start",
+                title: recorder.isRecording ? String(localized: "Stop") : String(localized: "Start"),
                 systemImage: recorder.isRecording ? "stop.fill" : "mic.fill",
                 minHeight: 34,
                 action: toggleRecording
@@ -156,7 +156,7 @@ struct WatchSpeakCaptureView: View {
             .accessibilityLabel(recorder.isRecording ? "Stop recording" : "Start recording")
 
             WatchPrimaryButton(
-                title: saved ? "Saved" : "Save",
+                title: saved ? String(localized: "Saved") : String(localized: "Save"),
                 systemImage: saved ? "checkmark.circle.fill" : "tray.and.arrow.down.fill",
                 fill: WatchPalette.sageSurface,
                 foreground: WatchPalette.sageText,
@@ -169,11 +169,11 @@ struct WatchSpeakCaptureView: View {
     }
 
     private var cardTitle: String {
-        if saved { return "Saved" }
-        if pendingRecording != nil { return "Ready to save" }
-        if recorder.isRecording { return "Recording" }
-        if recorder.errorMessage != nil { return "Try again" }
-        return "Speak now"
+        if saved { return String(localized: "Saved") }
+        if pendingRecording != nil { return String(localized: "Ready to save") }
+        if recorder.isRecording { return String(localized: "Recording") }
+        if recorder.errorMessage != nil { return String(localized: "Try again") }
+        return String(localized: "Speak now")
     }
 
     private var cardSymbol: String {
@@ -187,10 +187,10 @@ struct WatchSpeakCaptureView: View {
             return message
         }
         if recorder.didReachSoftLimit {
-            return "Almost at the limit."
+            return String(localized: "Almost at the limit.")
         }
         if pendingRecording != nil || recorder.isRecording {
-            return "Transcribed on iPhone."
+            return String(localized: "Transcribed on iPhone.")
         }
         return nil
     }
