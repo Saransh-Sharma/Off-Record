@@ -248,9 +248,9 @@ public enum EmbeddingProviderError: LocalizedError {
     public var errorDescription: String? {
         switch self {
         case .unavailable:
-            return "Semantic embedding assets are unavailable on this device."
+            return "Semantic embedding assets are unavailable on this device."  // copy-lint:ignore (logged only)
         case .emptyResult:
-            return "The semantic embedding model returned no vectors."
+            return "The semantic embedding model returned no vectors."  // copy-lint:ignore (logged only)
         }
     }
 }

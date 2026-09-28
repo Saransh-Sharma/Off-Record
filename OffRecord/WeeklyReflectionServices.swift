@@ -619,7 +619,7 @@ enum WeeklyReflectionExportService {
             lines += report.questions.map { "- \($0)" }
             lines.append("")
         }
-        lines.append("Made by OffRecord on your device. Not medical advice.")
+        lines.append("Made by OffRecord on your device. Not medical advice.")  // copy-lint:ignore (export is an allowed privacy place)
     }
 
     private static func dateRange(_ report: WeeklyReflectionReport) -> String {
