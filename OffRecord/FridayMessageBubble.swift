@@ -133,7 +133,7 @@ struct FridayMessageBubble: View {
         .offRecordShadow(.chip)
         .contextMenu { messageActions }
         .accessibilityLabel("Friday: \(message.text)")
-        .accessibilityHint(hasCitations ? "Numbers in brackets match the sources listed below." : "")
+        .accessibilityHint(hasCitations ? "Numbers refer to the sources below." : "")
         .accessibilityIdentifier("friday.answerMessage.\(message.id.uuidString)")
     }
 
@@ -246,7 +246,7 @@ struct FridayFollowUpChips: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: OffRecordSpacing.sm) {
-            Text("Keep exploring")
+            Text("Follow Up")
                 .font(OffRecordTypography.labelSmall)
                 .foregroundStyle(OffRecordColor.textSecondary)
                 .padding(.leading, OffRecordSpacing.xs)
@@ -269,7 +269,7 @@ struct FridayFollowUpChips: View {
                     }
                     .buttonStyle(.plain)
                     .offRecordPointerLift()
-                    .accessibilityLabel("Ask Friday: \(followUp.prompt)")
+                    .accessibilityLabel(followUp.prompt)
                     .accessibilityIdentifier("friday.followUp.\(followUp.accessibilityID)")
                 }
             }

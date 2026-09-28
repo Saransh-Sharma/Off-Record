@@ -29,7 +29,7 @@ struct FridayFollowUp: Identifiable, Equatable, Hashable {
     }
 
     init(question: FridayQuestion) {
-        self.init(title: question.compactPromptTitle, prompt: question.rawValue, question: question)
+        self.init(title: question.question, prompt: question.question, question: question)
     }
 }
 
@@ -54,8 +54,11 @@ enum FridayFollowUpBuilder {
 
         func append(_ followUp: FridayFollowUp) {
             let key = followUp.id
+            // Older history sent a suggested question's rawValue as the message text.
+            let legacyKey = followUp.question?.rawValue.lowercased()
             guard results.count < maximumCount,
                   !askedPrompts.contains(key),
+                  !(legacyKey.map { askedPrompts.contains($0) } ?? false),
                   key != loweredQuestion,
                   !results.contains(where: { $0.id == key }) else { return }
             results.append(followUp)
@@ -135,7 +138,7 @@ enum FridayEvidenceStrength: Equatable {
         switch self {
         case .strong(let entries): return "Strong evidence · \(Self.entryText(entries))"
         case .some(let entries): return "Some evidence · \(Self.entryText(entries))"
-        case .tentative(let entries): return "Tentative · \(Self.entryText(entries))"
+        case .tentative(let entries): return "Limited evidence · \(Self.entryText(entries))"
         case .overallPatterns: return "From your overall patterns"
         }
     }
@@ -144,8 +147,8 @@ enum FridayEvidenceStrength: Equatable {
         switch self {
         case .strong(let entries): return "Strong evidence, based on \(Self.entryText(entries))"
         case .some(let entries): return "Some evidence, based on \(Self.entryText(entries))"
-        case .tentative(let entries): return "Tentative, based on \(Self.entryText(entries))"
-        case .overallPatterns: return "Based on your overall patterns, without specific entries"
+        case .tentative(let entries): return "Limited evidence, based on \(Self.entryText(entries))"
+        case .overallPatterns: return "Based on your overall patterns"
         }
     }
 
@@ -168,7 +171,7 @@ enum FridayEvidenceStrength: Equatable {
     }
 
     private static func entryText(_ count: Int) -> String {
-        count == 1 ? "1 entry" : "\(count) entries"
+        String(AttributedString(localized: "^[\(count) entry](inflect: true)").characters)
     }
 }
 

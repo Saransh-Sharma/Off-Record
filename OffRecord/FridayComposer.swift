@@ -23,7 +23,7 @@ struct FridayComposer: View {
             }
 
             HStack(alignment: .bottom, spacing: OffRecordSpacing.sm) {
-                TextField("Ask Friday about your journal...", text: $text, axis: .vertical)
+                TextField("Ask me about your journal", text: $text, axis: .vertical)
                     .font(OffRecordTypography.bodyMedium)
                     .foregroundStyle(OffRecordColor.textPrimary)
                     .textFieldStyle(.plain)
@@ -45,7 +45,7 @@ struct FridayComposer: View {
                 }
                 .disabled(!canSend)
                 .buttonStyle(.plain)
-                .accessibilityLabel("Send message")
+                .accessibilityLabel("Send")
                 .accessibilityIdentifier("friday.askButton")
                 .padding(.trailing, 6)
                 .padding(.bottom, 6)

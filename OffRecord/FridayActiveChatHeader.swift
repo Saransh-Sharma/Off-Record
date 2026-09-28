@@ -22,7 +22,7 @@ struct FridayActiveChatHeader: View {
                     .foregroundStyle(OffRecordColor.textHeading)
                     .accessibilityAddTraits(.isHeader)
 
-                Label("Private • On device", systemImage: "lock.shield.fill")
+                Label("On-device", systemImage: "lock.shield.fill")
                     .font(OffRecordTypography.labelSmall)
                     .foregroundStyle(OffRecordColor.textSage)
             }
@@ -31,7 +31,7 @@ struct FridayActiveChatHeader: View {
 
             if let onNewChat {
                 Button(action: onNewChat) {
-                    Label("New chat", systemImage: "square.and.pencil")
+                    Label("New Chat", systemImage: "square.and.pencil")
                         .labelStyle(.iconOnly)
                         .font(OffRecordTypography.titleSmall)
                         .foregroundStyle(OffRecordColor.textLavender)
@@ -39,8 +39,8 @@ struct FridayActiveChatHeader: View {
                         .background(OffRecordColor.backgroundLavenderTint, in: Circle())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("New chat")
-                .accessibilityHint("Clears this conversation from your device")
+                .accessibilityLabel("New Chat")
+                .accessibilityHint("Clears this conversation.")
                 .accessibilityIdentifier("friday.newChat")
             }
         }

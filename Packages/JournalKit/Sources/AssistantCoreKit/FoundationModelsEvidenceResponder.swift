@@ -16,6 +16,7 @@ import FoundationModels
 @available(iOS 26.0, macOS 26.0, *)
 @Generable
 struct GeneratedEvidenceObservation {
+    @Guide(description: "One short sentence about what the cited entries show.")
     let text: String
     let evidenceIDs: [String]
 }
@@ -23,10 +24,13 @@ struct GeneratedEvidenceObservation {
 @available(iOS 26.0, macOS 26.0, *)
 @Generable
 struct GeneratedEvidenceBackedAnswer {
+    @Guide(description: "The answer in at most 2 short sentences.")
     let summary: String
+    @Guide(description: "Specific findings from the evidence, each one sentence.")
     let observations: [GeneratedEvidenceObservation]
     let confidence: Double
     let followUpPrompt: String
+    @Guide(description: "At most 1 sentence about what the evidence can’t show. Omit when there is nothing to add.")
     let limitations: String?
 }
 
@@ -66,8 +70,11 @@ public struct FoundationModelsEvidenceResponder: EvidenceResponding {
             instructions: """
             \(persona.evidenceSystemPrompt)
             Every substantive observation must be supported by one or more evidenceIDs from the evidence list.
-            If the evidence is weak, say so in limitations. Do not invent people, events, dates, moods, or causes.
-            Keep the answer concise, warm, and specific. Never use clinical or diagnostic language.
+            Do not invent people, events, dates, moods, or causes.
+            Speak to the user as "you" and about yourself as "I". Use 1–3 short sentences in plain words.
+            Lead with what the entries show and include dates or counts. No exclamation marks, emoji, or em dashes.
+            Never use therapy phrases (valid, safe space, journey, gentle, self-care) or clinical or diagnostic language.
+            If evidence is thin, say "I’m not sure" once in limitations.
             """
         )
 

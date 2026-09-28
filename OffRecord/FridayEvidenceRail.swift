@@ -20,7 +20,7 @@ struct FridayEvidenceRail: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: OffRecordSpacing.sm) {
-            Text("Sources from your journal")
+            Text("Sources")
                 .font(OffRecordTypography.labelSmall)
                 .foregroundStyle(OffRecordColor.textLavender)
                 .accessibilityAddTraits(.isHeader)
@@ -40,7 +40,7 @@ struct FridayEvidenceRail: View {
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel(FridayEvidenceChip.accessibilityLabel(for: item, number: number))
                     .accessibilityValue(item.matchReason.displayName)
-                    .accessibilityHint("Opens entry from \(FridayEvidenceChip.spokenDate(item.date))")
+                    .accessibilityHint("Opens the entry.")
                     .accessibilityAddTraits(.isButton)
                     .accessibilityIdentifier("friday.evidenceChip")
                 } else {

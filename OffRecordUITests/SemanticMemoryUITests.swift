@@ -61,7 +61,6 @@ final class SemanticMemoryUITests: XCTestCase {
         let status = app.staticTexts["semanticMemory.statusMessage"]
         XCTAssertTrue(status.waitForExistence(timeout: 4))
         XCTAssertTrue(status.label.localizedCaseInsensitiveContains("deleted"))
-        XCTAssertTrue(status.label.localizedCaseInsensitiveContains("rebuild"))
     }
 
     func testRebuildAfterDeleteRestoresSearch() throws {
@@ -259,7 +258,7 @@ final class SemanticMemoryUITests: XCTestCase {
 
         openFridayChat(app)
 
-        XCTAssertTrue(app.staticTexts["I need a little context."].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.staticTexts["I don’t know you yet."].waitForExistence(timeout: 8))
         XCTAssertTrue(app.staticTexts.matching(labelContaining: "Write or record a few entries").firstMatch.exists)
         XCTAssertTrue(app.descendants(matching: .any)["friday.askField"].firstMatch.exists)
         XCTAssertTrue(app.buttons["friday.askButton"].firstMatch.exists)

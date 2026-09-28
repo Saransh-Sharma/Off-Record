@@ -82,7 +82,7 @@ final class ProactiveReflectionUITests: XCTestCase {
         XCTAssertTrue(askField.waitForExistence(timeout: 6))
         let value = askField.value as? String ?? ""
         XCTAssertFalse(value.isEmpty)
-        XCTAssertNotEqual(value, "Ask Friday about your journal...")
+        XCTAssertNotEqual(value, "Ask me about your journal")
     }
 
     func testTodayShowsContextAwareReflectionPrompt() throws {

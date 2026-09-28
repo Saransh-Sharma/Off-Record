@@ -7,9 +7,9 @@
 
 import SwiftUI
 
+/// Shows exactly the text that tapping sends.
 struct FridayPromptPill: View {
     let question: FridayQuestion
-    let title: String
     let isAsked: Bool
     let action: () -> Void
 
@@ -23,7 +23,7 @@ struct FridayPromptPill: View {
                     .foregroundStyle(isAsked ? OffRecordColor.textTertiary : style.accent)
                     .frame(width: 22)
 
-                Text(title)
+                Text(question.question)
                     .font(OffRecordTypography.labelLarge)
                     .foregroundStyle(isAsked ? OffRecordColor.textSecondary : OffRecordColor.textBrand)
                     .lineLimit(2)
@@ -42,7 +42,7 @@ struct FridayPromptPill: View {
         }
         .buttonStyle(.plain)
         .offRecordPointerLift(enabled: !isAsked)
-        .accessibilityLabel("Ask Friday: \(title)")
+        .accessibilityLabel(question.question)
         .accessibilityIdentifier("friday.questionChip.\(question.accessibilityID)")
     }
 }

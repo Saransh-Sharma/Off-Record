@@ -15,6 +15,8 @@ import UIKit
 
 // MARK: - Question Types
 
+/// Suggested questions. The rawValue is a stable ID: chat history persists it, and it
+/// doubles as the search query. `question` is what the pill shows and the chat sends.
 enum FridayQuestion: String, CaseIterable, Identifiable {
     case moodPattern = "What's my mood pattern this week?"
     case talkAboutMost = "Who do I talk about most?"
@@ -28,6 +30,22 @@ enum FridayQuestion: String, CaseIterable, Identifiable {
     case bestJournalTime = "What time should I journal?"
 
     var id: String { rawValue }
+
+    /// The pill label, and the text sent as the user's message.
+    var question: String {
+        switch self {
+        case .moodPattern: return "How’s my mood this week?"
+        case .talkAboutMost: return "Who do I mention most?"
+        case .happiestWhen: return "When am I happiest?"
+        case .dominantTopics: return "What keeps coming up?"
+        case .moodOverTime: return "How has my mood changed?"
+        case .communicationStyle: return "How do I write?"
+        case .stressTriggers: return "What’s been stressing me?"
+        case .positiveOrNegative: return "What’s my overall tone?"
+        case .personality: return "What’s my personality like?"
+        case .bestJournalTime: return "When do I journal most?"
+        }
+    }
 
     var accessibilityID: String {
         switch self {
@@ -178,11 +196,11 @@ struct FridayResponseGenerator {
             let recent = Array(sig.recentSentiments.suffix(7))
             let avg = recent.reduce(0, +) / Double(recent.count)
             let moodWord: String
-            if avg > 0.3 { moodWord = "quite positive" }
-            else if avg > 0.1 { moodWord = "generally good" }
-            else if avg > -0.1 { moodWord = "fairly balanced" }
+            if avg > 0.3 { moodWord = "mostly good" }
+            else if avg > 0.1 { moodWord = "good" }
+            else if avg > -0.1 { moodWord = "mixed" }
             else if avg > -0.3 { moodWord = "a bit low" }
-            else { moodWord = "on the tougher side" }
+            else { moodWord = "hard" }
             parts.append("Your recent mood has been \(moodWord).")
         }
 
@@ -190,16 +208,14 @@ struct FridayResponseGenerator {
         let weekdayLabel = sentimentWord(sig.weekdayMood)
         let weekendLabel = sentimentWord(sig.weekendMood)
         if weekdayLabel != weekendLabel {
-            parts.append("Weekdays feel \(weekdayLabel), while weekends are \(weekendLabel).")
+            parts.append("Weekdays feel \(weekdayLabel). Weekends feel \(weekendLabel).")
         } else {
-            parts.append("Your mood stays pretty consistent between weekdays and weekends.")
+            parts.append("Weekdays and weekends feel about the same.")
         }
 
         // Emotional range
-        if sig.emotionalRange > 0.6 {
-            parts.append("You experience a wide range of emotions - lots of highs and lows.")
-        } else if sig.emotionalRange < 0.3 {
-            parts.append("Your emotions tend to stay steady without big swings.")
+        if let range = rangeSentence(sig.emotionalRange) {
+            parts.append(range)
         }
 
         return parts.isEmpty ? insufficientData : parts.joined(separator: " ")
@@ -210,22 +226,23 @@ struct FridayResponseGenerator {
 
         let people = assistant.knowledgeGraph.fridayVisibleNodes(ofType: .person, limit: 5)
         guard !people.isEmpty else {
-            return "I haven't picked up on specific people in your entries yet. Try mentioning people by name and I'll start tracking who matters most to you."
+            return "I haven’t seen anyone by name yet. Mention people by name and I’ll keep track."
         }
 
         var parts: [String] = []
         let top = people[0]
-        parts.append("\(top.label) comes up the most in your journal (\(top.mentions) mentions).")
+        let times = String(AttributedString(localized: "^[\(top.mentions) time](inflect: true)").characters)
+        parts.append("You mention \(top.label) most, \(times) so far.")
 
         if top.sentimentAssociation > 0.2 {
-            parts.append("You tend to feel positive when writing about them.")
+            parts.append("Those entries are usually upbeat.")
         } else if top.sentimentAssociation < -0.2 {
-            parts.append("Entries about them carry some heavier emotions.")
+            parts.append("Those entries tend to be heavier.")
         }
 
         if people.count > 1 {
             let others = people.dropFirst().prefix(3).map { $0.label }
-            parts.append("You also mention \(others.joined(separator: ", ")) frequently.")
+            parts.append("You also mention \(list(others)) often.")
         }
 
         return parts.joined(separator: " ")
@@ -240,16 +257,16 @@ struct FridayResponseGenerator {
         // Time of day
         let morningBetter = sig.morningMood > sig.eveningMood
         if abs(sig.morningMood - sig.eveningMood) > 0.1 {
-            parts.append("You tend to be happier in the \(morningBetter ? "morning" : "evening").")
+            parts.append("You’re happier in the \(morningBetter ? "morning" : "evening").")
         } else {
-            parts.append("Your mood is fairly consistent throughout the day.")
+            parts.append("Your mood stays about the same through the day.")
         }
 
         // Weekday vs weekend
         if sig.weekendMood > sig.weekdayMood + 0.1 {
-            parts.append("Weekends clearly lift your spirits.")
+            parts.append("You’re happier on weekends.")
         } else if sig.weekdayMood > sig.weekendMood + 0.1 {
-            parts.append("Interestingly, you seem happier on weekdays.")
+            parts.append("You’re happier on weekdays.")
         }
 
         // Positive triggers
@@ -260,7 +277,7 @@ struct FridayResponseGenerator {
             .map { $0.key.capitalized }
 
         if !positiveTriggers.isEmpty {
-            parts.append("Topics that lift your mood include: \(positiveTriggers.joined(separator: ", ")).")
+            parts.append("Your mood lifts when you write about \(list(positiveTriggers)).")
         }
 
         return parts.isEmpty ? insufficientData : parts.joined(separator: " ")
@@ -287,11 +304,10 @@ struct FridayResponseGenerator {
         }
 
         guard !allTopics.isEmpty else {
-            return "I haven't identified strong themes yet. The more you journal, the clearer your thought patterns will become."
+            return "No clear topics yet. I’ll see more after a few entries."
         }
 
-        let topList = allTopics.prefix(5).joined(separator: ", ")
-        var response = "The themes that dominate your journal are: \(topList)."
+        var response = "You write most about \(list(Array(allTopics.prefix(5))))."
 
         // Add concerns if available
         let concerns = assistant.thoughtPatterns.topConcerns
@@ -299,8 +315,10 @@ struct FridayResponseGenerator {
             .sorted { $0.value > $1.value }
             .prefix(2)
             .map { $0.key.capitalized }
-        if !concerns.isEmpty {
-            response += " Your main concerns seem to revolve around \(concerns.joined(separator: " and "))."
+        if concerns.count == 1 {
+            response += " Your biggest worry is \(concerns[0])."
+        } else if !concerns.isEmpty {
+            response += " Your biggest worries are \(list(concerns))."
         }
 
         return response
@@ -314,28 +332,30 @@ struct FridayResponseGenerator {
 
         // Trend
         if sig.sentimentTrend > 0.05 {
-            parts.append("Your mood has been trending upward recently. Things are looking brighter.")
+            parts.append("Your mood has been improving lately.")
         } else if sig.sentimentTrend < -0.05 {
-            parts.append("Your mood has been dipping a bit lately. That's okay - acknowledging it is the first step.")
+            parts.append("Your mood has dipped a bit lately.")
         } else {
-            parts.append("Your emotional state has been fairly stable recently.")
+            parts.append("Your mood has been steady lately.")
         }
 
-        // Baseline
-        let baselineWord: String
-        if sig.baselineValence > 0.2 { baselineWord = "positive" }
-        else if sig.baselineValence > -0.1 { baselineWord = "balanced" }
-        else { baselineWord = "reflective" }
-        parts.append("Your overall emotional baseline is \(baselineWord).")
+        // Overall lean
+        if sig.baselineValence > 0.2 {
+            parts.append("Overall, it leans positive.")
+        } else if sig.baselineValence > -0.1 {
+            parts.append("Overall, it’s fairly even.")
+        } else {
+            parts.append("Overall, it leans low.")
+        }
 
         // Resilience
         if sig.resilienceScore > 0.6 {
-            parts.append("You show good emotional resilience - you bounce back well.")
+            parts.append("After hard days, you tend to bounce back quickly.")
         }
 
         // Data points
         if sig.recentSentiments.count >= 10 {
-            parts.append("This is based on your last \(sig.recentSentiments.count) journal entries.")
+            parts.append("Based on your last \(sig.recentSentiments.count) entries.")
         }
 
         return parts.joined(separator: " ")
@@ -349,29 +369,29 @@ struct FridayResponseGenerator {
 
         // Formality
         if style.formalityLevel > 0.6 {
-            parts.append("You write in a fairly formal, polished way.")
+            parts.append("You write formally.")
         } else if style.formalityLevel < 0.4 {
-            parts.append("Your writing style is casual and conversational.")
+            parts.append("You write the way you talk.")
         } else {
-            parts.append("Your writing strikes a nice balance between casual and formal.")
+            parts.append("You write somewhere between casual and formal.")
         }
 
         // Expressiveness
         if style.expressiveness > 0.6 {
-            parts.append("You're quite expressive - you use exclamations and vivid language.")
+            parts.append("You write with a lot of feeling.")
         } else if style.expressiveness < 0.3 {
-            parts.append("You tend to be measured and understated in your expression.")
+            parts.append("You keep your feelings understated.")
         }
 
         // Directness
         if style.directness > 0.6 {
-            parts.append("You're direct and to the point.")
+            parts.append("You get to the point.")
         } else if style.directness < 0.4 {
-            parts.append("You often take a more nuanced, reflective approach.")
+            parts.append("You think things through on the page.")
         }
 
         // Sentence length
-        parts.append("Your average sentence is about \(Int(style.averageSentenceLength)) words long.")
+        parts.append("Your sentences average \(Int(style.averageSentenceLength)) words.")
 
         // Signature words
         let topWords = style.signatureWords
@@ -379,7 +399,7 @@ struct FridayResponseGenerator {
             .prefix(5)
             .map { $0.key }
         if !topWords.isEmpty {
-            parts.append("Some of your signature words are: \(topWords.joined(separator: ", ")).")
+            parts.append("Words you use often: \(list(topWords)).")
         }
 
         return parts.joined(separator: " ")
@@ -394,11 +414,11 @@ struct FridayResponseGenerator {
             .prefix(5)
 
         guard !negativeTriggers.isEmpty else {
-            return "I haven't identified clear stress triggers yet. This is actually a good sign! As you journal more, I'll be able to spot patterns in what weighs on you."
+            return "Nothing stands out as a stressor yet."
         }
 
         let triggerList = negativeTriggers.map { $0.key.capitalized }
-        var response = "Based on your entries, these topics tend to bring your mood down: \(triggerList.joined(separator: ", "))."
+        var response = "Your mood tends to drop when you write about \(list(triggerList))."
 
         // Contrast with positive
         let positiveTriggers = assistant.emotionalSignature.positiveTriggersTopics
@@ -407,7 +427,7 @@ struct FridayResponseGenerator {
             .prefix(3)
             .map { $0.key.capitalized }
         if !positiveTriggers.isEmpty {
-            response += " On the flip side, \(positiveTriggers.joined(separator: ", ")) tend to lift you up."
+            response += " \(list(positiveTriggers)) \(positiveTriggers.count == 1 ? "tends" : "tend") to lift it."
         }
 
         return response
@@ -420,15 +440,15 @@ struct FridayResponseGenerator {
         var parts: [String] = []
 
         if valence > 0.2 {
-            parts.append("Overall, your journal entries lean positive. You tend to focus on good things.")
+            parts.append("Your entries lean positive.")
         } else if valence > 0.05 {
-            parts.append("You're slightly on the positive side - a healthy, realistic optimism.")
+            parts.append("Your entries lean slightly positive.")
         } else if valence > -0.05 {
-            parts.append("You're remarkably balanced. Your entries show an even mix of positive and negative.")
+            parts.append("Your entries are an even mix of good and hard days.")
         } else if valence > -0.2 {
-            parts.append("Your entries lean slightly toward processing challenges. That's what journaling is great for.")
+            parts.append("Your entries lean slightly toward hard days.")
         } else {
-            parts.append("You've been working through some tough things. Your journal is a safe space for that.")
+            parts.append("You’ve been writing through some hard things lately.")
         }
 
         // Emotion frequency breakdown
@@ -436,8 +456,12 @@ struct FridayResponseGenerator {
             .sorted { $0.value > $1.value }
             .prefix(3)
         if !emotions.isEmpty {
-            let topEmotions = emotions.map { "\($0.key.capitalized)" }
-            parts.append("Your most frequent moods are: \(topEmotions.joined(separator: ", ")).")
+            let topEmotions = emotions.map { $0.key.lowercased() }
+            if topEmotions.count == 1 {
+                parts.append("Your most common mood is \(topEmotions[0]).")
+            } else {
+                parts.append("Your most common moods are \(list(topEmotions)).")
+            }
         }
 
         return parts.joined(separator: " ")
@@ -449,29 +473,33 @@ struct FridayResponseGenerator {
         let fridayProfile = FridayProfileGenerator.generate()
         var parts: [String] = []
 
-        parts.append("Here's what your journal reveals about you:")
-
         // Core traits from profile
-        let traitDescriptions = fridayProfile.traits.map { $0.displayLabel }
-        if !traitDescriptions.isEmpty {
-            parts.append("Your core traits are: \(traitDescriptions.joined(separator: ", ")).")
+        var traitWords: [String] = []
+        for trait in fridayProfile.traits.map({ $0.displayLabel.lowercased() }) where !traitWords.contains(trait) {
+            traitWords.append(trait)
+        }
+        if !traitWords.isEmpty {
+            parts.append("You come across as \(list(traitWords)).")
         }
 
-        // Communication & thinking style
-        parts.append("Communication style: \(fridayProfile.communicationStyle). Thinking style: \(fridayProfile.thinkingStyle).")
+        // Writing and thinking style
+        parts.append("Writing style: \(fridayProfile.communicationStyle). Thinking style: \(fridayProfile.thinkingStyle).")
 
-        // Dominant mood
-        parts.append("Your dominant mood is \(fridayProfile.dominantMood) with \(fridayProfile.emotionalRange.lowercased()) emotional range.")
+        // Usual mood and range
+        parts.append("Your usual mood is \(fridayProfile.dominantMood.lowercased()).")
+        if let range = rangeSentence(assistant.emotionalSignature.emotionalRange) {
+            parts.append(range)
+        }
 
         // Growth indicators
         if assistant.thoughtPatterns.growthMindsetScore > 0.6 {
-            parts.append("You show a strong growth mindset.")
+            parts.append("You write a lot about learning and improving.")
         }
         if assistant.thoughtPatterns.gratitudeTendency > 0.5 {
-            parts.append("Gratitude is a natural part of how you think.")
+            parts.append("You often write about what you’re grateful for.")
         }
         if assistant.thoughtPatterns.selfAwarenessLevel > 0.6 {
-            parts.append("You have a high level of self-awareness.")
+            parts.append("You notice a lot about yourself.")
         }
 
         return parts.joined(separator: " ")
@@ -484,30 +512,30 @@ struct FridayResponseGenerator {
 
         // Peak hour from behavioral patterns
         if let peakHour = assistant.behavioralPatterns.peakHour {
-            parts.append("Based on your habits, you journal most often around \(formatHour(peakHour)).")
+            parts.append("You journal most around \(formatHour(peakHour)).")
         }
 
         // Cross-reference with mood
         let sig = assistant.emotionalSignature
         if sig.morningMood > sig.eveningMood + 0.1 {
-            parts.append("You tend to be in a better mood in the morning, so that might be ideal for reflection.")
+            parts.append("Your morning entries are more upbeat.")
         } else if sig.eveningMood > sig.morningMood + 0.1 {
-            parts.append("Your evening entries tend to be more positive - evenings might be your sweet spot.")
+            parts.append("Your evening entries are more upbeat.")
         }
 
         // Peak day
         if let peakDay = assistant.behavioralPatterns.peakDay {
             let days = ["", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
             if peakDay >= 1 && peakDay <= 7 {
-                parts.append("\(days[peakDay]) is when you journal most frequently.")
+                parts.append("You journal most on \(days[peakDay])s.")
             }
         }
 
         // Consistency note
         if assistant.behavioralPatterns.consistencyScore > 0.5 {
-            parts.append("You've built a solid journaling habit - keep it up!")
+            parts.append("You journal regularly.")
         } else {
-            parts.append("Try picking a consistent time each day to build the habit.")
+            parts.append("A set time each day can make it easier.")
         }
 
         return parts.isEmpty ? insufficientData : parts.joined(separator: " ")
@@ -518,9 +546,21 @@ struct FridayResponseGenerator {
     private static func sentimentWord(_ value: Double) -> String {
         if value > 0.3 { return "great" }
         if value > 0.1 { return "good" }
-        if value > -0.1 { return "neutral" }
+        if value > -0.1 { return "okay" }
         if value > -0.3 { return "a bit low" }
-        return "tough"
+        return "hard"
+    }
+
+    /// One sentence about how much moods swing, or nil for the middle of the range.
+    private static func rangeSentence(_ range: Double) -> String? {
+        if range > 0.6 { return "Your moods swing quite a bit." }
+        if range < 0.3 { return "Your moods stay fairly steady." }
+        return nil
+    }
+
+    /// "A, B, and C", localized.
+    private static func list(_ items: [String]) -> String {
+        ListFormatter.localizedString(byJoining: items)
     }
 
     private static func formatHour(_ hour: Int) -> String {
@@ -680,14 +720,14 @@ struct FridayChatView: View {
                 .navigationTransition(.zoom(sourceID: selection.sourceID, in: evidenceNamespace))
         }
         .confirmationDialog(
-            "Start a new chat?",
+            "Start a New Chat?",
             isPresented: $isConfirmingNewChat,
             titleVisibility: .visible
         ) {
-            Button("New chat", role: .destructive, action: startNewChat)
+            Button("New Chat", role: .destructive, action: startNewChat)
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This conversation will be cleared from this device. Your journal isn’t affected.")
+            Text("This conversation will be cleared. Your journal won’t change.")
         }
         .sensoryFeedback(.impact(flexibility: .soft), trigger: answerFeedbackTrigger)
         .sensoryFeedback(.success, trigger: newChatTrigger)
@@ -734,7 +774,7 @@ struct FridayChatView: View {
             messageList(contentWidth: contentWidth)
             if showsStaticPrompts {
                 FridayPromptSection(
-                    title: "Or ask me something",
+                    title: "Try Asking",
                     questions: compactQuestions,
                     askedQuestions: askedQuestions,
                     layout: .grid,
@@ -908,7 +948,8 @@ struct FridayChatView: View {
         if !restored.isEmpty {
             messages = restored
             let askedTexts = Set(restored.filter(\.isUser).map(\.summary))
-            askedQuestions = Set(FridayQuestion.allCases.filter { askedTexts.contains($0.rawValue) })
+            // Older history sent the rawValue as the message text.
+            askedQuestions = Set(FridayQuestion.allCases.filter { askedTexts.contains($0.question) || askedTexts.contains($0.rawValue) })
         }
         hasRestoredHistory = true
     }
@@ -939,7 +980,13 @@ struct FridayChatView: View {
     }
 
     private func askQuestion(_ question: FridayQuestion) {
-        askEvidenceQuestion(question.rawValue, profileSummary: FridayResponseGenerator.generateResponse(for: question))
+        // The chat shows the question as written on the pill; the stable rawValue
+        // stays the search query so retrieval matches what it always has.
+        askEvidenceQuestion(
+            question.question,
+            searchQuery: question.rawValue,
+            profileSummary: FridayResponseGenerator.generateResponse(for: question)
+        )
         askedQuestions.insert(question)
     }
 
@@ -962,11 +1009,11 @@ struct FridayChatView: View {
         askEvidenceQuestion(question, profileSummary: nil)
     }
 
-    private func askEvidenceQuestion(_ question: String, profileSummary: String?) {
+    private func askEvidenceQuestion(_ question: String, searchQuery: String? = nil, profileSummary: String?) {
         guard !isAnswering else { return }
         chatError = nil
         messages.append(FridayChatMessage(text: question, isUser: true))
-        answer(question, profileSummary: profileSummary)
+        answer(searchQuery ?? question, profileSummary: profileSummary)
     }
 
     private func retryAfterError() {
@@ -1059,24 +1106,18 @@ private struct FridayChatErrorCard: View {
                     iconSize: 15
                 )
                 VStack(alignment: .leading, spacing: OffRecordSpacing.xs) {
-                    Text(isIndexFailure ? "I couldn’t open your journal memory" : "I couldn’t search your journal just now")
+                    Text(isIndexFailure ? "I couldn’t read your journal." : "I couldn’t search your journal just now.")
                         .font(OffRecordTypography.labelLarge)
                         .foregroundStyle(OffRecordColor.textHeading)
-                    Text("Nothing left your device. Trying again usually helps.")
+                    Text("Try again in a moment.")
                         .font(OffRecordTypography.bodySmall)
                         .foregroundStyle(OffRecordColor.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
-                    if !detail.isEmpty {
-                        Text(detail)
-                            .font(OffRecordTypography.annotation)
-                            .foregroundStyle(OffRecordColor.textTertiary)
-                            .lineLimit(3)
-                    }
                 }
             }
 
             Button(action: onRetry) {
-                Label(isIndexFailure ? "Rebuild and try again" : "Try again", systemImage: "arrow.clockwise")
+                Label(isIndexFailure ? "Rebuild Index" : "Try Again", systemImage: "arrow.clockwise")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(OffRecordSoftButtonStyle(tint: OffRecordColor.textOnAccent, fill: OffRecordColor.brandLavenderDark))
@@ -1096,7 +1137,7 @@ private struct FridayChatErrorContent: View {
 
     var body: some View {
         VStack(spacing: OffRecordSpacing.xl) {
-            FridayChatHeroHeader(subtitle: "Something got in the way on my side. Your entries are safe on this device.")
+            FridayChatHeroHeader(subtitle: "Something went wrong on my end. Your entries are fine.")
 
             FridayMascotView(pose: .thinking, size: 120)
                 .accessibilityHidden(true)

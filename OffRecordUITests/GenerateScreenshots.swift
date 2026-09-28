@@ -129,7 +129,7 @@ final class ScreenshotTests: XCTestCase {
         let answer = app.descendants(matching: .any)
             .matching(NSPredicate(format: "identifier BEGINSWITH %@", "friday.answerMessage."))
             .firstMatch
-        let stillIndexing = app.staticTexts.containing(NSPredicate(format: "label CONTAINS[c] %@", "still building")).firstMatch
+        let stillIndexing = app.staticTexts.containing(NSPredicate(format: "label CONTAINS[c] %@", "still reading")).firstMatch
         for _ in 0..<6 {
             Thread.sleep(forTimeInterval: 4)
             app.open(route)

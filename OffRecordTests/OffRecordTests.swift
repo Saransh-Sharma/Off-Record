@@ -1138,7 +1138,7 @@ struct SemanticMemoryTests {
         #expect(answer.summary == profileSummary)
         #expect(answer.evidence.isEmpty)
         #expect(answer.confidence > 0)
-        #expect(answer.limitations?.localizedCaseInsensitiveContains("citations") == true)
+        #expect(answer.limitations?.localizedCaseInsensitiveContains("supporting entries") == true)
     }
 
     @Test func fridayRefusesWeakMeaningOnlyEvidence() async {
@@ -1157,7 +1157,7 @@ struct SemanticMemoryTests {
 
         #expect(answer.evidence.isEmpty)
         #expect(answer.confidence == 0)
-        #expect(answer.limitations?.localizedCaseInsensitiveContains("retrieved journal evidence") == true)
+        #expect(answer.limitations?.localizedCaseInsensitiveContains("journal evidence") == true)
     }
 
     @Test func fridaySuggestedPromptUsesProfileSummaryWhenEvidenceIsWeak() async {

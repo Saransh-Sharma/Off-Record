@@ -18,12 +18,13 @@ extension AssistantPersona {
         hostAppName: "OffRecord",
         evidenceSystemPromptTemplate: "You are {name} inside a private journal app. Answer only from the provided evidence.",
         copy: PersonaCopyCatalog(
-            welcome: "I'm Friday. Tell me what you're carrying, or ask what I've noticed.",
+            welcome: FridayPersonality.welcome,
             insufficientData: FridayPersonality.insufficientData,
-            noticedPrefix: "I'm noticing this from your entries so far: ",
-            watchingSuffix: " I'll keep watching this with you.",
-            exclusionRespected: "I don't have anything on that.",
-            riskSafeSupport: "That sounds heavy. I'm here with you. It might also help to talk to someone you trust."
+            // Friday speaks plainly: no lead-in before what she sees, no sign-off after.
+            noticedPrefix: "",
+            watchingSuffix: "",
+            exclusionRespected: FridayPersonality.exclusionRespected,
+            riskSafeSupport: FridayPersonality.riskSafeSupport
         )
     )
 }

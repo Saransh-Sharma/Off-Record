@@ -78,7 +78,7 @@ struct FridayProfileGenerator {
             value: timeFocus,
             lowLabel: "Past",
             highLabel: "Future",
-            displayLabel: timeFocus > 0.6 ? "Future-focused" : timeFocus < 0.4 ? "Reflective" : "Present"
+            displayLabel: timeFocus > 0.6 ? "Future-focused" : timeFocus < 0.4 ? "Reflective" : "Present-focused"
         ))
 
         let growth = assistant.thoughtPatterns.growthMindsetScore
@@ -87,7 +87,7 @@ struct FridayProfileGenerator {
             value: growth,
             lowLabel: "Fixed",
             highLabel: "Growth",
-            displayLabel: growth > 0.6 ? "Growth" : growth < 0.4 ? "Fixed" : "Evolving"
+            displayLabel: growth > 0.6 ? "Growth-minded" : growth < 0.4 ? "Steady" : "Evolving"
         ))
 
         // Signature words

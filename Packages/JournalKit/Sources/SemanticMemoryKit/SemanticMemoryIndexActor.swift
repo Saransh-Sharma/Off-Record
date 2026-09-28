@@ -50,7 +50,7 @@ public actor SemanticMemoryIndexActor {
 
     public func rebuildAll(records: [IndexableEntry], progress: @Sendable @escaping (SemanticIndexProgress) async -> Void) async throws -> MemoryIndexSnapshot {
         try Task.checkCancellation()
-        await progress(SemanticIndexProgress(progress: 0, message: "Building semantic memory..."))
+        await progress(SemanticIndexProgress(progress: 0, message: "Building…"))
         guard !records.isEmpty else {
             try store.deleteAll()
             chunks = []
@@ -79,7 +79,7 @@ public actor SemanticMemoryIndexActor {
                 try await Task.sleep(nanoseconds: 1_000_000_000)
             }
             if shouldPauseForSystemConditions {
-                await progress(SemanticIndexProgress(progress: Double(entryIndex) / Double(total), message: "Semantic memory paused to save power."))
+                await progress(SemanticIndexProgress(progress: Double(entryIndex) / Double(total), message: "Paused to save power"))
                 try await Task.sleep(nanoseconds: 800_000_000)
             }
 
@@ -87,7 +87,7 @@ public actor SemanticMemoryIndexActor {
             builtChunks.append(contentsOf: entryChunks)
             textByChunkID.merge(entryTexts) { _, new in new }
 
-            await progress(SemanticIndexProgress(progress: Double(entryIndex + 1) / Double(total), message: "Indexed \(entryIndex + 1) of \(records.count) entries..."))
+            await progress(SemanticIndexProgress(progress: Double(entryIndex + 1) / Double(total), message: "\(entryIndex + 1) of \(records.count) \(records.count == 1 ? "entry" : "entries")"))
         }
 
         try store.replaceAll(chunks: builtChunks, textByChunkID: textByChunkID)
@@ -126,7 +126,7 @@ public actor SemanticMemoryIndexActor {
     public func search(query: String, records: [IndexableEntry], limit: Int) async -> SemanticMemorySearchResult {
         let trimmed = query.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return .ready([]) }
-        guard !chunks.isEmpty else { return .unavailable("Semantic memory is not indexed yet.") }
+        guard !chunks.isEmpty else { return .unavailable("Not ready yet") }
 
         let provider = providerForCurrentIndex()
         let language = NLLanguageRecognizer.dominantLanguage(for: trimmed)
@@ -134,7 +134,8 @@ public actor SemanticMemoryIndexActor {
         do {
             embedded = try await provider.embedding(for: trimmed, language: language)
         } catch {
-            return .failed(error.localizedDescription)
+            semanticMemoryLogger.error("Query embedding failed: \(error.localizedDescription, privacy: .public)")
+            return .failed("Couldn’t search")
         }
 
         let recordByID = Dictionary(uniqueKeysWithValues: records.map { ($0.id, $0) })
@@ -142,7 +143,8 @@ public actor SemanticMemoryIndexActor {
         do {
             lexicalIDs = try store.lexicalSearch(query: trimmed, limit: max(limit * 3, 24))
         } catch {
-            return .failed(error.localizedDescription)
+            semanticMemoryLogger.error("Lexical search failed: \(error.localizedDescription, privacy: .public)")
+            return .failed("Couldn’t search")
         }
 
         let lexicalCandidateIDs = Set(lexicalIDs)

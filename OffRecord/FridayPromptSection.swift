@@ -36,7 +36,6 @@ struct FridayPromptSection: View {
                     ForEach(questions) { question in
                         FridayPromptPill(
                             question: question,
-                            title: question.warmMinimalTitle,
                             isAsked: askedQuestions.contains(question)
                         ) {
                             action(question)
@@ -48,7 +47,6 @@ struct FridayPromptSection: View {
                     ForEach(questions) { question in
                         FridayPromptPill(
                             question: question,
-                            title: question.compactPromptTitle,
                             isAsked: askedQuestions.contains(question)
                         ) {
                             action(question)
