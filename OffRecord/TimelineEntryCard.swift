@@ -49,7 +49,6 @@ struct TimelineEntryCard: View {
                     Text("\(wordCount) words")
                         .font(OffRecordTypography.metadata)
                         .foregroundStyle(OffRecordColor.textBrand.opacity(0.76))
-                        .lineLimit(1)
 
                     if hasPhotos {
                         Image(systemName: "photo")

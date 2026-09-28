@@ -9,6 +9,7 @@ import SwiftUI
 struct MonthSummaryCard: View {
     let title: String
     let entries: [DiaryEntry]
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private var totalEntries: Int { entries.count }
 
@@ -21,23 +22,21 @@ struct MonthSummaryCard: View {
     }
 
     var body: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(alignment: .center, spacing: OffRecordSpacing.lg) {
-                stats
-                    .layoutPriority(1)
-                MonthlyWordsChart(values: chartValues)
-                    .frame(minWidth: 110, maxWidth: .infinity)
-                    .frame(height: TimelineDesign.summaryChartHeight)
-            }
-            VStack(alignment: .leading, spacing: OffRecordSpacing.lg) {
-                stats
-                MonthlyWordsChart(values: chartValues)
-                    .frame(height: TimelineDesign.summaryChartHeight)
-            }
+        // AnyLayout keeps the same stats as the arrangement changes, so they scale with
+        // Dynamic Type; large sizes put the chart under the numbers.
+        let layout = dynamicTypeSize >= .xxLarge
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: OffRecordSpacing.lg))
+            : AnyLayout(HStackLayout(alignment: .center, spacing: OffRecordSpacing.lg))
+        layout {
+            stats
+                .layoutPriority(1)
+            MonthlyWordsChart(values: chartValues)
+                .frame(minWidth: 110, maxWidth: .infinity)
+                .frame(height: TimelineDesign.summaryChartHeight)
         }
         .padding(.horizontal, OffRecordSpacing.xl)
         .padding(.vertical, OffRecordSpacing.xl)
-        .offRecordContentCard(cornerRadius: OffRecordRadius.xl, fill: OffRecordColor.surfacePrimary, useGlass: true)
+        .offRecordContentCard(cornerRadius: OffRecordRadius.xl, fill: OffRecordColor.surfacePrimary)
         .accessibilityElement(children: .ignore)
         .accessibilityLabel("\(title): \(totalEntries) \(totalEntries == 1 ? "entry" : "entries"), \(totalWords) words")
     }
@@ -63,11 +62,11 @@ struct MonthSummaryCard: View {
                 .font(OffRecordTypography.numberMedium)
                 .foregroundStyle(OffRecordColor.textBrand)
                 .contentTransition(.numericText())
-                .lineLimit(1)
+                .fixedSize(horizontal: false, vertical: true)
             Text(label)
                 .font(OffRecordTypography.metadata)
                 .foregroundStyle(OffRecordColor.textSecondary)
-                .lineLimit(1)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }

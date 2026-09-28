@@ -42,11 +42,12 @@ struct TimelineDayRow: View {
     let evidence: EvidenceReference?
     let isSelected: Bool
     let onSelect: () -> Void
+    @ScaledMetric(relativeTo: .body) private var spineWidth = TimelineDesign.daySpineWidth
 
     var body: some View {
         HStack(alignment: .top, spacing: TimelineDesign.dayRowContentSpacing) {
             TimelineDateSpine(date: entry.date ?? Date(), index: index, isLast: isLast)
-                .frame(width: TimelineDesign.daySpineWidth)
+                .frame(width: min(spineWidth, TimelineDesign.daySpineWidth * 1.6))
 
             Button(action: onSelect) {
                 TimelineEntryCard(
@@ -86,6 +87,13 @@ struct TimelineDateSpine: View {
     let index: Int
     let isLast: Bool
 
+    // The badge grows with Dynamic Type (up to a cap) so its date text isn't stuck at one size.
+    @ScaledMetric(relativeTo: .body) private var scaledBadgeSize = TimelineDesign.dateBadgeSize
+
+    private var badgeSize: CGFloat {
+        min(scaledBadgeSize, TimelineDesign.dateBadgeSize * 1.6)
+    }
+
     private var style: TimelineDateBadgeStyle {
         TimelineDateBadgeStyle.styles[index % TimelineDateBadgeStyle.styles.count]
     }
@@ -98,7 +106,7 @@ struct TimelineDateSpine: View {
                         OffRecordColor.textTertiary.opacity(0.58),
                         style: StrokeStyle(lineWidth: 0.95, dash: [4, 7], dashPhase: 1)
                     )
-                    .padding(.top, TimelineDesign.dateBadgeTopPadding + TimelineDesign.dateBadgeSize + 4)
+                    .padding(.top, TimelineDesign.dateBadgeTopPadding + badgeSize + 4)
                     .frame(maxHeight: .infinity)
                     .allowsHitTesting(false)
             }
@@ -108,18 +116,17 @@ struct TimelineDateSpine: View {
                     .font(OffRecordTypography.numberSmall)
                     .foregroundStyle(style.foreground)
                     .lineLimit(1)
-                    .minimumScaleFactor(0.72)
                 Text(weekday)
                     .font(OffRecordTypography.badgeLabel)
                     .foregroundStyle(style.foreground)
                     .lineLimit(1)
             }
-            .frame(width: TimelineDesign.dateBadgeSize, height: TimelineDesign.dateBadgeSize)
+            .frame(width: badgeSize, height: badgeSize)
             .background(Circle().fill(style.fill))
             .overlay(Circle().stroke(style.border, lineWidth: 1.1))
             .padding(.top, TimelineDesign.dateBadgeTopPadding)
         }
-        .frame(minHeight: TimelineDesign.dateBadgeSize + TimelineDesign.dateBadgeTopPadding * 2)
+        .frame(minHeight: badgeSize + TimelineDesign.dateBadgeTopPadding * 2)
         .accessibilityHidden(true)
     }
 

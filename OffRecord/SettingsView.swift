@@ -640,6 +640,7 @@ struct SettingsView: View {
                 .accessibilityIdentifier("semanticMemory.delete")
                 .disabled(semanticMemory.isBuilding || semanticMemory.chunkCount == 0)
             }
+            .accessibilityElement(children: .contain)
             .accessibilityIdentifier("semanticMemory.section")
         }
     }
