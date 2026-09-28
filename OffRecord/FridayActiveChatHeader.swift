@@ -17,7 +17,7 @@ struct FridayActiveChatHeader: View {
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: OffRecordSpacing.xxs) {
-                Text("Friday")
+                Text("Friday", comment: "Name of the in-app assistant")
                     .font(OffRecordTypography.titleSmall)
                     .foregroundStyle(OffRecordColor.textHeading)
                     .accessibilityAddTraits(.isHeader)

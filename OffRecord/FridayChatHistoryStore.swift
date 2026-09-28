@@ -207,8 +207,8 @@ enum FridayChatHistoryStore {
         var limitations = stored.limitations
         if droppedAny {
             let note = evidence.isEmpty
-                ? "The entries behind this answer were deleted."
-                : "Some entries behind this answer were deleted."
+                ? String(localized: "The entries behind this answer were deleted.")
+                : String(localized: "Some entries behind this answer were deleted.")
             limitations = [limitations, note].compactMap { $0 }.joined(separator: " ")
         }
 

@@ -37,7 +37,7 @@ enum PDFPaperSize: String, CaseIterable, Identifiable {
 }
 
 struct PDFExportService {
-    private static let footerText = "Made with OffRecord"
+    private static let footerText = String(localized: "Made with OffRecord", comment: "PDF export page footer")
     private static let margin: CGFloat = 40
     private static let footerHeight: CGFloat = 30
 
@@ -130,7 +130,7 @@ struct PDFExportService {
         dateFormatter.timeStyle = .none
 
         let exportDateFormatter = DateFormatter()
-        exportDateFormatter.dateFormat = "MMMM d, yyyy"
+        exportDateFormatter.setLocalizedDateFormatFromTemplate("MMMMdyyyy")
 
         let data = renderer.pdfData { context in
             // MARK: - Cover Page
@@ -258,7 +258,7 @@ struct PDFExportService {
         var yPosition: CGFloat = pageRect.height * 0.3
 
         // App name / Title
-        let titleText = "Journal"
+        let titleText = String(localized: "Journal", comment: "PDF export cover title, above the period (e.g. 2026)")
         let titleAttrs: [NSAttributedString.Key: Any] = [
             .font: UIFont.systemFont(ofSize: 36, weight: .light),
             .foregroundColor: PDFExportPalette.textSecondary
@@ -333,7 +333,7 @@ struct PDFExportService {
             withAttributes: infoAttrs
         )
 
-        let dateText = "Exported on \(exportDate)"
+        let dateText = String(localized: "Exported on \(exportDate)", comment: "PDF export cover: date the PDF was made")
         let dateSize = (dateText as NSString).size(withAttributes: infoAttrs)
         (dateText as NSString).draw(
             at: CGPoint(x: centerX - dateSize.width / 2, y: bottomY + 16),

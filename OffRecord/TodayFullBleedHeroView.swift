@@ -96,7 +96,7 @@ struct TodayFullBleedHeroView: View {
             : AnyLayout(HStackLayout(alignment: .center, spacing: OffRecordSpacing.sm))
         return layout {
             TodayHeroMetadataChip(
-                title: "\(entriesThisYear) this year",
+                title: String(localized: "\(entriesThisYear) this year"),
                 systemImage: "calendar"
             )
             .accessibilityIdentifier("homeHero.entriesThisYear")
@@ -114,7 +114,7 @@ struct TodayFullBleedHeroView: View {
 
             Button(action: onPrivacy) {
                 TodayHeroMetadataChip(
-                    title: "Privacy",
+                    title: String(localized: "Privacy"),
                     systemImage: "lock.shield.fill",
                     iconOnly: true
                 )
@@ -190,7 +190,7 @@ struct TodayFullBleedHeroView: View {
 
     private var speakButton: some View {
         Button(action: onSpeak) {
-            Label("Record", systemImage: "mic.fill")
+            Label(String(localized: "Record", comment: "Button that starts a voice recording"), systemImage: "mic.fill")
                 .offRecordPillButton()
         }
         .buttonStyle(.plain)
@@ -200,7 +200,7 @@ struct TodayFullBleedHeroView: View {
 
     private var writeButton: some View {
         Button(action: onWrite) {
-            Label("Write", systemImage: "square.and.pencil")
+            Label(String(localized: "Write", comment: "Button that starts a typed journal entry"), systemImage: "square.and.pencil")
         }
         .buttonStyle(OffRecordSoftButtonStyle(tint: OffRecordColor.textBrand, fill: OffRecordColor.surfacePrimary.opacity(0.88)))
         .accessibilityIdentifier("homeHero.write")

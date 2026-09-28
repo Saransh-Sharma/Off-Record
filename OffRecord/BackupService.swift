@@ -295,6 +295,30 @@ private func backupFormattedFullDate(_ date: Date) -> String {
     return formatter.string(from: date)
 }
 
+/// Human-readable copy for the text and Markdown exports. CSV headers and
+/// backup JSON keys stay in English because they are machine-readable.
+private enum ReadableExportCopy {
+    static var plainTextTitle: String { String(localized: "OFFRECORD JOURNAL", comment: "Plain-text export title, in capitals") }
+    static var markdownTitle: String { String(localized: "OffRecord Journal", comment: "Markdown export title") }
+    static var endOfExport: String { String(localized: "END OF EXPORT", comment: "Plain-text export closing line, in capitals") }
+    static var exported: String { String(localized: "Exported:", comment: "Export header label, followed by the export date") }
+    static var entries: String { String(localized: "Entries:", comment: "Export header label, followed by the number of entries") }
+    static var mood: String { String(localized: "Mood:", comment: "Export label, followed by the entry's mood") }
+    static var starredSuffix: String { " · " + String(localized: "Starred", comment: "Export: marks a starred entry after its date") }
+    static var noText: String { String(localized: "(No text)", comment: "Export placeholder for an entry without text") }
+
+    /// Stored moods are raw values ("happy"); show the localized name.
+    static func moodName(_ rawValue: String) -> String {
+        Mood(rawValue: rawValue)?.displayName ?? rawValue.capitalized
+    }
+
+    static func dayHeadingFormatter() -> DateFormatter {
+        let formatter = DateFormatter()
+        formatter.setLocalizedDateFormatFromTemplate("EEEEMMMMd")
+        return formatter
+    }
+}
+
 // MARK: - Backup Service
 
 @MainActor
@@ -348,11 +372,11 @@ final class BackupService {
     nonisolated static func writeTextExport(entries: [ExportableEntry]) throws -> URL {
         var textContent = """
         ═══════════════════════════════════════════════════════════════
-                                OFFRECORD JOURNAL
+                                \(ReadableExportCopy.plainTextTitle)
         ═══════════════════════════════════════════════════════════════
 
-        Exported: \(backupFormattedFullDate(Date()))
-        Entries: \(entries.count)
+        \(ReadableExportCopy.exported) \(backupFormattedFullDate(Date()))
+        \(ReadableExportCopy.entries) \(entries.count)
 
         ═══════════════════════════════════════════════════════════════
 
@@ -364,21 +388,21 @@ final class BackupService {
         dateFormatter.timeStyle = .short
 
         for entry in sortedEntries {
-            let starred = entry.isStarred ? " · Starred" : ""
+            let starred = entry.isStarred ? ReadableExportCopy.starredSuffix : ""
             textContent += """
             ───────────────────────────────────────────────────────────────
             \(dateFormatter.string(from: entry.date))\(starred)
             """
 
             if let mood = entry.mood, !mood.isEmpty {
-                textContent += "\nMood: \(mood.capitalized)"
+                textContent += "\n\(ReadableExportCopy.mood) \(ReadableExportCopy.moodName(mood))"
             }
 
             textContent += """
 
             ───────────────────────────────────────────────────────────────
 
-            \(entry.text.isEmpty ? "(No text)" : entry.text)
+            \(entry.text.isEmpty ? ReadableExportCopy.noText : entry.text)
 
 
             """
@@ -386,7 +410,7 @@ final class BackupService {
 
         textContent += """
         ═══════════════════════════════════════════════════════════════
-                              END OF EXPORT
+                              \(ReadableExportCopy.endOfExport)
         ═══════════════════════════════════════════════════════════════
         """
 
@@ -398,10 +422,10 @@ final class BackupService {
 
     nonisolated static func writeMarkdownExport(entries: [ExportableEntry]) throws -> URL {
         var mdContent = """
-        # OffRecord Journal
+        # \(ReadableExportCopy.markdownTitle)
 
-        **Exported:** \(backupFormattedFullDate(Date()))
-        **Entries:** \(entries.count)
+        **\(ReadableExportCopy.exported)** \(backupFormattedFullDate(Date()))
+        **\(ReadableExportCopy.entries)** \(entries.count)
 
         ---
 
@@ -425,14 +449,13 @@ final class BackupService {
         for month in sortedMonths {
             mdContent += "## \(month)\n\n"
             for entry in groupedByMonth[month] ?? [] {
-                let dayFormatter = DateFormatter()
-                dayFormatter.dateFormat = "EEEE, MMMM d"
-                let starred = entry.isStarred ? " · Starred" : ""
+                let dayFormatter = ReadableExportCopy.dayHeadingFormatter()
+                let starred = entry.isStarred ? ReadableExportCopy.starredSuffix : ""
                 mdContent += "### \(dayFormatter.string(from: entry.date))\(starred)\n\n"
                 if let mood = entry.mood, !mood.isEmpty {
-                    mdContent += "**Mood:** \(mood.capitalized)\n\n"
+                    mdContent += "**\(ReadableExportCopy.mood)** \(ReadableExportCopy.moodName(mood))\n\n"
                 }
-                mdContent += "\(entry.text.isEmpty ? "(No text)" : entry.text)\n\n---\n\n"
+                mdContent += "\(entry.text.isEmpty ? ReadableExportCopy.noText : entry.text)\n\n---\n\n"
             }
         }
 
@@ -542,11 +565,11 @@ final class BackupService {
     func exportToText(entries: [DiaryEntry]) throws -> URL {
         var textContent = """
         ═══════════════════════════════════════════════════════════════
-                                OFFRECORD JOURNAL
+                                \(ReadableExportCopy.plainTextTitle)
         ═══════════════════════════════════════════════════════════════
         
-        Exported: \(formattedFullDate(Date()))
-        Entries: \(entries.count)
+        \(ReadableExportCopy.exported) \(formattedFullDate(Date()))
+        \(ReadableExportCopy.entries) \(entries.count)
         
         ═══════════════════════════════════════════════════════════════
         
@@ -559,9 +582,9 @@ final class BackupService {
         
         for entry in sortedEntries {
             let date = entry.date ?? Date()
-            let text = entry.text ?? "(No text)"
+            let text = entry.text ?? ReadableExportCopy.noText
             let mood = entry.value(forKey: "mood") as? String ?? ""
-            let starred = entry.isStarred ? " · Starred" : ""
+            let starred = entry.isStarred ? ReadableExportCopy.starredSuffix : ""
             
             textContent += """
             ───────────────────────────────────────────────────────────────
@@ -569,7 +592,7 @@ final class BackupService {
             """
             
             if !mood.isEmpty {
-                textContent += "\nMood: \(mood.capitalized)"
+                textContent += "\n\(ReadableExportCopy.mood) \(ReadableExportCopy.moodName(mood))"
             }
             
             textContent += """
@@ -584,7 +607,7 @@ final class BackupService {
         
         textContent += """
         ═══════════════════════════════════════════════════════════════
-                              END OF EXPORT
+                              \(ReadableExportCopy.endOfExport)
         ═══════════════════════════════════════════════════════════════
         """
         
@@ -621,10 +644,10 @@ final class BackupService {
     /// Export entries to Markdown format
     func exportToMarkdown(entries: [DiaryEntry]) throws -> URL {
         var mdContent = """
-        # OffRecord Journal
+        # \(ReadableExportCopy.markdownTitle)
         
-        **Exported:** \(formattedFullDate(Date()))  
-        **Entries:** \(entries.count)
+        **\(ReadableExportCopy.exported)** \(formattedFullDate(Date()))  
+        **\(ReadableExportCopy.entries)** \(entries.count)
         
         ---
         
@@ -655,17 +678,16 @@ final class BackupService {
             if let monthEntries = groupedByMonth[month] {
                 for entry in monthEntries {
                     let date = entry.date ?? Date()
-                    let text = entry.text ?? "(No text)"
+                    let text = entry.text ?? ReadableExportCopy.noText
                     let mood = entry.value(forKey: "mood") as? String ?? ""
-                    let starred = entry.isStarred ? " · Starred" : ""
+                    let starred = entry.isStarred ? ReadableExportCopy.starredSuffix : ""
                     
-                    let dayFormatter = DateFormatter()
-                    dayFormatter.dateFormat = "EEEE, MMMM d"
+                    let dayFormatter = ReadableExportCopy.dayHeadingFormatter()
                     
                     mdContent += "### \(dayFormatter.string(from: date))\(starred)\n\n"
                     
                     if !mood.isEmpty {
-                        mdContent += "**Mood:** \(mood.capitalized)\n\n"
+                        mdContent += "**\(ReadableExportCopy.mood)** \(ReadableExportCopy.moodName(mood))\n\n"
                     }
                     
                     mdContent += "\(text)\n\n---\n\n"
@@ -881,12 +903,12 @@ enum ExportFormat: String, CaseIterable, Identifiable {
     /// The name shown in the export picker.
     var title: String {
         switch self {
-        case .json: return "Backup (JSON)"
-        case .text: return "Plain Text"
-        case .markdown: return "Markdown"
-        case .csv: return "CSV"
-        case .pdf: return "PDF"
-        case .encryptedBackup: return "Encrypted Backup"
+        case .json: return String(localized: "Backup (JSON)")
+        case .text: return String(localized: "Plain Text")
+        case .markdown: return String(localized: "Markdown")
+        case .csv: return String(localized: "CSV")
+        case .pdf: return String(localized: "PDF")
+        case .encryptedBackup: return String(localized: "Encrypted Backup")
         }
     }
 
@@ -914,12 +936,12 @@ enum ExportFormat: String, CaseIterable, Identifiable {
 
     var description: String {
         switch self {
-        case .json: return "Can be restored in OffRecord."
-        case .text: return "Readable anywhere."
-        case .markdown: return "For notes apps."
-        case .csv: return "For spreadsheets."
-        case .pdf: return "For reading and printing."
-        case .encryptedBackup: return "Password-protected. Can be restored in OffRecord."
+        case .json: return String(localized: "Can be restored in OffRecord.")
+        case .text: return String(localized: "Readable anywhere.")
+        case .markdown: return String(localized: "For notes apps.")
+        case .csv: return String(localized: "For spreadsheets.")
+        case .pdf: return String(localized: "For reading and printing.")
+        case .encryptedBackup: return String(localized: "Password-protected. Can be restored in OffRecord.")
         }
     }
 }

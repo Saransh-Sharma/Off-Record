@@ -117,13 +117,13 @@ enum WeeklyReflectionGenerationService {
                 unavailableEntryIds: unavailable,
                 previousVersion: previousVersion,
                 now: now,
-                heroSentence: "Nothing to look back on yet.",
-                summary: "Write a few entries this week and I’ll put a reflection together.",
+                heroSentence: String(localized: "Nothing to look back on yet."),
+                summary: String(localized: "Write a few entries this week and I’ll put a reflection together."),
                 emotionalArc: nil,
                 themes: [],
                 wins: [],
                 frictions: [],
-                questions: ["What’s one small moment worth writing down this week?"],
+                questions: [String(localized: "What’s one small moment worth writing down this week?")],
                 safetyLevel: .none
             )
         }
@@ -139,13 +139,13 @@ enum WeeklyReflectionGenerationService {
                 unavailableEntryIds: unavailable,
                 previousVersion: previousVersion,
                 now: now,
-                heroSentence: "This was a heavy week.",
-                summary: "Some entries this week were heavier than usual, so I’ve kept this short and didn’t quote them.",
+                heroSentence: String(localized: "This was a heavy week."),
+                summary: String(localized: "Some entries this week were heavier than usual, so I’ve kept this short and didn’t quote them."),
                 emotionalArc: nil,
                 themes: [],
-                wins: ["You kept writing through a hard week."],
-                frictions: ["I left the heaviest entries out of this reflection."],
-                questions: ["Who could you lean on this week?", "What’s one small thing that would make next week easier?"],
+                wins: [String(localized: "You kept writing through a hard week.")],
+                frictions: [String(localized: "I left the heaviest entries out of this reflection.")],
+                questions: [String(localized: "Who could you lean on this week?"), String(localized: "What’s one small thing that would make next week easier?")],
                 safetyLevel: safetyLevel
             )
         }
@@ -161,21 +161,21 @@ enum WeeklyReflectionGenerationService {
             String(AttributedString(localized: "You wrote on ^[\(entryDays) day](inflect: true).").characters)
         ]
         if insightEntries.contains(where: { $0.sentiment > 0.25 }) {
-            wins.append("Some entries were upbeat or grateful.")
+            wins.append(String(localized: "Some entries were upbeat or grateful."))
         }
         wins = Array(wins.prefix(eligibility.kind == .full ? 3 : 1))
 
         var frictions: [String] = []
         if safetyLevel == .highRiskExcluded {
-            frictions.append("Some entries were heavier than usual.")
+            frictions.append(String(localized: "Some entries were heavier than usual."))
         } else if insightEntries.contains(where: { $0.sentiment < -0.2 }) {
-            frictions.append("Parts of the week were heavier.")
+            frictions.append(String(localized: "Parts of the week were heavier."))
         }
         if let firstTopic = topics.first {
-            frictions.append("\(firstTopic.capitalized) came up more than once.")
+            frictions.append(String(localized: "\(firstTopic.capitalized) came up more than once."))
         }
         if frictions.isEmpty {
-            frictions.append("Nothing stood out as hard this week.")
+            frictions.append(String(localized: "Nothing stood out as hard this week."))
         }
         frictions = Array(frictions.prefix(eligibility.kind == .full ? 3 : 1))
 
@@ -279,8 +279,8 @@ enum WeeklyReflectionGenerationService {
             unavailableEntryIds: [],
             privateEntryCount: 0,
             inputSignature: "failed-\(now.timeIntervalSince1970)",
-            heroSentence: "I couldn’t put this week together.",
-            summary: "Your entries are fine. Try again in a bit.",
+            heroSentence: String(localized: "I couldn’t put this week together."),
+            summary: String(localized: "Your entries are fine. Try again in a bit."),
             emotionalArc: nil,
             themes: [],
             wins: [],
@@ -308,21 +308,21 @@ enum WeeklyReflectionGenerationService {
         safetyLevel: WeeklyReflectionSafetyLevel
     ) -> String {
         if safetyLevel == .highRiskExcluded {
-            return "This was a heavy week."
+            return String(localized: "This was a heavy week.")
         }
         if kind == .light {
-            return "A short look back at your week."
+            return String(localized: "A short look back at your week.")
         }
         if let first = topics.first, let arc {
             let direction: String
             switch arc.label {
-            case ArcLabel.lighter: direction = "it got lighter as it went"
-            case ArcLabel.heavier: direction = "it got heavier as it went"
-            default: direction = "it stayed steady"
+            case ArcLabel.lighter: direction = String(localized: "it got lighter as it went")
+            case ArcLabel.heavier: direction = String(localized: "it got heavier as it went")
+            default: direction = String(localized: "it stayed steady")
             }
-            return "This week was mostly about \(first), and \(direction)."
+            return String(localized: "This week was mostly about \(first), and \(direction).")
         }
-        return "A few things stood out this week."
+        return String(localized: "A few things stood out this week.")
     }
 
     private static func summaryText(
@@ -334,19 +334,20 @@ enum WeeklyReflectionGenerationService {
     ) -> String {
         var parts: [String] = []
         if !topics.isEmpty {
-            parts.append("You wrote most about \(Array(topics.prefix(3)).formatted(.list(type: .and))).")
+            parts.append(String(localized: "You wrote most about \(Array(topics.prefix(3)).formatted(.list(type: .and)))."))
         }
         parts.append(String(AttributedString(localized: "^[\(eligibility.entryCount) entry](inflect: true), about \(eligibility.wordCount) words.").characters))
         if let arc {
             parts.append(arc.description)
         }
         if safetyLevel == .highRiskExcluded {
-            parts.append("Some entries were heavy, so I’ve kept this brief.")
+            parts.append(String(localized: "Some entries were heavy, so I’ve kept this brief."))
         }
         return parts.joined(separator: " ")
     }
 
-    private enum ArcLabel {
+    /// Stored English identifiers; `WeeklyReflectionEmotionalArc.localizedLabel` is the display form.
+    fileprivate enum ArcLabel {
         static let lighter = "Got Lighter"
         static let heavier = "Got Heavier"
         static let steady = "Steady"
@@ -361,19 +362,19 @@ enum WeeklyReflectionGenerationService {
         let description: String
         if second > first + 0.15 {
             label = ArcLabel.lighter
-            description = "Your entries got lighter toward the end of the week."
+            description = String(localized: "Your entries got lighter toward the end of the week.")
         } else if second < first - 0.15 {
             label = ArcLabel.heavier
-            description = "Your entries got heavier toward the end of the week."
+            description = String(localized: "Your entries got heavier toward the end of the week.")
         } else {
             label = ArcLabel.steady
-            description = "Your mood stayed about the same all week."
+            description = String(localized: "Your mood stayed about the same all week.")
         }
         return WeeklyReflectionEmotionalArc(label: label, description: description)
     }
 
     private static func makeThemes(topics: [String], entries: [WeeklyReflectionEntrySnapshot], limit: Int) -> [WeeklyReflectionTheme] {
-        let selected = topics.isEmpty ? ["Writing habit"] : Array(topics.prefix(limit))
+        let selected = topics.isEmpty ? [String(localized: "Writing habit")] : Array(topics.prefix(limit))
         return selected.map { topic in
             let matches = entries.filter { $0.text.localizedCaseInsensitiveContains(topic) }
             let evidenceEntries = (matches.isEmpty ? entries : matches).prefix(3)
@@ -384,7 +385,7 @@ enum WeeklyReflectionGenerationService {
                     entryDate: entry.date,
                     sourceType: entry.sourceType,
                     quote: ProactiveReflectionAnalyzer.snippet(entry.text),
-                    reason: "Mentions this."
+                    reason: String(localized: "Mentions this.", comment: "Why an entry is cited as evidence for a weekly reflection theme")
                 )
             }
             return WeeklyReflectionTheme(
@@ -398,11 +399,11 @@ enum WeeklyReflectionGenerationService {
 
     private static func makeQuestions(topics: [String], eligibility: WeeklyReflectionEligibilityKind) -> [String] {
         var questions = [
-            "What would make next week feel 10% lighter?",
-            "Where did you feel most like yourself this week?"
+            String(localized: "What would make next week feel 10% lighter?"),
+            String(localized: "Where did you feel most like yourself this week?")
         ]
         if let topic = topics.first {
-            questions.insert("What do you want to remember about \(topic)?", at: 0)
+            questions.insert(String(localized: "What do you want to remember about \(topic)?"), at: 0)
         }
         return Array(questions.prefix(eligibility == .full ? 3 : 2))
     }
@@ -434,6 +435,22 @@ enum WeeklyReflectionGenerationService {
         }
         .prefix(limit)
         .map(\.key)
+    }
+}
+
+extension WeeklyReflectionEmotionalArc {
+    /// `label` is persisted in English (see `ArcLabel`); show this instead.
+    var localizedLabel: String {
+        switch label {
+        case WeeklyReflectionGenerationService.ArcLabel.lighter:
+            return String(localized: "Got Lighter", comment: "Weekly mood arc: entries got lighter over the week")
+        case WeeklyReflectionGenerationService.ArcLabel.heavier:
+            return String(localized: "Got Heavier", comment: "Weekly mood arc: entries got heavier over the week")
+        case WeeklyReflectionGenerationService.ArcLabel.steady:
+            return String(localized: "Steady", comment: "Weekly mood arc: mood stayed about the same")
+        default:
+            return label
+        }
     }
 }
 
@@ -487,8 +504,8 @@ enum WeeklyReflectionNotificationScheduler {
 
     static func makeRequest(settings: WeeklyReflectionSettings, now: Date = Date(), calendar: Calendar = .current) -> UNNotificationRequest {
         let content = UNMutableNotificationContent()
-        content.title = "Weekly Reflection"
-        content.body = "Your week is ready to look back on."
+        content.title = String(localized: "Weekly Reflection")
+        content.body = String(localized: "Your week is ready to look back on.")
         content.sound = .default
         content.categoryIdentifier = "WEEKLY_REFLECTION_READY"
         if let url = OffRecordNavigationRouter.url(for: .weeklyReflectionCurrent) {
@@ -544,6 +561,13 @@ enum WeeklyReflectionExportService {
         case plainText = "Plain Text"
 
         var id: String { rawValue }
+
+        var displayName: String {
+            switch self {
+            case .markdown: return String(localized: "Markdown")
+            case .plainText: return String(localized: "Plain Text")
+            }
+        }
     }
 
     static func export(report: WeeklyReflectionReport, format: Format, includeQuotes: Bool) throws -> URL {
@@ -558,13 +582,13 @@ enum WeeklyReflectionExportService {
 
     static func markdown(report: WeeklyReflectionReport, includeQuotes: Bool) -> String {
         var lines: [String] = [
-            "# Weekly Reflection",
+            "# " + String(localized: "Weekly Reflection"),
             "",
             "\(dateRange(report))",
             "",
             report.heroSentence,
             "",
-            "## Summary",
+            "## " + String(localized: "Summary", comment: "Export heading for the weekly reflection summary"),
             report.summary,
             ""
         ]
@@ -574,12 +598,12 @@ enum WeeklyReflectionExportService {
 
     static func plainText(report: WeeklyReflectionReport, includeQuotes: Bool) -> String {
         var lines: [String] = [
-            "Weekly Reflection",
+            String(localized: "Weekly Reflection"),
             dateRange(report),
             "",
             report.heroSentence,
             "",
-            "Summary",
+            String(localized: "Summary", comment: "Export heading for the weekly reflection summary"),
             report.summary,
             ""
         ]
@@ -590,10 +614,10 @@ enum WeeklyReflectionExportService {
     private static func appendSections(to lines: inout [String], report: WeeklyReflectionReport, includeQuotes: Bool, markdown: Bool) {
         let header = { (text: String) -> String in markdown ? "## \(text)" : text }
         if let arc = report.emotionalArc {
-            lines += [header("Mood"), "\(arc.label): \(arc.description)", ""]
+            lines += [header(String(localized: "Mood", comment: "Export heading for the weekly mood arc")), "\(arc.localizedLabel): \(arc.description)", ""]
         }
         if !report.themes.isEmpty {
-            lines.append(header("Themes"))
+            lines.append(header(String(localized: "Themes", comment: "Export heading for weekly reflection themes")))
             for theme in report.themes {
                 lines.append(markdown ? "- **\(theme.title):** \(theme.summary)" : "- \(theme.title): \(theme.summary)")
                 if includeQuotes {
@@ -605,21 +629,21 @@ enum WeeklyReflectionExportService {
             lines.append("")
         }
         if !report.wins.isEmpty {
-            lines += [header("Wins")]
+            lines += [header(String(localized: "Wins", comment: "Export heading: things that went well this week"))]
             lines += report.wins.map { "- \($0)" }
             lines.append("")
         }
         if !report.frictions.isEmpty {
-            lines += [header("What Was Hard")]
+            lines += [header(String(localized: "What Was Hard"))]
             lines += report.frictions.map { "- \($0)" }
             lines.append("")
         }
         if !report.questions.isEmpty {
-            lines += [header("Questions for Next Week")]
+            lines += [header(String(localized: "Questions for Next Week"))]
             lines += report.questions.map { "- \($0)" }
             lines.append("")
         }
-        lines.append("Made by OffRecord on your device. Not medical advice.")  // copy-lint:ignore (export is an allowed privacy place)
+        lines.append(String(localized: "Made by OffRecord on your device. Not medical advice."))  // copy-lint:ignore (export is an allowed privacy place)
     }
 
     private static func dateRange(_ report: WeeklyReflectionReport) -> String {

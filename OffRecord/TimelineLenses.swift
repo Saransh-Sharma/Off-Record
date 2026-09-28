@@ -19,9 +19,9 @@ enum TimelineLens: String, CaseIterable, Identifiable {
     /// The segment label. The raw value stays fixed because it is the identity.
     var displayName: String {
         switch self {
-        case .list: return "List"
-        case .calendar: return "Calendar"
-        case .media: return "Photos"
+        case .list: return String(localized: "List", comment: "Timeline view option: entries as a list.")
+        case .calendar: return String(localized: "Calendar", comment: "Timeline view option: entries on a mood calendar.")
+        case .media: return String(localized: "Photos", comment: "Timeline view option: a grid of every photo.")
         }
     }
 
@@ -44,6 +44,13 @@ struct TimelineCalendarView: View {
         case month = "Month"
         case year = "Year"
         var id: String { rawValue }
+
+        var displayName: String {
+            switch self {
+            case .month: return String(localized: "Month", comment: "Calendar scale showing one month")
+            case .year: return String(localized: "Year", comment: "Calendar scale showing the whole year")
+            }
+        }
     }
 
     @State private var displayedMonth = Calendar.current.dateInterval(of: .month, for: Date())?.start ?? Date()
@@ -132,7 +139,7 @@ struct TimelineCalendarView: View {
 
             Picker("Calendar Scale", selection: $scale) {
                 ForEach(Scale.allCases) { scale in
-                    Text(scale.rawValue).tag(scale)
+                    Text(scale.displayName).tag(scale)
                 }
             }
             .pickerStyle(.segmented)
@@ -238,7 +245,7 @@ struct TimelineCalendarView: View {
                     .aspectRatio(1, contentMode: .fit)
                     .frame(maxWidth: .infinity)
                     .overlay {
-                        Text("\(calendar.component(.day, from: day))")
+                        Text(day.formatted(.dateTime.day()))
                             .font(OffRecordTypography.labelSmall)
                             .foregroundStyle(entry == nil ? OffRecordColor.textTertiary : Color(hex: 0x241730))
                             .minimumScaleFactor(0.6)
@@ -264,8 +271,10 @@ struct TimelineCalendarView: View {
 
     private func dayAccessibilityLabel(_ day: Date, entry: DiaryEntry?, mood: Mood) -> String {
         let date = day.formatted(.dateTime.weekday(.wide).month(.wide).day())
-        guard entry != nil else { return "\(date), no entry" }
-        return mood == .none ? "\(date), entry" : "\(date), \(mood.displayName) entry"
+        guard entry != nil else { return String(localized: "\(date), no entry", comment: "VoiceOver label for a calendar day with no entry. The argument is the date.") }
+        return mood == .none
+            ? String(localized: "\(date), entry", comment: "VoiceOver label for a calendar day with an entry. The argument is the date.")
+            : String(localized: "\(date), \(mood.displayName) entry", comment: "VoiceOver label for a calendar day with an entry. The arguments are the date and the mood.")
     }
 
     private var yearGrid: some View {
@@ -306,7 +315,7 @@ struct TimelineCalendarView: View {
         let common = Dictionary(grouping: moods, by: { $0 }).max { $0.value.count < $1.value.count }?.key
         let period = scale == .month ? displayedMonth.formatted(.dateTime.month(.wide)) : displayedMonth.formatted(.dateTime.year())
         var text = String(AttributedString(localized: "^[\(inRange.count) day](inflect: true) in \(period)").characters)
-        if let common { text += " · mostly \(common.displayName.lowercased())" }
+        if let common { text = String(localized: "\(text) · mostly \(common.displayName.lowercased())", comment: "Calendar summary. The first argument is like “12 days in September”; the second is the most common mood.") }
         return Text(text)
             .font(OffRecordTypography.metadata)
             .foregroundStyle(OffRecordColor.textSecondary)
@@ -338,8 +347,8 @@ struct TimelineMediaGrid: View {
         if items.isEmpty {
             TimelineLensEmptyState(
                 systemImage: "photo.on.rectangle.angled",
-                title: "No Photos",
-                message: "Photos you add to entries show up here."
+                title: String(localized: "No Photos"),
+                message: String(localized: "Photos you add to entries show up here.")
             )
         } else {
             LazyVGrid(columns: [GridItem(.adaptive(minimum: 104), spacing: 4)], spacing: 4) {

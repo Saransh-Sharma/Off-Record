@@ -110,7 +110,7 @@ final class AudioRecorder: NSObject, ObservableObject {
         observeInterruptions()
         startMeterTimer()
         #else
-        throw NSError(domain: "AudioRecorder", code: -1, userInfo: [NSLocalizedDescriptionKey: "Recording needs iOS."])
+        throw NSError(domain: "AudioRecorder", code: -1, userInfo: [NSLocalizedDescriptionKey: String(localized: "Recording needs iOS.")])
         #endif
     }
 
@@ -198,7 +198,7 @@ final class AudioRecorder: NSObject, ObservableObject {
         let input = engine.inputNode
         let inputFormat = input.outputFormat(forBus: 0)
         guard inputFormat.sampleRate > 0, inputFormat.channelCount > 0 else {
-            throw NSError(domain: "AudioRecorder", code: -2, userInfo: [NSLocalizedDescriptionKey: "No microphone found."])
+            throw NSError(domain: "AudioRecorder", code: -2, userInfo: [NSLocalizedDescriptionKey: String(localized: "No microphone found.")])
         }
 
         let fileSettings: [String: Any] = [
@@ -322,7 +322,7 @@ final class AudioRecorder: NSObject, ObservableObject {
         recorder.isMeteringEnabled = true
         recorder.delegate = self
         guard recorder.record() else {
-            throw NSError(domain: "AudioRecorder", code: -3, userInfo: [NSLocalizedDescriptionKey: "Recording couldn’t start."])
+            throw NSError(domain: "AudioRecorder", code: -3, userInfo: [NSLocalizedDescriptionKey: String(localized: "Recording couldn’t start.")])
         }
         fallbackRecorder = recorder
     }
@@ -435,7 +435,7 @@ final class AudioRecorder: NSObject, ObservableObject {
     private static func recordingsDirectory() throws -> URL {
         let fileManager = FileManager.default
         guard let base = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
-            throw NSError(domain: "AudioRecorder", code: -1, userInfo: [NSLocalizedDescriptionKey: "Couldn’t access storage."])
+            throw NSError(domain: "AudioRecorder", code: -1, userInfo: [NSLocalizedDescriptionKey: String(localized: "Couldn’t access storage.")])
         }
         let directory = base.appendingPathComponent("Recordings", isDirectory: true)
         if !fileManager.fileExists(atPath: directory.path) {

@@ -53,7 +53,7 @@ final class HealthStateOfMindWriter: ObservableObject {
             return false
         }
         guard isAvailable else {
-            lastError = "Apple Health isn’t available on this \(DeviceNoun.current)."
+            lastError = String(localized: "Apple Health isn’t available on this \(DeviceNoun.current).")
             return false
         }
         do {
@@ -61,11 +61,11 @@ final class HealthStateOfMindWriter: ObservableObject {
             let authorized = store.authorizationStatus(for: HKSampleType.stateOfMindType()) == .sharingAuthorized
             isEnabled = authorized
             defaults.set(authorized, forKey: Self.enabledKey)
-            lastError = authorized ? nil : "Allow OffRecord in the Health app to turn this on."
+            lastError = authorized ? nil : String(localized: "Allow OffRecord in the Health app to turn this on.")
             return authorized
         } catch {
             healthLogger.error("Health authorization failed: \(error.localizedDescription, privacy: .public)")
-            lastError = "Couldn’t ask for Health access. Try again."
+            lastError = String(localized: "Couldn’t ask for Health access. Try again.")
             isEnabled = false
             defaults.set(false, forKey: Self.enabledKey)
             return false

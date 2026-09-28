@@ -100,10 +100,10 @@ struct TodayView: View {
     private var greeting: String {
         let baseGreeting: String
         switch DayPart.current() {
-        case .morning: baseGreeting = "Good morning"
-        case .afternoon: baseGreeting = "Good afternoon"
-        case .evening: baseGreeting = "Good evening"
-        case .night: baseGreeting = "Good night"
+        case .morning: baseGreeting = String(localized: "Good morning")
+        case .afternoon: baseGreeting = String(localized: "Good afternoon")
+        case .evening: baseGreeting = String(localized: "Good evening")
+        case .night: baseGreeting = String(localized: "Good night")
         }
         return Personalization.appendFirstName(to: baseGreeting, name: authorName)
     }
@@ -366,7 +366,7 @@ struct TodayView: View {
         todayActivity?.resignCurrent()
         todayActivity = JournalSpotlightIndexer.shared.predictionActivity(
             type: "com.singularity.offrecord.today",
-            title: "Write in OffRecord",
+            title: String(localized: "Write in OffRecord"),
             route: .today
         )
         todayActivity?.becomeCurrent()
@@ -425,13 +425,13 @@ private struct TodayFirstEntryCard: View {
             }
             HStack(spacing: OffRecordSpacing.md) {
                 Button(action: onSpeak) {
-                    Label("Record", systemImage: "mic.fill")
+                    Label(String(localized: "Record", comment: "Button that starts a voice recording"), systemImage: "mic.fill")
                         .frame(maxWidth: .infinity)
                         .offRecordPillButton()
                 }
                 .buttonStyle(.plain)
                 Button(action: onWrite) {
-                    Label("Write", systemImage: "square.and.pencil")
+                    Label(String(localized: "Write", comment: "Button that starts a typed journal entry"), systemImage: "square.and.pencil")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(OffRecordSoftButtonStyle())
@@ -520,8 +520,8 @@ struct OnThisDayCard: View {
     private func snippet(for entry: DiaryEntry) -> String {
         let text = entry.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if !text.isEmpty { return text }
-        if entry.hasStartedEntryAudio { return "Recording" }
-        return "Photo"
+        if entry.hasStartedEntryAudio { return String(localized: "Recording", comment: "Stands in for an On This Day entry that has a voice recording but no text") }
+        return String(localized: "Photo", comment: "Stands in for an On This Day entry that has only photos")
     }
 }
 
@@ -538,20 +538,20 @@ struct TodayProgressStrip: View {
 
     private var headline: String {
         if stats.currentStreak >= 2 {
-            return "\(stats.currentStreak)-day streak"
+            return String(localized: "\(stats.currentStreak)-day streak")
         }
         if stats.entryCount > 0 && !hasEntryToday && stats.currentStreak == 0 {
-            return "Welcome back"
+            return String(localized: "Welcome back")
         }
-        return "\(daysThisWeek) of 7 days this week"
+        return String(localized: "\(daysThisWeek) of 7 days this week")
     }
 
     private var subtitle: String {
         if stats.currentStreak >= 2 {
-            return hasEntryToday ? "Today’s entry keeps it going." : "Add today’s entry to keep it going."
+            return hasEntryToday ? String(localized: "Today’s entry keeps it going.") : String(localized: "Add today’s entry to keep it going.")
         }
         if stats.entryCount > 0 && !hasEntryToday && stats.currentStreak == 0 {
-            return "Start with today."
+            return String(localized: "Start with today.")
         }
         return String(AttributedString(localized: "^[\(stats.entriesThisYear) entry](inflect: true) this year").characters)
     }
@@ -621,33 +621,33 @@ struct EntryPrompt: Identifiable, Equatable {
     static let defaultPrompts: [EntryPrompt] = [
         EntryPrompt(
             kind: .dailyReflection,
-            title: "Today",
-            detail: "What’s one moment from today you want to remember?"
+            title: String(localized: "Today", comment: "Title of the daily reflection writing prompt"),
+            detail: String(localized: "What’s one moment from today you want to remember?")
         ),
         EntryPrompt(
             kind: .gratitude,
-            title: "Gratitude",
-            detail: "What are 3 small things you’re grateful for?"
+            title: String(localized: "Gratitude", comment: "Title of a writing prompt"),
+            detail: String(localized: "What are 3 small things you’re grateful for?")
         ),
         EntryPrompt(
             kind: .energyCheck,
-            title: "Body",
-            detail: "How does your body feel right now?"
+            title: String(localized: "Body", comment: "Title of a writing prompt about how your body feels"),
+            detail: String(localized: "How does your body feel right now?")
         ),
         EntryPrompt(
             kind: .lettingGo,
-            title: "Letting Go",
-            detail: "What worry can you put down tonight?"
+            title: String(localized: "Letting Go", comment: "Title of a writing prompt"),
+            detail: String(localized: "What worry can you put down tonight?")
         ),
         EntryPrompt(
             kind: .selfKindness,
-            title: "Kindness",
-            detail: "What would you tell a friend in your place?"
+            title: String(localized: "Kindness", comment: "Title of a writing prompt about self-kindness"),
+            detail: String(localized: "What would you tell a friend in your place?")
         ),
         EntryPrompt(
             kind: .tomorrow,
-            title: "Tomorrow",
-            detail: "What do you want from tomorrow?"
+            title: String(localized: "Tomorrow", comment: "Title of a writing prompt about the next day"),
+            detail: String(localized: "What do you want from tomorrow?")
         )
     ]
 }

@@ -33,31 +33,31 @@ enum EntryFollowUpQuestion {
             .filter { $0.count > 3 }
 
         for person in people {
-            result.append("What do you wish \(person) knew about how this felt?")
-            result.append("What does your time with \(person) tend to bring out in you?")
+            result.append(String(localized: "What do you wish \(person) knew about how this felt?"))
+            result.append(String(localized: "What does your time with \(person) tend to bring out in you?"))
         }
         if let topic = topics.first {
-            result.append("What’s still on your mind about \(topic)?")
-            result.append("If \(topic) went the way you hoped, what would change?")
+            result.append(String(localized: "What’s still on your mind about \(topic)?"))
+            result.append(String(localized: "If \(topic) went the way you hoped, what would change?"))
         }
 
         switch mood {
         case .tired, .sad, .anxious:
-            result.append("What would make tomorrow easier?")
-            result.append("What do you need right now?")
+            result.append(String(localized: "What would make tomorrow easier?"))
+            result.append(String(localized: "What do you need right now?"))
         case .angry:
-            result.append("Is this feeling pointing to a boundary?")
+            result.append(String(localized: "Is this feeling pointing to a boundary?"))
         case .happy, .grateful, .excited:
-            result.append("What made this possible?")
-            result.append("Who would you tell about this?")
+            result.append(String(localized: "What made this possible?"))
+            result.append(String(localized: "Who would you tell about this?"))
         case .calm:
-            result.append("What helped you feel settled today?")
+            result.append(String(localized: "What helped you feel settled today?"))
         case .none:
             break
         }
 
-        result.append("What part of this do you want to understand?")
-        result.append("What would you tell a friend who wrote this?")
+        result.append(String(localized: "What part of this do you want to understand?"))
+        result.append(String(localized: "What would you tell a friend who wrote this?"))
         return result
     }
 }

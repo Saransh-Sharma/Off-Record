@@ -47,11 +47,11 @@ struct MonthSummaryCard: View {
                 .font(OffRecordTypography.bodyMedium)
                 .foregroundStyle(OffRecordColor.textBrand.opacity(0.86))
             HStack(spacing: OffRecordSpacing.lg) {
-                summaryStat(value: "\(totalEntries)", label: totalEntries == 1 ? "Entry" : "Entries")
+                summaryStat(value: "\(totalEntries)", label: totalEntries == 1 ? String(localized: "Entry", comment: "Label under the number of entries this month (singular).") : String(localized: "Entries", comment: "Label under the number of entries this month (plural)."))
                 Rectangle()
                     .fill(OffRecordColor.borderWarm.opacity(0.9))
                     .frame(width: 1, height: 44)
-                summaryStat(value: totalWords.formatted(), label: "Words")
+                summaryStat(value: totalWords.formatted(), label: String(localized: "Words", comment: "Label under the number of words written this month."))
             }
         }
     }

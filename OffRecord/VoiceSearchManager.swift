@@ -147,9 +147,9 @@ private enum VoiceSearchError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .microphonePermissionDenied:
-            return "Turn on microphone access in Settings to search by voice."
+            return String(localized: "Turn on microphone access in Settings to search by voice.")
         case .transcriptionConsentRequired:
-            return "Turn on transcription in Settings to search by voice."
+            return String(localized: "Turn on transcription in Settings to search by voice.")
         }
     }
 }

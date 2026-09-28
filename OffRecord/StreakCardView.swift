@@ -39,7 +39,7 @@ struct StreakCardView: View {
 
     /// Nothing to say while a streak is running; at 0 it invites a first entry.
     private var statusMessage: String? {
-        isActive ? nil : "Write today to start a streak."
+        isActive ? nil : String(localized: "Write today to start a streak.")
     }
 
     private var fireSize: CGFloat {
@@ -51,7 +51,9 @@ struct StreakCardView: View {
     }
 
     private var dayLabel: String {
-        currentStreak == 1 ? "day" : "days"
+        currentStreak == 1
+            ? String(localized: "day", comment: "Unit shown after a streak count of 1")
+            : String(localized: "days", comment: "Unit shown after a streak count other than 1")
     }
 
     private var longestValue: String { Self.inflected("^[\(longestStreak) day](inflect: true)") }
@@ -63,15 +65,15 @@ struct StreakCardView: View {
     }
 
     private var accessibilitySummary: String {
-        var summary = "\(currentStreak) \(dayLabel)."
+        var summary = String(localized: "\(currentStreak) \(dayLabel).", comment: "Streak count and unit, e.g. \"7 days.\"")
         if let statusMessage { summary += " \(statusMessage)" }
-        return summary + " Longest \(longestValue), \(thisMonthValue) this month, \(totalValue) total."
+        return summary + " " + String(localized: "Longest \(longestValue), \(thisMonthValue) this month, \(totalValue) total.")
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: OffRecordSpacing.lg) {
             HStack(alignment: .center, spacing: OffRecordSpacing.md) {
-                Text("Streak")
+                Text("Streak", comment: "Insights card title for the journaling streak")
                     .font(OffRecordTypography.sectionTitle)
                     .foregroundStyle(OffRecordColor.textHeading)
 
@@ -120,23 +122,23 @@ struct StreakCardView: View {
 
             ViewThatFits(in: .horizontal) {
                 HStack(alignment: .top, spacing: OffRecordSpacing.md) {
-                    StreakMetricColumnView(title: "Longest", value: longestValue)
+                    StreakMetricColumnView(title: String(localized: "Longest", comment: "Streak card metric: longest streak"), value: longestValue)
 
                     Divider()
                         .frame(maxHeight: 44)
 
-                    StreakMetricColumnView(title: "This Month", value: thisMonthValue)
+                    StreakMetricColumnView(title: String(localized: "This Month", comment: "Streak card metric: entries this month"), value: thisMonthValue)
 
                     Divider()
                         .frame(maxHeight: 44)
 
-                    StreakMetricColumnView(title: "Total", value: totalValue)
+                    StreakMetricColumnView(title: String(localized: "Total", comment: "Streak card metric: total entries"), value: totalValue)
                 }
 
                 VStack(alignment: .leading, spacing: OffRecordSpacing.sm) {
-                    StreakMetricColumnView(title: "Longest", value: longestValue)
-                    StreakMetricColumnView(title: "This Month", value: thisMonthValue)
-                    StreakMetricColumnView(title: "Total", value: totalValue)
+                    StreakMetricColumnView(title: String(localized: "Longest", comment: "Streak card metric: longest streak"), value: longestValue)
+                    StreakMetricColumnView(title: String(localized: "This Month", comment: "Streak card metric: entries this month"), value: thisMonthValue)
+                    StreakMetricColumnView(title: String(localized: "Total", comment: "Streak card metric: total entries"), value: totalValue)
                 }
             }
         }

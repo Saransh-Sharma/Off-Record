@@ -9,16 +9,19 @@ private let intentLogger = Logger(subsystem: "com.singularity.offrecord", catego
 @available(iOS 17.0, *)
 private struct JournalIntentPersistenceError: LocalizedError {
     let action: String
+    let message: String
     let underlyingError: Error
 
-    init(action: String, underlyingError: Error) {
+    /// `message` is the whole sentence Siri speaks, so it can be translated as one unit.
+    init(action: String, message: String, underlyingError: Error) {
         self.action = action
+        self.message = message
         self.underlyingError = underlyingError
         intentLogger.error("Intent couldn’t \(action, privacy: .public): \(underlyingError.localizedDescription, privacy: .public)")
     }
 
     var errorDescription: String? {
-        "Couldn’t \(action). Try again in OffRecord."
+        message
     }
 }
 
@@ -80,27 +83,27 @@ struct JournalEntryEntity: AppEntity, IndexedEntity {
     }
 
     var title: String {
-        "Journal Entry, \(Self.shortDateFormatter.string(from: date))"
+        String(localized: "Journal Entry, \(Self.shortDateFormatter.string(from: date))")
     }
 
     var subtitle: String {
         var parts: [String] = []
         if let moodName {
-            parts.append("\(moodName) mood")
+            parts.append(String(localized: "\(moodName) mood", comment: "Entry subtitle part, e.g. Happy mood"))
         }
         if wordCount > 0 {
             parts.append(String(AttributedString(localized: "^[\(wordCount) word](inflect: true)").characters))
         }
         if hasAudio {
-            parts.append("recording")
+            parts.append(String(localized: "recording", comment: "Entry subtitle part: the entry has a voice recording"))
         }
         if hasPhotos {
-            parts.append("photos")
+            parts.append(String(localized: "photos", comment: "Entry subtitle part: the entry has photos"))
         }
         if isStarred {
-            parts.append("starred")
+            parts.append(String(localized: "starred", comment: "Entry subtitle part: the entry is starred"))
         }
-        return parts.isEmpty ? "Journal entry" : parts.joined(separator: ", ")
+        return parts.isEmpty ? String(localized: "Journal entry") : parts.formatted(.list(type: .and, width: .narrow))
     }
 
     private var moodName: String? {
@@ -163,7 +166,7 @@ struct WriteJournalEntryIntent: AppIntent {
         do {
             try await DiaryEntryIntentStore.appendToToday(text: trimmed)
         } catch {
-            throw JournalIntentPersistenceError(action: "add to today’s entry", underlyingError: error)
+            throw JournalIntentPersistenceError(action: "add to today’s entry", message: String(localized: "Couldn’t add to today’s entry. Try again in OffRecord."), underlyingError: error)
         }
         return .result(dialog: "Added to today’s entry.")
     }
@@ -240,7 +243,7 @@ struct SetTodayMoodIntent: AppIntent {
         do {
             try await DiaryEntryIntentStore.setTodayMood(mood.mood)
         } catch {
-            throw JournalIntentPersistenceError(action: "save today’s mood", underlyingError: error)
+            throw JournalIntentPersistenceError(action: "save today’s mood", message: String(localized: "Couldn’t save today’s mood. Try again in OffRecord."), underlyingError: error)
         }
         return .result(dialog: "Mood set to \(mood.mood.displayName).")
     }
@@ -266,7 +269,13 @@ struct StarJournalEntryIntent: AppIntent {
         do {
             try await DiaryEntryIntentStore.setStarred(entryID: entry.id, isStarred: state.boolValue)
         } catch {
-            throw JournalIntentPersistenceError(action: state == .starred ? "star the entry" : "unstar the entry", underlyingError: error)
+            throw JournalIntentPersistenceError(
+                action: state == .starred ? "star the entry" : "unstar the entry",
+                message: state == .starred
+                    ? String(localized: "Couldn’t star the entry. Try again in OffRecord.")
+                    : String(localized: "Couldn’t unstar the entry. Try again in OffRecord."),
+                underlyingError: error
+            )
         }
         return .result(dialog: state == .starred ? "Starred." : "Unstarred.")
     }

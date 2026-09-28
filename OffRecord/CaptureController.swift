@@ -61,8 +61,8 @@ struct SavedCapture: Identifiable, Equatable {
 
     var dayLabel: String {
         let calendar = Calendar.current
-        if calendar.isDateInToday(capturedAt) { return "Today" }
-        if calendar.isDateInYesterday(capturedAt) { return "Yesterday" }
+        if calendar.isDateInToday(capturedAt) { return String(localized: "Today", comment: "Day a recording was saved to, as in “Saved to Today”") }
+        if calendar.isDateInYesterday(capturedAt) { return String(localized: "Yesterday") }
         return capturedAt.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())
     }
 }
@@ -79,29 +79,29 @@ enum CaptureAlert: Identifiable, Equatable {
 
     var title: String {
         switch self {
-        case .microphoneDenied: return "Microphone Access Is Off"
-        case .recordingFailed: return "Couldn’t Start Recording"
-        case .saveFailed: return "Recording Not Saved"
-        case .transcriptionFailed: return "No Transcript"
-        case .photoImportFailed: return "Some Photos Weren’t Added"
-        case .entryCreationFailed: return "Couldn’t Open Today’s Entry"
+        case .microphoneDenied: return String(localized: "Microphone Access Is Off")
+        case .recordingFailed: return String(localized: "Couldn’t Start Recording")
+        case .saveFailed: return String(localized: "Recording Not Saved")
+        case .transcriptionFailed: return String(localized: "No Transcript")
+        case .photoImportFailed: return String(localized: "Some Photos Weren’t Added")
+        case .entryCreationFailed: return String(localized: "Couldn’t Open Today’s Entry")
         }
     }
 
     var message: String {
         switch self {
         case .microphoneDenied:
-            return "Turn on microphone access in Settings to record."
+            return String(localized: "Turn on microphone access in Settings to record.")
         case .recordingFailed:
-            return "Another app might be using the microphone."
+            return String(localized: "Another app might be using the microphone.")
         case .saveFailed:
-            return "Try recording again."
+            return String(localized: "Try recording again.")
         case .transcriptionFailed(let reason):
-            return "\(reason) You can still listen or add text."
+            return String(localized: "\(reason) You can still listen or add text.")
         case .photoImportFailed(let failed):
             return String(AttributedString(localized: "^[\(failed) photo](inflect: true) couldn’t be added. Try choosing again.").characters)
         case .entryCreationFailed:
-            return "Try again."
+            return String(localized: "Try again.")
         }
     }
 
@@ -520,12 +520,12 @@ final class CaptureController: ObservableObject {
                     JournalSpotlightIndexer.shared.upsert(entry: entry)
                 } catch {
                     captureLogger.error("Failed to store transcript: \(error.localizedDescription, privacy: .public)")
-                    self.updateSaved(captureID) { $0.transcription = .failed("The transcript couldn’t be added.") }
+                    self.updateSaved(captureID) { $0.transcription = .failed(String(localized: "The transcript couldn’t be added.")) }
                 }
             case .failure(let error):
                 AudioAttachmentStore.markTranscriptionFailed(attachment, error: error)
                 try? context.save()
-                let reason = (error as? TranscriptionError)?.errorDescription ?? "Transcription didn’t finish."
+                let reason = (error as? TranscriptionError)?.errorDescription ?? String(localized: "Transcription didn’t finish.")
                 self.updateSaved(captureID) { $0.transcription = .failed(reason) }
                 // Only interrupt with an alert when the saved card is no longer visible.
                 if self.savedCapture?.id != captureID || !self.isPanelPresented {

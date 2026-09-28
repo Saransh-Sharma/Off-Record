@@ -53,21 +53,21 @@ struct FridaySummary: Codable {
         /// Shown in the UI. Raw values are persisted in the saved summary, so they stay fixed.
         var displayName: String {
             switch self {
-            case .nascent: return "New"
-            case .emerging: return "Learning"
-            case .developing: return "Growing"
-            case .established: return "Solid"
-            case .deep: return "Deep"
+            case .nascent: return String(localized: "New", comment: "How well Friday knows the user: lowest level")
+            case .emerging: return String(localized: "Learning", comment: "How well Friday knows the user: second level")
+            case .developing: return String(localized: "Growing", comment: "How well Friday knows the user: middle level")
+            case .established: return String(localized: "Solid", comment: "How well Friday knows the user: fourth level")
+            case .deep: return String(localized: "Deep", comment: "How well Friday knows the user: highest level")
             }
         }
 
         var description: String {
             switch self {
-            case .nascent: return "I’m just getting to know you."
-            case .emerging: return "I’m starting to see patterns."
-            case .developing: return "I’m getting a clearer picture."
-            case .established: return "I know your patterns well."
-            case .deep: return "I know you well."
+            case .nascent: return String(localized: "I’m just getting to know you.")
+            case .emerging: return String(localized: "I’m starting to see patterns.")
+            case .developing: return String(localized: "I’m getting a clearer picture.")
+            case .established: return String(localized: "I know your patterns well.")
+            case .deep: return String(localized: "I know you well.")
             }
         }
 
@@ -621,30 +621,42 @@ final class FridayAssistantEngine: ObservableObject {
 
         // Personality snapshot
         var traits: [String] = []
-        if communicationStyle.expressiveness > 0.6 { traits.append("expressive") }
-        else if communicationStyle.expressiveness < 0.3 { traits.append("reserved") }
-        if communicationStyle.directness > 0.6 { traits.append("direct") }
-        else if communicationStyle.directness < 0.3 { traits.append("thoughtful") }
-        if communicationStyle.formalityLevel < 0.3 { traits.append("casual") }
-        else if communicationStyle.formalityLevel > 0.7 { traits.append("articulate") }
-        if thoughtPatterns.analyticalScore > 0.6 { traits.append("analytical") }
-        if thoughtPatterns.growthMindsetScore > 0.6 { traits.append("growth-oriented") }
-        if thoughtPatterns.gratitudeTendency > 0.5 { traits.append("grateful") }
+        if communicationStyle.expressiveness > 0.6 { traits.append(String(localized: "expressive", comment: "Personality trait, listed in “You come across as …”")) }
+        else if communicationStyle.expressiveness < 0.3 { traits.append(String(localized: "reserved", comment: "Personality trait, listed in “You come across as …”")) }
+        if communicationStyle.directness > 0.6 { traits.append(String(localized: "direct", comment: "Personality trait, listed in “You come across as …”")) }
+        else if communicationStyle.directness < 0.3 { traits.append(String(localized: "thoughtful", comment: "Personality trait, listed in “You come across as …”")) }
+        if communicationStyle.formalityLevel < 0.3 { traits.append(String(localized: "casual", comment: "Personality trait, listed in “You come across as …”")) }
+        else if communicationStyle.formalityLevel > 0.7 { traits.append(String(localized: "articulate", comment: "Personality trait, listed in “You come across as …”")) }
+        if thoughtPatterns.analyticalScore > 0.6 { traits.append(String(localized: "analytical", comment: "Personality trait, listed in “You come across as …”")) }
+        if thoughtPatterns.growthMindsetScore > 0.6 { traits.append(String(localized: "growth-oriented", comment: "Personality trait, listed in “You come across as …”")) }
+        if thoughtPatterns.gratitudeTendency > 0.5 { traits.append(String(localized: "grateful", comment: "Personality trait, listed in “You come across as …”")) }
 
-        summary.personalitySnapshot = traits.isEmpty ? "Still learning." : "You come across as \(traits.formatted(.list(type: .and)))."
+        summary.personalitySnapshot = traits.isEmpty ? String(localized: "Still learning.") : String(localized: "You come across as \(traits.formatted(.list(type: .and))).")
 
         // Communication snapshot
         if communicationStyle.analysisCount > 3 {
-            let wordStyle = communicationStyle.averageSentenceLength > 15 ? "in detail" : "briefly"
-            let toneStyle = communicationStyle.expressiveness > 0.5 ? "with feeling" : "evenly"
-            summary.communicationSnapshot = "You write \(wordStyle) and \(toneStyle). About \(Int(communicationStyle.averageSentenceLength)) words per sentence."
+            let wordStyle = communicationStyle.averageSentenceLength > 15
+                ? String(localized: "in detail", comment: "Fills “You write … and …”: how much the user writes")
+                : String(localized: "briefly", comment: "Fills “You write … and …”: how much the user writes")
+            let toneStyle = communicationStyle.expressiveness > 0.5
+                ? String(localized: "with feeling", comment: "Fills “You write … and …”: the user's tone")
+                : String(localized: "evenly", comment: "Fills “You write … and …”: the user's tone")
+            summary.communicationSnapshot = String(localized: "You write \(wordStyle) and \(toneStyle). About \(Int(communicationStyle.averageSentenceLength)) words per sentence.")
         }
 
         // Emotional snapshot
         if emotionalSignature.analysisCount > 3 {
-            let valenceLabel = emotionalSignature.baselineValence > 0.1 ? "mostly positive" : (emotionalSignature.baselineValence < -0.1 ? "mostly low" : "mixed")
-            let trendLabel = emotionalSignature.sentimentTrend > 0.05 ? "improving" : (emotionalSignature.sentimentTrend < -0.05 ? "dipping" : "holding steady")
-            summary.emotionalSnapshot = "Your mood is \(valenceLabel) and \(trendLabel)."
+            let valenceLabel = emotionalSignature.baselineValence > 0.1
+                ? String(localized: "mostly positive", comment: "Fills “Your mood is … and …”: overall mood")
+                : (emotionalSignature.baselineValence < -0.1
+                    ? String(localized: "mostly low", comment: "Fills “Your mood is … and …”: overall mood")
+                    : String(localized: "mixed", comment: "Fills “Your mood is … and …”: overall mood"))
+            let trendLabel = emotionalSignature.sentimentTrend > 0.05
+                ? String(localized: "improving", comment: "Fills “Your mood is … and …”: mood trend")
+                : (emotionalSignature.sentimentTrend < -0.05
+                    ? String(localized: "dipping", comment: "Fills “Your mood is … and …”: mood trend")
+                    : String(localized: "holding steady", comment: "Fills “Your mood is … and …”: mood trend"))
+            summary.emotionalSnapshot = String(localized: "Your mood is \(valenceLabel) and \(trendLabel).")
         }
 
         // Life snapshot
@@ -652,16 +664,18 @@ final class FridayAssistantEngine: ObservableObject {
         let topTopics = knowledgeGraph.topNodes(ofType: .topic, limit: 3)
         var lifeItems: [String] = []
         if !topPeople.isEmpty {
-            lifeItems.append("People: \(topPeople.map { $0.label }.joined(separator: ", ")).")
+            lifeItems.append(String(localized: "People: \(topPeople.map { $0.label }.joined(separator: ", ")).", comment: "Followed by a comma-separated list of names"))
         }
         if !topTopics.isEmpty {
-            lifeItems.append("Topics: \(topTopics.map { $0.label }.joined(separator: ", ")).")
+            lifeItems.append(String(localized: "Topics: \(topTopics.map { $0.label }.joined(separator: ", ")).", comment: "Followed by a comma-separated list of topics"))
         }
         summary.lifeSnapshot = lifeItems.joined(separator: " ")
 
         // Growth snapshot
         if behavioralPatterns.totalEntries > 5 {
-            let consistency = behavioralPatterns.consistencyScore > 0.5 ? "regularly" : "now and then"
+            let consistency = behavioralPatterns.consistencyScore > 0.5
+                ? String(localized: "regularly", comment: "Fills “You write …”: how often the user journals")
+                : String(localized: "now and then", comment: "Fills “You write …”: how often the user journals")
             summary.growthSnapshot = String(AttributedString(localized: "^[\(behavioralPatterns.totalEntries) entry](inflect: true) so far. You write \(consistency).").characters)
         }
 

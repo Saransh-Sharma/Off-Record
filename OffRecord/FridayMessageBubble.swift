@@ -92,7 +92,7 @@ struct FridayMessageBubble: View {
                 .accessibilityHidden(true)
 
             VStack(alignment: .leading, spacing: OffRecordSpacing.sm) {
-                Text("Friday")
+                Text("Friday", comment: "Name of the in-app assistant")
                     .font(OffRecordTypography.labelSmall)
                     .foregroundStyle(OffRecordColor.textLavender)
                     .padding(.leading, OffRecordSpacing.xs)
@@ -177,11 +177,11 @@ struct FridayMessageBubble: View {
             #endif
             copyTrigger += 1
         } label: {
-            Label("Copy", systemImage: "doc.on.doc")
+            Label(String(localized: "Copy", comment: "Copies Friday’s message"), systemImage: "doc.on.doc")
         }
 
         ShareLink(item: message.text) {
-            Label("Share", systemImage: "square.and.arrow.up")
+            Label(String(localized: "Share", comment: "Shares Friday’s message"), systemImage: "square.and.arrow.up")
         }
     }
 
@@ -246,7 +246,7 @@ struct FridayFollowUpChips: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: OffRecordSpacing.sm) {
-            Text("Follow Up")
+            Text("Follow Up", comment: "Heading above suggested next questions")
                 .font(OffRecordTypography.labelSmall)
                 .foregroundStyle(OffRecordColor.textSecondary)
                 .padding(.leading, OffRecordSpacing.xs)

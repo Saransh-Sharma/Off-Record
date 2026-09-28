@@ -36,9 +36,9 @@ struct FridayIntroCard: View {
     private var title: String {
         switch mode {
         case .noJournalData:
-            return "I don’t know you yet."
+            return String(localized: "I don’t know you yet.")
         case .indexing:
-            return "I’m getting your journal ready."
+            return String(localized: "I’m getting your journal ready.")
         case .warm:
             return FridayPersonality.greeting
         }
@@ -47,10 +47,12 @@ struct FridayIntroCard: View {
     private var bodyText: String {
         switch mode {
         case .noJournalData:
-            return "Write or record a few entries and I’ll start seeing patterns. You can still talk to me now."
+            return String(localized: "Write or record a few entries and I’ll start seeing patterns. You can still talk to me now.")
         case .indexing(let statusFragment):
             let status = Self.sentence(from: statusFragment)
-            return status.isEmpty ? "I’ll be ready soon." : "\(status) I’ll be ready soon."
+            return status.isEmpty
+                ? String(localized: "I’ll be ready soon.")
+                : String(localized: "\(status) I’ll be ready soon.", comment: "The placeholder is a progress sentence, like “12 of 40 entries.”")
         case .warm:
             return Personalization.appendFirstName(to: FridayPersonality.invitation, name: userName) + "."
         }

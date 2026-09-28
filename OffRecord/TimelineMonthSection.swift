@@ -130,7 +130,7 @@ struct TimelineDateSpine: View {
     }
 
     private var dayNumber: String {
-        String(Calendar.current.component(.day, from: date))
+        date.formatted(.dateTime.day())
     }
 
     private var weekday: String {

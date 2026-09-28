@@ -161,7 +161,7 @@ struct JournalStatsSnapshot: Equatable, Sendable {
         starredCount: 0,
         audioCount: 0,
         insights: [],
-        weeklySummary: "No entries this week.",
+        weeklySummary: String(localized: "No entries this week."),
         goal: .empty,
         availableYears: []
     )
@@ -315,15 +315,17 @@ actor JournalAnalyticsWorker {
         }
 
         guard !weekEntries.isEmpty else {
-            return "No entries this week."
+            return String(localized: "No entries this week.")
         }
 
-        var summary = "This week you wrote \(weekEntries.count) \(weekEntries.count == 1 ? "entry" : "entries") with \(weekEntries.reduce(0) { $0 + $1.wordCount }) words. "
+        let entryCount = weekEntries.count
+        let wordCount = weekEntries.reduce(0) { $0 + $1.wordCount }
+        var summary = String(AttributedString(localized: "This week you wrote ^[\(entryCount) entry](inflect: true) with \(wordCount) words.").characters) + " "
         let moods = weekEntries.map(\.mood).filter { $0 != .none }
         if !moods.isEmpty {
             let moodCounts = Dictionary(grouping: moods, by: { $0 }).mapValues(\.count)
             if let topMood = moodCounts.max(by: { $0.value < $1.value }) {
-                summary += "Your most common mood was \(topMood.key.displayName.lowercased()). "
+                summary += String(localized: "Your most common mood was \(topMood.key.displayName.lowercased()).") + " "
             }
         }
         return summary

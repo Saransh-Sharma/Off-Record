@@ -18,6 +18,6 @@ enum Personalization {
 
     static func appendFirstName(to text: String, name: String) -> String {
         guard let firstName = firstName(from: name) else { return text }
-        return "\(text), \(firstName)"
+        return String(localized: "\(text), \(firstName)", comment: "A greeting or invitation followed by the user’s first name, e.g. “Good morning, Sam”")
     }
 }

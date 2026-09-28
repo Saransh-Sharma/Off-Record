@@ -34,16 +34,16 @@ enum FridayQuestion: String, CaseIterable, Identifiable {
     /// The pill label, and the text sent as the user's message.
     var question: String {
         switch self {
-        case .moodPattern: return "How’s my mood this week?"
-        case .talkAboutMost: return "Who do I mention most?"
-        case .happiestWhen: return "When am I happiest?"
-        case .dominantTopics: return "What keeps coming up?"
-        case .moodOverTime: return "How has my mood changed?"
-        case .communicationStyle: return "How do I write?"
-        case .stressTriggers: return "What’s been stressing me?"
-        case .positiveOrNegative: return "What’s my overall tone?"
-        case .personality: return "What’s my personality like?"
-        case .bestJournalTime: return "When do I journal most?"
+        case .moodPattern: return String(localized: "How’s my mood this week?")
+        case .talkAboutMost: return String(localized: "Who do I mention most?")
+        case .happiestWhen: return String(localized: "When am I happiest?")
+        case .dominantTopics: return String(localized: "What keeps coming up?")
+        case .moodOverTime: return String(localized: "How has my mood changed?")
+        case .communicationStyle: return String(localized: "How do I write?")
+        case .stressTriggers: return String(localized: "What’s been stressing me?")
+        case .positiveOrNegative: return String(localized: "What’s my overall tone?")
+        case .personality: return String(localized: "What’s my personality like?")
+        case .bestJournalTime: return String(localized: "When do I journal most?")
         }
     }
 
@@ -196,21 +196,21 @@ struct FridayResponseGenerator {
             let recent = Array(sig.recentSentiments.suffix(7))
             let avg = recent.reduce(0, +) / Double(recent.count)
             let moodWord: String
-            if avg > 0.3 { moodWord = "mostly good" }
-            else if avg > 0.1 { moodWord = "good" }
-            else if avg > -0.1 { moodWord = "mixed" }
-            else if avg > -0.3 { moodWord = "a bit low" }
-            else { moodWord = "hard" }
-            parts.append("Your recent mood has been \(moodWord).")
+            if avg > 0.3 { moodWord = String(localized: "mostly good", comment: "Fills “Your recent mood has been …”") }
+            else if avg > 0.1 { moodWord = String(localized: "good", comment: "Fills “Your recent mood has been …”") }
+            else if avg > -0.1 { moodWord = String(localized: "mixed", comment: "Fills “Your recent mood has been …”") }
+            else if avg > -0.3 { moodWord = String(localized: "a bit low", comment: "Fills “Your recent mood has been …”") }
+            else { moodWord = String(localized: "hard", comment: "Fills “Your recent mood has been …”") }
+            parts.append(String(localized: "Your recent mood has been \(moodWord)."))
         }
 
         // Weekday vs weekend
         let weekdayLabel = sentimentWord(sig.weekdayMood)
         let weekendLabel = sentimentWord(sig.weekendMood)
         if weekdayLabel != weekendLabel {
-            parts.append("Weekdays feel \(weekdayLabel). Weekends feel \(weekendLabel).")
+            parts.append(String(localized: "Weekdays feel \(weekdayLabel). Weekends feel \(weekendLabel)."))
         } else {
-            parts.append("Weekdays and weekends feel about the same.")
+            parts.append(String(localized: "Weekdays and weekends feel about the same."))
         }
 
         // Emotional range
@@ -226,23 +226,23 @@ struct FridayResponseGenerator {
 
         let people = assistant.knowledgeGraph.fridayVisibleNodes(ofType: .person, limit: 5)
         guard !people.isEmpty else {
-            return "I haven’t seen anyone by name yet. Mention people by name and I’ll keep track."
+            return String(localized: "I haven’t seen anyone by name yet. Mention people by name and I’ll keep track.")
         }
 
         var parts: [String] = []
         let top = people[0]
         let times = String(AttributedString(localized: "^[\(top.mentions) time](inflect: true)").characters)
-        parts.append("You mention \(top.label) most, \(times) so far.")
+        parts.append(String(localized: "You mention \(top.label) most, \(times) so far."))
 
         if top.sentimentAssociation > 0.2 {
-            parts.append("Those entries are usually upbeat.")
+            parts.append(String(localized: "Those entries are usually upbeat."))
         } else if top.sentimentAssociation < -0.2 {
-            parts.append("Those entries tend to be heavier.")
+            parts.append(String(localized: "Those entries tend to be heavier."))
         }
 
         if people.count > 1 {
             let others = people.dropFirst().prefix(3).map { $0.label }
-            parts.append("You also mention \(list(others)) often.")
+            parts.append(String(localized: "You also mention \(list(others)) often."))
         }
 
         return parts.joined(separator: " ")
@@ -257,16 +257,18 @@ struct FridayResponseGenerator {
         // Time of day
         let morningBetter = sig.morningMood > sig.eveningMood
         if abs(sig.morningMood - sig.eveningMood) > 0.1 {
-            parts.append("You’re happier in the \(morningBetter ? "morning" : "evening").")
+            parts.append(morningBetter
+                ? String(localized: "You’re happier in the morning.")
+                : String(localized: "You’re happier in the evening."))
         } else {
-            parts.append("Your mood stays about the same through the day.")
+            parts.append(String(localized: "Your mood stays about the same through the day."))
         }
 
         // Weekday vs weekend
         if sig.weekendMood > sig.weekdayMood + 0.1 {
-            parts.append("You’re happier on weekends.")
+            parts.append(String(localized: "You’re happier on weekends."))
         } else if sig.weekdayMood > sig.weekendMood + 0.1 {
-            parts.append("You’re happier on weekdays.")
+            parts.append(String(localized: "You’re happier on weekdays."))
         }
 
         // Positive triggers
@@ -277,7 +279,7 @@ struct FridayResponseGenerator {
             .map { $0.key.capitalized }
 
         if !positiveTriggers.isEmpty {
-            parts.append("Your mood lifts when you write about \(list(positiveTriggers)).")
+            parts.append(String(localized: "Your mood lifts when you write about \(list(positiveTriggers))."))
         }
 
         return parts.isEmpty ? insufficientData : parts.joined(separator: " ")
@@ -304,10 +306,10 @@ struct FridayResponseGenerator {
         }
 
         guard !allTopics.isEmpty else {
-            return "No clear topics yet. I’ll see more after a few entries."
+            return String(localized: "No clear topics yet. I’ll see more after a few entries.")
         }
 
-        var response = "You write most about \(list(Array(allTopics.prefix(5))))."
+        var response = String(localized: "You write most about \(list(Array(allTopics.prefix(5)))).")
 
         // Add concerns if available
         let concerns = assistant.thoughtPatterns.topConcerns
@@ -316,9 +318,9 @@ struct FridayResponseGenerator {
             .prefix(2)
             .map { $0.key.capitalized }
         if concerns.count == 1 {
-            response += " Your biggest worry is \(concerns[0])."
+            response += " " + String(localized: "Your biggest worry is \(concerns[0]).")
         } else if !concerns.isEmpty {
-            response += " Your biggest worries are \(list(concerns))."
+            response += " " + String(localized: "Your biggest worries are \(list(concerns)).")
         }
 
         return response
@@ -332,30 +334,30 @@ struct FridayResponseGenerator {
 
         // Trend
         if sig.sentimentTrend > 0.05 {
-            parts.append("Your mood has been improving lately.")
+            parts.append(String(localized: "Your mood has been improving lately."))
         } else if sig.sentimentTrend < -0.05 {
-            parts.append("Your mood has dipped a bit lately.")
+            parts.append(String(localized: "Your mood has dipped a bit lately."))
         } else {
-            parts.append("Your mood has been steady lately.")
+            parts.append(String(localized: "Your mood has been steady lately."))
         }
 
         // Overall lean
         if sig.baselineValence > 0.2 {
-            parts.append("Overall, it leans positive.")
+            parts.append(String(localized: "Overall, it leans positive."))
         } else if sig.baselineValence > -0.1 {
-            parts.append("Overall, it’s fairly even.")
+            parts.append(String(localized: "Overall, it’s fairly even."))
         } else {
-            parts.append("Overall, it leans low.")
+            parts.append(String(localized: "Overall, it leans low."))
         }
 
         // Resilience
         if sig.resilienceScore > 0.6 {
-            parts.append("After hard days, you tend to bounce back quickly.")
+            parts.append(String(localized: "After hard days, you tend to bounce back quickly."))
         }
 
         // Data points
         if sig.recentSentiments.count >= 10 {
-            parts.append("Based on your last \(sig.recentSentiments.count) entries.")
+            parts.append(String(localized: "Based on your last \(sig.recentSentiments.count) entries."))
         }
 
         return parts.joined(separator: " ")
@@ -369,29 +371,29 @@ struct FridayResponseGenerator {
 
         // Formality
         if style.formalityLevel > 0.6 {
-            parts.append("You write formally.")
+            parts.append(String(localized: "You write formally."))
         } else if style.formalityLevel < 0.4 {
-            parts.append("You write the way you talk.")
+            parts.append(String(localized: "You write the way you talk."))
         } else {
-            parts.append("You write somewhere between casual and formal.")
+            parts.append(String(localized: "You write somewhere between casual and formal."))
         }
 
         // Expressiveness
         if style.expressiveness > 0.6 {
-            parts.append("You write with a lot of feeling.")
+            parts.append(String(localized: "You write with a lot of feeling."))
         } else if style.expressiveness < 0.3 {
-            parts.append("You keep your feelings understated.")
+            parts.append(String(localized: "You keep your feelings understated."))
         }
 
         // Directness
         if style.directness > 0.6 {
-            parts.append("You get to the point.")
+            parts.append(String(localized: "You get to the point."))
         } else if style.directness < 0.4 {
-            parts.append("You think things through on the page.")
+            parts.append(String(localized: "You think things through on the page."))
         }
 
         // Sentence length
-        parts.append("Your sentences average \(Int(style.averageSentenceLength)) words.")
+        parts.append(String(localized: "Your sentences average \(Int(style.averageSentenceLength)) words."))
 
         // Signature words
         let topWords = style.signatureWords
@@ -399,7 +401,7 @@ struct FridayResponseGenerator {
             .prefix(5)
             .map { $0.key }
         if !topWords.isEmpty {
-            parts.append("Words you use often: \(list(topWords)).")
+            parts.append(String(localized: "Words you use often: \(list(topWords))."))
         }
 
         return parts.joined(separator: " ")
@@ -414,11 +416,11 @@ struct FridayResponseGenerator {
             .prefix(5)
 
         guard !negativeTriggers.isEmpty else {
-            return "Nothing stands out as a stressor yet."
+            return String(localized: "Nothing stands out as a stressor yet.")
         }
 
         let triggerList = negativeTriggers.map { $0.key.capitalized }
-        var response = "Your mood tends to drop when you write about \(list(triggerList))."
+        var response = String(localized: "Your mood tends to drop when you write about \(list(triggerList)).")
 
         // Contrast with positive
         let positiveTriggers = assistant.emotionalSignature.positiveTriggersTopics
@@ -427,7 +429,10 @@ struct FridayResponseGenerator {
             .prefix(3)
             .map { $0.key.capitalized }
         if !positiveTriggers.isEmpty {
-            response += " \(list(positiveTriggers)) \(positiveTriggers.count == 1 ? "tends" : "tend") to lift it."
+            let lifters = list(positiveTriggers)
+            response += " " + (positiveTriggers.count == 1
+                ? String(localized: "\(lifters) tends to lift it.", comment: "The placeholder is one topic")
+                : String(localized: "\(lifters) tend to lift it.", comment: "The placeholder is a list of topics"))
         }
 
         return response
@@ -440,15 +445,15 @@ struct FridayResponseGenerator {
         var parts: [String] = []
 
         if valence > 0.2 {
-            parts.append("Your entries lean positive.")
+            parts.append(String(localized: "Your entries lean positive."))
         } else if valence > 0.05 {
-            parts.append("Your entries lean slightly positive.")
+            parts.append(String(localized: "Your entries lean slightly positive."))
         } else if valence > -0.05 {
-            parts.append("Your entries are an even mix of good and hard days.")
+            parts.append(String(localized: "Your entries are an even mix of good and hard days."))
         } else if valence > -0.2 {
-            parts.append("Your entries lean slightly toward hard days.")
+            parts.append(String(localized: "Your entries lean slightly toward hard days."))
         } else {
-            parts.append("You’ve been writing through some hard things lately.")
+            parts.append(String(localized: "You’ve been writing through some hard things lately."))
         }
 
         // Emotion frequency breakdown
@@ -458,9 +463,9 @@ struct FridayResponseGenerator {
         if !emotions.isEmpty {
             let topEmotions = emotions.map { $0.key.lowercased() }
             if topEmotions.count == 1 {
-                parts.append("Your most common mood is \(topEmotions[0]).")
+                parts.append(String(localized: "Your most common mood is \(topEmotions[0])."))
             } else {
-                parts.append("Your most common moods are \(list(topEmotions)).")
+                parts.append(String(localized: "Your most common moods are \(list(topEmotions))."))
             }
         }
 
@@ -479,27 +484,27 @@ struct FridayResponseGenerator {
             traitWords.append(trait)
         }
         if !traitWords.isEmpty {
-            parts.append("You come across as \(list(traitWords)).")
+            parts.append(String(localized: "You come across as \(list(traitWords))."))
         }
 
         // Writing and thinking style
-        parts.append("Writing style: \(fridayProfile.communicationStyle). Thinking style: \(fridayProfile.thinkingStyle).")
+        parts.append(String(localized: "Writing style: \(fridayProfile.communicationStyle). Thinking style: \(fridayProfile.thinkingStyle)."))
 
         // Usual mood and range
-        parts.append("Your usual mood is \(fridayProfile.dominantMood.lowercased()).")
+        parts.append(String(localized: "Your usual mood is \(fridayProfile.dominantMood.lowercased())."))
         if let range = rangeSentence(assistant.emotionalSignature.emotionalRange) {
             parts.append(range)
         }
 
         // Growth indicators
         if assistant.thoughtPatterns.growthMindsetScore > 0.6 {
-            parts.append("You write a lot about learning and improving.")
+            parts.append(String(localized: "You write a lot about learning and improving."))
         }
         if assistant.thoughtPatterns.gratitudeTendency > 0.5 {
-            parts.append("You often write about what you’re grateful for.")
+            parts.append(String(localized: "You often write about what you’re grateful for."))
         }
         if assistant.thoughtPatterns.selfAwarenessLevel > 0.6 {
-            parts.append("You notice a lot about yourself.")
+            parts.append(String(localized: "You notice a lot about yourself."))
         }
 
         return parts.joined(separator: " ")
@@ -512,30 +517,31 @@ struct FridayResponseGenerator {
 
         // Peak hour from behavioral patterns
         if let peakHour = assistant.behavioralPatterns.peakHour {
-            parts.append("You journal most around \(formatHour(peakHour)).")
+            parts.append(String(localized: "You journal most around \(formatHour(peakHour)).", comment: "The placeholder is an hour of the day, like “9 PM”"))
         }
 
         // Cross-reference with mood
         let sig = assistant.emotionalSignature
         if sig.morningMood > sig.eveningMood + 0.1 {
-            parts.append("Your morning entries are more upbeat.")
+            parts.append(String(localized: "Your morning entries are more upbeat."))
         } else if sig.eveningMood > sig.morningMood + 0.1 {
-            parts.append("Your evening entries are more upbeat.")
+            parts.append(String(localized: "Your evening entries are more upbeat."))
         }
 
         // Peak day
         if let peakDay = assistant.behavioralPatterns.peakDay {
-            let days = ["", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
-            if peakDay >= 1 && peakDay <= 7 {
-                parts.append("You journal most on \(days[peakDay])s.")
+            let days = Calendar.current.weekdaySymbols
+            if peakDay >= 1 && peakDay <= days.count {
+                let day = days[peakDay - 1]
+                parts.append(String(localized: "\(day) is when you journal most.", comment: "The placeholder is a weekday name, e.g. Sunday"))
             }
         }
 
         // Consistency note
         if assistant.behavioralPatterns.consistencyScore > 0.5 {
-            parts.append("You journal regularly.")
+            parts.append(String(localized: "You journal regularly."))
         } else {
-            parts.append("A set time each day can make it easier.")
+            parts.append(String(localized: "A set time each day can make it easier."))
         }
 
         return parts.isEmpty ? insufficientData : parts.joined(separator: " ")
@@ -544,17 +550,17 @@ struct FridayResponseGenerator {
     // MARK: - Helpers
 
     private static func sentimentWord(_ value: Double) -> String {
-        if value > 0.3 { return "great" }
-        if value > 0.1 { return "good" }
-        if value > -0.1 { return "okay" }
-        if value > -0.3 { return "a bit low" }
-        return "hard"
+        if value > 0.3 { return String(localized: "great", comment: "Fills “Weekdays feel … Weekends feel …”") }
+        if value > 0.1 { return String(localized: "good", comment: "Fills “Weekdays feel … Weekends feel …”") }
+        if value > -0.1 { return String(localized: "okay", comment: "Fills “Weekdays feel … Weekends feel …”") }
+        if value > -0.3 { return String(localized: "a bit low", comment: "Fills “Weekdays feel … Weekends feel …”") }
+        return String(localized: "hard", comment: "Fills “Weekdays feel … Weekends feel …”")
     }
 
     /// One sentence about how much moods swing, or nil for the middle of the range.
     private static func rangeSentence(_ range: Double) -> String? {
-        if range > 0.6 { return "Your moods swing quite a bit." }
-        if range < 0.3 { return "Your moods stay fairly steady." }
+        if range > 0.6 { return String(localized: "Your moods swing quite a bit.") }
+        if range < 0.3 { return String(localized: "Your moods stay fairly steady.") }
         return nil
     }
 
@@ -563,11 +569,15 @@ struct FridayResponseGenerator {
         ListFormatter.localizedString(byJoining: items)
     }
 
+    /// The hour in the user's locale, like "9 PM".
     private static func formatHour(_ hour: Int) -> String {
-        if hour == 0 { return "midnight" }
-        if hour < 12 { return "\(hour)am" }
-        if hour == 12 { return "noon" }
-        return "\(hour - 12)pm"
+        // A fixed day with no daylight-saving change, so every hour exists.
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        guard let date = calendar.date(from: DateComponents(year: 2001, month: 1, day: 1, hour: hour)) else {
+            return String(hour)
+        }
+        return date.formatted(.dateTime.hour())
     }
 }
 
@@ -774,7 +784,7 @@ struct FridayChatView: View {
             messageList(contentWidth: contentWidth)
             if showsStaticPrompts {
                 FridayPromptSection(
-                    title: "Try Asking",
+                    title: String(localized: "Try Asking"),
                     questions: compactQuestions,
                     askedQuestions: askedQuestions,
                     layout: .grid,
@@ -1137,7 +1147,7 @@ private struct FridayChatErrorContent: View {
 
     var body: some View {
         VStack(spacing: OffRecordSpacing.xl) {
-            FridayChatHeroHeader(subtitle: "Something went wrong on my end. Your entries are fine.")
+            FridayChatHeroHeader(subtitle: String(localized: "Something went wrong on my end. Your entries are fine."))
 
             FridayMascotView(pose: .thinking, size: 120)
                 .accessibilityHidden(true)

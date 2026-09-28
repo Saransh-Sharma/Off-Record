@@ -57,15 +57,15 @@ final class AppLockManager: ObservableObject {
         case .faceID: return "Face ID"
         case .touchID: return "Touch ID"
         case .opticID: return "Optic ID"
-        case .none: return "Passcode"
-        @unknown default: return "Passcode"
+        case .none: return String(localized: "Passcode")
+        @unknown default: return String(localized: "Passcode")
         }
     }
 
     /// Authenticate the user using Face ID / Touch ID, with passcode as fallback.
     func authenticate(completion: @escaping (Bool) -> Void) {
         let context = LAContext()
-        let reason = "Unlock your journal."
+        let reason = String(localized: "Unlock your journal.")
 
         // Check if biometrics are available
         var error: NSError?
@@ -93,7 +93,7 @@ final class AppLockManager: ObservableObject {
 
     private func authenticateWithPasscode(completion: @escaping (Bool) -> Void) {
         let context = LAContext()
-        let reason = "Unlock your journal."
+        let reason = String(localized: "Unlock your journal.")
 
         context.evaluatePolicy(.deviceOwnerAuthentication, localizedReason: reason) { success, _ in
             DispatchQueue.main.async {

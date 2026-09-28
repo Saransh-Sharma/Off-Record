@@ -479,7 +479,7 @@ extension View {
 
 struct OffRecordPrivacyBadge: View {
     var compact = false
-    var title = "Private"
+    var title = String(localized: "Private", comment: "Badge saying the content is kept private")
     var subtitle: String?
 
     var body: some View {

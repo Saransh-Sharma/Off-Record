@@ -21,6 +21,20 @@ enum AppTheme: String, CaseIterable, Identifiable {
 
     var id: String { rawValue }
 
+    /// Localized name for the theme picker. `rawValue` is persisted; don't show it.
+    var displayName: String {
+        switch self {
+        case .system: return String(localized: "System", comment: "Theme name: follow the device appearance")
+        case .light: return String(localized: "Light", comment: "Theme name: always light appearance")
+        case .sage: return String(localized: "Sage", comment: "Theme name: sage green accent")
+        case .lavender: return String(localized: "Lavender", comment: "Theme name: lavender accent")
+        case .rose: return String(localized: "Rose", comment: "Theme name: rose pink accent")
+        case .ocean: return String(localized: "Ocean", comment: "Theme name: ocean blue accent")
+        case .warm: return String(localized: "Warm", comment: "Theme name: warm peach accent")
+        case .dark: return String(localized: "Dark", comment: "Theme name: always dark appearance")
+        }
+    }
+
     /// Display icon for theme picker
     var icon: String {
         switch self {

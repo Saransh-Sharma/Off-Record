@@ -240,8 +240,8 @@ struct ShareInsightPreviewSheet: View {
                             .accessibilityIdentifier("insights.share.includeNames")
 
                             Text(includeNames
-                                 ? "Names will be visible in the image."
-                                 : "Names are replaced with \u{201C}someone.\u{201D}")
+                                 ? String(localized: "Names will be visible in the image.")
+                                 : String(localized: "Names are replaced with \u{201C}someone.\u{201D}"))
                                 .font(OffRecordTypography.metadata)
                                 .foregroundStyle(OffRecordColor.textSecondary)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -250,7 +250,7 @@ struct ShareInsightPreviewSheet: View {
                         .offRecordCard(cornerRadius: OffRecordRadius.md, shadow: false)
                     }
 
-                    OffRecordPrivacyBadge(title: "Only this image is shared.")
+                    OffRecordPrivacyBadge(title: String(localized: "Only this image is shared."))
 
                     if let renderedImage {
                         ShareLink(
@@ -292,7 +292,7 @@ struct ShareInsightPreviewSheet: View {
                 .frame(maxWidth: 340)
                 .frame(maxWidth: .infinity)
                 .offRecordShadow(.card)
-                .accessibilityLabel("Preview: \(shareable.headline) \(shareable.subtext)".trimmingCharacters(in: .whitespaces))
+                .accessibilityLabel(String(localized: "Preview: \(shareable.headline) \(shareable.subtext)").trimmingCharacters(in: .whitespaces))
         } else {
             ProgressView()
                 .frame(maxWidth: .infinity, minHeight: 200)
@@ -329,7 +329,7 @@ struct WeeklyInsightsSection: View {
 
     private var insightsContent: some View {
         VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
-            InsightCardHeader(title: "This Week", systemImage: "sparkles", tint: OffRecordColor.textLavender)
+            InsightCardHeader(title: String(localized: "This Week"), systemImage: "sparkles", tint: OffRecordColor.textLavender)
 
             ScrollView(.horizontal) {
                 HStack(alignment: .top, spacing: OffRecordSpacing.md) {

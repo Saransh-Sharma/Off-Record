@@ -105,11 +105,11 @@ extension PersonalKnowledgeGraph {
 
 enum FridayMemoryTone {
     static func sentimentLabel(_ sentiment: Double) -> String {
-        if sentiment > 0.3 { return "Mostly positive" }
-        if sentiment > 0.1 { return "Leans positive" }
-        if sentiment > -0.1 { return "Mixed" }
-        if sentiment > -0.3 { return "Leans heavy" }
-        return "Mostly heavy"
+        if sentiment > 0.3 { return String(localized: "Mostly positive", comment: "Overall feeling of entries that mention a remembered person, place, or topic") }
+        if sentiment > 0.1 { return String(localized: "Leans positive", comment: "Overall feeling of entries that mention a remembered person, place, or topic") }
+        if sentiment > -0.1 { return String(localized: "Mixed", comment: "Overall feeling of entries that mention a remembered person, place, or topic") }
+        if sentiment > -0.3 { return String(localized: "Leans heavy", comment: "Overall feeling of entries that mention a remembered person, place, or topic") }
+        return String(localized: "Mostly heavy", comment: "Overall feeling of entries that mention a remembered person, place, or topic")
     }
 
     static func sentimentFill(_ sentiment: Double) -> Color {
@@ -129,21 +129,21 @@ enum FridayMemoryTone {
     }
 
     static func importanceLabel(_ importance: Double) -> String {
-        if importance >= 0.66 { return "Comes up a lot" }
-        if importance >= 0.33 { return "Comes up sometimes" }
-        return "Comes up rarely"
+        if importance >= 0.66 { return String(localized: "Comes up a lot") }
+        if importance >= 0.33 { return String(localized: "Comes up sometimes") }
+        return String(localized: "Comes up rarely")
     }
 
     static func typeNoun(_ type: PersonalKnowledgeGraph.KnowledgeNode.NodeType) -> String {
         switch type {
-        case .person: return "person"
-        case .place: return "place"
-        case .topic: return "topic"
-        case .goal: return "goal"
-        case .fear: return "worry"
-        case .activity: return "activity"
-        case .value: return "value"
-        case .event: return "event"
+        case .person: return String(localized: "person", comment: "Kind of thing Friday remembers, lowercase noun")
+        case .place: return String(localized: "place", comment: "Kind of thing Friday remembers, lowercase noun")
+        case .topic: return String(localized: "topic", comment: "Kind of thing Friday remembers, lowercase noun")
+        case .goal: return String(localized: "goal", comment: "Kind of thing Friday remembers, lowercase noun")
+        case .fear: return String(localized: "worry", comment: "Kind of thing Friday remembers, lowercase noun")
+        case .activity: return String(localized: "activity", comment: "Kind of thing Friday remembers, lowercase noun")
+        case .value: return String(localized: "value", comment: "Kind of thing Friday remembers, lowercase noun")
+        case .event: return String(localized: "event", comment: "Kind of thing Friday remembers, lowercase noun")
         }
     }
 
@@ -337,7 +337,7 @@ struct FridayMemoryDetailSheet: View {
     private var subtitle: String {
         let noun = FridayMemoryTone.typeNoun(node.type).capitalized
         if preferences.aliases[node.id] != nil {
-            return "\(noun) · written as “\(node.label)”"
+            return String(localized: "\(noun) · written as “\(node.label)”", comment: "The first placeholder is a kind, like Person; the second is the name as written in the journal")
         }
         return noun
     }
@@ -346,17 +346,17 @@ struct FridayMemoryDetailSheet: View {
         HStack(spacing: OffRecordSpacing.md) {
             statTile(
                 value: "\(node.mentions)",
-                label: node.mentions == 1 ? "Mention" : "Mentions",
+                label: node.mentions == 1 ? String(localized: "Mention", comment: "Label under a count of 1") : String(localized: "Mentions", comment: "Label under a count other than 1"),
                 valueColor: OffRecordColor.textLavender
             )
             statTile(
                 value: FridayMemoryTone.sentimentLabel(node.sentimentAssociation),
-                label: "Tone",
+                label: String(localized: "Tone", comment: "Label for how positive or heavy the entries feel"),
                 valueColor: FridayMemoryTone.sentimentText(node.sentimentAssociation)
             )
             statTile(
                 value: node.lastSeen.formatted(.dateTime.month(.abbreviated).day()),
-                label: "Last Mentioned",
+                label: String(localized: "Last Mentioned"),
                 valueColor: OffRecordColor.textPrimary
             )
         }

@@ -188,13 +188,13 @@ struct StatsView: View {
     private var statsSummaryCard: some View {
         let columnCount = dynamicTypeSize.isAccessibilitySize ? 1 : (isIPad ? 4 : 2)
         return VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
-            InsightCardHeader(title: "Writing", systemImage: "text.word.spacing", tint: OffRecordColor.textSky)
+            InsightCardHeader(title: String(localized: "Writing", comment: "Insights card title for word and entry counts"), systemImage: "text.word.spacing", tint: OffRecordColor.textSky)
 
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: OffRecordSpacing.md), count: columnCount), spacing: OffRecordSpacing.md) {
-                StatItem(title: "Words", value: "\(stats.totalWords)", icon: "text.word.spacing", color: OffRecordColor.textSky)
-                StatItem(title: "Words per Entry", value: "\(stats.avgWordsPerEntry)", icon: "chart.bar.fill", color: OffRecordColor.textMint)
-                StatItem(title: "Starred", value: "\(stats.starredCount)", icon: "star.fill", color: OffRecordColor.textYellow)
-                StatItem(title: "With Recordings", value: "\(stats.audioCount)", icon: "waveform", color: OffRecordColor.textAqua)
+                StatItem(title: String(localized: "Words", comment: "Stat label: total words written"), value: "\(stats.totalWords)", icon: "text.word.spacing", color: OffRecordColor.textSky)
+                StatItem(title: String(localized: "Words per Entry"), value: "\(stats.avgWordsPerEntry)", icon: "chart.bar.fill", color: OffRecordColor.textMint)
+                StatItem(title: String(localized: "Starred", comment: "Stat label: number of starred entries"), value: "\(stats.starredCount)", icon: "star.fill", color: OffRecordColor.textYellow)
+                StatItem(title: String(localized: "With Recordings"), value: "\(stats.audioCount)", icon: "waveform", color: OffRecordColor.textAqua)
             }
         }
         .padding()
@@ -207,7 +207,7 @@ struct StatsView: View {
     private var aiInsightsCard: some View {
         if !stats.insights.isEmpty {
             VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
-                InsightCardHeader(title: "From Friday", systemImage: "sparkles", tint: OffRecordColor.textLavender)
+                InsightCardHeader(title: String(localized: "From Friday"), systemImage: "sparkles", tint: OffRecordColor.textLavender)
 
                 ForEach(Array(stats.insights.prefix(4).enumerated()), id: \.element.id) { index, insight in
                     if index > 0 {
@@ -261,7 +261,7 @@ struct StatsView: View {
         let reached = stats.goal.progress >= 1.0
         return VStack(alignment: .leading, spacing: OffRecordSpacing.lg) {
             HStack {
-                InsightCardHeader(title: "Weekly Goal", systemImage: "target", tint: OffRecordColor.textAqua)
+                InsightCardHeader(title: String(localized: "Weekly Goal"), systemImage: "target", tint: OffRecordColor.textAqua)
                 Text("\(stats.goal.count)/\(stats.goal.weeklyTarget)")
                     .font(OffRecordTypography.numberSmall)
                     .foregroundStyle(OffRecordColor.textAqua)
@@ -292,7 +292,7 @@ struct StatsView: View {
                 .accessibilityIdentifier("insights.goal.ring")
 
                 VStack(alignment: .leading, spacing: OffRecordSpacing.xs) {
-                    Text(reached ? "Goal Reached" : "\(stats.goal.count) of \(stats.goal.weeklyTarget) days")
+                    Text(reached ? String(localized: "Goal Reached") : String(localized: "\(stats.goal.count) of \(stats.goal.weeklyTarget) days"))
                         .font(OffRecordTypography.labelMedium)
                         .foregroundStyle(reached ? OffRecordColor.textSage : OffRecordColor.textPrimary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -312,9 +312,11 @@ struct StatsView: View {
     }
 
     private func goalAccessibilityValue(percent: Int, reached: Bool) -> String {
-        let days = "\(percent) percent, \(stats.goal.count) of \(stats.goal.weeklyTarget) days"
-        if reached { return days + ", goal reached" }
-        return days + ", \(max(0, stats.goal.weeklyTarget - stats.goal.count)) to go"
+        let count = stats.goal.count
+        let target = stats.goal.weeklyTarget
+        if reached { return String(localized: "\(percent) percent, \(count) of \(target) days, goal reached") }
+        let remaining = max(0, target - count)
+        return String(localized: "\(percent) percent, \(count) of \(target) days, \(remaining) to go")
     }
 
     private func insightTint(_ name: String) -> Color {

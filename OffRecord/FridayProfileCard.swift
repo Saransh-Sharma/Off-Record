@@ -47,47 +47,57 @@ struct FridayProfileGenerator {
 
         let expr = assistant.communicationStyle.expressiveness
         traits.append(.init(
-            label: "Expression",
+            label: String(localized: "Expression", comment: "Personality card trait"),
             value: expr,
-            lowLabel: "Reserved",
-            highLabel: "Expressive",
-            displayLabel: expr > 0.6 ? "Expressive" : expr < 0.4 ? "Reserved" : "Balanced"
+            lowLabel: String(localized: "Reserved", comment: "Low end of the “Expression” scale"),
+            highLabel: String(localized: "Expressive", comment: "High end of the “Expression” scale"),
+            displayLabel: expr > 0.6 ? String(localized: "Expressive", comment: "Where the user leans on the “Expression” scale")
+                : expr < 0.4 ? String(localized: "Reserved", comment: "Where the user leans on the “Expression” scale")
+                : String(localized: "Balanced", comment: "Where the user leans on the “Expression” scale")
         ))
 
         let direct = assistant.communicationStyle.directness
         traits.append(.init(
-            label: "Directness",
+            label: String(localized: "Directness", comment: "Personality card trait"),
             value: direct,
-            lowLabel: "Nuanced",
-            highLabel: "Direct",
-            displayLabel: direct > 0.6 ? "Direct" : direct < 0.4 ? "Nuanced" : "Measured"
+            lowLabel: String(localized: "Nuanced", comment: "Low end of the “Directness” scale"),
+            highLabel: String(localized: "Direct", comment: "High end of the “Directness” scale"),
+            displayLabel: direct > 0.6 ? String(localized: "Direct", comment: "Where the user leans on the “Directness” scale")
+                : direct < 0.4 ? String(localized: "Nuanced", comment: "Where the user leans on the “Directness” scale")
+                : String(localized: "Measured", comment: "Where the user leans on the “Directness” scale")
         ))
 
         let analytical = assistant.thoughtPatterns.analyticalScore
         traits.append(.init(
-            label: "Thinking",
+            label: String(localized: "Thinking", comment: "Personality card trait"),
             value: analytical,
-            lowLabel: "Intuitive",
-            highLabel: "Analytical",
-            displayLabel: analytical > 0.6 ? "Analytical" : analytical < 0.4 ? "Intuitive" : "Balanced"
+            lowLabel: String(localized: "Intuitive", comment: "Low end of the “Thinking” scale"),
+            highLabel: String(localized: "Analytical", comment: "High end of the “Thinking” scale"),
+            displayLabel: analytical > 0.6 ? String(localized: "Analytical", comment: "Where the user leans on the “Thinking” scale")
+                : analytical < 0.4 ? String(localized: "Intuitive", comment: "Where the user leans on the “Thinking” scale")
+                : String(localized: "Balanced", comment: "Where the user leans on the “Thinking” scale")
         ))
 
         let timeFocus = assistant.thoughtPatterns.futureOriented
         traits.append(.init(
-            label: "Time Focus",
+            label: String(localized: "Time Focus", comment: "Personality card trait"),
             value: timeFocus,
-            lowLabel: "Past",
-            highLabel: "Future",
-            displayLabel: timeFocus > 0.6 ? "Future-focused" : timeFocus < 0.4 ? "Reflective" : "Present-focused"
+            lowLabel: String(localized: "Past", comment: "Low end of the “Time Focus” scale"),
+            highLabel: String(localized: "Future", comment: "High end of the “Time Focus” scale"),
+            displayLabel: timeFocus > 0.6 ? String(localized: "Future-focused", comment: "Where the user leans on the “Time Focus” scale")
+                : timeFocus < 0.4 ? String(localized: "Reflective", comment: "Where the user leans on the “Time Focus” scale")
+                : String(localized: "Present-focused", comment: "Where the user leans on the “Time Focus” scale")
         ))
 
         let growth = assistant.thoughtPatterns.growthMindsetScore
         traits.append(.init(
-            label: "Mindset",
+            label: String(localized: "Mindset", comment: "Personality card trait"),
             value: growth,
-            lowLabel: "Fixed",
-            highLabel: "Growth",
-            displayLabel: growth > 0.6 ? "Growth-minded" : growth < 0.4 ? "Steady" : "Evolving"
+            lowLabel: String(localized: "Fixed", comment: "Low end of the “Mindset” scale"),
+            highLabel: String(localized: "Growth", comment: "High end of the “Mindset” scale"),
+            displayLabel: growth > 0.6 ? String(localized: "Growth-minded", comment: "Where the user leans on the “Mindset” scale")
+                : growth < 0.4 ? String(localized: "Steady", comment: "Where the user leans on the “Mindset” scale")
+                : String(localized: "Evolving", comment: "Where the user leans on the “Mindset” scale")
         ))
 
         // Signature words
@@ -104,43 +114,45 @@ struct FridayProfileGenerator {
         let dominantMood: String
         if let topMood = assistant.emotionalSignature.emotionFrequency
             .max(by: { $0.value < $1.value })?.key {
-            dominantMood = topMood.capitalized
+            dominantMood = Mood(rawValue: topMood)?.displayName ?? topMood.capitalized
         } else {
-            dominantMood = "Neutral"
+            dominantMood = String(localized: "Neutral", comment: "Top mood when there isn’t enough mood data")
         }
 
         // Emotional range
         let range = assistant.emotionalSignature.emotionalRange
-        let emotionalRange = range > 0.6 ? "Wide" : range < 0.3 ? "Steady" : "Moderate"
+        let emotionalRange = range > 0.6 ? String(localized: "Wide", comment: "How much the user’s mood varies")
+            : range < 0.3 ? String(localized: "Steady", comment: "How much the user’s mood varies")
+            : String(localized: "Moderate", comment: "How much the user’s mood varies")
 
         // Communication style summary
         let formality = assistant.communicationStyle.formalityLevel
         let communicationStyle: String
         if formality > 0.6 && direct > 0.6 {
-            communicationStyle = "Clear & Professional"
+            communicationStyle = String(localized: "Clear & Professional")
         } else if formality < 0.4 && expr > 0.6 {
-            communicationStyle = "Casual & Expressive"
+            communicationStyle = String(localized: "Casual & Expressive")
         } else if direct > 0.6 && expr < 0.4 {
-            communicationStyle = "Direct & Reserved"
+            communicationStyle = String(localized: "Direct & Reserved")
         } else if formality < 0.4 && direct < 0.4 {
-            communicationStyle = "Soft-Spoken"
+            communicationStyle = String(localized: "Soft-Spoken", comment: "Writing style label")
         } else {
-            communicationStyle = "Adaptive"
+            communicationStyle = String(localized: "Adaptive", comment: "Writing style label")
         }
 
         // Thinking style summary
         let abstract = assistant.thoughtPatterns.abstractScore
         let thinkingStyle: String
         if analytical > 0.6 && abstract > 0.6 {
-            thinkingStyle = "Conceptual Thinker"
+            thinkingStyle = String(localized: "Conceptual Thinker")
         } else if analytical > 0.6 && abstract < 0.4 {
-            thinkingStyle = "Practical Analyst"
+            thinkingStyle = String(localized: "Practical Analyst")
         } else if analytical < 0.4 && abstract > 0.6 {
-            thinkingStyle = "Creative Dreamer"
+            thinkingStyle = String(localized: "Creative Dreamer")
         } else if analytical < 0.4 && abstract < 0.4 {
-            thinkingStyle = "Grounded Feeler"
+            thinkingStyle = String(localized: "Grounded Feeler")
         } else {
-            thinkingStyle = "Flexible Thinker"
+            thinkingStyle = String(localized: "Flexible Thinker")
         }
 
         // Top person & topic from knowledge graph
@@ -163,10 +175,15 @@ struct FridayProfileGenerator {
         )
     }
 
+    /// The hour in the user's locale, like "9 PM".
     private static func formatHour(_ hour: Int) -> String {
-        if hour == 0 { return "midnight" }
-        if hour == 12 { return "noon" }
-        return hour < 12 ? "\(hour)am" : "\(hour - 12)pm"
+        // A fixed day with no daylight-saving change, so every hour exists.
+        var calendar = Calendar(identifier: .gregorian)
+        calendar.timeZone = .current
+        guard let date = calendar.date(from: DateComponents(year: 2001, month: 1, day: 1, hour: hour)) else {
+            return String(hour)
+        }
+        return date.formatted(.dateTime.hour())
     }
 }
 
@@ -225,7 +242,7 @@ struct FridayProfileCardSection: View {
                         Label("Wide (Posts)", systemImage: "rectangle")
                     }
                 } label: {
-                    Label("Share", systemImage: "square.and.arrow.up")
+                    Label(String(localized: "Share", comment: "Button that shares the personality card"), systemImage: "square.and.arrow.up")
                         .font(OffRecordTypography.labelSmall)
                         .foregroundStyle(OffRecordColor.textAqua)
                         .frame(minWidth: OffRecordLayout.minimumTapTarget, minHeight: OffRecordLayout.minimumTapTarget)
@@ -317,9 +334,9 @@ struct FridayProfileCardContent: View {
 
             // Stats row
             HStack(spacing: 0) {
-                miniStat(value: profile.peakTime, label: "Peak Time")
-                miniStat(value: profile.dominantMood, label: "Top Mood")
-                miniStat(value: profile.emotionalRange, label: "Range")
+                miniStat(value: profile.peakTime, label: String(localized: "Peak Time", comment: "Hour the user journals most"))
+                miniStat(value: profile.dominantMood, label: String(localized: "Top Mood"))
+                miniStat(value: profile.emotionalRange, label: String(localized: "Range", comment: "How widely the user’s mood varies"))
             }
         }
         .padding(20)
@@ -455,10 +472,10 @@ private struct FridayProfileCardExport: View {
 
             // Stats
             HStack(spacing: 0) {
-                exportStat(value: profile.peakTime, label: "Peak Time")
-                exportStat(value: profile.dominantMood, label: "Top Mood")
-                exportStat(value: profile.emotionalRange, label: "Range")
-                exportStat(value: "\(profile.totalEntries)", label: "Entries")
+                exportStat(value: profile.peakTime, label: String(localized: "Peak Time", comment: "Hour the user journals most"))
+                exportStat(value: profile.dominantMood, label: String(localized: "Top Mood"))
+                exportStat(value: profile.emotionalRange, label: String(localized: "Range", comment: "How widely the user’s mood varies"))
+                exportStat(value: "\(profile.totalEntries)", label: String(localized: "Entries", comment: "Number of journal entries"))
             }
 
             // Branding

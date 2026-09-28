@@ -60,6 +60,14 @@ struct SettingsView: View {
         case yearly = "Yearly"
 
         var id: String { rawValue }
+
+        var displayName: String {
+            switch self {
+            case .monthly: return String(localized: "Monthly", comment: "PDF export period")
+            case .quarterly: return String(localized: "Quarterly", comment: "PDF export period")
+            case .yearly: return String(localized: "Yearly", comment: "PDF export period")
+            }
+        }
     }
 
     // Storage states
@@ -98,7 +106,7 @@ struct SettingsView: View {
                     }
 
                     settingsGroup(
-                        title: "Journal & Reminders",
+                        title: String(localized: "Journal & Reminders"),
                         columns: columns,
                         items: [
                             .init(id: "goal", keywords: "weekly goal journaling target habit", view: AnyView(journalingGoalSection)),
@@ -108,7 +116,7 @@ struct SettingsView: View {
                     )
 
                     settingsGroup(
-                        title: "Privacy & AI",
+                        title: String(localized: "Privacy & AI"),
                         columns: columns,
                         items: [
                             .init(id: "lock", keywords: "lock face id touch id passcode privacy security", view: AnyView(securitySection)),
@@ -120,7 +128,7 @@ struct SettingsView: View {
                     )
 
                     settingsGroup(
-                        title: "Data & Export",
+                        title: String(localized: "Data & Export"),
                         columns: columns,
                         items: [
                             .init(id: "export", keywords: "export pdf print", view: AnyView(exportSection)),
@@ -131,7 +139,7 @@ struct SettingsView: View {
                     )
 
                     settingsGroup(
-                        title: "Appearance",
+                        title: String(localized: "Appearance"),
                         columns: columns,
                         items: [
                             .init(id: "theme", keywords: "theme appearance dark light color accent", view: AnyView(appearanceSection))
@@ -139,7 +147,7 @@ struct SettingsView: View {
                     )
 
                     settingsGroup(
-                        title: "About",
+                        title: String(localized: "About", comment: "Settings group title"),
                         columns: columns,
                         items: [
                             .init(id: "privacyPolicy", keywords: "privacy policy data not collected", view: AnyView(privacySection)),
@@ -295,36 +303,36 @@ struct SettingsView: View {
             PrivacyGlanceRow(
                 id: "lock",
                 systemImage: "lock.shield.fill",
-                title: "Lock",
-                status: lockManager.isEnabled ? "On" : "Off",
+                title: String(localized: "Lock", comment: "Settings section: app lock"),
+                status: lockManager.isEnabled ? String(localized: "On", comment: "Privacy status: feature is on") : String(localized: "Off", comment: "Privacy status: feature is off"),
                 isPositive: lockManager.isEnabled
             ),
             PrivacyGlanceRow(
                 id: "localAI",
                 systemImage: "cpu.fill",
-                title: "AI & Transcription",
-                status: "On-device",
+                title: String(localized: "AI & Transcription"),
+                status: String(localized: "On-device"),
                 isPositive: true
             ),
             PrivacyGlanceRow(
                 id: "icloud",
                 systemImage: iCloudSyncEnabled ? "icloud.fill" : "icloud.slash",
-                title: "iCloud Sync",
-                status: iCloudSyncEnabled ? "Your iCloud" : "Off",
+                title: String(localized: "iCloud Sync"),
+                status: iCloudSyncEnabled ? String(localized: "Your iCloud") : String(localized: "Off", comment: "Privacy status: feature is off"),
                 isPositive: true
             ),
             PrivacyGlanceRow(
                 id: "health",
                 systemImage: "heart.text.square.fill",
-                title: "Apple Health",
-                status: health.isEnabled ? "Moods only" : "Off",
+                title: String(localized: "Apple Health"),
+                status: health.isEnabled ? String(localized: "Moods only") : String(localized: "Off", comment: "Privacy status: feature is off"),
                 isPositive: true
             ),
             PrivacyGlanceRow(
                 id: "spotlight",
                 systemImage: "magnifyingglass",
-                title: "Spotlight",
-                status: spotlightMetadataIndexingEnabled ? "Dates and moods only" : "Off",
+                title: String(localized: "Spotlight", comment: "Privacy row: iOS Spotlight search"),
+                status: spotlightMetadataIndexingEnabled ? String(localized: "Dates and moods only") : String(localized: "Off", comment: "Privacy status: feature is off"),
                 isPositive: true
             )
         ]
@@ -332,8 +340,8 @@ struct SettingsView: View {
 
     private var healthSection: some View {
         SettingsCard(
-            title: "Apple Health",
-            footer: "Only the mood and time are saved. OffRecord never reads Health data.",
+            title: String(localized: "Apple Health"),
+            footer: String(localized: "Only the mood and time are saved. OffRecord never reads Health data."),
             systemImage: "heart.text.square.fill",
             tint: OffRecordColor.textBlush,
             fill: OffRecordColor.surfaceBlush
@@ -363,8 +371,8 @@ struct SettingsView: View {
     @ViewBuilder
     private var exportSection: some View {
         SettingsCard(
-            title: "PDF Export",
-            footer: "Name and subtitle appear on the cover only.",
+            title: String(localized: "PDF Export"),
+            footer: String(localized: "Name and subtitle appear on the cover only."),
             systemImage: "doc.richtext",
             tint: OffRecordColor.textSky,
             fill: OffRecordColor.surfaceBlue
@@ -377,7 +385,7 @@ struct SettingsView: View {
             if years.isEmpty {
                 SettingsRow(
                     systemImage: "tray",
-                    title: "No entries to export yet.",
+                    title: String(localized: "No entries to export yet."),
                     tint: OffRecordColor.textSky
                 )
             } else {
@@ -385,7 +393,7 @@ struct SettingsView: View {
                     VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
                         Picker("Period", selection: $selectedExportPeriod) {
                             ForEach(ExportPeriod.allCases) { period in
-                                Text(period.rawValue).tag(period)
+                                Text(period.displayName).tag(period)
                             }
                         }
 
@@ -450,7 +458,7 @@ struct SettingsView: View {
                         } else {
                             Image(systemName: "square.and.arrow.up")
                         }
-                        Text(isExporting ? "Exporting…" : "Export PDF")
+                        Text(isExporting ? String(localized: "Exporting…") : String(localized: "Export PDF"))
                     }
                 }
                 .buttonStyle(SettingsPrimaryButtonStyle())
@@ -462,8 +470,8 @@ struct SettingsView: View {
     @ViewBuilder
     private var appearanceSection: some View {
         SettingsCard(
-            title: "Theme",
-            footer: "System matches your \(DeviceNoun.current)’s appearance.",
+            title: String(localized: "Theme", comment: "Settings section: app color theme"),
+            footer: String(localized: "System matches your \(DeviceNoun.current)’s appearance."),
             systemImage: "paintpalette",
             tint: themeManager.selectedTheme.readableAccentColor,
             fill: OffRecordColor.surfacePrimary
@@ -486,7 +494,7 @@ struct SettingsView: View {
     @ViewBuilder
     private var journalingGoalSection: some View {
         SettingsCard(
-            title: "Weekly Goal",
+            title: String(localized: "Weekly Goal"),
             systemImage: "target",
             tint: OffRecordColor.textAqua,
             fill: OffRecordColor.surfaceMint
@@ -506,8 +514,8 @@ struct SettingsView: View {
     @ViewBuilder
     private var securitySection: some View {
         SettingsCard(
-            title: "Lock",
-            footer: "Locks when you leave the app. Falls back to your passcode.",
+            title: String(localized: "Lock", comment: "Settings section: app lock"),
+            footer: String(localized: "Locks when you leave the app. Falls back to your passcode."),
             systemImage: "lock.shield.fill",
             tint: OffRecordColor.textSage,
             fill: OffRecordColor.surfaceSage
@@ -519,8 +527,8 @@ struct SettingsView: View {
     @ViewBuilder
     private var localAIPrivacySection: some View {
         SettingsCard(
-            title: "On-Device AI",
-            footer: "iCloud Sync uses your own iCloud account.",
+            title: String(localized: "On-Device AI"),
+            footer: String(localized: "iCloud Sync uses your own iCloud account."),
             systemImage: "cpu.fill",
             tint: OffRecordColor.textLavender,
             fill: OffRecordColor.surfaceLavender
@@ -552,8 +560,8 @@ struct SettingsView: View {
     @ViewBuilder
     private var semanticMemorySection: some View {
         SettingsCard(
-            title: "Search Index",
-            footer: "Lets search and Friday find entries by meaning. Built on this \(DeviceNoun.current), never synced.",
+            title: String(localized: "Search Index"),
+            footer: String(localized: "Lets search and Friday find entries by meaning. Built on this \(DeviceNoun.current), never synced."),
             systemImage: "brain.head.profile",
             tint: OffRecordColor.textLavender,
             fill: OffRecordColor.surfacePrimary
@@ -561,7 +569,7 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 12) {
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("Status")
+                        Text("Status", comment: "Search index status heading")
                             .font(OffRecordTypography.labelMedium)
                         Text(semanticMemory.statusMessage)
                             .font(OffRecordTypography.metadata)
@@ -627,7 +635,7 @@ struct SettingsView: View {
     @ViewBuilder
     private var systemSearchSection: some View {
         SettingsCard(
-            title: "Siri & Search",
+            title: String(localized: "Siri & Search"),
             systemImage: "magnifyingglass",
             tint: OffRecordColor.textSky,
             fill: OffRecordColor.surfacePrimary
@@ -661,8 +669,8 @@ struct SettingsView: View {
     @ViewBuilder
     private var dailyReminderSection: some View {
         SettingsCard(
-            title: "Daily Reminder",
-            footer: "Reminders never include anything from your entries.",
+            title: String(localized: "Daily Reminder"),
+            footer: String(localized: "Reminders never include anything from your entries."),
             systemImage: "bell.badge",
             tint: OffRecordColor.textPeach,
             fill: OffRecordColor.surfacePeach
@@ -686,13 +694,14 @@ struct SettingsView: View {
 
             if reminderManager.isEnabled {
                 DatePicker(
-                    "Time",
                     selection: Binding(
                         get: { reminderManager.reminderTime },
                         set: { reminderManager.reminderTime = $0 }
                     ),
                     displayedComponents: .hourAndMinute
-                )
+                ) {
+                    Text("Time", comment: "Label for the reminder's time of day")
+                }
             }
 
             Toggle("Smart Prompts from Friday", isOn: $reminderManager.usesFridaySmartPrompts)
@@ -702,8 +711,8 @@ struct SettingsView: View {
 
     private var weeklyReflectionSection: some View {
         SettingsCard(
-            title: "Weekly Reflection",
-            footer: "Notifications never include anything from your entries.",
+            title: String(localized: "Weekly Reflection"),
+            footer: String(localized: "Notifications never include anything from your entries."),
             systemImage: "calendar.badge.clock",
             tint: OffRecordColor.textAqua,
             fill: OffRecordColor.surfaceMint
@@ -719,13 +728,10 @@ struct SettingsView: View {
                     get: { weeklyReflection.settings.reminderWeekday },
                     set: { value in weeklyReflection.updateSettings { $0.reminderWeekday = value } }
                 )) {
-                    Text("Sunday").tag(1)
-                    Text("Monday").tag(2)
-                    Text("Tuesday").tag(3)
-                    Text("Wednesday").tag(4)
-                    Text("Thursday").tag(5)
-                    Text("Friday").tag(6)
-                    Text("Saturday").tag(7)
+                    // `reminderWeekday` uses Calendar weekday numbers (1 = Sunday).
+                    ForEach(Array(Calendar.current.weekdaySymbols.enumerated()), id: \.offset) { index, name in
+                        Text(name).tag(index + 1)
+                    }
                 }
 
                 DatePicker(
@@ -781,9 +787,9 @@ struct SettingsView: View {
     @ViewBuilder
     private var iCloudSection: some View {
         SettingsCard(
-            title: "iCloud Sync",
+            title: String(localized: "iCloud Sync"),
             subtitle: syncStatusText,
-            footer: iCloudSyncEnabled ? "Recordings stay on this \(DeviceNoun.current) and don’t sync." : nil,
+            footer: iCloudSyncEnabled ? String(localized: "Recordings stay on this \(DeviceNoun.current) and don’t sync.") : nil,
             systemImage: iCloudSyncEnabled && PersistenceController.isCloudAvailable ? "icloud.fill" : "icloud.slash",
             tint: iCloudSyncEnabled && PersistenceController.isCloudAvailable ? OffRecordColor.textSky : OffRecordColor.textTertiary,
             fill: OffRecordColor.surfaceBlue
@@ -814,18 +820,18 @@ struct SettingsView: View {
 
     private var syncStatusText: String {
         if !iCloudSyncEnabled {
-            return "Off"
+            return String(localized: "Off", comment: "iCloud Sync status: turned off")
         }
         if PersistenceController.isCloudAvailable {
-            return "On"
+            return String(localized: "On", comment: "iCloud Sync status: turned on")
         }
-        return "Not Signed In"
+        return String(localized: "Not Signed In", comment: "iCloud Sync status: no iCloud account")
     }
 
     @ViewBuilder
     private var privacySection: some View {
         SettingsCard(
-            title: "Privacy Policy",
+            title: String(localized: "Privacy Policy"),
             systemImage: "hand.raised.fill",
             tint: OffRecordColor.textSage,
             fill: OffRecordColor.surfaceSage
@@ -847,8 +853,8 @@ struct SettingsView: View {
     @ViewBuilder
     private var backupSection: some View {
         SettingsCard(
-            title: "Backup & Export",
-            footer: "Encrypted backups can’t be opened without their password.",
+            title: String(localized: "Backup & Export"),
+            footer: String(localized: "Encrypted backups can’t be opened without their password."),
             systemImage: "archivebox",
             tint: OffRecordColor.textSky,
             fill: OffRecordColor.surfacePrimary
@@ -858,8 +864,8 @@ struct SettingsView: View {
             } label: {
                 SettingsActionRow(
                     systemImage: "square.and.arrow.up",
-                    title: "Export",
-                    subtitle: "Backup, text, Markdown, CSV",
+                    title: String(localized: "Export", comment: "Settings row that opens export options"),
+                    subtitle: String(localized: "Backup, text, Markdown, CSV"),
                     tint: OffRecordColor.textSky
                 )
             }
@@ -869,7 +875,7 @@ struct SettingsView: View {
             } label: {
                 SettingsActionRow(
                     systemImage: "square.and.arrow.down",
-                    title: "Restore from Backup",
+                    title: String(localized: "Restore from Backup"),
                     tint: OffRecordColor.textSky
                 )
             }
@@ -879,22 +885,22 @@ struct SettingsView: View {
     @ViewBuilder
     private var storageSection: some View {
         SettingsCard(
-            title: "Storage",
+            title: String(localized: "Storage", comment: "Settings section: space used on device"),
             systemImage: "internaldrive",
             tint: OffRecordColor.textAqua,
             fill: OffRecordColor.surfacePrimary
         ) {
             if isCalculatingStorage {
-                SettingsRow(systemImage: "hourglass", title: "Calculating…", tint: OffRecordColor.textAqua) {
+                SettingsRow(systemImage: "hourglass", title: String(localized: "Calculating…"), tint: OffRecordColor.textAqua) {
                     ProgressView()
                 }
             } else {
                 let total = audioStorageBytes + photoStorageBytes + databaseStorageBytes
-                StorageRow(label: "Recordings", bytes: audioStorageBytes, totalBytes: total, icon: "waveform", color: OffRecordColor.textAqua)
-                StorageRow(label: "Photos", bytes: photoStorageBytes, totalBytes: total, icon: "photo", color: OffRecordColor.textBlush)
-                StorageRow(label: "Entries", bytes: databaseStorageBytes, totalBytes: total, icon: "cylinder", color: OffRecordColor.textPeach)
+                StorageRow(label: String(localized: "Recordings"), bytes: audioStorageBytes, totalBytes: total, icon: "waveform", color: OffRecordColor.textAqua)
+                StorageRow(label: String(localized: "Photos"), bytes: photoStorageBytes, totalBytes: total, icon: "photo", color: OffRecordColor.textBlush)
+                StorageRow(label: String(localized: "Entries", comment: "Storage row: space used by journal entries"), bytes: databaseStorageBytes, totalBytes: total, icon: "cylinder", color: OffRecordColor.textPeach)
 
-                SettingsRow(systemImage: "sum", title: "Total", tint: OffRecordColor.textBrand) {
+                SettingsRow(systemImage: "sum", title: String(localized: "Total", comment: "Storage row: total space used"), tint: OffRecordColor.textBrand) {
                     Text(formatBytes(total))
                         .font(OffRecordTypography.labelMedium)
                         .foregroundColor(OffRecordColor.textPrimary)
@@ -970,18 +976,18 @@ struct SettingsView: View {
     @ViewBuilder
     private var aboutSection: some View {
         SettingsCard(
-            title: "About OffRecord",
+            title: String(localized: "About OffRecord"),
             systemImage: "info.circle",
             tint: OffRecordColor.textBrand,
             fill: OffRecordColor.surfacePrimary
         ) {
-            SettingsRow(systemImage: "number", title: "Version", tint: OffRecordColor.textBrand) {
+            SettingsRow(systemImage: "number", title: String(localized: "Version", comment: "Settings row: app version number"), tint: OffRecordColor.textBrand) {
                 Text(Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "1.0")
                     .font(OffRecordTypography.bodySmall)
                     .foregroundColor(OffRecordColor.textPrimary)
             }
 
-            SettingsRow(systemImage: "book.pages", title: "Entries", tint: OffRecordColor.textBrand) {
+            SettingsRow(systemImage: "book.pages", title: String(localized: "Entries", comment: "About row: number of journal entries"), tint: OffRecordColor.textBrand) {
                 Text("\(totalEntriesCount)")
                     .font(OffRecordTypography.bodySmall)
                     .foregroundColor(OffRecordColor.textPrimary)
@@ -1029,11 +1035,11 @@ struct SettingsView: View {
         case .monthly:
             let month = selectedMonth ?? currentMonth
             dateRange = .month(year: year, month: month)
-            periodTitle = "\(monthName(month)) \(year)"
+            periodTitle = String(localized: "\(monthName(month)) \(String(year))", comment: "PDF export period title: month name and year")
         case .quarterly:
             let quarter = selectedMonth ?? currentQuarter
             dateRange = .quarter(year: year, quarter: quarter)
-            periodTitle = "Q\(quarter) \(year)"
+            periodTitle = String(localized: "Q\(quarter) \(String(year))", comment: "PDF export period title: quarter number and year, e.g. Q3 2026")
         case .yearly:
             dateRange = .year(year)
             periodTitle = String(year)
@@ -1065,14 +1071,14 @@ struct SettingsView: View {
             } catch {
                 settingsLogger.error("PDF export failed: \(error.localizedDescription, privacy: .public)")
                 await MainActor.run {
-                    exportError = "Try again."
+                    exportError = String(localized: "Try again.")
                     isExporting = false
                     PerformanceSignposts.end(token)
                 }
             }
         }
         #else
-        exportError = "PDF export is available on iOS."
+        exportError = String(localized: "PDF export is available on iOS.")
         #endif
     }
 

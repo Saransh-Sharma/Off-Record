@@ -33,14 +33,14 @@ enum SpeechTranscriptionConsent {
         #endif
     }
 
-    static let disclosureTitle = "Transcribe Recordings?"
+    static let disclosureTitle = String(localized: "Transcribe Recordings?")
 
     static var disclosureMessage: String {
-        "OffRecord uses Apple’s on-device speech recognition. Your audio is never sent to a server. iOS may download a language file first."
+        String(localized: "OffRecord uses Apple’s on-device speech recognition. Your audio is never sent to a server. iOS may download a language file first.")
     }
 
     static var settingsDescription: String {
-        "Uses Apple’s on-device speech recognition. Unsupported languages keep the recording without a transcript."
+        String(localized: "Uses Apple’s on-device speech recognition. Unsupported languages keep the recording without a transcript.")
     }
 }
 

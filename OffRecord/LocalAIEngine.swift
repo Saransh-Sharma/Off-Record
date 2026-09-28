@@ -108,31 +108,31 @@ enum UserIntent: String, CaseIterable {
     
     var description: String {
         switch self {
-        case .journaling: return "Daily log"
-        case .venting: return "Venting"
-        case .reflection: return "Thinking it through"
-        case .planning: return "Planning"
-        case .gratitude: return "Gratitude"
-        case .problemSolving: return "Working through something"
-        case .celebration: return "Good news"
-        case .processing: return "Processing feelings"
-        case .seeking: return "Looking for advice"
-        case .unknown: return "General"
+        case .journaling: return String(localized: "Daily log")
+        case .venting: return String(localized: "Venting")
+        case .reflection: return String(localized: "Thinking it through")
+        case .planning: return String(localized: "Planning")
+        case .gratitude: return String(localized: "Gratitude")
+        case .problemSolving: return String(localized: "Working through something")
+        case .celebration: return String(localized: "Good news")
+        case .processing: return String(localized: "Processing feelings")
+        case .seeking: return String(localized: "Looking for advice")
+        case .unknown: return String(localized: "General", comment: "What an entry is about, when no clear theme stands out.")
         }
     }
     
     var suggestedFollowUp: String {
         switch self {
-        case .journaling: return "How did that feel?"
-        case .venting: return "What would help right now?"
-        case .reflection: return "What stands out to you?"
-        case .planning: return "What’s a first small step?"
-        case .gratitude: return "How can you keep this feeling?"
-        case .problemSolving: return "Who could help?"
-        case .celebration: return "Who would you tell?"
-        case .processing: return "What did this teach you?"
-        case .seeking: return "What does your gut say?"
-        case .unknown: return "What else is on your mind?"
+        case .journaling: return String(localized: "How did that feel?")
+        case .venting: return String(localized: "What would help right now?")
+        case .reflection: return String(localized: "What stands out to you?")
+        case .planning: return String(localized: "What’s a first small step?")
+        case .gratitude: return String(localized: "How can you keep this feeling?")
+        case .problemSolving: return String(localized: "Who could help?")
+        case .celebration: return String(localized: "Who would you tell?")
+        case .processing: return String(localized: "What did this teach you?")
+        case .seeking: return String(localized: "What does your gut say?")
+        case .unknown: return String(localized: "What else is on your mind?")
         }
     }
 }
@@ -166,15 +166,15 @@ enum DetectedEmotion: String, CaseIterable {
     
     var supportiveMessage: String {
         switch self {
-        case .joy: return "Sounds like a good day."
-        case .sadness: return "That sounds hard."
-        case .anger: return "That sounds frustrating."
-        case .fear: return "That sounds scary."
-        case .surprise: return "That was unexpected."
-        case .disgust: return "That’s a lot to work through."
-        case .anticipation: return "Sounds like you’re looking ahead."
-        case .trust: return "Sounds like you have people to lean on."
-        case .neutral: return "Sounds like a calm day."
+        case .joy: return String(localized: "Sounds like a good day.")
+        case .sadness: return String(localized: "That sounds hard.")
+        case .anger: return String(localized: "That sounds frustrating.")
+        case .fear: return String(localized: "That sounds scary.")
+        case .surprise: return String(localized: "That was unexpected.")
+        case .disgust: return String(localized: "That’s a lot to work through.")
+        case .anticipation: return String(localized: "Sounds like you’re looking ahead.")
+        case .trust: return String(localized: "Sounds like you have people to lean on.")
+        case .neutral: return String(localized: "Sounds like a calm day.")
         }
     }
 }
@@ -471,7 +471,7 @@ final class LocalAIEngine: ObservableObject {
         // Personalize based on user history
         if userProfile.totalEntries > 10 {
             if let frequentTopic = topics.first(where: { userProfile.commonTopics[$0, default: 0] > 3 }) {
-                response += " \(frequentTopic) comes up a lot for you."
+                response += " " + String(localized: "\(frequentTopic) comes up a lot for you.")
             }
         }
         

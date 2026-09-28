@@ -96,16 +96,16 @@ extension EmptyStateView {
     static var noInsights: EmptyStateView {
         EmptyStateView(
             icon: "chart.line.uptrend.xyaxis",
-            title: "No Insights Yet",
-            subtitle: "I need 3 entries before I can spot patterns."
+            title: String(localized: "No Insights Yet"),
+            subtitle: String(localized: "I need 3 entries before I can spot patterns.")
         )
     }
 
     static var fridayGettingToKnow: EmptyStateView {
         EmptyStateView(
             icon: "sparkles",
-            title: "Still Getting to Know You",
-            subtitle: "After 5 entries, I can start telling you what I see."
+            title: String(localized: "Still Getting to Know You"),
+            subtitle: String(localized: "After 5 entries, I can start telling you what I see.")
         )
     }
 }

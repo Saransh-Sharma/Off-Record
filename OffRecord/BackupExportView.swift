@@ -56,7 +56,7 @@ struct BackupExportView: View {
     private var filterFooterText: String {
         switch selectedFormat {
         case .json, .encryptedBackup:
-            return "Backups include every entry."
+            return String(localized: "Backups include every entry.")
         default:
             return String(AttributedString(localized: "^[\(filteredEntryCount) entry](inflect: true)").characters)
         }
@@ -66,7 +66,7 @@ struct BackupExportView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: OffRecordSpacing.lg) {
                 SettingsCard(
-                    title: "Format",
+                    title: String(localized: "Format", comment: "Export section: file format"),
                     systemImage: "doc.badge.arrow.up",
                     tint: OffRecordColor.textSky,
                     fill: OffRecordColor.surfacePrimary
@@ -99,7 +99,7 @@ struct BackupExportView: View {
             }
             
                 SettingsCard(
-                    title: "Entries",
+                    title: String(localized: "Entries", comment: "Export filter section: which entries to include"),
                     footer: filterFooterText,
                     systemImage: "line.3.horizontal.decrease.circle",
                     tint: OffRecordColor.textAqua,
@@ -119,8 +119,8 @@ struct BackupExportView: View {
             // Password fields for encrypted backup
             if selectedFormat == .encryptedBackup {
                     SettingsCard(
-                        title: "Password",
-                        footer: "You’ll need this to restore. It can’t be recovered.",
+                        title: String(localized: "Password", comment: "Encrypted backup password section"),
+                        footer: String(localized: "You’ll need this to restore. It can’t be recovered."),
                         systemImage: "lock.shield.fill",
                         tint: OffRecordColor.textSage,
                         fill: OffRecordColor.surfaceSage
@@ -235,7 +235,7 @@ struct BackupExportView: View {
                 backupLogger.error("Export failed: \(error.localizedDescription, privacy: .public)")
                 await MainActor.run {
                     isExporting = false
-                    errorMessage = "Try again."
+                    errorMessage = String(localized: "Try again.")
                     showError = true
                     HapticManager.shared.error()
                 }
@@ -267,15 +267,15 @@ struct ImportBackupView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: OffRecordSpacing.lg) {
                 SettingsCard(
-                    title: "Restore from Backup",
-                    subtitle: "Choose a backup file exported from OffRecord.",
+                    title: String(localized: "Restore from Backup"),
+                    subtitle: String(localized: "Choose a backup file exported from OffRecord."),
                     systemImage: "doc.badge.plus",
                     tint: OffRecordColor.textSky,
                     fill: OffRecordColor.surfaceBlue
                 ) {
-                    SettingsRow(systemImage: "checkmark.circle.fill", title: "Entries you already have are skipped.", tint: OffRecordColor.textSage)
-                    SettingsRow(systemImage: "arrow.triangle.merge", title: "Nothing is deleted.", tint: OffRecordColor.textSky)
-                    SettingsRow(systemImage: "icloud.and.arrow.up", title: "Restored entries sync if iCloud is on.", tint: OffRecordColor.textLavender)
+                    SettingsRow(systemImage: "checkmark.circle.fill", title: String(localized: "Entries you already have are skipped."), tint: OffRecordColor.textSage)
+                    SettingsRow(systemImage: "arrow.triangle.merge", title: String(localized: "Nothing is deleted."), tint: OffRecordColor.textSky)
+                    SettingsRow(systemImage: "icloud.and.arrow.up", title: String(localized: "Restored entries sync if iCloud is on."), tint: OffRecordColor.textLavender)
                 }
 
                 Button {
@@ -287,7 +287,7 @@ struct ImportBackupView: View {
                             ProgressView()
                                 .tint(OffRecordColor.textInverse)
                         }
-                        Text(isImporting ? "Restoring…" : "Choose Backup File")
+                        Text(isImporting ? String(localized: "Restoring…") : String(localized: "Choose Backup File"))
                     }
                 }
                 .buttonStyle(SettingsPrimaryButtonStyle())
@@ -313,8 +313,8 @@ struct ImportBackupView: View {
                 ScrollView {
                     VStack(alignment: .leading, spacing: OffRecordSpacing.lg) {
                         SettingsCard(
-                            title: "Encrypted Backup",
-                            subtitle: "Enter this backup’s password.",
+                            title: String(localized: "Encrypted Backup"),
+                            subtitle: String(localized: "Enter this backup’s password."),
                             systemImage: "lock.shield.fill",
                             tint: OffRecordColor.textSage,
                             fill: OffRecordColor.surfaceSage
@@ -371,9 +371,9 @@ struct ImportBackupView: View {
     
     private var resultTitle: String {
         if case .error = importResult {
-            return "Couldn’t Restore"
+            return String(localized: "Couldn’t Restore")
         }
-        return "Restore Complete"
+        return String(localized: "Restore Complete")
     }
 
     private func handleFileSelection(_ result: Result<[URL], Error>) {
@@ -385,7 +385,7 @@ struct ImportBackupView: View {
                 guard url.startAccessingSecurityScopedResource() else {
                     pendingEncryptedURL = nil
                     importPassword = ""
-                    importResult = .error("Couldn’t open that file.")
+                    importResult = .error(String(localized: "Couldn’t open that file."))
                     showResult = true
                     return
                 }
@@ -397,7 +397,7 @@ struct ImportBackupView: View {
             }
         case .failure(let error):
             backupLogger.error("Backup file selection failed: \(error.localizedDescription, privacy: .public)")
-            importResult = .error("Couldn’t open that file.")
+            importResult = .error(String(localized: "Couldn’t open that file."))
             showResult = true
         }
     }
@@ -422,7 +422,7 @@ struct ImportBackupView: View {
             } catch {
                 backupLogger.error("Restore failed: \(error.localizedDescription, privacy: .public)")
                 isImporting = false
-                importResult = .error("Couldn’t restore. Check the password and try again.")
+                importResult = .error(String(localized: "Couldn’t restore. Check the password and try again."))
                 showResult = true
                 HapticManager.shared.error()
             }
@@ -434,7 +434,7 @@ struct ImportBackupView: View {
         
         // Start accessing security-scoped resource
         guard url.startAccessingSecurityScopedResource() else {
-            importResult = .error("Couldn’t open that file.")
+            importResult = .error(String(localized: "Couldn’t open that file."))
             showResult = true
             isImporting = false
             return
@@ -453,7 +453,7 @@ struct ImportBackupView: View {
             } catch {
                 backupLogger.error("Restore failed: \(error.localizedDescription, privacy: .public)")
                 isImporting = false
-                importResult = .error("Couldn’t restore this backup.")
+                importResult = .error(String(localized: "Couldn’t restore this backup."))
                 showResult = true
                 HapticManager.shared.error()
             }

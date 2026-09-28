@@ -71,7 +71,10 @@ enum FridayFollowUpBuilder {
                 let lowered = name.match.lowercased()
                 return lowered.count > 2 && containsWord(lowered, in: evidenceText) && !containsWord(lowered, in: loweredQuestion)
             }) {
-                append(FridayFollowUp(title: "More about \(name.display)", prompt: "What else have I written about \(name.match)?"))
+                append(FridayFollowUp(
+                    title: String(localized: "More about \(name.display)", comment: "Follow-up chip; the placeholder is a person, place, or theme"),
+                    prompt: String(localized: "What else have I written about \(name.match)?")
+                ))
             }
 
             // The mood the cited entries share most.
@@ -79,7 +82,10 @@ enum FridayFollowUpBuilder {
             if let mood = Dictionary(grouping: moods, by: { $0 })
                 .max(by: { $0.value.count == $1.value.count ? $0.key > $1.key : $0.value.count < $1.value.count })?.key,
                !containsWord(mood, in: loweredQuestion) {
-                append(FridayFollowUp(title: "Other \(mood) days", prompt: "When else did I feel \(mood)?"))
+                append(FridayFollowUp(
+                    title: String(localized: "Other \(mood) days", comment: "Follow-up chip; the placeholder is a mood, like happy"),
+                    prompt: String(localized: "When else did I feel \(mood)?", comment: "The placeholder is a mood, like happy")
+                ))
             }
 
             // How far back the evidence reaches.
@@ -87,9 +93,15 @@ enum FridayFollowUpBuilder {
             if let earliest = dates.first, let latest = dates.last,
                (calendar.dateComponents([.day], from: earliest, to: latest).day ?? 0) >= 7 {
                 let month = earliest.formatted(.dateTime.month(.wide))
-                append(FridayFollowUp(title: "What’s changed since \(month)?", prompt: "How has this changed since \(month)?"))
+                append(FridayFollowUp(
+                    title: String(localized: "What’s changed since \(month)?", comment: "Follow-up chip; the placeholder is a month name"),
+                    prompt: String(localized: "How has this changed since \(month)?", comment: "The placeholder is a month name")
+                ))
             } else {
-                append(FridayFollowUp(title: "What helped before?", prompt: "What helped me when I felt like this before?"))
+                append(FridayFollowUp(
+                    title: String(localized: "What helped before?"),
+                    prompt: String(localized: "What helped me when I felt like this before?")
+                ))
             }
         }
 
@@ -136,19 +148,19 @@ enum FridayEvidenceStrength: Equatable {
 
     var title: String {
         switch self {
-        case .strong(let entries): return "Strong evidence · \(Self.entryText(entries))"
-        case .some(let entries): return "Some evidence · \(Self.entryText(entries))"
-        case .tentative(let entries): return "Limited evidence · \(Self.entryText(entries))"
-        case .overallPatterns: return "From your overall patterns"
+        case .strong(let entries): return String(localized: "Strong evidence · \(Self.entryText(entries))", comment: "The placeholder is an entry count, like “4 entries”")
+        case .some(let entries): return String(localized: "Some evidence · \(Self.entryText(entries))", comment: "The placeholder is an entry count, like “4 entries”")
+        case .tentative(let entries): return String(localized: "Limited evidence · \(Self.entryText(entries))", comment: "The placeholder is an entry count, like “4 entries”")
+        case .overallPatterns: return String(localized: "From your overall patterns")
         }
     }
 
     var accessibilityLabel: String {
         switch self {
-        case .strong(let entries): return "Strong evidence, based on \(Self.entryText(entries))"
-        case .some(let entries): return "Some evidence, based on \(Self.entryText(entries))"
-        case .tentative(let entries): return "Limited evidence, based on \(Self.entryText(entries))"
-        case .overallPatterns: return "Based on your overall patterns"
+        case .strong(let entries): return String(localized: "Strong evidence, based on \(Self.entryText(entries))")
+        case .some(let entries): return String(localized: "Some evidence, based on \(Self.entryText(entries))")
+        case .tentative(let entries): return String(localized: "Limited evidence, based on \(Self.entryText(entries))")
+        case .overallPatterns: return String(localized: "Based on your overall patterns")
         }
     }
 

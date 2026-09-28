@@ -69,7 +69,7 @@ struct ContentView: View {
     private var tabs: some View {
         TabView(selection: selectedTabBinding) {
             ForEach(OffRecordTab.allCases) { tab in
-                Tab(tab.rawValue, systemImage: tab.systemImage, value: tab) {
+                Tab(tab.title, systemImage: tab.systemImage, value: tab) {
                     NavigationStack {
                         tab.rootView
                     }
@@ -83,10 +83,10 @@ struct ContentView: View {
     private var tabKeyboardShortcuts: some View {
         ZStack {
             ForEach(Array(OffRecordTab.allCases.enumerated()), id: \.element) { index, tab in
-                Button(tab.rawValue) { navigationRouter.selectedTab = tab }
+                Button(tab.title) { navigationRouter.selectedTab = tab }
                     .keyboardShortcut(KeyEquivalent(Character("\(index + 1)")), modifiers: .command)
             }
-            Button("Record") { capture.toggleRecording() }
+            Button(String(localized: "Record", comment: "Keyboard shortcut (⌘R) that starts or stops a voice recording")) { capture.toggleRecording() }
                 .keyboardShortcut("r", modifiers: .command)
         }
         .frame(width: 0, height: 0)
@@ -110,6 +110,17 @@ enum OffRecordTab: String, CaseIterable, Identifiable {
     case settings = "Settings"
 
     var id: String { rawValue }
+
+    /// The tab name people see. Raw values stay fixed because routes and UI tests use them.
+    var title: String {
+        switch self {
+        case .today: return String(localized: "Today", comment: "Tab name")
+        case .timeline: return String(localized: "Timeline", comment: "Tab name")
+        case .insights: return String(localized: "Insights", comment: "Tab name")
+        case .friday: return String(localized: "Friday", comment: "Tab name; Friday is the AI companion, not the weekday")
+        case .settings: return String(localized: "Settings", comment: "Tab name")
+        }
+    }
 
     var systemImage: String {
         switch self {

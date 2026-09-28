@@ -79,17 +79,17 @@ extension JournalBlock {
 
 enum JournalBlockTimelinePresentation {
     static func label(for date: Date, calendar: Calendar = .current) -> String {
-        "\(daypart(for: date, calendar: calendar)) · \(date.formatted(date: .omitted, time: .shortened))"
+        String(localized: "\(daypart(for: date, calendar: calendar)) · \(date.formatted(date: .omitted, time: .shortened))", comment: "When a block was added: a part of the day, then the time. For example, “Evening · 6:42 PM”.")
     }
 
     static func daypart(for date: Date, calendar: Calendar = .current) -> String {
         switch calendar.component(.hour, from: date) {
-        case 0..<5: return "Late night"
-        case 5..<8: return "Early morning"
-        case 8..<12: return "Morning"
-        case 12..<17: return "Afternoon"
-        case 17..<21: return "Evening"
-        default: return "Night"
+        case 0..<5: return String(localized: "Late night", comment: "Part of the day, midnight to 5 AM.")
+        case 5..<8: return String(localized: "Early morning", comment: "Part of the day, 5 to 8 AM.")
+        case 8..<12: return String(localized: "Morning", comment: "Part of the day, 8 AM to noon.")
+        case 12..<17: return String(localized: "Afternoon", comment: "Part of the day, noon to 5 PM.")
+        case 17..<21: return String(localized: "Evening", comment: "Part of the day, 5 to 9 PM.")
+        default: return String(localized: "Night", comment: "Part of the day, 9 PM to midnight.")
         }
     }
 }

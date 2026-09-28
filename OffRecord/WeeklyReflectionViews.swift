@@ -180,12 +180,12 @@ struct WeeklyReflectionHistorySection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
-            InsightCardHeader(title: "Weekly Reflection", systemImage: "calendar.badge.clock", tint: OffRecordColor.textSage)
+            InsightCardHeader(title: String(localized: "Weekly Reflection"), systemImage: "calendar.badge.clock", tint: OffRecordColor.textSage)
 
             if reports.isEmpty {
                 InsightChartEmptyState(
                     systemImage: "moon.stars",
-                    message: "After \(WeeklyReflectionEligibilityService.fullEntryCount) entries this week, I’ll put a reflection here."
+                    message: String(localized: "After \(WeeklyReflectionEligibilityService.fullEntryCount) entries this week, I’ll put a reflection here.")
                 )
             } else {
                 if let currentWeekReport {
@@ -314,8 +314,8 @@ struct WeeklyReflectionHistorySection: View {
 
     private func statusLabel(_ report: WeeklyReflectionReport) -> String {
         switch report.status {
-        case .insufficientData: return "Not enough entries yet"
-        case .failed: return "Couldn’t be made"
+        case .insufficientData: return String(localized: "Not enough entries yet")
+        case .failed: return String(localized: "Couldn’t be made", comment: "Weekly reflection history row: the reflection failed to generate")
         default: return String(AttributedString(localized: "^[\(report.includedEntryIds.count) entry](inflect: true)").characters)
         }
     }
@@ -377,7 +377,7 @@ struct WeeklyReflectionReportView: View {
                 if displayedReport.safetyLevel == .highRiskExcluded {
                     supportCard
                 }
-                sectionCard(title: "Summary", systemImage: "text.alignleft") {
+                sectionCard(title: String(localized: "Summary", comment: "Weekly reflection section title"), systemImage: "text.alignleft") {
                     Text(displayedReport.summary)
                         .font(OffRecordTypography.bodyMedium)
                         .foregroundStyle(OffRecordColor.textPrimary)
@@ -390,12 +390,12 @@ struct WeeklyReflectionReportView: View {
                     themesSection
                 }
                 if !displayedReport.wins.isEmpty {
-                    sectionCard(title: "Wins", systemImage: "sparkles") {
+                    sectionCard(title: String(localized: "Wins", comment: "Weekly reflection section title: things that went well"), systemImage: "sparkles") {
                         bulletList(displayedReport.wins, symbol: "sparkle", tint: OffRecordColor.textSage)
                     }
                 }
                 if !displayedReport.frictions.isEmpty {
-                    sectionCard(title: "What Was Hard", systemImage: "cloud") {
+                    sectionCard(title: String(localized: "What Was Hard"), systemImage: "cloud") {
                         bulletList(displayedReport.frictions, symbol: "circle.fill", tint: OffRecordColor.textLavender, symbolScale: .small)
                     }
                 }
@@ -537,7 +537,7 @@ struct WeeklyReflectionReportView: View {
     }
 
     private var supportCard: some View {
-        sectionCard(title: "Support", systemImage: "heart") {
+        sectionCard(title: String(localized: "Support", comment: "Weekly reflection section title: emotional support resources"), systemImage: "heart") {
             Text("Some entries this week were heavier than usual. If you need support, reach out to someone you trust. OffRecord isn’t an emergency service.")
                 .font(OffRecordTypography.bodySmall)
                 .foregroundStyle(OffRecordColor.textSecondary)
@@ -550,13 +550,13 @@ struct WeeklyReflectionReportView: View {
         if let arc = displayedReport.emotionalArc, !arc.description.isEmpty {
             return arc.description
         }
-        return MoodTrendNarrator.summary(for: arcPoints, periodPhrase: "this week")
+        return MoodTrendNarrator.summary(for: arcPoints, periodPhrase: String(localized: "this week", comment: "Period phrase inside a mood summary sentence, e.g. \"This week, your moods were mixed.\""))
     }
 
     private var arcSection: some View {
-        sectionCard(title: "Mood", systemImage: "waveform.path.ecg") {
+        sectionCard(title: String(localized: "Mood", comment: "Weekly reflection section title: mood over the week"), systemImage: "waveform.path.ecg") {
             if let arc = displayedReport.emotionalArc {
-                Text(arc.label)
+                Text(arc.localizedLabel)
                     .font(OffRecordTypography.labelMedium)
                     .foregroundStyle(OffRecordColor.textHeading)
             }
@@ -573,7 +573,7 @@ struct WeeklyReflectionReportView: View {
     }
 
     private var themesSection: some View {
-        sectionCard(title: "Themes", systemImage: "tag") {
+        sectionCard(title: String(localized: "Themes", comment: "Weekly reflection section title: recurring topics"), systemImage: "tag") {
             ForEach(displayedReport.themes) { theme in
                 VStack(alignment: .leading, spacing: OffRecordSpacing.sm) {
                     Text(theme.title)
@@ -607,7 +607,7 @@ struct WeeklyReflectionReportView: View {
     }
 
     private var questionsSection: some View {
-        sectionCard(title: "Questions for Next Week", systemImage: "questionmark.bubble") {
+        sectionCard(title: String(localized: "Questions for Next Week"), systemImage: "questionmark.bubble") {
             VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
                 ForEach(Array(displayedReport.questions.enumerated()), id: \.offset) { index, question in
                     HStack(alignment: .firstTextBaseline, spacing: OffRecordSpacing.sm) {
@@ -628,7 +628,7 @@ struct WeeklyReflectionReportView: View {
     }
 
     private var takeawaySection: some View {
-        sectionCard(title: "Takeaway", systemImage: "bookmark") {
+        sectionCard(title: String(localized: "Takeaway", comment: "Weekly reflection section title: one thing to remember"), systemImage: "bookmark") {
             TextField("What do you want to remember?", text: $takeawayText, axis: .vertical)
                 .font(OffRecordTypography.bodyMedium)
                 .foregroundStyle(OffRecordColor.textPrimary)
@@ -651,7 +651,7 @@ struct WeeklyReflectionReportView: View {
             controller.saveTakeaway(takeawayText, for: displayedReport)
             saveCount += 1
         } label: {
-            Label(takeawayIsSaved ? "Saved" : "Save", systemImage: takeawayIsSaved ? "checkmark" : "bookmark.fill")
+            Label(takeawayIsSaved ? String(localized: "Saved") : String(localized: "Save"), systemImage: takeawayIsSaved ? "checkmark" : "bookmark.fill")
         }
         .buttonStyle(OffRecordSoftButtonStyle(tint: OffRecordColor.textOnAccent, fill: OffRecordColor.brandPlum))
         .disabled(trimmedTakeaway.isEmpty)
@@ -818,9 +818,9 @@ private struct WeeklyReflectionSourcesSheet: View {
 
     private func sourceSummary(_ entry: DiaryEntry) -> String {
         let words = String(AttributedString(localized: "^[\(entry.startedEntryWordCount) word](inflect: true)").characters)
-        if entry.hasStartedEntryAudio { return "Recording · \(words)" }
-        if entry.hasStartedEntryPhotos { return "Photo · \(words)" }
-        return "Text · \(words)"
+        if entry.hasStartedEntryAudio { return String(localized: "Recording · \(words)", comment: "Source row: a voice entry and its word count") }
+        if entry.hasStartedEntryPhotos { return String(localized: "Photo · \(words)", comment: "Source row: a photo entry and its word count") }
+        return String(localized: "Text · \(words)", comment: "Source row: a text entry and its word count")
     }
 }
 
@@ -864,7 +864,7 @@ private struct WeeklyReflectionExportSheet: View {
                 Section("Format") {
                     Picker("Format", selection: $format) {
                         ForEach(WeeklyReflectionExportService.Format.allCases) { format in
-                            Text(format.rawValue).tag(format)
+                            Text(format.displayName).tag(format)
                         }
                     }
                     .accessibilityIdentifier("weeklyReflection.export.format")

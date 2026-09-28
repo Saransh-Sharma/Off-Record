@@ -96,7 +96,7 @@ struct CaptureAccessoryBar: View {
                         .frame(width: 30, height: 30)
                         .background(OffRecordColor.brandPlum, in: Circle())
                     VStack(alignment: .leading, spacing: 0) {
-                        Text("Record")
+                        Text("Record", comment: "Button that starts a voice recording")
                             .font(OffRecordTypography.labelMedium)
                             .foregroundStyle(OffRecordColor.textPrimary)
                         if !isInline && !capture.isCaptureDateToday {
@@ -121,7 +121,7 @@ struct CaptureAccessoryBar: View {
             }
             .buttonStyle(.plain)
             .accessibilityLabel("Record")
-            .accessibilityHint("Adds a recording to \(capture.isCaptureDateToday ? "today" : "that day")’s entry.")
+            .accessibilityHint(capture.isCaptureDateToday ? String(localized: "Adds a recording to today’s entry.") : String(localized: "Adds a recording to that day’s entry."))
             .accessibilityIdentifier("todayDock.record")
 
             if !isInline {
@@ -174,7 +174,7 @@ struct CaptureAccessoryBar: View {
         HStack(spacing: OffRecordSpacing.sm) {
             ProgressView()
                 .controlSize(.small)
-            Text("Starting…")
+            Text("Starting…", comment: "Shown while the microphone gets ready to record")
                 .font(OffRecordTypography.labelMedium)
                 .foregroundStyle(OffRecordColor.textSecondary)
             Spacer(minLength: 0)
@@ -209,7 +209,7 @@ struct CaptureAccessoryBar: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .accessibilityLabel(capture.phase == .paused ? "Recording paused" : "Recording")
+            .accessibilityLabel(capture.phase == .paused ? String(localized: "Recording paused") : String(localized: "Recording"))
             .accessibilityValue(CaptureFormat.spokenDuration(recorder.currentTime))
             .accessibilityHint("Opens recording controls.")
 
@@ -374,9 +374,9 @@ private struct CaptureRecordingView: View {
 
     private var statusTitle: String {
         switch capture.phase {
-        case .starting: return "Starting…"
-        case .paused: return "Paused"
-        default: return "Recording"
+        case .starting: return String(localized: "Starting…", comment: "Shown while the microphone gets ready to record")
+        case .paused: return String(localized: "Paused", comment: "Recording status while recording is paused")
+        default: return String(localized: "Recording", comment: "Recording status while recording")
         }
     }
 
@@ -416,15 +416,15 @@ private struct CaptureRecordingView: View {
                         .contentTransition(.symbolEffect(.replace))
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel(capture.showsLiveTranscript ? "Hide Transcript" : "Show Transcript")
+                .accessibilityLabel(capture.showsLiveTranscript ? String(localized: "Hide Transcript") : String(localized: "Show Transcript"))
             }
         }
     }
 
     private var dateLabel: String {
         let calendar = Calendar.current
-        if calendar.isDateInToday(capture.captureDate) { return "Today" }
-        if calendar.isDateInYesterday(capture.captureDate) { return "Yesterday" }
+        if calendar.isDateInToday(capture.captureDate) { return String(localized: "Today", comment: "Date of the entry a recording will be added to") }
+        if calendar.isDateInYesterday(capture.captureDate) { return String(localized: "Yesterday") }
         return capture.captureDate.formatted(.dateTime.month(.abbreviated).day())
     }
 
@@ -433,7 +433,7 @@ private struct CaptureRecordingView: View {
         if capture.showsLiveTranscript && (capture.isLiveTranscriptActive || !capture.liveTranscript.isEmpty) {
             ScrollViewReader { proxy in
                 ScrollView {
-                    Text(capture.liveTranscript.isEmpty ? "Transcript appears here." : capture.liveTranscript)
+                    Text(capture.liveTranscript.isEmpty ? String(localized: "Transcript appears here.") : capture.liveTranscript)
                         .font(OffRecordTypography.journalBody)
                         .foregroundStyle(capture.liveTranscript.isEmpty ? OffRecordColor.textTertiary : OffRecordColor.textPrimary)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -458,7 +458,7 @@ private struct CaptureRecordingView: View {
         HStack(spacing: OffRecordSpacing.xl) {
             CaptureRoundControl(
                 systemImage: "trash",
-                label: "Discard",
+                label: String(localized: "Discard"),
                 style: .warning
             ) {
                 if recorder.currentTime > 10 {
@@ -471,7 +471,7 @@ private struct CaptureRecordingView: View {
 
             CaptureRoundControl(
                 systemImage: isPaused ? "play.fill" : "pause.fill",
-                label: isPaused ? "Resume" : "Pause",
+                label: isPaused ? String(localized: "Resume") : String(localized: "Pause"),
                 style: .journal
             ) {
                 capture.togglePause()
@@ -481,7 +481,7 @@ private struct CaptureRecordingView: View {
             Button {
                 capture.finishRecording()
             } label: {
-                Label("Save", systemImage: "checkmark")
+                Label(String(localized: "Save", comment: "Button that stops and saves the recording"), systemImage: "checkmark")
                     .font(OffRecordTypography.labelLarge)
                     .frame(maxWidth: .infinity)
                     .offRecordPillButton()
@@ -614,7 +614,7 @@ private struct CaptureSavedView: View {
                 Label("Transcript", systemImage: "text.quote")
                     .font(OffRecordTypography.labelSmall)
                     .foregroundStyle(OffRecordColor.textLavender)
-                Text(text.isEmpty ? "No speech detected. The recording is saved." : text)
+                Text(text.isEmpty ? String(localized: "No speech detected. The recording is saved.") : text)
                     .font(OffRecordTypography.bodyMedium)
                     .foregroundStyle(text.isEmpty ? OffRecordColor.textSecondary : OffRecordColor.textPrimary)
                     .lineLimit(5)
@@ -727,7 +727,7 @@ private struct CaptureSavedView: View {
                     router.route(.entry(id), canNavigate: true)
                 }
             } label: {
-                Label("Open", systemImage: "book.pages")
+                Label(String(localized: "Open", comment: "Button that opens the entry the recording was saved to"), systemImage: "book.pages")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(OffRecordSoftButtonStyle(tint: OffRecordColor.textBrand, fill: OffRecordColor.surfacePrimary.opacity(0.8)))
@@ -914,10 +914,7 @@ enum CaptureFormat {
 
     static func shortDuration(_ time: TimeInterval) -> String {
         let total = max(1, Int(time.rounded()))
-        let minutes = total / 60
-        let seconds = total % 60
-        if minutes == 0 { return "\(seconds)s" }
-        return seconds == 0 ? "\(minutes)m" : "\(minutes)m \(seconds)s"
+        return Duration.seconds(total).formatted(.units(allowed: [.minutes, .seconds], width: .narrow))
     }
 
     static func spokenDuration(_ time: TimeInterval) -> String {

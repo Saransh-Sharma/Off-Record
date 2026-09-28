@@ -96,7 +96,7 @@ final class GoalManager: ObservableObject {
 
         let content = UNMutableNotificationContent()
         // `entriesThisWeek` counts distinct days with an entry (see `entriesThisWeek(from:)`).
-        content.title = "Weekly Goal Reached"
+        content.title = String(localized: "Weekly Goal Reached")
         content.body = String(AttributedString(localized: "You journaled ^[\(entriesThisWeek) day](inflect: true) this week.").characters)
         content.sound = .default
 

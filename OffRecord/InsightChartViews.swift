@@ -58,27 +58,29 @@ enum InsightTimeOfDay: Int, CaseIterable, Identifiable, Sendable {
 
     var label: String {
         switch self {
-        case .morning: return "Morning"
-        case .afternoon: return "Afternoon"
-        case .evening: return "Evening"
-        case .night: return "Night"
+        case .morning: return String(localized: "Morning")
+        case .afternoon: return String(localized: "Afternoon")
+        case .evening: return String(localized: "Evening")
+        case .night: return String(localized: "Night")
         }
     }
 
     var shortLabel: String {
         switch self {
-        case .morning: return "Morn"
-        case .afternoon: return "Aft"
-        case .evening: return "Eve"
-        case .night: return "Night"
+        case .morning: return String(localized: "Morn", comment: "Short chart column label for morning")
+        case .afternoon: return String(localized: "Aft", comment: "Short chart column label for afternoon")
+        case .evening: return String(localized: "Eve", comment: "Short chart column label for evening")
+        case .night: return String(localized: "Night")
         }
     }
 
     /// Lowercased phrase used inside sentences ("in the evening", "at night").
     var phrase: String {
         switch self {
-        case .night: return "at night"
-        default: return "in the \(label.lowercased())"
+        case .morning: return String(localized: "in the morning")
+        case .afternoon: return String(localized: "in the afternoon")
+        case .evening: return String(localized: "in the evening")
+        case .night: return String(localized: "at night")
         }
     }
 }
@@ -105,10 +107,10 @@ struct WeekDayActivity: Identifiable, Equatable, Sendable {
     var weekdayName: String { date.formatted(.dateTime.weekday(.wide)) }
 
     var accessibilityValue: String {
-        guard hasEntry else { return "No entries" }
-        var value = String(AttributedString(localized: "^[\(entryCount) entry](inflect: true)").characters)
-        if let mood { value += ", mostly \(mood.displayName.lowercased())" }
-        return value
+        guard hasEntry else { return String(localized: "No entries") }
+        let value = String(AttributedString(localized: "^[\(entryCount) entry](inflect: true)").characters)
+        guard let mood else { return value }
+        return String(localized: "\(value), mostly \(mood.displayName.lowercased())")
     }
 }
 
@@ -277,15 +279,15 @@ struct WeekActivityChartCard: View {
 
     var summary: String {
         switch journaledCount {
-        case 0: return "No entries in the last 7 days."
-        case days.count: return "You journaled every day this week."
-        default: return "You journaled on \(journaledCount) of the last \(days.count) days."
+        case 0: return String(localized: "No entries in the last 7 days.")
+        case days.count: return String(localized: "You journaled every day this week.")
+        default: return String(localized: "You journaled on \(journaledCount) of the last \(days.count) days.")
         }
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
-            InsightCardHeader(title: "Last 7 Days", systemImage: "calendar", tint: OffRecordColor.textAqua)
+            InsightCardHeader(title: String(localized: "Last 7 Days"), systemImage: "calendar", tint: OffRecordColor.textAqua)
             InsightChartSummary(text: summary)
 
             Chart(days) { day in
@@ -339,16 +341,16 @@ private struct WeekActivityAXDescriptor: AXChartDescriptorRepresentable {
         let names = days.map(\.weekdayName)
         let maxCount = Double(max(1, days.map(\.entryCount).max() ?? 1))
         return AXChartDescriptor(
-            title: "Last 7 Days",
+            title: String(localized: "Last 7 Days"),
             summary: summary,
-            xAxis: AXCategoricalDataAxisDescriptor(title: "Day", categoryOrder: names),
-            yAxis: AXNumericDataAxisDescriptor(title: "Entries", range: 0...maxCount, gridlinePositions: []) { value in
+            xAxis: AXCategoricalDataAxisDescriptor(title: String(localized: "Day", comment: "Chart axis title: day of the week"), categoryOrder: names),
+            yAxis: AXNumericDataAxisDescriptor(title: String(localized: "Entries", comment: "Chart axis title: number of journal entries"), range: 0...maxCount, gridlinePositions: []) { value in
                 String(AttributedString(localized: "^[\(Int(value)) entry](inflect: true)").characters)
             },
             additionalAxes: [],
             series: [
                 AXDataSeriesDescriptor(
-                    name: "Entries per day",
+                    name: String(localized: "Entries per day"),
                     isContinuous: false,
                     dataPoints: days.map { day in
                         AXDataPoint(x: day.weekdayName, y: Double(day.entryCount), label: day.accessibilityValue)
@@ -371,17 +373,17 @@ enum MoodTrendRange: Int, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-        case .twoWeeks: return "2W"
-        case .month: return "1M"
-        case .quarter: return "3M"
+        case .twoWeeks: return String(localized: "2W", comment: "Segmented control: 2 weeks")
+        case .month: return String(localized: "1M", comment: "Segmented control: 1 month")
+        case .quarter: return String(localized: "3M", comment: "Segmented control: 3 months")
         }
     }
 
     var spokenTitle: String {
         switch self {
-        case .twoWeeks: return "2 weeks"
-        case .month: return "month"
-        case .quarter: return "3 months"
+        case .twoWeeks: return String(localized: "2 weeks")
+        case .month: return String(localized: "month", comment: "Spoken time range, as in \"over the last month\"")
+        case .quarter: return String(localized: "3 months")
         }
     }
 
@@ -397,35 +399,36 @@ enum MoodTrendRange: Int, CaseIterable, Identifiable {
 enum MoodTrendNarrator {
     static func summary(for points: [MoodTrendPoint], periodPhrase: String) -> String {
         guard !points.isEmpty else {
-            return "No moods logged \(periodPhrase)."
+            return String(localized: "No moods logged \(periodPhrase).")
         }
 
         let average = points.reduce(0) { $0 + $1.valence } / Double(points.count)
         let tone: String
         switch average {
-        case 0.35...: tone = "mostly positive"
-        case -0.1..<0.35: tone = "mixed"
-        default: tone = "mostly low"
+        case 0.35...: tone = String(localized: "mostly positive")
+        case -0.1..<0.35: tone = String(localized: "mixed", comment: "Mood tone, as in \"your moods were mixed\"")
+        default: tone = String(localized: "mostly low")
         }
 
         var counts: [Mood: Int] = [:]
         for point in points { counts[point.mood, default: 0] += point.entryCount }
         let topMood = counts.max { $0.value == $1.value ? $0.key.valence > $1.key.valence : $0.value < $1.value }?.key
 
-        var sentence = "\(periodPhrase.prefix(1).uppercased() + periodPhrase.dropFirst()), your moods were \(tone)"
-        if let topMood { sentence += ", most often \(topMood.displayName.lowercased())" }
+        let capitalizedPeriod = periodPhrase.prefix(1).uppercased() + periodPhrase.dropFirst()
+        var sentence = String(localized: "\(capitalizedPeriod), your moods were \(tone)")
+        if let topMood { sentence += String(localized: ", most often \(topMood.displayName.lowercased())") }
 
         if points.count >= 4 {
             let half = points.count / 2
             let early = points.prefix(half).reduce(0) { $0 + $1.valence } / Double(half)
             let late = points.suffix(half).reduce(0) { $0 + $1.valence } / Double(half)
             if late - early > 0.25 {
-                sentence += ", and improving"
+                sentence += String(localized: ", and improving")
             } else if early - late > 0.25 {
-                sentence += ", and dipping"
+                sentence += String(localized: ", and dipping")
             }
         }
-        return sentence + "."
+        return sentence + String(localized: ".", comment: "Sentence-ending period for the mood trend summary")
     }
 }
 
@@ -455,13 +458,13 @@ struct MoodTrendChartCard: View {
     }
 
     private var summary: String {
-        MoodTrendNarrator.summary(for: visiblePoints, periodPhrase: "over the last \(range.spokenTitle)")
+        MoodTrendNarrator.summary(for: visiblePoints, periodPhrase: String(localized: "over the last \(range.spokenTitle)"))
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
             HStack(alignment: .center) {
-                InsightCardHeader(title: "Mood Over Time", systemImage: "waveform.path.ecg", tint: OffRecordColor.textAqua)
+                InsightCardHeader(title: String(localized: "Mood Over Time"), systemImage: "waveform.path.ecg", tint: OffRecordColor.textAqua)
                 Picker("Time range", selection: $range) {
                     ForEach(MoodTrendRange.allCases) { range in
                         Text(range.title)
@@ -479,13 +482,13 @@ struct MoodTrendChartCard: View {
             if visiblePoints.isEmpty {
                 InsightChartEmptyState(
                     systemImage: "face.smiling",
-                    message: "Add moods to entries to see them here."
+                    message: String(localized: "Add moods to entries to see them here.")
                 )
             } else {
                 chart
                     .frame(height: chartHeight)
                     .accessibilityChartDescriptor(
-                        MoodTrendAXDescriptor(points: visiblePoints, title: "Mood Over Time", summary: summary)
+                        MoodTrendAXDescriptor(points: visiblePoints, title: String(localized: "Mood Over Time"), summary: summary)
                     )
             }
         }
@@ -624,16 +627,16 @@ private struct MoodTrendAXDescriptor: AXChartDescriptorRepresentable {
         return AXChartDescriptor(
             title: title,
             summary: summary,
-            xAxis: AXNumericDataAxisDescriptor(title: "Date", range: minX...maxX, gridlinePositions: []) { value in
+            xAxis: AXNumericDataAxisDescriptor(title: String(localized: "Date", comment: "Chart axis title"), range: minX...maxX, gridlinePositions: []) { value in
                 Date(timeIntervalSince1970: value).formatted(date: .abbreviated, time: .omitted)
             },
-            yAxis: AXNumericDataAxisDescriptor(title: "Mood", range: -1...1, gridlinePositions: [-0.6, 0, 0.7]) { value in
+            yAxis: AXNumericDataAxisDescriptor(title: String(localized: "Mood", comment: "Chart axis title: mood level"), range: -1...1, gridlinePositions: [-0.6, 0, 0.7]) { value in
                 Mood.nearest(toValence: value).displayName
             },
             additionalAxes: [],
             series: [
                 AXDataSeriesDescriptor(
-                    name: "Daily mood",
+                    name: String(localized: "Daily mood"),
                     isContinuous: true,
                     dataPoints: points.map { point in
                         AXDataPoint(x: point.date.timeIntervalSince1970, y: point.valence, label: point.mood.displayName)
@@ -658,14 +661,14 @@ struct MoodTimeHeatmapCard: View {
 
     private var summary: String {
         guard let strongest = cells.max(by: { $0.count < $1.count }) else {
-            return "Add moods to a few entries to see when each shows up."
+            return String(localized: "Add moods to a few entries to see when each shows up.")
         }
-        return "Over the last 90 days, you’re most often \(strongest.mood.displayName.lowercased()) \(strongest.timeOfDay.phrase)."
+        return String(localized: "Over the last 90 days, you’re most often \(strongest.mood.displayName.lowercased()) \(strongest.timeOfDay.phrase).")
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
-            InsightCardHeader(title: "Mood by Time of Day", systemImage: "clock", tint: OffRecordColor.textLavender)
+            InsightCardHeader(title: String(localized: "Mood by Time of Day"), systemImage: "clock", tint: OffRecordColor.textLavender)
 
             if snapshot.heatmapIsReady {
                 InsightChartSummary(text: summary)
@@ -689,7 +692,7 @@ struct MoodTimeHeatmapCard: View {
         if remaining > 0 {
             return String(AttributedString(localized: "Add a mood to ^[\(remaining) more entry](inflect: true) to see this.").characters)
         }
-        return "Journal at different times of day to see this."
+        return String(localized: "Journal at different times of day to see this.")
     }
 
     private var chart: some View {
@@ -767,10 +770,10 @@ private struct MoodTimeAXDescriptor: AXChartDescriptorRepresentable {
     func makeChartDescriptor() -> AXChartDescriptor {
         let maxCount = Double(max(1, cells.map(\.count).max() ?? 1))
         return AXChartDescriptor(
-            title: "Mood by Time of Day",
+            title: String(localized: "Mood by Time of Day"),
             summary: summary,
-            xAxis: AXCategoricalDataAxisDescriptor(title: "Time of day", categoryOrder: InsightTimeOfDay.allCases.map(\.label)),
-            yAxis: AXNumericDataAxisDescriptor(title: "Entries", range: 0...maxCount, gridlinePositions: []) { value in
+            xAxis: AXCategoricalDataAxisDescriptor(title: String(localized: "Time of day"), categoryOrder: InsightTimeOfDay.allCases.map(\.label)),
+            yAxis: AXNumericDataAxisDescriptor(title: String(localized: "Entries", comment: "Chart axis title: number of journal entries"), range: 0...maxCount, gridlinePositions: []) { value in
                 String(AttributedString(localized: "^[\(Int(value)) entry](inflect: true)").characters)
             },
             additionalAxes: [],
@@ -809,7 +812,7 @@ struct WeeklyMoodArcChart: View {
         if points.isEmpty {
             InsightChartEmptyState(
                 systemImage: "face.smiling",
-                message: "No moods logged this week."
+                message: String(localized: "No moods logged this week.")
             )
         } else {
             Chart {
@@ -858,7 +861,7 @@ struct WeeklyMoodArcChart: View {
             }
             .frame(height: chartHeight)
             .accessibilityChartDescriptor(
-                MoodTrendAXDescriptor(points: points, title: "Mood", summary: summary)
+                MoodTrendAXDescriptor(points: points, title: String(localized: "Mood", comment: "Chart title: mood over the week"), summary: summary)
             )
         }
     }

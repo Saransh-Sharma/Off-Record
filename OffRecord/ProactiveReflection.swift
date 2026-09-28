@@ -36,6 +36,16 @@ struct ReflectionInsight: Identifiable, Codable, Equatable, Sendable {
         case decision = "Decision"
         case weekly = "Weekly"
         case prompt = "Prompt"
+
+        /// Raw values are persisted with saved insights; show this instead.
+        var displayName: String {
+            switch self {
+            case .pattern: return String(localized: "Pattern", comment: "Insight category badge")
+            case .decision: return String(localized: "Decision", comment: "Insight category badge")
+            case .weekly: return String(localized: "Weekly", comment: "Insight category badge")
+            case .prompt: return String(localized: "Prompt", comment: "Insight category badge")
+            }
+        }
     }
 
     enum Kind: String, Codable, Sendable {
@@ -149,7 +159,7 @@ struct ReflectionInsight: Identifiable, Codable, Equatable, Sendable {
     }
 
     private static func defaultExplanation(for evidence: [ReflectionEvidence]) -> String {
-        guard !evidence.isEmpty else { return "Based on patterns in your journal." }
+        guard !evidence.isEmpty else { return String(localized: "Based on patterns in your journal.") }
         let sourceCount = evidence.filter { $0.role == .source || $0.role == .trajectory }.count
         let baselineCount = evidence.filter { $0.role == .baseline }.count
         if baselineCount > 0 {
@@ -411,17 +421,17 @@ enum ProactiveReflectionAnalyzer {
                 id: stableID("cadence-\(recent.map(\.id.uuidString).joined())-\(isLongSilence)"),
                 category: .pattern,
                 priority: .medium,
-                title: isLongSilence ? "You’re writing less often" : "You’re writing more often",
+                title: isLongSilence ? String(localized: "You’re writing less often") : String(localized: "You’re writing more often"),
                 message: isLongSilence
-                ? "Your last few entries were further apart than usual."
-                : "Your last few entries were closer together than usual.",
-                prompt: isLongSilence ? "What’s made it harder to write lately?" : "What brought you back?",
+                ? String(localized: "Your last few entries were further apart than usual.")
+                : String(localized: "Your last few entries were closer together than usual."),
+                prompt: isLongSilence ? String(localized: "What’s made it harder to write lately?") : String(localized: "What brought you back?"),
                 evidence: evidenceSet(source: recent.prefix(2), baseline: baseline.prefix(3)),
                 kind: .cadenceChange,
                 feedbackKey: feedbackKey(kind: .cadenceChange, subject: isLongSilence ? "long silence" : "dense return", window: "recent rhythm"),
-                explanation: "Based on the gaps between recent entries.",
+                explanation: String(localized: "Based on the gaps between recent entries."),
                 confidence: .medium,
-                suggestedQuestion: "How often have I been writing lately?",
+                suggestedQuestion: String(localized: "How often have I been writing lately?"),
                 createdAt: now,
                 expiresAt: Calendar.current.date(byAdding: .day, value: 7, to: now)
             )
@@ -446,15 +456,15 @@ enum ProactiveReflectionAnalyzer {
                 id: stableID("topic-shift-\(recent.map(\.id.uuidString).joined())"),
                 category: .pattern,
                 priority: .medium,
-                title: "Something new is coming up",
-                message: "Your last 3 entries cover different ground than usual.",
-                prompt: "What changed?",
+                title: String(localized: "Something new is coming up"),
+                message: String(localized: "Your last 3 entries cover different ground than usual."),
+                prompt: String(localized: "What changed?"),
                 evidence: evidenceSet(source: recent, baseline: baseline.prefix(3)),
                 kind: .contrast,
                 feedbackKey: feedbackKey(kind: .contrast, subject: "topic shift", window: "recent"),
-                explanation: "Based on your last 3 entries vs. earlier ones.",
+                explanation: String(localized: "Based on your last 3 entries vs. earlier ones."),
                 confidence: .medium,
-                suggestedQuestion: "What have I been writing about lately?",
+                suggestedQuestion: String(localized: "What have I been writing about lately?"),
                 createdAt: now,
                 expiresAt: Calendar.current.date(byAdding: .day, value: 7, to: now)
             )
@@ -488,15 +498,15 @@ enum ProactiveReflectionAnalyzer {
                 id: stableID("repeated-theme-\(theme.key)-\(theme.value.map(\.id.uuidString).joined())"),
                 category: .pattern,
                 priority: .medium,
-                title: "\(theme.key.capitalized) keeps coming up",
+                title: String(localized: "\(theme.key.capitalized) keeps coming up"),
                 message: String(AttributedString(localized: "You’ve mentioned \(theme.key) in ^[\(theme.value.count) recent entry](inflect: true).").characters),
-                prompt: "What’s going on with \(theme.key)?",
+                prompt: String(localized: "What’s going on with \(theme.key)?"),
                 evidence: theme.value.prefix(4).map { evidence(from: $0, role: .source) },
                 kind: .patternSignal,
                 feedbackKey: feedbackKey(kind: .patternSignal, subject: theme.key, window: "recent theme"),
                 explanation: String(AttributedString(localized: "Based on ^[\(theme.value.count) recent entry](inflect: true).").characters),
                 confidence: theme.value.count >= 4 ? .high : .medium,
-                suggestedQuestion: "What have I written about \(theme.key)?",
+                suggestedQuestion: String(localized: "What have I written about \(theme.key)?"),
                 createdAt: now,
                 expiresAt: Calendar.current.date(byAdding: .day, value: 7, to: now)
             )
@@ -526,15 +536,15 @@ enum ProactiveReflectionAnalyzer {
                 id: stableID("resurfaced-\(match.theme)-\(match.recent.map(\.id.uuidString).joined())-\(match.older.map(\.id.uuidString).joined())"),
                 category: .pattern,
                 priority: .medium,
-                title: "\(match.theme.capitalized) is back",
-                message: "You’re writing about \(match.theme) again after more than a month.",
-                prompt: "What’s different this time?",
+                title: String(localized: "\(match.theme.capitalized) is back"),
+                message: String(localized: "You’re writing about \(match.theme) again after more than a month."),
+                prompt: String(localized: "What’s different this time?"),
                 evidence: evidenceSet(source: match.recent.prefix(2), baseline: match.older.prefix(3)),
                 kind: .resurfacedThread,
                 feedbackKey: feedbackKey(kind: .resurfacedThread, subject: match.theme, window: "28d"),
-                explanation: "Based on recent entries and ones from over a month ago.",
+                explanation: String(localized: "Based on recent entries and ones from over a month ago."),
                 confidence: match.older.count >= 3 ? .high : .medium,
-                suggestedQuestion: "How has \(match.theme) changed since I first wrote about it?",
+                suggestedQuestion: String(localized: "How has \(match.theme) changed since I first wrote about it?"),
                 createdAt: now,
                 expiresAt: Calendar.current.date(byAdding: .day, value: 10, to: now)
             )
@@ -565,17 +575,17 @@ enum ProactiveReflectionAnalyzer {
                 id: stableID("contrast-\(match.theme)-\(lighter)-\(match.recentEntries.map(\.id.uuidString).joined())"),
                 category: .pattern,
                 priority: .medium,
-                title: lighter ? "\(match.theme.capitalized) feels lighter now" : "\(match.theme.capitalized) feels heavier now",
+                title: lighter ? String(localized: "\(match.theme.capitalized) feels lighter now") : String(localized: "\(match.theme.capitalized) feels heavier now"),
                 message: lighter
-                ? "You’re writing about \(match.theme) again, and it reads lighter than before."
-                : "You’re writing about \(match.theme) again, and it reads heavier than before.",
-                prompt: lighter ? "What changed?" : "What’s making it harder?",
+                ? String(localized: "You’re writing about \(match.theme) again, and it reads lighter than before.")
+                : String(localized: "You’re writing about \(match.theme) again, and it reads heavier than before."),
+                prompt: lighter ? String(localized: "What changed?") : String(localized: "What’s making it harder?"),
                 evidence: evidenceSet(source: match.recentEntries.prefix(2), baseline: match.previousEntries.prefix(3)),
                 kind: .contrast,
                 feedbackKey: feedbackKey(kind: .contrast, subject: match.theme, window: "60d"),
-                explanation: "Based on your recent and earlier \(match.theme) entries.",
+                explanation: String(localized: "Based on your recent and earlier \(match.theme) entries."),
                 confidence: abs(match.delta) >= 0.45 ? .high : .medium,
-                suggestedQuestion: "How do I feel about \(match.theme) lately?",
+                suggestedQuestion: String(localized: "How do I feel about \(match.theme) lately?"),
                 createdAt: now,
                 expiresAt: Calendar.current.date(byAdding: .day, value: 10, to: now)
             )
@@ -616,15 +626,15 @@ enum ProactiveReflectionAnalyzer {
                 id: stableID("quiet-entity-\(match.key)-\(match.value.map(\.id.uuidString).joined())"),
                 category: .pattern,
                 priority: .low,
-                title: "You haven’t mentioned \(match.key) lately",
-                message: "I haven’t seen \(match.key) in the last 2 weeks. They used to come up often.",
-                prompt: "Anything you want to say about \(match.key)?",
+                title: String(localized: "You haven’t mentioned \(match.key) lately"),
+                message: String(localized: "I haven’t seen \(match.key) in the last 2 weeks. They used to come up often."),
+                prompt: String(localized: "Anything you want to say about \(match.key)?"),
                 evidence: match.value.prefix(3).map { evidence(from: $0, role: .baseline) },
                 kind: .quietEntity,
                 feedbackKey: feedbackKey(kind: .quietEntity, subject: match.key, window: "14d"),
-                explanation: "Based on earlier entries and the last 2 weeks.",
+                explanation: String(localized: "Based on earlier entries and the last 2 weeks."),
                 confidence: .medium,
-                suggestedQuestion: "What’s changed with \(match.key)?",
+                suggestedQuestion: String(localized: "What’s changed with \(match.key)?"),
                 createdAt: now,
                 expiresAt: Calendar.current.date(byAdding: .day, value: 7, to: now)
             )
@@ -652,17 +662,17 @@ enum ProactiveReflectionAnalyzer {
                 id: stableID("mood-association-\(match.theme)-\(lifts)-\(match.entries.map(\.id.uuidString).joined())"),
                 category: .pattern,
                 priority: lifts ? .medium : .high,
-                title: lifts ? "\(match.theme.capitalized) seems to lift you" : "\(match.theme.capitalized) seems to weigh on you",
+                title: lifts ? String(localized: "\(match.theme.capitalized) seems to lift you") : String(localized: "\(match.theme.capitalized) seems to weigh on you"),
                 message: lifts
-                ? "Entries about \(match.theme) read lighter than your others."
-                : "Entries about \(match.theme) read heavier than your others.",
-                prompt: lifts ? "How could you make more room for it?" : "What would make it easier?",
+                ? String(localized: "Entries about \(match.theme) read lighter than your others.")
+                : String(localized: "Entries about \(match.theme) read heavier than your others."),
+                prompt: lifts ? String(localized: "How could you make more room for it?") : String(localized: "What would make it easier?"),
                 evidence: match.entries.prefix(4).map { evidence(from: $0, role: .source) },
                 kind: .moodAssociation,
                 feedbackKey: feedbackKey(kind: .moodAssociation, subject: match.theme, window: "45d"),
                 explanation: String(AttributedString(localized: "Based on ^[\(match.entries.count) entry](inflect: true) about \(match.theme).").characters),
                 confidence: match.entries.count >= 4 ? .high : .medium,
-                suggestedQuestion: "How does \(match.theme) affect my mood?",
+                suggestedQuestion: String(localized: "How does \(match.theme) affect my mood?"),
                 createdAt: now,
                 expiresAt: Calendar.current.date(byAdding: .day, value: 10, to: now)
             )
@@ -694,15 +704,15 @@ enum ProactiveReflectionAnalyzer {
                 id: stableID("repeated-question-\(match.key)-\(match.value.map(\.id.uuidString).joined())"),
                 category: .prompt,
                 priority: .medium,
-                title: "You keep asking about \(match.key)",
+                title: String(localized: "You keep asking about \(match.key)"),
                 message: String(AttributedString(localized: "This question has come up in ^[\(match.value.count) entry](inflect: true).").characters),
-                prompt: "What’s your honest answer right now?",
+                prompt: String(localized: "What’s your honest answer right now?"),
                 evidence: match.value.prefix(3).map { evidence(from: $0, role: .source) },
                 kind: .repeatedQuestion,
                 feedbackKey: feedbackKey(kind: .repeatedQuestion, subject: match.key, window: "45d"),
                 explanation: String(AttributedString(localized: "Based on ^[\(match.value.count) entry](inflect: true).").characters),
                 confidence: match.value.count >= 3 ? .high : .medium,
-                suggestedQuestion: "What do I keep asking about \(match.key)?",
+                suggestedQuestion: String(localized: "What do I keep asking about \(match.key)?"),
                 createdAt: now,
                 expiresAt: Calendar.current.date(byAdding: .day, value: 7, to: now)
             )
@@ -724,15 +734,15 @@ enum ProactiveReflectionAnalyzer {
                 id: stableID("carry-forward-\(recent.map(\.id.uuidString).joined())"),
                 category: .pattern,
                 priority: .medium,
-                title: "Your recent entries feel lighter",
-                message: "Your last few entries read lighter than usual.",
-                prompt: "What’s helping?",
+                title: String(localized: "Your recent entries feel lighter"),
+                message: String(localized: "Your last few entries read lighter than usual."),
+                prompt: String(localized: "What’s helping?"),
                 evidence: evidenceSet(source: recent.prefix(3), baseline: baseline.prefix(3)),
                 kind: .carryForward,
                 feedbackKey: feedbackKey(kind: .carryForward, subject: "lighter pattern", window: "recent"),
-                explanation: "Based on your last few entries.",
+                explanation: String(localized: "Based on your last few entries."),
                 confidence: recentAverage - baselineAverage >= 0.40 ? .high : .medium,
-                suggestedQuestion: "What’s been helping me lately?",
+                suggestedQuestion: String(localized: "What’s been helping me lately?"),
                 createdAt: now,
                 expiresAt: Calendar.current.date(byAdding: .day, value: 7, to: now)
             )
@@ -812,24 +822,24 @@ enum ProactiveReflectionAnalyzer {
 
         let moodLine: String
         if previousWeek.isEmpty {
-            moodLine = "I have enough from this week for a recap."
+            moodLine = String(localized: "I have enough from this week for a recap.")
         } else if moodDelta > 0.12 {
-            moodLine = "This week read lighter than last."
+            moodLine = String(localized: "This week read lighter than last.")
         } else if moodDelta < -0.12 {
-            moodLine = "This week read heavier than last."
+            moodLine = String(localized: "This week read heavier than last.")
         } else {
-            moodLine = "About the same as last week."
+            moodLine = String(localized: "About the same as last week.")
         }
 
         let volumeLine: String
         if previousWeek.isEmpty {
             volumeLine = String(AttributedString(localized: "^[\(currentWeek.count) entry](inflect: true), ^[\(currentWords) word](inflect: true).").characters)
         } else if currentWords > previousWords {
-            volumeLine = "More writing than last week."
+            volumeLine = String(localized: "More writing than last week.")
         } else if currentWords < previousWords {
-            volumeLine = "Less writing than last week."
+            volumeLine = String(localized: "Less writing than last week.")
         } else {
-            volumeLine = "About as much as last week."
+            volumeLine = String(localized: "About as much as last week.")
         }
 
         let decisionEntryCount = Set(weekDecisions.map(\.entryID)).count
@@ -838,8 +848,8 @@ enum ProactiveReflectionAnalyzer {
         : " " + String(AttributedString(localized: "A decision or regret came up in ^[\(decisionEntryCount) entry](inflect: true).").characters)
         let summary = "\(moodLine) \(volumeLine)\(decisionLine)"
         let prompt = weekDecisions.isEmpty
-        ? "What from this week do you want to keep?"
-        : "Which decision from this week needs another look?"
+        ? String(localized: "What from this week do you want to keep?")
+        : String(localized: "Which decision from this week needs another look?")
 
         return WeeklyReflectionRecap(
             id: stableID("weekly-\(Calendar.current.component(.weekOfYear, from: now))-\(Calendar.current.component(.yearForWeekOfYear, from: now))"),
@@ -879,7 +889,7 @@ enum ProactiveReflectionAnalyzer {
                 evidence: [evidence(from: entry, role: .source)],
                 kind: .decisionFollowUp,
                 feedbackKey: feedbackKey(kind: .decisionFollowUp, subject: unresolved.phraseHash, window: "follow-up"),
-                explanation: "Based on a recent entry.",
+                explanation: String(localized: "Based on a recent entry."),
                 confidence: .high,
                 suggestedQuestion: decisionCopy.suggestedQuestion,
                 createdAt: now,
@@ -897,15 +907,15 @@ enum ProactiveReflectionAnalyzer {
                 id: stableID("weekly-prompt-\(weeklyRecap.id)"),
                 category: .prompt,
                 priority: .medium,
-                title: "Your week so far",
-                message: "I pulled a question from this week’s entries.",
+                title: String(localized: "Your week so far"),
+                message: String(localized: "I pulled a question from this week’s entries."),
                 prompt: weeklyRecap.suggestedPrompt,
                 evidence: weeklyRecap.evidence,
                 kind: .weeklyRecap,
                 feedbackKey: feedbackKey(kind: .weeklyRecap, subject: weeklyRecap.id, window: "week"),
-                explanation: "Based on this week’s entries.",
+                explanation: String(localized: "Based on this week’s entries."),
                 confidence: weeklyRecap.previousWeekEntryCount >= 2 ? .high : .medium,
-                suggestedQuestion: "What stood out in my week?",
+                suggestedQuestion: String(localized: "What stood out in my week?"),
                 createdAt: now,
                 expiresAt: Calendar.current.date(byAdding: .day, value: 3, to: now)
             )
@@ -973,15 +983,15 @@ enum ProactiveReflectionAnalyzer {
                     id: stableID("sentiment-\(latest.id)-\(heavier)"),
                     category: .pattern,
                     priority: .high,
-                    title: heavier ? "This entry reads heavier than usual" : "This entry reads lighter than usual",
-                    message: "Compared with your recent entries.",
-                    prompt: heavier ? "What made today heavier?" : "What made today lighter?",
+                    title: heavier ? String(localized: "This entry reads heavier than usual") : String(localized: "This entry reads lighter than usual"),
+                    message: String(localized: "Compared with your recent entries."),
+                    prompt: heavier ? String(localized: "What made today heavier?") : String(localized: "What made today lighter?"),
                     evidence: evidenceSet(source: [latest], baseline: baseline.prefix(3)),
                     kind: .moodAssociation,
                     feedbackKey: feedbackKey(kind: .moodAssociation, subject: heavier ? "heavier entry" : "lighter entry", window: "recent baseline"),
-                    explanation: "Based on this entry’s wording.",
+                    explanation: String(localized: "Based on this entry’s wording."),
                     confidence: abs(sentimentZScore ?? 0) >= 2.2 ? .high : .medium,
-                    suggestedQuestion: heavier ? "Why did this entry feel heavier?" : "What made this entry feel lighter?",
+                    suggestedQuestion: heavier ? String(localized: "Why did this entry feel heavier?") : String(localized: "What made this entry feel lighter?"),
                     createdAt: now,
                     expiresAt: Calendar.current.date(byAdding: .day, value: 7, to: now)
                 )
@@ -1008,17 +1018,17 @@ enum ProactiveReflectionAnalyzer {
                 id: stableID("volume-\(latest.id)-\(more)"),
                 category: .pattern,
                 priority: .medium,
-                title: more ? "You wrote more than usual" : "You wrote less than usual",
+                title: more ? String(localized: "You wrote more than usual") : String(localized: "You wrote less than usual"),
                 message: more
-                ? "Longer than your recent entries."
-                : "Shorter than your recent entries.",
-                prompt: more ? "What needed the extra space?" : "Anything you held back?",
+                ? String(localized: "Longer than your recent entries.")
+                : String(localized: "Shorter than your recent entries."),
+                prompt: more ? String(localized: "What needed the extra space?") : String(localized: "Anything you held back?"),
                 evidence: evidenceSet(source: [latest], baseline: baseline.prefix(3)),
                 kind: .volumeChange,
                 feedbackKey: feedbackKey(kind: .volumeChange, subject: more ? "more words" : "fewer words", window: "recent baseline"),
-                explanation: "Based on your recent entry lengths.",
+                explanation: String(localized: "Based on your recent entry lengths."),
                 confidence: abs(wordZScore ?? 0) >= 2.2 ? .high : .medium,
-                suggestedQuestion: more ? "When do I write more than usual?" : "When do I write less than usual?",
+                suggestedQuestion: more ? String(localized: "When do I write more than usual?") : String(localized: "When do I write less than usual?"),
                 createdAt: now,
                 expiresAt: Calendar.current.date(byAdding: .day, value: 7, to: now)
             )
@@ -1033,15 +1043,15 @@ enum ProactiveReflectionAnalyzer {
                 id: stableID("trajectory-\(recent.map(\.id.uuidString).joined())"),
                 category: .pattern,
                 priority: .high,
-                title: "Your last 5 entries got heavier",
-                message: "Each one read a bit heavier than the last.",
-                prompt: "What would make the next few days easier?",
+                title: String(localized: "Your last 5 entries got heavier"),
+                message: String(localized: "Each one read a bit heavier than the last."),
+                prompt: String(localized: "What would make the next few days easier?"),
                 evidence: recent.map { evidence(from: $0, role: .trajectory) },
                 kind: .moodTrajectory,
                 feedbackKey: feedbackKey(kind: .moodTrajectory, subject: "downward", window: "five entries"),
-                explanation: "Based on your last 5 entries.",
+                explanation: String(localized: "Based on your last 5 entries."),
                 confidence: .high,
-                suggestedQuestion: "What’s been weighing on me?",
+                suggestedQuestion: String(localized: "What’s been weighing on me?"),
                 createdAt: now,
                 expiresAt: Calendar.current.date(byAdding: .day, value: 7, to: now)
             )
@@ -1065,7 +1075,7 @@ enum ProactiveReflectionAnalyzer {
                     evidence: [evidence(from: entry, role: .source)],
                     kind: .decisionFollowUp,
                     feedbackKey: feedbackKey(kind: .decisionFollowUp, subject: decision.phraseHash, window: "recent"),
-                    explanation: "Based on a recent entry.",
+                    explanation: String(localized: "Based on a recent entry."),
                     confidence: .high,
                     suggestedQuestion: decisionCopy.suggestedQuestion,
                     createdAt: now,
@@ -1080,15 +1090,15 @@ enum ProactiveReflectionAnalyzer {
             id: stableID("weekly-insight-\(recap.id)"),
             category: .weekly,
             priority: .medium,
-            title: "This week’s patterns",
+            title: String(localized: "This week’s patterns"),
             message: recap.summary,
             prompt: recap.suggestedPrompt,
             evidence: recap.evidence,
             kind: .weeklyRecap,
             feedbackKey: feedbackKey(kind: .weeklyRecap, subject: recap.id, window: "week"),
-            explanation: "Based on this week’s entries.",
+            explanation: String(localized: "Based on this week’s entries."),
             confidence: recap.previousWeekEntryCount >= 2 ? .high : .medium,
-            suggestedQuestion: "How did this week compare to last week?",
+            suggestedQuestion: String(localized: "How did this week compare to last week?"),
             createdAt: now,
             expiresAt: Calendar.current.date(byAdding: .day, value: 7, to: now)
         )
@@ -1101,17 +1111,17 @@ enum ProactiveReflectionAnalyzer {
         switch kind {
         case .decision:
             return (
-                title: "Time to check in on a decision",
-                message: "You wrote about a decision recently.",
-                prompt: "How do you feel about it now?",
-                suggestedQuestion: "What decisions have I written about lately?"
+                title: String(localized: "Time to check in on a decision"),
+                message: String(localized: "You wrote about a decision recently."),
+                prompt: String(localized: "How do you feel about it now?"),
+                suggestedQuestion: String(localized: "What decisions have I written about lately?")
             )
         case .regret:
             return (
-                title: "Time to revisit a regret",
-                message: "You wrote about a regret recently.",
-                prompt: "What would you do differently now?",
-                suggestedQuestion: "What regrets have I written about lately?"
+                title: String(localized: "Time to revisit a regret"),
+                message: String(localized: "You wrote about a regret recently."),
+                prompt: String(localized: "What would you do differently now?"),
+                suggestedQuestion: String(localized: "What regrets have I written about lately?")
             )
         }
     }
@@ -1408,18 +1418,18 @@ final class ProactiveReflectionController: ObservableObject {
     nonisolated static func privacySafeReminderBody(for prompt: ReflectionInsight?) -> String {
         // Bodies stay generic: never names, topics, or anything else from the journal.
         guard let prompt else {
-            return "How was today?"
+            return String(localized: "How was today?")
         }
 
         switch prompt.category {
         case .decision:
-            return "Time to check in on a decision."
+            return String(localized: "Time to check in on a decision.")
         case .weekly:
-            return "Your weekly reflection is ready."
+            return String(localized: "Your weekly reflection is ready.")
         case .pattern:
-            return "I spotted a pattern worth a look."
+            return String(localized: "I spotted a pattern worth a look.")
         case .prompt:
-            return prompt.decisionID == nil ? "I have a question for you tonight." : "Time to check in on a decision."
+            return prompt.decisionID == nil ? String(localized: "I have a question for you tonight.") : String(localized: "Time to check in on a decision.")
         }
     }
 
@@ -1796,7 +1806,7 @@ private struct ReflectionInsightCard: View {
 
                 VStack(alignment: .leading, spacing: 5) {
                     HStack(spacing: 7) {
-                        Text(insight.category.rawValue)
+                        Text(insight.category.displayName)
                             .font(OffRecordTypography.labelSmall)
                             .foregroundColor(style.foreground)
                             .padding(.horizontal, 8)
@@ -1835,7 +1845,7 @@ private struct ReflectionInsightCard: View {
                     Button {
                         onSave()
                     } label: {
-                        Label(isSaved ? "Unsave" : "Save", systemImage: isSaved ? "bookmark.slash" : "bookmark")
+                        Label(isSaved ? String(localized: "Unsave", comment: "Menu action that removes a Friday insight from saved") : String(localized: "Save", comment: "Menu action that saves a Friday insight"), systemImage: isSaved ? "bookmark.slash" : "bookmark")
                     }
                     Button {
                         onSnooze()
@@ -1852,7 +1862,7 @@ private struct ReflectionInsightCard: View {
                         .font(OffRecordTypography.titleSmall)
                         .foregroundColor(OffRecordColor.textTertiary)
                 }
-                .accessibilityLabel("More")
+                .accessibilityLabel(Text("More", comment: "Accessibility label for the insight card’s options menu"))
                 .accessibilityIdentifier("proactiveReflection.cardMenu.\(insight.kind.rawValue)")
             }
 
@@ -1865,7 +1875,7 @@ private struct ReflectionInsightCard: View {
                 Button {
                     onReflect()
                 } label: {
-                    Label("Write", systemImage: "square.and.pencil")
+                    Label(String(localized: "Write", comment: "Button that starts a typed journal entry"), systemImage: "square.and.pencil")
                         .font(OffRecordTypography.labelSmall)
                 }
                 .buttonStyle(.borderedProminent)
@@ -1953,7 +1963,7 @@ private struct ReflectionInsightDetailView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     VStack(alignment: .leading, spacing: 8) {
-                        Text(insight.category.rawValue)
+                        Text(insight.category.displayName)
                             .font(OffRecordTypography.labelSmall)
                             .foregroundColor(OffRecordColor.textLavender)
                             .accessibilityIdentifier("proactiveReflection.detail")
@@ -2027,12 +2037,12 @@ private struct ReflectionInsightDetailView: View {
                     }
 
                     evidenceSection(
-                        title: sourceEvidence.count == 1 ? "This Entry" : "Recent Entries",
+                        title: sourceEvidence.count == 1 ? String(localized: "This Entry") : String(localized: "Recent Entries"),
                         identifier: "proactiveReflection.evidence.source",
                         evidence: sourceEvidence
                     )
                     evidenceSection(
-                        title: "Earlier Entries",
+                        title: String(localized: "Earlier Entries"),
                         identifier: "proactiveReflection.evidence.baseline",
                         evidence: baselineEvidence
                     )
@@ -2089,7 +2099,7 @@ private struct ReflectionInsightDetailView: View {
                     .padding(.vertical, 3)
                     .background(Capsule().fill(OffRecordColor.backgroundLavenderTint))
                 if let mood = evidence.mood, !mood.isEmpty {
-                    Text(mood.capitalized)
+                    Text(Mood(rawValue: mood)?.displayName ?? mood.capitalized)
                         .font(OffRecordTypography.labelSmall)
                         .foregroundColor(OffRecordColor.textSage)
                         .padding(.horizontal, 7)
@@ -2112,9 +2122,9 @@ private struct ReflectionInsightDetailView: View {
 
     private func roleLabel(for role: ReflectionEvidence.Role) -> String {
         switch role {
-        case .source: return "Recent"
-        case .baseline: return "Earlier"
-        case .trajectory: return "Trend"
+        case .source: return String(localized: "Recent", comment: "Tag on an entry cited as recent evidence for a Friday insight")
+        case .baseline: return String(localized: "Earlier", comment: "Tag on an entry cited as earlier, comparison evidence for a Friday insight")
+        case .trajectory: return String(localized: "Trend", comment: "Tag on an entry cited as part of a mood trend")
         }
     }
 
@@ -2122,7 +2132,7 @@ private struct ReflectionInsightDetailView: View {
         guard let entry = entry(for: evidence),
               let text = entry.text,
               !text.isEmpty else {
-            return "No text."
+            return String(localized: "No text.")
         }
         return ProactiveReflectionAnalyzer.snippet(text)
     }

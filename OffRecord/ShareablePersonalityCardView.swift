@@ -47,7 +47,7 @@ struct PersonalityCardRenderer {
     }
 
     /// Share text to include alongside the image
-    static let shareText = "My personality card from OffRecord, a private voice journal. https://saransh-sharma.github.io/Off-Record"
+    static let shareText = String(localized: "My personality card from OffRecord, a private voice journal.") + " https://saransh-sharma.github.io/Off-Record"
 }
 
 // MARK: - Story Format Export (1080x1920 at 3x)

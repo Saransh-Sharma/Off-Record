@@ -331,7 +331,7 @@ struct ThemeButton: View {
                     }
                 }
 
-                Text(theme.rawValue)
+                Text(theme.displayName)
                     .font(OffRecordTypography.metadata)
                     .foregroundStyle(isSelected ? theme.readableAccentColor : OffRecordColor.textSecondary)
                     .lineLimit(2)
@@ -345,7 +345,7 @@ struct ThemeButton: View {
         .offRecordPointerLift()
         .offRecordAnimation(OffRecordMotion.snappy, value: isSelected)
         .sensoryFeedback(.selection, trigger: isSelected) { _, new in new }
-        .accessibilityLabel("\(theme.rawValue) theme")
+        .accessibilityLabel("\(theme.displayName) theme")
         .accessibilityAddTraits(isSelected ? [.isSelected] : [])
     }
 }

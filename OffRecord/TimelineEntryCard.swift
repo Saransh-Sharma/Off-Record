@@ -32,7 +32,7 @@ struct TimelineEntryCard: View {
     }
 
     private var accessiblePreviewText: String {
-        previewText.isEmpty ? "No text" : previewText
+        previewText.isEmpty ? String(localized: "No text") : previewText
     }
 
     var body: some View {
@@ -43,7 +43,7 @@ struct TimelineEntryCard: View {
                         mood: mood,
                         size: 18,
                         opacity: mood == .none ? 0.5 : 0.82,
-                        accessibilityLabel: mood == .none ? mood.displayName : "\(mood.displayName) mood"
+                        accessibilityLabel: mood == .none ? mood.displayName : String(localized: "\(mood.displayName) mood", comment: "VoiceOver label for an entry’s mood icon. The argument is the mood name.")
                     )
 
                     Text("^[\(wordCount) word](inflect: true)")

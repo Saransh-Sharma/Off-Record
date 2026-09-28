@@ -69,7 +69,7 @@ struct TodayNudgeSection: View {
                     HapticManager.shared.selectionChanged()
                     onSpeak(prompt)
                 } label: {
-                    Label("Record", systemImage: "mic.fill")
+                    Label(String(localized: "Record", comment: "Button that starts a voice recording"), systemImage: "mic.fill")
                         .font(OffRecordTypography.labelSmall)
                         .foregroundStyle(OffRecordColor.textOnAccent)
                         .padding(.horizontal, OffRecordSpacing.md)
@@ -83,7 +83,7 @@ struct TodayNudgeSection: View {
                     HapticManager.shared.selectionChanged()
                     onWrite(prompt)
                 } label: {
-                    Label("Write", systemImage: "square.and.pencil")
+                    Label(String(localized: "Write", comment: "Button that starts a typed journal entry"), systemImage: "square.and.pencil")
                         .font(OffRecordTypography.labelSmall)
                         .foregroundStyle(OffRecordColor.textBrand)
                         .padding(.horizontal, OffRecordSpacing.md)
@@ -109,7 +109,7 @@ struct TodayNudgeSection: View {
 
     private func accessibilityLabel(for prompt: EntryPrompt) -> String {
         let detail = prompt.detail.trimmingCharacters(in: .whitespacesAndNewlines)
-        return detail.isEmpty ? prompt.title : "\(prompt.title): \(detail)"
+        return detail.isEmpty ? prompt.title : String(localized: "\(prompt.title): \(detail)", comment: "Accessibility label for a prompt card: prompt title, then its question")
     }
 
     private func nudgeStyle(for prompt: EntryPrompt) -> TodayNudgeCardStyle {

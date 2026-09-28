@@ -20,7 +20,7 @@ struct FridayEvidenceRail: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: OffRecordSpacing.sm) {
-            Text("Sources")
+            Text("Sources", comment: "Heading above the journal entries an answer cites")
                 .font(OffRecordTypography.labelSmall)
                 .foregroundStyle(OffRecordColor.textLavender)
                 .accessibilityAddTraits(.isHeader)

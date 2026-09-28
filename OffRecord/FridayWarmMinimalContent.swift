@@ -70,16 +70,16 @@ struct FridayWarmMinimalContent: View {
     private var subtitle: String {
         switch mode {
         case .noJournalData:
-            return "Write a few entries and I’ll have more to go on."
+            return String(localized: "Write a few entries and I’ll have more to go on.")
         case .indexing:
-            return "I’m reading your journal. This takes a minute."
+            return String(localized: "I’m reading your journal. This takes a minute.")
         case .warm:
-            return "Ask me about your moods, people, and patterns."
+            return String(localized: "Ask me about your moods, people, and patterns.")
         }
     }
 
     private var promptTitle: String {
-        "Try Asking"
+        String(localized: "Try Asking")
     }
 
     private var cardHorizontalInset: CGFloat {

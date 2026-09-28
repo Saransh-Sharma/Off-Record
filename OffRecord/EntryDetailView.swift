@@ -102,14 +102,14 @@ struct JournalBlockTimelineItem: Identifiable {
     var accessibilityLabel: String {
         switch kind {
         case .text:
-            return "Text, \(timestamp)"
+            return String(localized: "Text, \(timestamp)", comment: "VoiceOver label for a text block in an entry. The argument is when it was added.")
         case .audio:
             let seconds = Int(duration.rounded())
             return String(AttributedString(localized: "Recording, ^[\(seconds) second](inflect: true), \(timestamp)").characters)
         case .mood:
-            return "Mood, \(mood.displayName), \(timestamp)"
+            return String(localized: "Mood, \(mood.displayName), \(timestamp)", comment: "VoiceOver label for a mood block in an entry. The arguments are the mood and when it was added.")
         case .photo:
-            return "Photo, \(timestamp)"
+            return String(localized: "Photo, \(timestamp)", comment: "VoiceOver label for a photo block in an entry. The argument is when it was added.")
         }
     }
 }
@@ -404,7 +404,7 @@ struct EntryDetailView: View {
                 if isActivelyEditing {
                     HStack(spacing: 8) {
                         editorToolbarButton(
-                            title: "Cancel",
+                            title: String(localized: "Cancel"),
                             systemImage: "xmark.circle.fill",
                             tint: OffRecordColor.textCoral,
                             fill: OffRecordColor.surfaceBlush,
@@ -413,7 +413,7 @@ struct EntryDetailView: View {
                         )
 
                         editorToolbarButton(
-                            title: "Save",
+                            title: String(localized: "Save"),
                             systemImage: "checkmark.circle.fill",
                             tint: OffRecordColor.brandSageDark,
                             fill: OffRecordColor.surfaceSage,
@@ -466,7 +466,7 @@ struct EntryDetailView: View {
                                 .background(OffRecordColor.surfacePrimary, in: Circle())
                                 .overlay(Circle().stroke(OffRecordColor.borderSoft, lineWidth: 1))
                         }
-                        .accessibilityLabel("More")
+                        .accessibilityLabel(Text("More", comment: "Accessibility label for the menu with more actions for this entry."))
                     }
                     .offRecordShadow(.chip)
                 }
@@ -545,7 +545,7 @@ struct EntryDetailView: View {
                     }
 
                     if audioOnOtherDevice {
-                        metadataChip(systemImage: "icloud", text: "Recording on another device")
+                        metadataChip(systemImage: "icloud", text: String(localized: "Recording on another device"))
                     }
                 }
                 .padding(.vertical, 1)
@@ -649,8 +649,8 @@ struct EntryDetailView: View {
     private var dayName: String {
         let date = entry.date ?? Date()
         let calendar = Calendar.current
-        if calendar.isDateInToday(date) { return "Today" }
-        if calendar.isDateInYesterday(date) { return "Yesterday" }
+        if calendar.isDateInToday(date) { return String(localized: "Today") }
+        if calendar.isDateInYesterday(date) { return String(localized: "Yesterday") }
         if let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: date), to: calendar.startOfDay(for: Date())).day, days < 7 {
             return date.formatted(.dateTime.weekday(.wide))
         }
@@ -659,11 +659,11 @@ struct EntryDetailView: View {
 
     private func blockDeletionTitle(for kind: JournalBlockKind?) -> String {
         switch kind {
-        case .audio: return "Delete Recording?"
-        case .text: return "Delete Text?"
-        case .photo: return "Delete Photo?"
-        case .mood: return "Remove Mood?"
-        case nil: return "Delete?"
+        case .audio: return String(localized: "Delete Recording?")
+        case .text: return String(localized: "Delete Text?")
+        case .photo: return String(localized: "Delete Photo?")
+        case .mood: return String(localized: "Remove Mood?")
+        case nil: return String(localized: "Delete?")
         }
     }
 
@@ -781,7 +781,7 @@ struct EntryDetailView: View {
                         composerPrompt = deeperQuestion
                         beginNewTextBlock()
                     } label: {
-                        Label("Write", systemImage: "square.and.pencil")
+                        Label(String(localized: "Write", comment: "Button that answers the question by writing."), systemImage: "square.and.pencil")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(OffRecordSoftButtonStyle(tint: OffRecordColor.textBrand, fill: OffRecordColor.surfacePrimary))
@@ -791,7 +791,7 @@ struct EntryDetailView: View {
                         if let date = entry.date { capture.captureDate = date }
                         capture.startRecording(prompt: deeperQuestion)
                     } label: {
-                        Label("Record", systemImage: "mic.fill")
+                        Label(String(localized: "Record", comment: "Button that answers the question by recording audio."), systemImage: "mic.fill")
                             .frame(maxWidth: .infinity)
                     }
                     .buttonStyle(OffRecordSoftButtonStyle(tint: OffRecordColor.textOnAccent, fill: OffRecordColor.brandPlum))
@@ -809,7 +809,7 @@ struct EntryDetailView: View {
 
     private var addToDaySection: some View {
         VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
-            sectionLabel("Add")
+            sectionLabel(String(localized: "Add", comment: "Section header above the Add Text and Add Photos buttons."))
             HStack(spacing: OffRecordSpacing.md) {
                 addTextButton
                 addPhotosButton
@@ -955,7 +955,7 @@ struct EntryDetailView: View {
             Button {
                 beginEditingBlock(item)
             } label: {
-                Label("Edit", systemImage: "pencil")
+                Label(String(localized: "Edit", comment: "Menu action that edits a text block."), systemImage: "pencil")
             }
         }
         if item.kind == .text, let text = block(for: item)?.textValue, !text.isEmpty {
@@ -968,7 +968,7 @@ struct EntryDetailView: View {
         Button(role: .destructive) {
             pendingBlockDeletion = item
         } label: {
-            Label("Delete", systemImage: "trash")
+            Label(String(localized: "Delete", comment: "Menu action that deletes a block from the entry."), systemImage: "trash")
         }
     }
 
@@ -1152,20 +1152,20 @@ struct EntryDetailView: View {
                 Button {
                     beginEditingBlock(item)
                 } label: {
-                    Label("Edit", systemImage: "pencil")
+                    Label(String(localized: "Edit", comment: "Menu action that edits a text block."), systemImage: "pencil")
                 }
             }
             Button(role: .destructive) {
                 deleteBlock(item)
             } label: {
-                Label("Delete", systemImage: "trash")
+                Label(String(localized: "Delete", comment: "Menu action that deletes a block from the entry."), systemImage: "trash")
             }
         } label: {
             Image(systemName: "ellipsis.circle")
                 .font(OffRecordTypography.labelSmall)
                 .foregroundColor(OffRecordColor.textSecondary)
         }
-        .accessibilityLabel("More")
+        .accessibilityLabel(Text("More", comment: "Accessibility label for the menu with more actions for this block."))
     }
 
     private var newTextBlockComposer: some View {
@@ -1253,7 +1253,7 @@ struct EntryDetailView: View {
                     )
 
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("From Friday")
+                        Text("From Friday", comment: "Header for the assistant’s notes on this entry. Friday is the assistant’s name, not the weekday.")
                             .font(OffRecordTypography.labelMedium)
                             .foregroundColor(OffRecordColor.textHeading)
                     }
@@ -1305,9 +1305,9 @@ struct EntryDetailView: View {
                             .frame(height: 8)
                             .accessibilityElement()
                             .accessibilityLabel("Tone")
-                            .accessibilityValue(analysis.sentiment > 0.2 ? "Light" : (analysis.sentiment < -0.2 ? "Heavy" : "Neutral"))
+                            .accessibilityValue(toneLabel(for: analysis.sentiment))
 
-                            Text(analysis.sentiment > 0.2 ? "Light" : (analysis.sentiment < -0.2 ? "Heavy" : "Neutral"))
+                            Text(toneLabel(for: analysis.sentiment))
                                 .font(OffRecordTypography.metadata)
                                 .foregroundColor(OffRecordColor.textSecondary)
                         }
@@ -1355,7 +1355,7 @@ struct EntryDetailView: View {
                         HStack(spacing: 4) {
                             Image(systemName: "bubble.left.and.text.bubble.right")
                                 .font(OffRecordTypography.metadata)
-                            Text("Friday")
+                            Text("Friday", comment: "Name of the in-app assistant, not the weekday.")
                                 .font(OffRecordTypography.metadata)
                         }
                         .foregroundColor(OffRecordColor.textSecondary)
@@ -1590,6 +1590,16 @@ struct EntryDetailView: View {
         EntryDetailDateFormatters.fullDate.string(from: entry.date ?? Date())
     }
 
+    private func toneLabel(for sentiment: Double) -> String {
+        if sentiment > 0.2 {
+            return String(localized: "Light", comment: "Tone of an entry: mostly positive.")
+        }
+        if sentiment < -0.2 {
+            return String(localized: "Heavy", comment: "Tone of an entry: mostly negative.")
+        }
+        return String(localized: "Neutral", comment: "Tone of an entry: neither positive nor negative.")
+    }
+
     private func formattedTime(_ date: Date) -> String {
         EntryDetailDateFormatters.time.string(from: date)
     }
@@ -1613,9 +1623,9 @@ struct EntryDetailView: View {
         let minutes = Int(time) / 60
         let seconds = Int(time) % 60
         if minutes > 0 {
-            return "\(minutes)m \(seconds)s"
+            return String(localized: "\(minutes)m \(seconds)s", comment: "Short recording length in minutes and seconds.")
         }
-        return "\(seconds)s"
+        return String(localized: "\(seconds)s", comment: "Short recording length in seconds.")
     }
 
     private func audioURL() -> URL? {
@@ -1754,7 +1764,7 @@ struct EntryDetailView: View {
     private func saveNewTextBlock() -> Bool {
         let trimmed = newTextBlockText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
-            newTextBlockError = "Write something first."
+            newTextBlockError = String(localized: "Write something first.")
             return false
         }
 
@@ -1781,7 +1791,7 @@ struct EntryDetailView: View {
             return true
         } catch {
             viewContext.rollback()
-            newTextBlockError = "Couldn’t save. Try again."
+            newTextBlockError = String(localized: "Couldn’t save. Try again.")
             return false
         }
     }
@@ -1801,7 +1811,7 @@ struct EntryDetailView: View {
     private func finishEditingBlock(_ item: JournalBlockTimelineItem) -> Bool {
         guard let block = block(for: item) else { return false }
         guard JournalBlockTimelineStore.updateTextBlock(block, text: editingBlockText) else {
-            blockEditError = "Text can’t be empty. Delete it instead?"
+            blockEditError = String(localized: "Text can’t be empty. Delete it instead?")
             return false
         }
         do {

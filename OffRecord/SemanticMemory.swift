@@ -60,7 +60,7 @@ final class SemanticMemoryIndexController: ObservableObject {
 
     @Published private(set) var isBuilding = false
     @Published private(set) var progress: Double = 0
-    @Published private(set) var statusMessage = "Ready"
+    @Published private(set) var statusMessage = String(localized: "Ready", comment: "Search index status: ready to use.")
     @Published private(set) var chunkCount = 0
     @Published private(set) var lastIndexedAt: Date?
     @Published private(set) var usesFallbackEmbeddings = false
@@ -77,7 +77,7 @@ final class SemanticMemoryIndexController: ObservableObject {
 
     func markNeedsReconcile() {
         needsRemoteReconcile = true
-        statusMessage = "Updating soon"
+        statusMessage = String(localized: "Updating soon")
     }
 
     func ensureIndexed(entries: [DiaryEntry]) {
@@ -110,10 +110,10 @@ final class SemanticMemoryIndexController: ObservableObject {
         Task {
             do {
                 let snapshot = try await worker.upsertEntry(record)
-                apply(snapshot: snapshot, message: "Up to date")
+                apply(snapshot: snapshot, message: String(localized: "Up to date"))
             } catch {
                 semanticMemoryLogger.error("Index update failed: \(error.localizedDescription, privacy: .public)")
-                statusMessage = "Couldn’t update"
+                statusMessage = String(localized: "Couldn’t update")
             }
         }
     }
@@ -123,10 +123,10 @@ final class SemanticMemoryIndexController: ObservableObject {
         Task {
             do {
                 let snapshot = try await worker.deleteEntry(id: id)
-                apply(snapshot: snapshot, message: "Up to date")
+                apply(snapshot: snapshot, message: String(localized: "Up to date"))
             } catch {
                 semanticMemoryLogger.error("Index entry delete failed: \(error.localizedDescription, privacy: .public)")
-                statusMessage = "Couldn’t update"
+                statusMessage = String(localized: "Couldn’t update")
             }
         }
     }
@@ -143,11 +143,11 @@ final class SemanticMemoryIndexController: ObservableObject {
                 chunkCount = 0
                 lastIndexedAt = nil
                 usesFallbackEmbeddings = false
-                statusMessage = "Deleted"
-                lastSearchState = .unavailable("Not ready yet")
+                statusMessage = String(localized: "Deleted", comment: "Search index status: the index was deleted.")
+                lastSearchState = .unavailable(String(localized: "Not ready yet"))
             } catch {
                 semanticMemoryLogger.error("Index delete failed: \(error.localizedDescription, privacy: .public)")
-                statusMessage = "Couldn’t update"
+                statusMessage = String(localized: "Couldn’t update")
             }
         }
     }
@@ -179,7 +179,7 @@ final class SemanticMemoryIndexController: ObservableObject {
         buildTask?.cancel()
         isBuilding = true
         progress = 0
-        statusMessage = "Building…"
+        statusMessage = String(localized: "Building…")
 
         buildTask = Task { [weak self] in
             guard let self else { return }
@@ -199,14 +199,14 @@ final class SemanticMemoryIndexController: ObservableObject {
                     self.needsRemoteReconcile = false
                     self.isBuilding = false
                     self.progress = snapshot.chunks.isEmpty ? 0 : 1
-                    self.apply(snapshot: snapshot, message: snapshot.chunks.isEmpty ? "No entries yet" : "Ready")
+                    self.apply(snapshot: snapshot, message: snapshot.chunks.isEmpty ? String(localized: "No entries yet") : String(localized: "Ready", comment: "Search index status: ready to use."))
                     self.buildTask = nil
                 }
             } catch is CancellationError {
                 await MainActor.run {
                     guard generation == self.buildGeneration else { return }
                     self.isBuilding = false
-                    self.statusMessage = "Stopped"
+                    self.statusMessage = String(localized: "Stopped", comment: "Search index status: the rebuild was cancelled.")
                     self.buildTask = nil
                 }
             } catch {
@@ -214,8 +214,8 @@ final class SemanticMemoryIndexController: ObservableObject {
                     guard generation == self.buildGeneration else { return }
                     semanticMemoryLogger.error("Index build failed: \(error.localizedDescription, privacy: .public)")
                     self.isBuilding = false
-                    self.lastSearchState = .failed("Couldn’t update")
-                    self.statusMessage = "Couldn’t update"
+                    self.lastSearchState = .failed(String(localized: "Couldn’t update"))
+                    self.statusMessage = String(localized: "Couldn’t update")
                     self.buildTask = nil
                 }
             }
@@ -225,14 +225,14 @@ final class SemanticMemoryIndexController: ObservableObject {
     private func loadSnapshot() async {
         do {
             if let snapshot = try await worker.load() {
-                apply(snapshot: snapshot, message: snapshot.chunks.isEmpty ? "Builds on your next search" : "Ready")
+                apply(snapshot: snapshot, message: snapshot.chunks.isEmpty ? String(localized: "Builds on your next search") : String(localized: "Ready", comment: "Search index status: ready to use."))
             } else {
-                statusMessage = "Builds on your next search"
+                statusMessage = String(localized: "Builds on your next search")
             }
         } catch {
             semanticMemoryLogger.error("Index load failed: \(error.localizedDescription, privacy: .public)")
-            statusMessage = "Not available"
-            lastSearchState = .failed("Not available")
+            statusMessage = String(localized: "Not available")
+            lastSearchState = .failed(String(localized: "Not available"))
         }
     }
 
@@ -242,7 +242,7 @@ final class SemanticMemoryIndexController: ObservableObject {
         usesFallbackEmbeddings = ProcessInfo.processInfo.arguments.contains("-SemanticMemoryUseFallbackEmbeddings")
             || snapshot.embeddingModelID == UnavailableEmbeddingProvider().metadata.modelID
         statusMessage = usesFallbackEmbeddings && !snapshot.chunks.isEmpty
-            ? "Ready (basic mode)"
+            ? String(localized: "Ready (basic mode)")
             : message
     }
 
@@ -266,48 +266,48 @@ enum EvidenceFridayEngine {
         case .building(let progress, _):
             if let fallback = profileFallbackAnswer(
                 profileSummary: profileSummary,
-                limitation: "I can’t point to specific entries right now."
+                limitation: String(localized: "I can’t point to specific entries right now.")
             ) {
                 semanticMemoryLogger.notice("Friday using suggested profile fallback while index is building.")
                 return fallback
             }
             return EvidenceBackedFridayAnswer(
-                summary: "I’m still reading your journal.",
-                observations: [EvidenceObservation(text: "\(Int(progress * 100))% done.", evidenceIDs: [])],
+                summary: String(localized: "I’m still reading your journal."),
+                observations: [EvidenceObservation(text: String(localized: "\(Int(progress * 100))% done."), evidenceIDs: [])],
                 evidence: [],
                 confidence: 0,
                 followUpPrompt: nil,
-                limitations: "I’ll answer once I’ve read everything."
+                limitations: String(localized: "I’ll answer once I’ve read everything.")
             )
         case .unavailable(let reason):
             semanticMemoryLogger.notice("Friday search unavailable: \(reason, privacy: .public)")
             if let fallback = profileFallbackAnswer(
                 profileSummary: profileSummary,
-                limitation: "I can’t point to specific entries right now."
+                limitation: String(localized: "I can’t point to specific entries right now.")
             ) {
                 semanticMemoryLogger.notice("Friday using suggested profile fallback because search is unavailable.")
                 return fallback
             }
             return EvidenceBackedFridayAnswer(
-                summary: "I do not have enough journal evidence to answer that yet.",
+                summary: String(localized: "I do not have enough journal evidence to answer that yet."),
                 observations: [],
                 evidence: [],
                 confidence: 0,
                 followUpPrompt: nil,
-                limitations: "I only answer from your entries."
+                limitations: String(localized: "I only answer from your entries.")
             )
         case .failed(let message):
             semanticMemoryLogger.error("Friday search failed: \(message, privacy: .public)")
             if let fallback = profileFallbackAnswer(
                 profileSummary: profileSummary,
-                limitation: "I can’t point to specific entries right now."
+                limitation: String(localized: "I can’t point to specific entries right now.")
             ) {
                 semanticMemoryLogger.notice("Friday using suggested profile fallback because search failed.")
                 return fallback
             }
             return EvidenceBackedFridayAnswer(
-                summary: "I couldn’t search your journal just now.",
-                observations: [EvidenceObservation(text: "Try again in a moment.", evidenceIDs: [])],
+                summary: String(localized: "I couldn’t search your journal just now."),
+                observations: [EvidenceObservation(text: String(localized: "Try again in a moment."), evidenceIDs: [])],
                 evidence: [],
                 confidence: 0,
                 followUpPrompt: nil,
@@ -327,18 +327,18 @@ enum EvidenceFridayEngine {
         guard !strongEvidence.isEmpty else {
             if let fallback = profileFallbackAnswer(
                 profileSummary: profileSummary,
-                limitation: "I couldn’t find supporting entries for this."
+                limitation: String(localized: "I couldn’t find supporting entries for this.")
             ) {
                 semanticMemoryLogger.notice("Friday using suggested profile fallback because evidence was weak.")
                 return fallback
             }
             return EvidenceBackedFridayAnswer(
-                summary: "I do not have enough journal evidence to answer that yet.",
-                observations: [EvidenceObservation(text: "Try asking about a person, topic, mood, or time you’ve written about.", evidenceIDs: [])],
+                summary: String(localized: "I do not have enough journal evidence to answer that yet."),
+                observations: [EvidenceObservation(text: String(localized: "Try asking about a person, topic, mood, or time you’ve written about."), evidenceIDs: [])],
                 evidence: [],
                 confidence: 0,
                 followUpPrompt: nil,
-                limitations: "I only answer from journal evidence I can find."
+                limitations: String(localized: "I only answer from journal evidence I can find.")
             )
         }
 
@@ -353,7 +353,7 @@ enum EvidenceFridayEngine {
             evidence: topEvidence,
             confidence: confidence,
             followUpPrompt: nil,
-            limitations: confidence < 0.65 ? "I’m not sure. Only a few entries match." : nil
+            limitations: confidence < 0.65 ? String(localized: "I’m not sure. Only a few entries match.") : nil
         )
 
         #if canImport(FoundationModels)
@@ -411,19 +411,22 @@ enum EvidenceFridayEngine {
         formatter.dateStyle = .medium
         let dateText: String
         if let first = dates.first, let last = dates.last, !Calendar.current.isDate(first, inSameDayAs: last) {
-            dateText = "\(formatter.string(from: first)) to \(formatter.string(from: last))"
+            dateText = String(localized: "\(formatter.string(from: first)) to \(formatter.string(from: last))", comment: "A date range, from the first date to the last.")
         } else if let first = dates.first {
             dateText = formatter.string(from: first)
         } else {
-            dateText = "your journal"
+            dateText = String(localized: "your journal", comment: "Used in place of a date range, as in “3 entries from your journal mention this.”")
         }
 
         let entryCount = String(AttributedString(localized: "^[\(evidence.count) entry](inflect: true)").characters)
-        let verb = evidence.count == 1 ? "mentions" : "mention"
         if topic.isEmpty {
-            return "\(entryCount) from \(dateText) \(verb) this."
+            return evidence.count == 1
+                ? String(localized: "\(entryCount) from \(dateText) mentions this.", comment: "The first argument is “1 entry”; the second is a date, a date range, or “your journal”.")
+                : String(localized: "\(entryCount) from \(dateText) mention this.", comment: "The first argument is a count like “3 entries”; the second is a date, a date range, or “your journal”.")
         }
-        return "\(entryCount) from \(dateText) \(verb) \(topic)."
+        return evidence.count == 1
+            ? String(localized: "\(entryCount) from \(dateText) mentions \(topic).", comment: "The first argument is “1 entry”; the second is a date, a date range, or “your journal”; the third is the words asked about.")
+            : String(localized: "\(entryCount) from \(dateText) mention \(topic).", comment: "The first argument is a count like “3 entries”; the second is a date, a date range, or “your journal”; the third is the words asked about.")
     }
 
     private static func buildObservations(question: String, evidence: [EvidenceReference]) -> [EvidenceObservation] {
@@ -438,17 +441,17 @@ enum EvidenceFridayEngine {
         var observations: [EvidenceObservation] = []
         let allEvidenceIDs = evidence.map(\.id)
         if !recurring.isEmpty {
-            observations.append(EvidenceObservation(text: "Words that come up most: \(recurring.joined(separator: ", ")).", evidenceIDs: allEvidenceIDs))
+            observations.append(EvidenceObservation(text: String(localized: "Words that come up most: \(recurring.joined(separator: ", ")).", comment: "The argument is a comma-separated list of words."), evidenceIDs: allEvidenceIDs))
         }
 
         let moods = evidence.compactMap(\.mood).filter { !$0.isEmpty }
         if let mood = Dictionary(grouping: moods, by: { $0 }).max(by: { $0.value.count < $1.value.count })?.key {
             let moodEvidenceIDs = evidence.filter { $0.mood == mood }.map(\.id)
-            observations.append(EvidenceObservation(text: "Most were tagged \(mood.capitalized).", evidenceIDs: moodEvidenceIDs))
+            observations.append(EvidenceObservation(text: String(localized: "Most were tagged \(Mood(rawValue: mood)?.displayName ?? mood.capitalized).", comment: "The argument is a mood name."), evidenceIDs: moodEvidenceIDs))
         }
 
         if let first = evidence.first {
-            observations.append(EvidenceObservation(text: "The clearest example: “\(first.snippet)”", evidenceIDs: [first.id]))
+            observations.append(EvidenceObservation(text: String(localized: "The clearest example: “\(first.snippet)”", comment: "The argument is a quote from one of the person’s entries."), evidenceIDs: [first.id]))
         }
         return observations
     }

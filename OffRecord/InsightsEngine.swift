@@ -63,13 +63,13 @@ enum InsightsEngine {
             guard let date = entry.date else { return false }
             return date >= streakStart
         }
-        let rationale = "Days in a row with at least one entry."
+        let rationale = String(localized: "Days in a row with at least one entry.")
 
         if streak >= 7 {
             return JournalInsightSummary(
                 id: "streak-7",
-                title: "On a streak",
-                description: "\(streak) days in a row.",
+                title: String(localized: "On a streak"),
+                description: String(localized: "\(streak) days in a row."),
                 icon: "flame.fill",
                 colorName: "orange",
                 rationale: rationale,
@@ -78,8 +78,8 @@ enum InsightsEngine {
         } else if streak >= 3 {
             return JournalInsightSummary(
                 id: "streak-3",
-                title: "Building a habit",
-                description: "\(streak) days in a row so far.",
+                title: String(localized: "Building a habit"),
+                description: String(localized: "\(streak) days in a row so far."),
                 icon: "arrow.up.right",
                 colorName: "green",
                 rationale: rationale,
@@ -88,8 +88,8 @@ enum InsightsEngine {
         } else if !hasToday && streak == 0 {
             return JournalInsightSummary(
                 id: "write-today",
-                title: "Nothing yet today",
-                description: "A sentence counts.",
+                title: String(localized: "Nothing yet today"),
+                description: String(localized: "A sentence counts."),
                 icon: "pencil.line",
                 colorName: "blue"
             )
@@ -108,13 +108,13 @@ enum InsightsEngine {
 
         let positive = recent.filter { positiveMoods.contains($0.mood) }
         let positiveRatio = Double(positive.count) / Double(recent.count)
-        let rationale = "Based on \(recent.count) moods from the last 7 days."
+        let rationale = String(localized: "Based on \(recent.count) moods from the last 7 days.")
 
         if positiveRatio >= 0.7 {
             return JournalInsightSummary(
                 id: "positive-week",
-                title: "A good week",
-                description: "\(Int(positiveRatio * 100))% of your moods this week were positive.",
+                title: String(localized: "A good week"),
+                description: String(localized: "\(Int(positiveRatio * 100))% of your moods this week were positive."),
                 icon: "sun.max.fill",
                 colorName: "yellow",
                 rationale: rationale,
@@ -124,8 +124,8 @@ enum InsightsEngine {
             let heavier = recent.filter { !positiveMoods.contains($0.mood) }
             return JournalInsightSummary(
                 id: "tough-week",
-                title: "A harder week",
-                description: "More of your moods this week were low.",
+                title: String(localized: "A harder week"),
+                description: String(localized: "More of your moods this week were low."),
                 icon: "heart.fill",
                 colorName: "pink",
                 rationale: rationale,
@@ -156,8 +156,8 @@ enum InsightsEngine {
         if morning.count > evening.count * 2 {
             return JournalInsightSummary(
                 id: "morning-writer",
-                title: "Morning writer",
-                description: "You usually journal before noon.",
+                title: String(localized: "Morning writer"),
+                description: String(localized: "You usually journal before noon."),
                 icon: "sunrise.fill",
                 colorName: "orange",
                 rationale: rationale,
@@ -166,8 +166,8 @@ enum InsightsEngine {
         } else if evening.count > morning.count * 2 {
             return JournalInsightSummary(
                 id: "evening-writer",
-                title: "Evening writer",
-                description: "You usually journal after 6 PM.",
+                title: String(localized: "Evening writer"),
+                description: String(localized: "You usually journal after 6 PM."),
                 icon: "moon.stars.fill",
                 colorName: "indigo",
                 rationale: rationale,
@@ -197,11 +197,11 @@ enum InsightsEngine {
 
         return JournalInsightSummary(
             id: "writing-more",
-            title: "Writing more",
-            description: "You’ve written \(increase)% more this month.",
+            title: String(localized: "Writing more"),
+            description: String(localized: "You’ve written \(increase)% more this month."),
             icon: "chart.line.uptrend.xyaxis",
             colorName: "green",
-            rationale: "\(thisMonthWords) words this month vs. \(lastMonthWords) last month.",
+            rationale: String(localized: "\(thisMonthWords) words this month vs. \(lastMonthWords) last month."),
             supportingEntryIDs: evidenceIDs(thisMonth.sorted { $0.wordCount > $1.wordCount })
         )
     }
@@ -213,11 +213,11 @@ enum InsightsEngine {
             // Entries are newest first, so the milestone entry sits `milestone` places from the oldest.
             let milestoneEntry = entries[entries.count - milestone]
             let description = milestoneEntry.date.map {
-                "Your \(milestone)th entry was on \($0.formatted(date: .long, time: .omitted))."
-            } ?? "You’ve saved \(milestone) entries."
+                String(localized: "Your \(milestone)th entry was on \($0.formatted(date: .long, time: .omitted)).")
+            } ?? String(localized: "You’ve saved \(milestone) entries.")
             return JournalInsightSummary(
                 id: "milestone-\(milestone)",
-                title: "\(milestone) entries",
+                title: String(localized: "\(milestone) entries"),
                 description: description,
                 icon: "trophy.fill",
                 colorName: "yellow",
@@ -247,8 +247,8 @@ enum InsightsEngine {
         if average > 0.3 {
             return JournalInsightSummary(
                 id: "positive-writing",
-                title: "Upbeat lately",
-                description: "Your recent entries read positive.",
+                title: String(localized: "Upbeat lately"),
+                description: String(localized: "Your recent entries read positive."),
                 icon: "face.smiling.fill",
                 colorName: "green",
                 rationale: rationale,
@@ -257,8 +257,8 @@ enum InsightsEngine {
         } else if average < -0.3 {
             return JournalInsightSummary(
                 id: "gratitude",
-                title: "Heavier lately",
-                description: "Your recent entries read heavier. Want to note one good thing today?",
+                title: String(localized: "Heavier lately"),
+                description: String(localized: "Your recent entries read heavier. Want to note one good thing today?"),
                 icon: "heart.text.square.fill",
                 colorName: "pink",
                 rationale: rationale,

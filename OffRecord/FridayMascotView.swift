@@ -33,12 +33,12 @@ enum FridayMascotPose {
 
     var accessibilityLabel: String {
         switch self {
-        case .idle: return "Friday"
-        case .wave: return "Friday waving"
-        case .listening: return "Friday listening"
-        case .thinking: return "Friday thinking"
-        case .walking: return "Friday walking"
-        case .confiding: return "Friday"
+        case .idle: return String(localized: "Friday", comment: "Name of the in-app assistant")
+        case .wave: return String(localized: "Friday waving")
+        case .listening: return String(localized: "Friday listening")
+        case .thinking: return String(localized: "Friday thinking")
+        case .walking: return String(localized: "Friday walking")
+        case .confiding: return String(localized: "Friday", comment: "Name of the in-app assistant")
         }
     }
 }

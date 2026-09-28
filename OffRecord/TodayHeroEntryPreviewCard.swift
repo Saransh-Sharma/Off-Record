@@ -18,7 +18,7 @@ struct TodayHeroEntryPreviewCard: View {
                 )
 
                 VStack(alignment: .leading, spacing: 5) {
-                    Text("Today")
+                    Text("Today", comment: "Heading of the card that previews today’s entry")
                         .accessibilityAddTraits(.isHeader)
                         .font(OffRecordTypography.labelLarge)
                         .foregroundStyle(primaryText)
@@ -60,12 +60,12 @@ struct TodayHeroEntryPreviewCard: View {
             return text
         }
         if entry.hasStartedEntryAudio {
-            return "Recording saved."
+            return String(localized: "Recording saved.")
         }
         if entry.photos?.count ?? 0 > 0 {
-            return "Photos added."
+            return String(localized: "Photos added.")
         }
-        return "Draft"
+        return String(localized: "Draft", comment: "Stands in for today’s entry preview when the entry is still empty")
     }
 
     private var metadataText: String {
@@ -73,7 +73,8 @@ struct TodayHeroEntryPreviewCard: View {
         let time = updatedAt.formatted(date: .omitted, time: .shortened)
         let text = entry.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let words = text.isEmpty ? 0 : text.split { $0.isWhitespace || $0.isNewline }.count
-        return "Updated \(time) · " + String(AttributedString(localized: "^[\(words) word](inflect: true)").characters)
+        let wordCount = String(AttributedString(localized: "^[\(words) word](inflect: true)").characters)
+        return String(localized: "Updated \(time) · \(wordCount)", comment: "Today’s entry preview metadata: last edit time, then word count")
     }
 
     private var primaryText: Color {

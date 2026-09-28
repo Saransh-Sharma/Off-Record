@@ -245,27 +245,27 @@ struct OnboardingView: View {
 
     private var primaryTitle: String {
         switch step {
-        case .welcome: return "Continue"
-        case .intent, .privacy: return "Continue"
-        case .lock: return lockManager.isEnabled ? "Continue" : lockPrimaryTitle
+        case .welcome: return String(localized: "Continue")
+        case .intent, .privacy: return String(localized: "Continue")
+        case .lock: return lockManager.isEnabled ? String(localized: "Continue") : lockPrimaryTitle
         case .firstReflection: return firstReflectionPrimaryTitle
-        case .habit: return "Start Journaling"
+        case .habit: return String(localized: "Start Journaling")
         }
     }
 
     /// "Use Face ID", "Use Touch ID", "Use Optic ID", or "Use Passcode".
     private var lockPrimaryTitle: String {
-        "Use \(lockManager.biometryTypeName)"
+        String(localized: "Use \(lockManager.biometryTypeName)")
     }
 
     private var firstReflectionPrimaryTitle: String {
-        if isTranscribing { return "Transcribing…" }
-        if entryCreated { return "Continue" }
+        if isTranscribing { return String(localized: "Transcribing…") }
+        if entryCreated { return String(localized: "Continue") }
         switch firstEntryMode {
         case .voice:
-            return isRecording ? "Stop Recording" : "Record"
+            return isRecording ? String(localized: "Stop Recording") : String(localized: "Record", comment: "Button that starts a voice recording")
         case .textFallback:
-            return "Save"
+            return String(localized: "Save", comment: "Onboarding button that saves the typed first entry")
         }
     }
 
@@ -290,11 +290,11 @@ struct OnboardingView: View {
     private var secondaryTitle: String? {
         switch step {
         case .lock:
-            return lockManager.isEnabled ? nil : "Not Now"
+            return lockManager.isEnabled ? nil : String(localized: "Not Now")
         case .firstReflection:
-            return (isRecording || isTranscribing) ? nil : "Skip"
+            return (isRecording || isTranscribing) ? nil : String(localized: "Skip", comment: "Button that skips an onboarding step")
         case .habit:
-            return "Skip"
+            return String(localized: "Skip", comment: "Button that skips an onboarding step")
         default:
             return nil
         }
@@ -390,7 +390,7 @@ struct OnboardingView: View {
                 goForward()
             } else {
                 response.faceIDChoice = .failed
-                onboardingError = "\(lockManager.biometryTypeName) wasn’t turned on. You can turn it on in Settings."
+                onboardingError = String(localized: "\(lockManager.biometryTypeName) wasn’t turned on. You can turn it on in Settings.")
             }
         }
     }
@@ -418,14 +418,14 @@ struct OnboardingView: View {
                     HapticManager.shared.recordingStarted()
                 } catch {
                     firstEntryMode = .textFallback
-                    onboardingError = "Recording didn’t start. You can type instead."
+                    onboardingError = String(localized: "Recording didn’t start. You can type instead.")
                     HapticManager.shared.error()
                 }
             }
         }
         #else
         firstEntryMode = .textFallback
-        onboardingError = "Recording didn’t start. You can type instead."
+        onboardingError = String(localized: "Recording didn’t start. You can type instead.")
         #endif
     }
 
@@ -451,7 +451,7 @@ struct OnboardingView: View {
             entry: entry,
             in: viewContext
         ) else {
-            onboardingError = "Recording saved. Transcription didn’t start."
+            onboardingError = String(localized: "Recording saved. Transcription didn’t start.")
             isTranscribing = false
             return
         }
@@ -587,7 +587,7 @@ struct OnboardingView: View {
                     try? viewContext.save()
                     let nsError = error as NSError
                     onboardingLogger.error("Onboarding transcription failed entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) domain=\(nsError.domain, privacy: .public) code=\(nsError.code, privacy: .public) transcriptionStatus=failed")
-                    onboardingError = "Recording saved. Add a few words before continuing."
+                    onboardingError = String(localized: "Recording saved. Add a few words before continuing.")
                     firstEntryMode = .textFallback
                 }
                 isTranscribing = false
@@ -726,18 +726,18 @@ enum OnboardingStep: Int, CaseIterable, Identifiable {
     }
 
     var progressText: String {
-        "\(rawValue + 1) of \(Self.allCases.count)"
+        String(localized: "\(rawValue + 1) of \(Self.allCases.count)", comment: "Onboarding progress, e.g. “2 of 6”")
     }
 
     @MainActor
     var pageTitle: String {
         switch self {
-        case .welcome: return "Your private voice journal"
-        case .intent: return "What brings you here?"
-        case .privacy: return "Stays on your \(DeviceNoun.current)"
-        case .lock: return "Lock your journal"
-        case .firstReflection: return "Say one thing about today"
-        case .habit: return "Make it a habit"
+        case .welcome: return String(localized: "Your private voice journal")
+        case .intent: return String(localized: "What brings you here?")
+        case .privacy: return String(localized: "Stays on your \(DeviceNoun.current)")
+        case .lock: return String(localized: "Lock your journal")
+        case .firstReflection: return String(localized: "Say one thing about today")
+        case .habit: return String(localized: "Make it a habit")
         }
     }
 
@@ -834,12 +834,12 @@ enum OnboardingPainPoint: String, CaseIterable, Codable, Identifiable {
 
     var title: String {
         switch self {
-        case .typingSlow: return "Clear my head"
-        case .detailsFade: return "Remember my days"
-        case .privacyWorry: return "Vent"
-        case .blankPage: return "Talk things through"
-        case .manualMood: return "Track my mood"
-        case .hardToSearch: return "Spot patterns"
+        case .typingSlow: return String(localized: "Clear my head")
+        case .detailsFade: return String(localized: "Remember my days")
+        case .privacyWorry: return String(localized: "Vent")
+        case .blankPage: return String(localized: "Talk things through")
+        case .manualMood: return String(localized: "Track my mood")
+        case .hardToSearch: return String(localized: "Spot patterns")
         }
     }
 
@@ -1055,7 +1055,7 @@ private struct OnboardingNameField: UIViewRepresentable {
         let textField = InsetTextField(frame: .zero)
         textField.delegate = context.coordinator
         textField.text = text
-        textField.placeholder = "Your name (optional)"
+        textField.placeholder = String(localized: "Your name (optional)")
         textField.textColor = UIColor(OffRecordColor.textPrimary)
         textField.tintColor = UIColor(OffRecordColor.textCoral)
         textField.font = UIFont.preferredFont(forTextStyle: .headline)
@@ -1133,7 +1133,7 @@ private struct IntentStep: View {
 
     var body: some View {
         OnboardingQuestion(
-            subtitle: "Choose any.",
+            subtitle: String(localized: "Choose any."),
             contentSpacing: 18
         ) {
             VStack(spacing: 10) {
@@ -1159,13 +1159,13 @@ private struct IntentStep: View {
 private struct PrivacyProofStep: View {
     var body: some View {
         OnboardingQuestion(
-            subtitle: "Nothing leaves your \(DeviceNoun.current) unless you export it or turn on iCloud.",
+            subtitle: String(localized: "Nothing leaves your \(DeviceNoun.current) unless you export it or turn on iCloud."),
             contentSpacing: 16
         ) {
             VStack(spacing: 10) {
-                PrivacyProofRow(icon: "person.crop.circle.badge.xmark", title: "No account", detail: "Open the app and start.")
-                PrivacyProofRow(icon: "server.rack", title: "No OffRecord servers", detail: "Transcription and Friday run on your \(DeviceNoun.current).")
-                PrivacyProofRow(icon: "chart.bar.xaxis", title: "No ads or tracking", detail: "Nothing you write is used for ads.")
+                PrivacyProofRow(icon: "person.crop.circle.badge.xmark", title: String(localized: "No account"), detail: String(localized: "Open the app and start."))
+                PrivacyProofRow(icon: "server.rack", title: String(localized: "No OffRecord servers"), detail: String(localized: "Transcription and Friday run on your \(DeviceNoun.current)."))
+                PrivacyProofRow(icon: "chart.bar.xaxis", title: String(localized: "No ads or tracking"), detail: String(localized: "Nothing you write is used for ads."))
             }
         }
     }
@@ -1178,7 +1178,9 @@ private struct FaceIDStep: View {
 
     var body: some View {
         OnboardingQuestion(
-            subtitle: "Require \(biometryNameInSentence) to open OffRecord.",
+            subtitle: isPasscode
+                ? String(localized: "Require your passcode to open OffRecord.")
+                : String(localized: "Require \(biometryName) to open OffRecord.", comment: "The placeholder is Face ID, Touch ID, or Optic ID"),
             contentSpacing: 18
         ) {
             VStack(spacing: 16) {
@@ -1192,7 +1194,7 @@ private struct FaceIDStep: View {
                 }
 
                 VStack(alignment: .leading, spacing: 12) {
-                    BenefitRow(icon: "lock.fill", text: "Locks again when you leave the app.")
+                    BenefitRow(icon: "lock.fill", text: String(localized: "Locks again when you leave the app."))
                 }
 
                 if !isAvailable {
@@ -1208,15 +1210,16 @@ private struct FaceIDStep: View {
         }
     }
 
-    /// "Face ID" reads as a name; a bare "Passcode" doesn't, so it becomes "your passcode".
-    private var biometryNameInSentence: String {
-        biometryName == "Passcode" ? "your passcode" : biometryName
+    /// "Face ID" reads as a name; a bare "Passcode" doesn't, so it gets its own sentences.
+    /// AppLockManager returns the localized "Passcode", so compare against the same key.
+    private var isPasscode: Bool {
+        biometryName == String(localized: "Passcode")
     }
 
     private var unavailableMessage: String {
-        biometryName == "Passcode"
-            ? "OffRecord will use your passcode."
-            : "\(biometryName) isn’t set up. Your passcode will be used instead."
+        isPasscode
+            ? String(localized: "OffRecord will use your passcode.")
+            : String(localized: "\(biometryName) isn’t set up. Your passcode will be used instead.")
     }
 
     private var lockIcon: String {
@@ -1247,7 +1250,7 @@ private struct FirstEntryStep: View {
 
     var body: some View {
         OnboardingQuestion(
-            subtitle: "A sentence is enough.",
+            subtitle: String(localized: "A sentence is enough."),
             contentSpacing: 16
         ) {
             VStack(spacing: 18) {
@@ -1329,7 +1332,7 @@ private struct FirstEntryStep: View {
                         .font(OffRecordTypography.sectionTitle)
                         .foregroundStyle(OnboardingPalette.foreground)
                 } else {
-                    Text("Record")
+                    Text("Record", comment: "Button that starts a voice recording")
                         .font(OffRecordTypography.sectionTitle)
                 }
             }
@@ -1394,7 +1397,7 @@ private struct HabitSetupStep: View {
 
     var body: some View {
         OnboardingQuestion(
-            subtitle: "Optional. You can change these in Settings.",
+            subtitle: String(localized: "Optional. You can change these in Settings."),
             contentSpacing: 18
         ) {
             VStack(spacing: 16) {

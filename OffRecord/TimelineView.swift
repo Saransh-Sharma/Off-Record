@@ -140,7 +140,7 @@ struct TimelineView: View {
         .overlay(alignment: .bottom) {
             if let pendingDeletion {
                 TimelineUndoToast(
-                    message: "Entry deleted",
+                    message: String(localized: "Entry deleted"),
                     onUndo: undoPendingDeletion
                 )
                 .padding(.horizontal, OffRecordSpacing.screenX)
@@ -310,10 +310,12 @@ struct TimelineView: View {
     }
 
     private var lensPicker: some View {
-        Picker("View", selection: $lens) {
+        Picker(selection: $lens) {
             ForEach(TimelineLens.allCases) { lens in
                 Label(lens.displayName, systemImage: lens.systemImage).tag(lens)
             }
+        } label: {
+            Text("View", comment: "Accessibility label for the picker that switches the timeline between list, calendar, and photos.")
         }
         .pickerStyle(.segmented)
         .accessibilityIdentifier("timeline.lensPicker")
@@ -329,9 +331,9 @@ struct TimelineView: View {
     }
 
     private var summaryTitle: String {
-        guard let date = summaryEntriesCache.first?.date else { return "This Month" }
+        guard let date = summaryEntriesCache.first?.date else { return String(localized: "This Month") }
         if Calendar.current.isDate(date, equalTo: Date(), toGranularity: .month) {
-            return "This Month"
+            return String(localized: "This Month")
         }
         return date.formatted(.dateTime.month(.wide).year())
     }
@@ -356,7 +358,7 @@ struct TimelineView: View {
                         entryRow(entry, index: index, isLast: index == bestMatches.count - 1, maxWidth: maxWidth, selectedEntryID: selectedEntryID, onSelect: onSelect, transitionSuffix: "best")
                     }
                 } header: {
-                    TimelineSectionHeader(title: "Top Results", count: nil, systemImage: "sparkle.magnifyingglass")
+                    TimelineSectionHeader(title: String(localized: "Top Results"), count: nil, systemImage: "sparkle.magnifyingglass")
                         .timelineHeaderLayout(maxWidth: maxWidth)
                 }
             }
@@ -417,7 +419,7 @@ struct TimelineView: View {
             Button(role: .destructive) {
                 requestDelete(entry)
             } label: {
-                Label("Delete", systemImage: "trash")
+                Label(String(localized: "Delete", comment: "Action that deletes an entry."), systemImage: "trash")
             }
             .tint(.red)
         }
@@ -451,7 +453,7 @@ struct TimelineView: View {
             Button(role: .destructive) {
                 requestDelete(entry)
             } label: {
-                Label("Delete", systemImage: "trash")
+                Label(String(localized: "Delete", comment: "Action that deletes an entry."), systemImage: "trash")
             }
         } preview: {
             TimelineEntryContextPreview(entry: entry)
@@ -583,7 +585,7 @@ struct TimelineView: View {
                 .foregroundStyle(showStarredOnly ? OffRecordColor.textYellow : OffRecordColor.textBrand)
                 .contentTransition(.symbolEffect(.replace))
         }
-        .accessibilityLabel("Starred")
+        .accessibilityLabel(Text("Starred", comment: "Accessibility label for the toolbar button that shows only starred entries."))
         .accessibilityAddTraits(showStarredOnly ? .isSelected : [])
     }
 
@@ -755,7 +757,7 @@ struct TimelineView: View {
         VStack(spacing: 12) {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    Text("Mood")
+                    Text("Mood", comment: "Label before the row of mood filters.")
                         .font(OffRecordTypography.metadata)
                         .foregroundColor(OffRecordColor.textSecondary)
 
@@ -791,8 +793,8 @@ struct TimelineView: View {
             }
 
             HStack(spacing: 12) {
-                DateRangeButton(title: "From", date: $startDate)
-                DateRangeButton(title: "To", date: $endDate)
+                DateRangeButton(title: String(localized: "From", comment: "Button that sets the start date of the date filter."), date: $startDate)
+                DateRangeButton(title: String(localized: "To", comment: "Button that sets the end date of the date filter."), date: $endDate)
 
                 Spacer()
 
@@ -823,7 +825,7 @@ struct TimelineView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 if showStarredOnly {
-                    FilterChip(label: "Starred", icon: "star.fill", style: .highlight) {
+                    FilterChip(label: String(localized: "Starred", comment: "Active filter chip: showing only starred entries."), icon: "star.fill", style: .highlight) {
                         showStarredOnly = false
                     }
                 }
@@ -835,13 +837,13 @@ struct TimelineView: View {
                 }
 
                 if let start = startDate {
-                    FilterChip(label: "From \(formatShortDate(start))", icon: "calendar", style: .export) {
+                    FilterChip(label: String(localized: "From \(formatShortDate(start))", comment: "Active filter chip. The argument is the start date."), icon: "calendar", style: .export) {
                         startDate = nil
                     }
                 }
 
                 if let end = endDate {
-                    FilterChip(label: "To \(formatShortDate(end))", icon: "calendar", style: .export) {
+                    FilterChip(label: String(localized: "To \(formatShortDate(end))", comment: "Active filter chip. The argument is the end date."), icon: "calendar", style: .export) {
                         endDate = nil
                     }
                 }
@@ -972,7 +974,7 @@ struct TimelineView: View {
         guard trimmed.count >= 2,
               let activity = JournalSpotlightIndexer.shared.predictionActivity(
                 type: "com.singularity.offrecord.searchTimeline",
-                title: "Search OffRecord Timeline",
+                title: String(localized: "Search OffRecord Timeline"),
                 route: .timeline(query: trimmed)
               ) else {
             return
@@ -1001,7 +1003,7 @@ struct TimelineView: View {
             await MainActor.run {
                 isSemanticSearching = true
                 semanticSearchQuery = query
-                semanticSearchMessage = "Searching…"
+                semanticSearchMessage = String(localized: "Searching…")
             }
             let searchResult = await semanticMemory.search(query: query, entries: entrySnapshot, limit: 48)
             guard !Task.isCancelled else { return }
@@ -1175,9 +1177,9 @@ struct TimelineView: View {
         comps.month = key.month
         let calendar = Calendar.current
         if let date = calendar.date(from: comps) {
-            return Self.sectionTitleFormatter.string(from: date)
+            return date.formatted(.dateTime.month(.wide).year())
         }
-        return "Unknown"
+        return String(localized: "Unknown", comment: "Section title when an entry’s month can’t be determined.")
     }
 
     private func requestDelete(_ entry: DiaryEntry) {
@@ -1236,12 +1238,6 @@ struct TimelineView: View {
             viewContext.rollback()
         }
     }
-
-    private static let sectionTitleFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "LLLL yyyy"
-        return formatter
-    }()
 }
 
 // MARK: - Filter Chip
@@ -1407,7 +1403,7 @@ struct TimelineUndoToast: View {
         .offRecordGlassBar(cornerRadius: OffRecordRadius.xl, fallbackFill: OffRecordColor.surfacePrimary)
         .accessibilityElement(children: .contain)
         .onAppear {
-            UIAccessibility.post(notification: .announcement, argument: "\(message). Undo available.")
+            UIAccessibility.post(notification: .announcement, argument: String(localized: "\(message). Undo available.", comment: "VoiceOver announcement. The argument is what was just done, like “Entry deleted”."))
         }
     }
 }
@@ -1464,7 +1460,7 @@ private struct TimelineFirstEntryState: View {
             Button {
                 capture.startRecording()
             } label: {
-                Label("Record", systemImage: "mic.fill")
+                Label(String(localized: "Record", comment: "Button that starts a voice recording."), systemImage: "mic.fill")
                     .offRecordPillButton()
             }
             .buttonStyle(.plain)
@@ -1495,7 +1491,7 @@ private struct TimelineEntryContextPreview: View {
                     .foregroundStyle(OffRecordColor.textSecondary)
             }
             Text(TimelineEntryPreviewSanitizer.sanitize(entry.text ?? "").isEmpty
-                 ? "No text"
+                 ? String(localized: "No text")
                  : TimelineEntryPreviewSanitizer.sanitize(entry.text ?? ""))
                 .font(OffRecordTypography.journalBody)
                 .foregroundStyle(OffRecordColor.textPrimary)

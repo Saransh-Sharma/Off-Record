@@ -36,7 +36,7 @@ extension Sequence where Element == DiaryEntry {
 
 /// Small "Why?" affordance shown on insight cards that have supporting entries.
 struct InsightWhyButton: View {
-    var title = "Why?"
+    var title = String(localized: "Why?", comment: "Button on an insight card that explains where it came from")
     let action: () -> Void
 
     var body: some View {
@@ -79,7 +79,7 @@ struct InsightEvidenceSheet: View {
                         if context.entries.isEmpty {
                             InsightChartEmptyState(
                                 systemImage: "doc.text.magnifyingglass",
-                                message: "These entries were deleted."
+                                message: String(localized: "These entries were deleted.")
                             )
                         } else {
                             ForEach(context.entries, id: \.objectID) { entry in
@@ -164,9 +164,9 @@ struct InsightEvidenceRow: View {
         if !text.isEmpty {
             return text.count > 180 ? String(text.prefix(180)).trimmingCharacters(in: .whitespaces) + "…" : text
         }
-        if entry.hasStartedEntryAudio { return "Recording" }
-        if entry.hasStartedEntryPhotos { return "Photo" }
-        return "Mood"
+        if entry.hasStartedEntryAudio { return String(localized: "Recording", comment: "Placeholder snippet for an entry with only a voice recording") }
+        if entry.hasStartedEntryPhotos { return String(localized: "Photo", comment: "Placeholder snippet for an entry with only photos") }
+        return String(localized: "Mood", comment: "Placeholder snippet for an entry with only a mood")
     }
 
     private var date: Date { entry.date ?? entry.createdAt ?? Date() }
@@ -221,8 +221,10 @@ struct InsightEvidenceRow: View {
     }
 
     private var accessibilityLabel: String {
-        var label = "Entry from \(date.formatted(date: .long, time: .omitted))"
-        if mood != .none { label += ", \(mood.displayName)" }
-        return label + ". \(snippet)"
+        let dateText = date.formatted(date: .long, time: .omitted)
+        if mood != .none {
+            return String(localized: "Entry from \(dateText), \(mood.displayName). \(snippet)")
+        }
+        return String(localized: "Entry from \(dateText). \(snippet)")
     }
 }

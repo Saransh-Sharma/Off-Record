@@ -22,7 +22,7 @@ struct FridayEvidenceChip: View {
                         .foregroundStyle(OffRecordColor.textPrimary)
 
                     if let mood = evidence.mood, !mood.isEmpty {
-                        Text(mood.capitalized)
+                        Text(Mood(rawValue: mood)?.displayName ?? mood.capitalized)
                             .font(OffRecordTypography.labelSmall)
                             .foregroundStyle(OffRecordColor.textSecondary)
                     }
@@ -76,9 +76,9 @@ struct FridayEvidenceChip: View {
     }
 
     static func accessibilityLabel(for evidence: EvidenceReference, number: Int) -> String {
-        var parts = ["Source \(number)", spokenDate(evidence.date)]
+        var parts = [String(localized: "Source \(number)", comment: "VoiceOver: a numbered journal entry an answer cites"), spokenDate(evidence.date)]
         if let mood = evidence.mood, !mood.isEmpty {
-            parts.append("mood \(mood.capitalized)")
+            parts.append(String(localized: "mood \(Mood(rawValue: mood)?.displayName ?? mood.capitalized)", comment: "VoiceOver: the cited entry’s mood"))
         }
         parts.append(evidence.snippet)
         return parts.joined(separator: ", ")
