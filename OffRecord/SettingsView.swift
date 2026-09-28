@@ -582,6 +582,13 @@ struct SettingsView: View {
                         .accessibilityIdentifier("semanticMemory.progress")
                 }
 
+                SettingsRow(systemImage: "number", title: String(localized: "Indexed Passages", comment: "How many pieces of the journal the search index holds"), tint: OffRecordColor.textLavender) {
+                    Text(verbatim: "\(semanticMemory.chunkCount)")
+                        .font(OffRecordTypography.bodySmall)
+                        .foregroundColor(OffRecordColor.textPrimary)
+                        .accessibilityIdentifier("semanticMemory.chunkCount")
+                }
+
                 if semanticMemory.usesFallbackEmbeddings {
                     HStack(alignment: .top, spacing: 6) {
                         Image(systemName: "exclamationmark.triangle.fill")
