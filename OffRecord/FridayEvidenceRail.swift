@@ -39,7 +39,7 @@ struct FridayEvidenceRail: View {
                     .matchedTransitionSource(id: sourceID, in: namespace)
                     .accessibilityElement(children: .ignore)
                     .accessibilityLabel(FridayEvidenceChip.accessibilityLabel(for: item, number: number))
-                    .accessibilityValue(item.matchReason.rawValue)
+                    .accessibilityValue(item.matchReason.displayName)
                     .accessibilityHint("Opens entry from \(FridayEvidenceChip.spokenDate(item.date))")
                     .accessibilityAddTraits(.isButton)
                     .accessibilityIdentifier("friday.evidenceChip")
@@ -47,7 +47,7 @@ struct FridayEvidenceRail: View {
                     FridayEvidenceChip(evidence: item, number: number)
                         .accessibilityElement(children: .ignore)
                         .accessibilityLabel(FridayEvidenceChip.accessibilityLabel(for: item, number: number))
-                        .accessibilityValue(item.matchReason.rawValue)
+                        .accessibilityValue(item.matchReason.displayName)
                         .accessibilityIdentifier("friday.evidenceChip")
                 }
             }

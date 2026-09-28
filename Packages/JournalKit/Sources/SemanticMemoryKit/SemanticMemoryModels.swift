@@ -23,11 +23,22 @@ let semanticMemoryLogger = Logger(
 // MARK: - Evidence Model
 
 public struct EvidenceReference: Identifiable, Codable, Equatable, Sendable {
+    /// Raw values are persisted in saved Friday answers and used in UI test identifiers,
+    /// so they stay fixed; show `displayName` instead.
     public enum MatchReason: String, Codable, Sendable {
         case meaning = "Meaning match"
         case exact = "Exact match"
         case entity = "Person or topic match"
         case recent = "Recent related entry"
+
+        public var displayName: String {
+            switch self {
+            case .meaning: return "Similar meaning"
+            case .exact: return "Exact words"
+            case .entity: return "Same person or topic"
+            case .recent: return "Recent"
+            }
+        }
     }
 
     public let id: String

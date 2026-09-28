@@ -61,8 +61,8 @@ struct SavedCapture: Identifiable, Equatable {
 
     var dayLabel: String {
         let calendar = Calendar.current
-        if calendar.isDateInToday(capturedAt) { return "today" }
-        if calendar.isDateInYesterday(capturedAt) { return "yesterday" }
+        if calendar.isDateInToday(capturedAt) { return "Today" }
+        if calendar.isDateInYesterday(capturedAt) { return "Yesterday" }
         return capturedAt.formatted(.dateTime.weekday(.wide).month(.abbreviated).day())
     }
 }

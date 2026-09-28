@@ -80,7 +80,7 @@ struct TimelineEntryCard: View {
                 VStack(alignment: .trailing, spacing: 4) {
                     Image(systemName: evidence.matchReason == .exact ? "text.magnifyingglass" : "brain.head.profile")
                         .foregroundStyle(OffRecordColor.textLavender)
-                    Text(evidence.matchReason.rawValue)
+                    Text(evidence.matchReason.displayName)
                         .font(OffRecordTypography.labelSmall)
                         .foregroundStyle(OffRecordColor.textLavender)
                         .multilineTextAlignment(.trailing)

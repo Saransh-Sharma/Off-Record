@@ -40,7 +40,7 @@ struct FridayEvidenceChip: View {
                     .lineLimit(3)
                     .multilineTextAlignment(.leading)
 
-                Label(evidence.matchReason.rawValue, systemImage: evidence.matchReason == .exact ? "text.magnifyingglass" : "quote.bubble")
+                Label(evidence.matchReason.displayName, systemImage: evidence.matchReason == .exact ? "text.magnifyingglass" : "quote.bubble")
                     .font(OffRecordTypography.annotation)
                     .foregroundStyle(OffRecordColor.textLavender)
             }
