@@ -154,7 +154,7 @@ struct StatsView: View {
             }
             .padding(.top, OffRecordSpacing.md)
         } label: {
-            Label("Deep Dive", systemImage: "chart.bar.doc.horizontal")
+            Label("More", systemImage: "chart.bar.doc.horizontal")
                 .font(OffRecordTypography.sectionTitle)
                 .foregroundStyle(OffRecordColor.textHeading)
                 .frame(minHeight: OffRecordLayout.minimumTapTarget)
@@ -188,13 +188,13 @@ struct StatsView: View {
     private var statsSummaryCard: some View {
         let columnCount = dynamicTypeSize.isAccessibilitySize ? 1 : (isIPad ? 4 : 2)
         return VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
-            InsightCardHeader(title: "Writing Stats", systemImage: "text.word.spacing", tint: OffRecordColor.textSky)
+            InsightCardHeader(title: "Writing", systemImage: "text.word.spacing", tint: OffRecordColor.textSky)
 
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: OffRecordSpacing.md), count: columnCount), spacing: OffRecordSpacing.md) {
-                StatItem(title: "Total Words", value: "\(stats.totalWords)", icon: "text.word.spacing", color: OffRecordColor.textSky)
-                StatItem(title: "Avg Words/Entry", value: "\(stats.avgWordsPerEntry)", icon: "chart.bar.fill", color: OffRecordColor.textMint)
+                StatItem(title: "Words", value: "\(stats.totalWords)", icon: "text.word.spacing", color: OffRecordColor.textSky)
+                StatItem(title: "Words per Entry", value: "\(stats.avgWordsPerEntry)", icon: "chart.bar.fill", color: OffRecordColor.textMint)
                 StatItem(title: "Starred", value: "\(stats.starredCount)", icon: "star.fill", color: OffRecordColor.textYellow)
-                StatItem(title: "With Audio", value: "\(stats.audioCount)", icon: "waveform", color: OffRecordColor.textAqua)
+                StatItem(title: "With Recordings", value: "\(stats.audioCount)", icon: "waveform", color: OffRecordColor.textAqua)
             }
         }
         .padding()
@@ -207,11 +207,7 @@ struct StatsView: View {
     private var aiInsightsCard: some View {
         if !stats.insights.isEmpty {
             VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
-                InsightCardHeader(title: "AI Insights", systemImage: "sparkles", tint: OffRecordColor.textLavender)
-                Text("Observations from your entries, worked out on your device.")
-                    .font(OffRecordTypography.metadata)
-                    .foregroundStyle(OffRecordColor.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
+                InsightCardHeader(title: "From Friday", systemImage: "sparkles", tint: OffRecordColor.textLavender)
 
                 ForEach(Array(stats.insights.prefix(4).enumerated()), id: \.element.id) { index, insight in
                     if index > 0 {
@@ -291,19 +287,21 @@ struct StatsView: View {
                 }
                 .frame(width: goalRingSize, height: goalRingSize)
                 .accessibilityElement(children: .ignore)
-                .accessibilityLabel("Weekly goal progress")
-                .accessibilityValue("\(percent) percent, \(stats.goal.count) of \(stats.goal.weeklyTarget) journaling days, \(stats.goal.daysRemaining) \(stats.goal.daysRemaining == 1 ? "day" : "days") to go")
+                .accessibilityLabel("Weekly Goal")
+                .accessibilityValue(goalAccessibilityValue(percent: percent, reached: reached))
                 .accessibilityIdentifier("insights.goal.ring")
 
                 VStack(alignment: .leading, spacing: OffRecordSpacing.xs) {
-                    Text(reached ? "Goal reached this week" : "\(stats.goal.count) of \(stats.goal.weeklyTarget) journaling days")
+                    Text(reached ? "Goal Reached" : "\(stats.goal.count) of \(stats.goal.weeklyTarget) days")
                         .font(OffRecordTypography.labelMedium)
                         .foregroundStyle(reached ? OffRecordColor.textSage : OffRecordColor.textPrimary)
                         .fixedSize(horizontal: false, vertical: true)
-                    Text(reached ? "Anything more is a bonus." : "\(stats.goal.daysRemaining) \(stats.goal.daysRemaining == 1 ? "day" : "days") to go this week.")
-                        .font(OffRecordTypography.metadata)
-                        .foregroundStyle(OffRecordColor.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
+                    if !reached {
+                        Text("\(max(0, stats.goal.weeklyTarget - stats.goal.count)) to go")
+                            .font(OffRecordTypography.metadata)
+                            .foregroundStyle(OffRecordColor.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
                 }
                 .accessibilityHidden(true)
                 Spacer(minLength: 0)
@@ -311,6 +309,12 @@ struct StatsView: View {
         }
         .padding()
         .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceMint)
+    }
+
+    private func goalAccessibilityValue(percent: Int, reached: Bool) -> String {
+        let days = "\(percent) percent, \(stats.goal.count) of \(stats.goal.weeklyTarget) days"
+        if reached { return days + ", goal reached" }
+        return days + ", \(max(0, stats.goal.weeklyTarget - stats.goal.count)) to go"
     }
 
     private func insightTint(_ name: String) -> Color {

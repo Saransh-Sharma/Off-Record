@@ -2,7 +2,7 @@
 //  EmptyStateView.swift
 //  OffRecord
 //
-//  Beautiful empty states for the app
+//  Empty states for the app
 //
 
 import SwiftUI
@@ -96,16 +96,16 @@ extension EmptyStateView {
     static var noInsights: EmptyStateView {
         EmptyStateView(
             icon: "chart.line.uptrend.xyaxis",
-            title: "Your Insights Will Grow Here",
-            subtitle: "Write or record a few entries and OffRecord will start noticing patterns, privately and on your device."
+            title: "No Insights Yet",
+            subtitle: "I need 3 entries before I can spot patterns."
         )
     }
 
     static var fridayGettingToKnow: EmptyStateView {
         EmptyStateView(
             icon: "sparkles",
-            title: "Getting to Know You",
-            subtitle: "Friday learns your personality, emotions, and patterns as you journal. Keep recording to unlock deeper insights."
+            title: "Still Getting to Know You",
+            subtitle: "After 5 entries, I can start telling you what I see."
         )
     }
 }

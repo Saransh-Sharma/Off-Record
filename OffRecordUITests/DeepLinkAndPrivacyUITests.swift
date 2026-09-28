@@ -38,7 +38,7 @@ final class DeepLinkAndPrivacyUITests: XCTestCase {
         )
 
         XCTAssertTrue(app.descendants(matching: .any)["weeklyReflection.report.cover"].firstMatch.waitForExistence(timeout: 10))
-        XCTAssertTrue(app.navigationBars["Your Week"].waitForExistence(timeout: 4) || app.staticTexts["Your Week in Review"].exists)
+        XCTAssertTrue(app.navigationBars["Weekly Reflection"].waitForExistence(timeout: 4))
     }
 
     func testSystemSearchSettingsExposePrivacySafeControls() throws {

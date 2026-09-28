@@ -95,8 +95,9 @@ final class GoalManager: ObservableObject {
         center.removePendingNotificationRequests(withIdentifiers: [id])
 
         let content = UNMutableNotificationContent()
-        content.title = "Goal Reached!"
-        content.body = "You hit your weekly journaling goal of \(weeklyTarget) entries. Keep it up!"
+        // `entriesThisWeek` counts distinct days with an entry (see `entriesThisWeek(from:)`).
+        content.title = "Weekly Goal Reached"
+        content.body = String(AttributedString(localized: "You journaled ^[\(entriesThisWeek) day](inflect: true) this week.").characters)
         content.sound = .default
 
         let trigger = UNTimeIntervalNotificationTrigger(timeInterval: 1, repeats: false)

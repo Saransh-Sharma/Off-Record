@@ -43,7 +43,7 @@ struct ShareableInsightCardView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: OffRecordSpacing.lg) {
-            Label("Weekly Insight", systemImage: insight.category.icon)
+            Label("This Week", systemImage: insight.category.icon)
                 .font(OffRecordTypography.badgeLabel)
                 .textCase(.uppercase)
                 .tracking(1.2)
@@ -55,11 +55,13 @@ struct ShareableInsightCardView: View {
                 .lineSpacing(3)
                 .fixedSize(horizontal: false, vertical: true)
 
-            Text(insight.subtext)
-                .font(OffRecordTypography.bodyMedium)
-                .foregroundStyle(OffRecordColor.textSecondary)
-                .lineSpacing(2)
-                .fixedSize(horizontal: false, vertical: true)
+            if !insight.subtext.isEmpty {
+                Text(insight.subtext)
+                    .font(OffRecordTypography.bodyMedium)
+                    .foregroundStyle(OffRecordColor.textSecondary)
+                    .lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
 
             if let dataPoint = insight.dataPoint {
                 HStack(spacing: OffRecordSpacing.sm) {
@@ -119,7 +121,7 @@ struct ShareableInsightCardView: View {
             Label("Share", systemImage: "square.and.arrow.up")
         }
         .buttonStyle(OffRecordSoftButtonStyle(tint: OffRecordColor.textOnAccent, fill: OffRecordColor.brandPlum))
-        .accessibilityHint("Previews a shareable image. Names stay hidden unless you include them.")
+        .accessibilityHint("Shows a preview before sharing.")
         .accessibilityIdentifier("insights.weekly.share")
     }
 }
@@ -146,7 +148,7 @@ private struct ShareableCardForExport: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            Label("Weekly Insight", systemImage: insight.category.icon)
+            Label("This Week", systemImage: insight.category.icon)
                 .font(OffRecordExportTypography.label)
                 .textCase(.uppercase)
                 .tracking(1.2)
@@ -159,10 +161,12 @@ private struct ShareableCardForExport: View {
                 .foregroundStyle(OffRecordColor.textHeading)
                 .lineSpacing(6)
 
-            Text(insight.subtext)
-                .font(OffRecordExportTypography.body)
-                .foregroundStyle(OffRecordColor.textSecondary)
-                .lineSpacing(3)
+            if !insight.subtext.isEmpty {
+                Text(insight.subtext)
+                    .font(OffRecordExportTypography.body)
+                    .foregroundStyle(OffRecordColor.textSecondary)
+                    .lineSpacing(3)
+            }
 
             if let dataPoint = insight.dataPoint {
                 HStack(spacing: 6) {
@@ -179,17 +183,14 @@ private struct ShareableCardForExport: View {
 
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("OffRecord AI Journal")
+                    Text("OffRecord")
                         .font(OffRecordExportTypography.brand)
                         .foregroundStyle(OffRecordColor.textSecondary)
-                    Text("Private, on-device voice diary")
+                    Text("Private voice journal")
                         .font(OffRecordExportTypography.micro)
                         .foregroundStyle(OffRecordColor.textTertiary)
                 }
                 Spacer()
-                Text("OffRecord")
-                    .font(OffRecordExportTypography.monospaced)
-                    .foregroundStyle(OffRecordColor.textTertiary)
             }
         }
         .padding(32)
@@ -231,7 +232,7 @@ struct ShareInsightPreviewSheet: View {
                     if !protectedNames.isEmpty {
                         VStack(alignment: .leading, spacing: OffRecordSpacing.sm) {
                             Toggle(isOn: $includeNames) {
-                                Label("Include names", systemImage: "person.crop.circle")
+                                Label("Show Names", systemImage: "person.crop.circle")
                                     .font(OffRecordTypography.labelLarge)
                                     .foregroundStyle(OffRecordColor.textPrimary)
                             }
@@ -239,8 +240,8 @@ struct ShareInsightPreviewSheet: View {
                             .accessibilityIdentifier("insights.share.includeNames")
 
                             Text(includeNames
-                                 ? "Names will appear in the image. Only share if they'd be comfortable with it."
-                                 : "Names are replaced with \u{201C}someone\u{201D} so the people in your journal stay private.")
+                                 ? "Names will be visible in the image."
+                                 : "Names are replaced with \u{201C}someone.\u{201D}")
                                 .font(OffRecordTypography.metadata)
                                 .foregroundStyle(OffRecordColor.textSecondary)
                                 .fixedSize(horizontal: false, vertical: true)
@@ -249,14 +250,14 @@ struct ShareInsightPreviewSheet: View {
                         .offRecordCard(cornerRadius: OffRecordRadius.md, shadow: false)
                     }
 
-                    OffRecordPrivacyBadge(title: "Only this card is shared", subtitle: "Your entries never leave your device.")
+                    OffRecordPrivacyBadge(title: "Only this image is shared.")
 
                     if let renderedImage {
                         ShareLink(
                             item: Image(uiImage: renderedImage),
                             preview: SharePreview(shareable.headline, image: Image(uiImage: renderedImage))
                         ) {
-                            Label("Share image", systemImage: "square.and.arrow.up")
+                            Label("Share Image", systemImage: "square.and.arrow.up")
                                 .frame(maxWidth: .infinity)
                                 .offRecordPillButton()
                         }
@@ -291,7 +292,7 @@ struct ShareInsightPreviewSheet: View {
                 .frame(maxWidth: 340)
                 .frame(maxWidth: .infinity)
                 .offRecordShadow(.card)
-                .accessibilityLabel("Preview: \(shareable.headline) \(shareable.subtext)")
+                .accessibilityLabel("Preview: \(shareable.headline) \(shareable.subtext)".trimmingCharacters(in: .whitespaces))
         } else {
             ProgressView()
                 .frame(maxWidth: .infinity, minHeight: 200)
@@ -328,7 +329,7 @@ struct WeeklyInsightsSection: View {
 
     private var insightsContent: some View {
         VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
-            InsightCardHeader(title: "Your Week, Decoded", systemImage: "sparkles", tint: OffRecordColor.textLavender)
+            InsightCardHeader(title: "This Week", systemImage: "sparkles", tint: OffRecordColor.textLavender)
 
             ScrollView(.horizontal) {
                 HStack(alignment: .top, spacing: OffRecordSpacing.md) {
@@ -413,8 +414,8 @@ struct InsightPageDots: View {
         VStack(spacing: 20) {
             ShareableInsightCardView(
                 insight: ShareableInsight(
-                    headline: "You said \"should\" 14 times this week.\n\"Want\"? 2.",
-                    subtext: "Lots of obligations on the page. Just something to notice.",
+                    headline: "You said \u{201C}should\u{201D} 14 times this week.\n\u{201C}Want\u{201D}? 2.",
+                    subtext: "More obligations than wants.",
                     category: .language,
                     dataPoint: "should: 14 vs want: 2",
                     generatedAt: Date()

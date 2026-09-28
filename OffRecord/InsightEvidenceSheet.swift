@@ -52,7 +52,6 @@ struct InsightWhyButton: View {
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Why am I seeing this?")
         .accessibilityHint("Shows the entries behind this insight.")
     }
 }
@@ -72,7 +71,7 @@ struct InsightEvidenceSheet: View {
                     }
 
                     VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
-                        Text(context.entries.count == 1 ? "Supporting entry" : "Supporting entries (\(context.entries.count))")
+                        Text("Based On")
                             .font(OffRecordTypography.sectionTitle)
                             .foregroundStyle(OffRecordColor.textHeading)
                             .accessibilityAddTraits(.isHeader)
@@ -80,7 +79,7 @@ struct InsightEvidenceSheet: View {
                         if context.entries.isEmpty {
                             InsightChartEmptyState(
                                 systemImage: "doc.text.magnifyingglass",
-                                message: "The entries behind this insight are no longer available."
+                                message: "These entries were deleted."
                             )
                         } else {
                             ForEach(context.entries, id: \.objectID) { entry in
@@ -95,14 +94,13 @@ struct InsightEvidenceSheet: View {
                         }
                     }
 
-                    OffRecordPrivacyBadge(title: "Private", subtitle: "Worked out on your device. Nothing was sent anywhere.")
                 }
                 .padding(OffRecordSpacing.screenX)
                 .frame(maxWidth: OffRecordLayout.readableContentWidth, alignment: .leading)
                 .frame(maxWidth: .infinity)
             }
             .background(OffRecordAppBackground().ignoresSafeArea())
-            .navigationTitle("Why This Insight")
+            .navigationTitle("Why You’re Seeing This")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
@@ -120,10 +118,12 @@ struct InsightEvidenceSheet: View {
                 .font(OffRecordTypography.titleSmall)
                 .foregroundStyle(OffRecordColor.textHeading)
                 .fixedSize(horizontal: false, vertical: true)
-            Text(context.summary)
-                .font(OffRecordTypography.bodyMedium)
-                .foregroundStyle(OffRecordColor.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
+            if !context.summary.isEmpty {
+                Text(context.summary)
+                    .font(OffRecordTypography.bodyMedium)
+                    .foregroundStyle(OffRecordColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
     }
 
@@ -131,7 +131,7 @@ struct InsightEvidenceSheet: View {
         HStack(alignment: .top, spacing: OffRecordSpacing.md) {
             OffRecordIconBubble(systemImage: "sparkles", tint: OffRecordColor.textLavender, size: 30, iconSize: 13)
             VStack(alignment: .leading, spacing: OffRecordSpacing.xxs) {
-                Text("How this was noticed")
+                Text("How I Got This")
                     .font(OffRecordTypography.labelSmall)
                     .foregroundStyle(OffRecordColor.textLavender)
                 Text(context.rationale)
@@ -164,9 +164,9 @@ struct InsightEvidenceRow: View {
         if !text.isEmpty {
             return text.count > 180 ? String(text.prefix(180)).trimmingCharacters(in: .whitespaces) + "…" : text
         }
-        if entry.hasStartedEntryAudio { return "Voice note" }
-        if entry.hasStartedEntryPhotos { return "Photo entry" }
-        return "Mood check-in"
+        if entry.hasStartedEntryAudio { return "Recording" }
+        if entry.hasStartedEntryPhotos { return "Photo" }
+        return "Mood"
     }
 
     private var date: Date { entry.date ?? entry.createdAt ?? Date() }
@@ -218,7 +218,6 @@ struct InsightEvidenceRow: View {
         .contentShape(RoundedRectangle(cornerRadius: OffRecordRadius.sm, style: .continuous))
         .accessibilityElement(children: .ignore)
         .accessibilityLabel(accessibilityLabel)
-        .accessibilityHint("Opens the entry.")
     }
 
     private var accessibilityLabel: String {

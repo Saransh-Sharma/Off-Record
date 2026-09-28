@@ -55,22 +55,22 @@ struct WeeklyReflectionHomeCard: View {
                     NavigationLink {
                         WeeklyReflectionReportView(report: report, entries: entries)
                     } label: {
-                        Text(report.eligibility == .light ? "A small reflection" : "Your weekly reflection is ready")
+                        Text("Weekly Reflection")
                             .font(OffRecordTypography.sectionTitle)
                             .foregroundColor(OffRecordColor.textHeading)
                             .multilineTextAlignment(.leading)
                     }
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("weeklyReflection.home.ready")
-                    Text("A private look back at what showed up this week.")
+                    Text("I looked back at ^[\(report.includedEntryIds.count) entry](inflect: true) from this week.")
                         .font(OffRecordTypography.bodySmall)
                         .foregroundColor(OffRecordColor.textSecondary)
                 }
                 Spacer()
                 Menu {
-                    Button("Hide this week") { controller.dismiss(report) }
-                    Button("Change reminder time") { OffRecordNavigationRouter.shared.selectedTab = .settings }
-                    Button("Privacy settings") { OffRecordNavigationRouter.shared.selectedTab = .settings }
+                    Button("Hide This Week") { controller.dismiss(report) }
+                    Button("Change Reminder Time") { OffRecordNavigationRouter.shared.selectedTab = .settings }
+                    Button("Settings") { OffRecordNavigationRouter.shared.selectedTab = .settings }
                 } label: {
                     Image(systemName: "ellipsis.circle")
                         .foregroundColor(OffRecordColor.textTertiary)
@@ -79,20 +79,13 @@ struct WeeklyReflectionHomeCard: View {
                 }
                 .padding(.top, -OffRecordSpacing.md)
                 .padding(.trailing, -OffRecordSpacing.md)
-                .accessibilityLabel("Weekly reflection options")
+                .accessibilityLabel("More")
             }
-
-            HStack(spacing: 8) {
-                Label("\(report.includedEntryIds.count) entries", systemImage: "book.pages")
-                Label("Generated on-device", systemImage: "lock.shield")
-            }
-            .font(OffRecordTypography.labelSmall)
-            .foregroundColor(OffRecordColor.textSage)
 
             NavigationLink {
                 WeeklyReflectionReportView(report: report, entries: entries)
             } label: {
-                Label("View reflection", systemImage: "arrow.right")
+                Label("Open", systemImage: "arrow.right")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
@@ -107,10 +100,10 @@ struct WeeklyReflectionHomeCard: View {
             HStack(alignment: .top) {
                 trustIcon("moon.stars")
                 VStack(alignment: .leading, spacing: 5) {
-                    Text("No reflection yet")
+                    Text("Not Enough Yet")
                         .font(OffRecordTypography.sectionTitle)
                         .foregroundColor(OffRecordColor.textHeading)
-                    Text("Write a little more this week and OffRecord will prepare a private reflection.")
+                    Text(notEnoughMessage(report))
                         .font(OffRecordTypography.bodySmall)
                         .foregroundColor(OffRecordColor.textSecondary)
                 }
@@ -118,7 +111,7 @@ struct WeeklyReflectionHomeCard: View {
             Button {
                 onWrite?()
             } label: {
-                Label("Write a note", systemImage: "square.and.pencil")
+                Label("Write", systemImage: "square.and.pencil")
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.bordered)
@@ -131,13 +124,13 @@ struct WeeklyReflectionHomeCard: View {
 
     private func failedCard(_ report: WeeklyReflectionReport) -> some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Reflection couldn't be created")
+            Text("Couldn’t Make This Reflection")
                 .font(OffRecordTypography.sectionTitle)
                 .foregroundColor(OffRecordColor.textHeading)
-            Text("Your entries are safe. OffRecord couldn't prepare this reflection right now.")
+            Text("Your entries are fine. Try again in a bit.")
                 .font(OffRecordTypography.bodySmall)
                 .foregroundColor(OffRecordColor.textSecondary)
-            Button("Try again") {
+            Button("Try Again") {
                 controller.refreshIfNeeded(entries: entries, force: true)
             }
             .buttonStyle(.borderedProminent)
@@ -146,6 +139,14 @@ struct WeeklyReflectionHomeCard: View {
         .padding(18)
         .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfacePeach)
         .accessibilityIdentifier("weeklyReflection.home.failed")
+    }
+
+    /// How many more entries this week reach a full reflection; falls back to
+    /// "a little more" when the entry count is met but the week is still short.
+    private func notEnoughMessage(_ report: WeeklyReflectionReport) -> LocalizedStringKey {
+        let needed = WeeklyReflectionEligibilityService.fullEntryCount - report.includedEntryIds.count
+        guard needed > 0 else { return "Write a little more this week and I’ll put one together." }
+        return "Write ^[\(needed) more entry](inflect: true) this week and I’ll put one together."
     }
 
     private func trustIcon(_ systemName: String) -> some View {
@@ -184,7 +185,7 @@ struct WeeklyReflectionHistorySection: View {
             if reports.isEmpty {
                 InsightChartEmptyState(
                     systemImage: "moon.stars",
-                    message: "Once you've written a few entries this week, OffRecord will prepare a private reflection here."
+                    message: "After \(WeeklyReflectionEligibilityService.fullEntryCount) entries this week, I’ll put a reflection here."
                 )
             } else {
                 if let currentWeekReport {
@@ -195,11 +196,10 @@ struct WeeklyReflectionHistorySection: View {
                     }
                     .buttonStyle(.plain)
                     .accessibilityIdentifier("weeklyReflection.history.row")
-                    .accessibilityHint("Opens this week's reflection.")
                 }
 
                 if !earlierReports.isEmpty {
-                    Text("Earlier weeks")
+                    Text("Earlier Weeks")
                         .font(OffRecordTypography.labelSmall)
                         .foregroundStyle(OffRecordColor.textSecondary)
                         .padding(.top, OffRecordSpacing.xs)
@@ -231,7 +231,7 @@ struct WeeklyReflectionHistorySection: View {
     private func currentWeekCard(_ report: WeeklyReflectionReport) -> some View {
         VStack(alignment: .leading, spacing: OffRecordSpacing.sm) {
             HStack(alignment: .firstTextBaseline) {
-                Text("This week")
+                Text("This Week")
                     .font(OffRecordTypography.badgeLabel)
                     .textCase(.uppercase)
                     .tracking(1)
@@ -248,7 +248,7 @@ struct WeeklyReflectionHistorySection: View {
                 .foregroundStyle(OffRecordColor.textPrimary)
 
             if report.status.showsReflectionContent {
-                Text("\u{201C}\(report.heroSentence)\u{201D}")
+                Text(report.heroSentence)
                     .font(OffRecordTypography.bodySmall)
                     .italic()
                     .foregroundStyle(OffRecordColor.textPrimary)
@@ -278,8 +278,7 @@ struct WeeklyReflectionHistorySection: View {
     @ViewBuilder
     private func reportMeta(_ report: WeeklyReflectionReport) -> some View {
         Group {
-            Label("\(report.includedEntryIds.count) \(report.includedEntryIds.count == 1 ? "entry" : "entries")", systemImage: "book.pages")
-            Label("On-device", systemImage: "lock.shield")
+            Label("^[\(report.includedEntryIds.count) entry](inflect: true)", systemImage: "book.pages")
         }
         .font(OffRecordTypography.labelSmall)
         .foregroundStyle(OffRecordColor.textSage)
@@ -316,8 +315,8 @@ struct WeeklyReflectionHistorySection: View {
     private func statusLabel(_ report: WeeklyReflectionReport) -> String {
         switch report.status {
         case .insufficientData: return "Not enough entries yet"
-        case .failed: return "Couldn't be prepared this time"
-        default: return "\(report.includedEntryIds.count) entries"
+        case .failed: return "Couldn’t be made"
+        default: return String(AttributedString(localized: "^[\(report.includedEntryIds.count) entry](inflect: true)").characters)
         }
     }
 }
@@ -391,12 +390,12 @@ struct WeeklyReflectionReportView: View {
                     themesSection
                 }
                 if !displayedReport.wins.isEmpty {
-                    sectionCard(title: "Small wins", systemImage: "sparkles") {
+                    sectionCard(title: "Wins", systemImage: "sparkles") {
                         bulletList(displayedReport.wins, symbol: "sparkle", tint: OffRecordColor.textSage)
                     }
                 }
                 if !displayedReport.frictions.isEmpty {
-                    sectionCard(title: "What felt heavy", systemImage: "cloud") {
+                    sectionCard(title: "What Was Hard", systemImage: "cloud") {
                         bulletList(displayedReport.frictions, symbol: "circle.fill", tint: OffRecordColor.textLavender, symbolScale: .small)
                     }
                 }
@@ -405,6 +404,12 @@ struct WeeklyReflectionReportView: View {
                 }
                 takeawaySection
                 exportButton
+                Text("Based on your words. Not medical advice.")
+                    .font(OffRecordTypography.metadata)
+                    .foregroundStyle(OffRecordColor.textSecondary)
+                    .frame(maxWidth: .infinity, alignment: .center)
+                    .multilineTextAlignment(.center)
+                    .accessibilityIdentifier("weeklyReflection.disclaimer")
             }
             .padding(OffRecordSpacing.screenX)
             .frame(maxWidth: OffRecordLayout.readableContentWidth)
@@ -427,7 +432,7 @@ struct WeeklyReflectionReportView: View {
             WeeklyReflectionExportSheet(report: displayedReport)
         }
         .confirmationDialog(
-            "Delete this reflection?",
+            "Delete Reflection?",
             isPresented: $showDeleteConfirmation,
             titleVisibility: .visible
         ) {
@@ -438,7 +443,7 @@ struct WeeklyReflectionReportView: View {
             .accessibilityIdentifier("weeklyReflection.delete.confirm")
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This removes the reflection only. Your journal entries stay exactly as they are.")
+            Text("Your entries won’t be affected.")
         }
         .sensoryFeedback(.success, trigger: saveCount)
         .toolbar {
@@ -454,18 +459,18 @@ struct WeeklyReflectionReportView: View {
                         controller.dismiss(displayedReport)
                         dismiss()
                     } label: {
-                        Label("Dismiss this week", systemImage: "eye.slash")
+                        Label("Hide This Week", systemImage: "eye.slash")
                     }
                     .accessibilityIdentifier("weeklyReflection.menu.dismiss")
                     Button(role: .destructive) {
                         showDeleteConfirmation = true
                     } label: {
-                        Label("Delete report", systemImage: "trash")
+                        Label("Delete Reflection", systemImage: "trash")
                     }
                     .accessibilityIdentifier("weeklyReflection.menu.delete")
                 } label: {
                     Image(systemName: "ellipsis.circle")
-                        .accessibilityLabel("Reflection options")
+                        .accessibilityLabel("More")
                 }
                 .accessibilityIdentifier("weeklyReflection.report.menu")
             }
@@ -483,15 +488,12 @@ struct WeeklyReflectionReportView: View {
 
     private var cover: some View {
         VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
-            Text("Your Week in Review")
+            Text(dateRange(displayedReport))
                 .font(OffRecordTypography.titleLarge)
                 .foregroundStyle(OffRecordColor.textHeading)
                 .accessibilityIdentifier("weeklyReflection.report.cover")
                 .accessibilityAddTraits(.isHeader)
-            Text(dateRange(displayedReport))
-                .font(OffRecordTypography.bodySmall)
-                .foregroundStyle(OffRecordColor.textSecondary)
-            Text("\u{201C}\(displayedReport.heroSentence)\u{201D}")
+            Text(displayedReport.heroSentence)
                 .font(OffRecordTypography.bodyLarge)
                 .foregroundStyle(OffRecordColor.textPrimary)
                 .italic()
@@ -515,28 +517,28 @@ struct WeeklyReflectionReportView: View {
     }
 
     private var trustLabel: some View {
-        Label("Generated on-device · \(displayedReport.includedEntryIds.count) entries included", systemImage: "lock.shield.fill")
+        Label("Based on ^[\(displayedReport.includedEntryIds.count) entry](inflect: true)", systemImage: "book.pages")
             .font(OffRecordTypography.labelSmall)
             .foregroundStyle(OffRecordColor.textSage)
             .fixedSize(horizontal: false, vertical: true)
     }
 
-    /// The one entry point to the sources and privacy sheet.
+    /// The one entry point to the sources sheet.
     private var sourcesButton: some View {
         Button {
             showSources = true
         } label: {
-            Label("Sources & privacy", systemImage: "doc.text.magnifyingglass")
+            Label("Sources", systemImage: "doc.text.magnifyingglass")
                 .lineLimit(1)
         }
         .buttonStyle(OffRecordSoftButtonStyle(tint: OffRecordColor.textSage, fill: OffRecordColor.surfacePrimary.opacity(0.85)))
         .accessibilityIdentifier("weeklyReflection.sources.openSheet")
-        .accessibilityHint("Shows which entries were used and lets you hide some.")
+        .accessibilityHint("Shows the entries used and lets you hide some.")
     }
 
     private var supportCard: some View {
         sectionCard(title: "Support", systemImage: "heart") {
-            Text("Some entries this week seemed heavier than usual. OffRecord is not emergency support, but you may want to reach out to someone you trust.")
+            Text("Some entries this week were heavier than usual. If you need support, reach out to someone you trust. OffRecord isn’t an emergency service.")
                 .font(OffRecordTypography.bodySmall)
                 .foregroundStyle(OffRecordColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -552,7 +554,7 @@ struct WeeklyReflectionReportView: View {
     }
 
     private var arcSection: some View {
-        sectionCard(title: "Emotional arc", systemImage: "waveform.path.ecg") {
+        sectionCard(title: "Mood", systemImage: "waveform.path.ecg") {
             if let arc = displayedReport.emotionalArc {
                 Text(arc.label)
                     .font(OffRecordTypography.labelMedium)
@@ -571,7 +573,7 @@ struct WeeklyReflectionReportView: View {
     }
 
     private var themesSection: some View {
-        sectionCard(title: "Key themes", systemImage: "tag") {
+        sectionCard(title: "Themes", systemImage: "tag") {
             ForEach(displayedReport.themes) { theme in
                 VStack(alignment: .leading, spacing: OffRecordSpacing.sm) {
                     Text(theme.title)
@@ -605,7 +607,7 @@ struct WeeklyReflectionReportView: View {
     }
 
     private var questionsSection: some View {
-        sectionCard(title: "Questions for next week", systemImage: "questionmark.bubble") {
+        sectionCard(title: "Questions for Next Week", systemImage: "questionmark.bubble") {
             VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
                 ForEach(Array(displayedReport.questions.enumerated()), id: \.offset) { index, question in
                     HStack(alignment: .firstTextBaseline, spacing: OffRecordSpacing.sm) {
@@ -626,7 +628,7 @@ struct WeeklyReflectionReportView: View {
     }
 
     private var takeawaySection: some View {
-        sectionCard(title: "Save a takeaway", systemImage: "bookmark") {
+        sectionCard(title: "Takeaway", systemImage: "bookmark") {
             TextField("What do you want to remember?", text: $takeawayText, axis: .vertical)
                 .font(OffRecordTypography.bodyMedium)
                 .foregroundStyle(OffRecordColor.textPrimary)
@@ -639,17 +641,8 @@ struct WeeklyReflectionReportView: View {
                 )
                 .accessibilityIdentifier("weeklyReflection.takeaway.textField")
 
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: OffRecordSpacing.md) {
-                    saveTakeawayButton
-                    savedNote
-                }
-                VStack(alignment: .leading, spacing: OffRecordSpacing.sm) {
-                    saveTakeawayButton
-                    savedNote
-                }
-            }
-            .offRecordAnimation(OffRecordMotion.fade, value: takeawayIsSaved)
+            saveTakeawayButton
+                .offRecordAnimation(OffRecordMotion.fade, value: takeawayIsSaved)
         }
     }
 
@@ -658,7 +651,7 @@ struct WeeklyReflectionReportView: View {
             controller.saveTakeaway(takeawayText, for: displayedReport)
             saveCount += 1
         } label: {
-            Label(takeawayIsSaved ? "Saved" : "Save takeaway", systemImage: takeawayIsSaved ? "checkmark" : "bookmark.fill")
+            Label(takeawayIsSaved ? "Saved" : "Save", systemImage: takeawayIsSaved ? "checkmark" : "bookmark.fill")
         }
         .buttonStyle(OffRecordSoftButtonStyle(tint: OffRecordColor.textOnAccent, fill: OffRecordColor.brandPlum))
         .disabled(trimmedTakeaway.isEmpty)
@@ -666,21 +659,11 @@ struct WeeklyReflectionReportView: View {
         .accessibilityIdentifier("weeklyReflection.takeaway.save")
     }
 
-    @ViewBuilder
-    private var savedNote: some View {
-        if takeawayIsSaved {
-            Text("Kept with this reflection")
-                .font(OffRecordTypography.metadata)
-                .foregroundStyle(OffRecordColor.textSage)
-                .transition(.opacity)
-        }
-    }
-
     private var exportButton: some View {
         Button {
             showExport = true
         } label: {
-            Label("Export reflection", systemImage: "square.and.arrow.up")
+            Label("Export", systemImage: "square.and.arrow.up")
                 .frame(maxWidth: .infinity)
         }
         .buttonStyle(OffRecordSoftButtonStyle(tint: OffRecordColor.textBrand, fill: OffRecordColor.surfacePrimary))
@@ -759,25 +742,23 @@ private struct WeeklyReflectionSourcesSheet: View {
     var body: some View {
         NavigationStack {
             List {
-                Section("Privacy") {
-                    Label("Generated locally", systemImage: "lock.shield.fill")
-                    Text("Nothing was sent off your device. Hidden entries only affect this weekly reflection.")
-                        .font(OffRecordTypography.metadata)
-                        .foregroundColor(OffRecordColor.textSecondary)
-                }
-                Section("Available Sources") {
+                Section {
                     ForEach(availableEntries, id: \.objectID) { entry in
                         sourceRow(entry)
                     }
+                } header: {
+                    Text("Included")
+                } footer: {
+                    Text("Hidden entries are left out of this reflection only.")
                 }
                 if !report.hiddenEntryIds.isEmpty || !report.unavailableEntryIds.isEmpty {
-                    Section("Excluded") {
-                        Text("\(report.hiddenEntryIds.count) hidden · \(report.unavailableEntryIds.count) unavailable")
+                    Section("Hidden") {
+                        Text("\(report.hiddenEntryIds.count) hidden · \(report.unavailableEntryIds.count) deleted")
                             .foregroundColor(OffRecordColor.textSecondary)
                     }
                 }
             }
-            .navigationTitle("Sources & Privacy")
+            .navigationTitle("Sources")
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
                     Button("Done") { dismiss() }
@@ -817,7 +798,7 @@ private struct WeeklyReflectionSourcesSheet: View {
             .accessibilityIdentifier("weeklyReflection.sources.openEntry")
 
             if let id = entry.id {
-                Toggle("Include in regenerated report", isOn: Binding(
+                Toggle("Include", isOn: Binding(
                     get: { includedSelection.contains(id) },
                     set: { isIncluded in
                         if isIncluded {
@@ -836,9 +817,10 @@ private struct WeeklyReflectionSourcesSheet: View {
     }
 
     private func sourceSummary(_ entry: DiaryEntry) -> String {
-        if entry.hasStartedEntryAudio { return "Voice note · \(entry.startedEntryWordCount) words" }
-        if entry.hasStartedEntryPhotos { return "Photo note · \(entry.startedEntryWordCount) words" }
-        return "Text entry · \(entry.startedEntryWordCount) words"
+        let words = String(AttributedString(localized: "^[\(entry.startedEntryWordCount) word](inflect: true)").characters)
+        if entry.hasStartedEntryAudio { return "Recording · \(words)" }
+        if entry.hasStartedEntryPhotos { return "Photo · \(words)" }
+        return "Text · \(words)"
     }
 }
 
@@ -871,12 +853,13 @@ private struct WeeklyReflectionExportSheet: View {
     var body: some View {
         NavigationStack {
             Form {
-                Section("Include") {
-                    Toggle("Source quotes", isOn: $includeQuotes)
+                Section {
+                    Toggle("Quotes from Entries", isOn: $includeQuotes)
                         .accessibilityIdentifier("weeklyReflection.export.includeQuotes")
-                    Text("Source quotes are off by default. The export never includes full journal entries.")
-                        .font(OffRecordTypography.metadata)
-                        .foregroundColor(OffRecordColor.textSecondary)
+                } header: {
+                    Text("Include")
+                } footer: {
+                    Text("Exports never include full entries.")
                 }
                 Section("Format") {
                     Picker("Format", selection: $format) {
@@ -887,7 +870,7 @@ private struct WeeklyReflectionExportSheet: View {
                     .accessibilityIdentifier("weeklyReflection.export.format")
                 }
                 Section {
-                    Button("Preview export") {
+                    Button("Preview") {
                         do {
                             exportURL = try WeeklyReflectionExportService.export(report: report, format: format, includeQuotes: includeQuotes)
                         } catch {
@@ -895,8 +878,6 @@ private struct WeeklyReflectionExportSheet: View {
                         }
                     }
                     .accessibilityIdentifier("weeklyReflection.export.preview")
-                } footer: {
-                    Text("A short reflection you can bring into a conversation. It does not include your full journal.")
                 }
             }
             .navigationTitle("Export Reflection")
@@ -916,7 +897,7 @@ private struct WeeklyReflectionExportSheet: View {
             Text(item.url.absoluteString)
             #endif
         }
-        .alert("Export error", isPresented: Binding(
+        .alert("Couldn’t Export", isPresented: Binding(
             get: { exportError != nil },
             set: { if !$0 { exportError = nil } }
         )) {
@@ -927,9 +908,13 @@ private struct WeeklyReflectionExportSheet: View {
     }
 }
 
+/// "Sep 22 – 28", with the year added for weeks outside the current year.
 private func dateRange(_ report: WeeklyReflectionReport) -> String {
-    let formatter = DateFormatter()
-    formatter.dateStyle = .medium
-    formatter.timeStyle = .none
-    return "\(formatter.string(from: report.periodStart)) - \(formatter.string(from: report.periodEnd))"
+    let end = max(report.periodEnd, report.periodStart)
+    let range = report.periodStart..<end
+    let isThisYear = Calendar.current.isDate(report.periodStart, equalTo: Date(), toGranularity: .year)
+        && Calendar.current.isDate(end, equalTo: Date(), toGranularity: .year)
+    return isThisYear
+        ? range.formatted(.interval.month(.abbreviated).day())
+        : range.formatted(.interval.month(.abbreviated).day().year())
 }

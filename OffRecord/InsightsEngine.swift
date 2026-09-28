@@ -6,8 +6,8 @@
 //
 //  Every insight carries the IDs of the entries that support it plus a short
 //  plain-language rationale, so the UI can answer "Why am I seeing this?".
-//  All analysis is performed locally with Apple's NaturalLanguage framework;
-//  nothing leaves the device. Copy is written as observations, not diagnoses.
+//  Analysis uses Apple's NaturalLanguage framework. Copy states facts and
+//  numbers, not diagnoses.
 //
 
 import Foundation
@@ -63,13 +63,13 @@ enum InsightsEngine {
             guard let date = entry.date else { return false }
             return date >= streakStart
         }
-        let rationale = "Counted from consecutive days with at least one entry."
+        let rationale = "Days in a row with at least one entry."
 
         if streak >= 7 {
             return JournalInsightSummary(
                 id: "streak-7",
-                title: "A steady rhythm",
-                description: "You've written \(streak) days in a row. That consistency adds up.",
+                title: "On a streak",
+                description: "\(streak) days in a row.",
                 icon: "flame.fill",
                 colorName: "orange",
                 rationale: rationale,
@@ -79,7 +79,7 @@ enum InsightsEngine {
             return JournalInsightSummary(
                 id: "streak-3",
                 title: "Building a habit",
-                description: "\(streak) days in a row. Your journaling rhythm is taking shape.",
+                description: "\(streak) days in a row so far.",
                 icon: "arrow.up.right",
                 colorName: "green",
                 rationale: rationale,
@@ -88,8 +88,8 @@ enum InsightsEngine {
         } else if !hasToday && streak == 0 {
             return JournalInsightSummary(
                 id: "write-today",
-                title: "Room for a few words",
-                description: "Nothing saved yet today. Even a sentence or a short voice note counts.",
+                title: "Nothing yet today",
+                description: "A sentence counts.",
                 icon: "pencil.line",
                 colorName: "blue"
             )
@@ -108,13 +108,13 @@ enum InsightsEngine {
 
         let positive = recent.filter { positiveMoods.contains($0.mood) }
         let positiveRatio = Double(positive.count) / Double(recent.count)
-        let rationale = "Based on \(recent.count) mood check-ins from the last 7 days."
+        let rationale = "Based on \(recent.count) moods from the last 7 days."
 
         if positiveRatio >= 0.7 {
             return JournalInsightSummary(
                 id: "positive-week",
-                title: "A bright stretch",
-                description: "\(Int(positiveRatio * 100))% of your moods this past week were on the lighter side.",
+                title: "A good week",
+                description: "\(Int(positiveRatio * 100))% of your moods this week were positive.",
                 icon: "sun.max.fill",
                 colorName: "yellow",
                 rationale: rationale,
@@ -124,8 +124,8 @@ enum InsightsEngine {
             let heavier = recent.filter { !positiveMoods.contains($0.mood) }
             return JournalInsightSummary(
                 id: "tough-week",
-                title: "A heavier week",
-                description: "More of your recent moods sat on the heavier side. Days like these are part of it.",
+                title: "A harder week",
+                description: "More of your moods this week were low.",
                 icon: "heart.fill",
                 colorName: "pink",
                 rationale: rationale,
@@ -152,12 +152,12 @@ enum InsightsEngine {
             }
         }
 
-        let rationale = "Based on the time of day of your last \(sample.count) \(sample.count == 1 ? "entry" : "entries")."
+        let rationale = String(AttributedString(localized: "Based on when you wrote your last ^[\(sample.count) entry](inflect: true).").characters)
         if morning.count > evening.count * 2 {
             return JournalInsightSummary(
                 id: "morning-writer",
                 title: "Morning writer",
-                description: "You tend to journal before noon. Starting the day with reflection seems to suit you.",
+                description: "You usually journal before noon.",
                 icon: "sunrise.fill",
                 colorName: "orange",
                 rationale: rationale,
@@ -166,8 +166,8 @@ enum InsightsEngine {
         } else if evening.count > morning.count * 2 {
             return JournalInsightSummary(
                 id: "evening-writer",
-                title: "Evening reflector",
-                description: "You usually journal after 6 pm, looking back on the day once it settles.",
+                title: "Evening writer",
+                description: "You usually journal after 6 PM.",
                 icon: "moon.stars.fill",
                 colorName: "indigo",
                 rationale: rationale,
@@ -198,10 +198,10 @@ enum InsightsEngine {
         return JournalInsightSummary(
             id: "writing-more",
             title: "Writing more",
-            description: "You've written \(increase)% more this month than last month.",
+            description: "You’ve written \(increase)% more this month.",
             icon: "chart.line.uptrend.xyaxis",
             colorName: "green",
-            rationale: "Compares \(thisMonthWords) words this month with \(lastMonthWords) last month.",
+            rationale: "\(thisMonthWords) words this month vs. \(lastMonthWords) last month.",
             supportingEntryIDs: evidenceIDs(thisMonth.sorted { $0.wordCount > $1.wordCount })
         )
     }
@@ -212,13 +212,15 @@ enum InsightsEngine {
         for milestone in [10, 25, 50, 100, 200, 365, 500, 1000] where entries.count >= milestone && entries.count < milestone + 5 {
             // Entries are newest first, so the milestone entry sits `milestone` places from the oldest.
             let milestoneEntry = entries[entries.count - milestone]
+            let description = milestoneEntry.date.map {
+                "Your \(milestone)th entry was on \($0.formatted(date: .long, time: .omitted))."
+            } ?? "You’ve saved \(milestone) entries."
             return JournalInsightSummary(
                 id: "milestone-\(milestone)",
                 title: "\(milestone) entries",
-                description: "You've saved \(milestone) entries. That's a real archive of your life.",
+                description: description,
                 icon: "trophy.fill",
                 colorName: "yellow",
-                rationale: "This is the entry that reached \(milestone).",
                 supportingEntryIDs: [milestoneEntry.id]
             )
         }
@@ -241,12 +243,12 @@ enum InsightsEngine {
         }
 
         let average = scored.reduce(0) { $0 + $1.score } / Double(scored.count)
-        let rationale = "Tone is estimated on-device from your last \(scored.count) written \(scored.count == 1 ? "entry" : "entries")."
+        let rationale = String(AttributedString(localized: "Estimated from the wording of your last ^[\(scored.count) entry](inflect: true).").characters)
         if average > 0.3 {
             return JournalInsightSummary(
                 id: "positive-writing",
-                title: "A warm tone lately",
-                description: "Your recent entries lean positive in how they're written.",
+                title: "Upbeat lately",
+                description: "Your recent entries read positive.",
                 icon: "face.smiling.fill",
                 colorName: "green",
                 rationale: rationale,
@@ -255,8 +257,8 @@ enum InsightsEngine {
         } else if average < -0.3 {
             return JournalInsightSummary(
                 id: "gratitude",
-                title: "A gentle idea",
-                description: "Your recent entries carry some weight. Noting one small good thing can help balance the page.",
+                title: "Heavier lately",
+                description: "Your recent entries read heavier. Want to note one good thing today?",
                 icon: "heart.text.square.fill",
                 colorName: "pink",
                 rationale: rationale,

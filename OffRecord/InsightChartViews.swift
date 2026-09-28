@@ -105,8 +105,8 @@ struct WeekDayActivity: Identifiable, Equatable, Sendable {
     var weekdayName: String { date.formatted(.dateTime.weekday(.wide)) }
 
     var accessibilityValue: String {
-        guard hasEntry else { return "not journaled" }
-        var value = "journaled, \(entryCount) \(entryCount == 1 ? "entry" : "entries")"
+        guard hasEntry else { return "No entries" }
+        var value = String(AttributedString(localized: "^[\(entryCount) entry](inflect: true)").characters)
         if let mood { value += ", mostly \(mood.displayName.lowercased())" }
         return value
     }
@@ -181,7 +181,7 @@ struct InsightChartsSnapshot: Equatable, Sendable {
         )
     }
 
-    /// One point per day that has at least one mood check-in, oldest first.
+    /// One point per day that has at least one mood, oldest first.
     static func dailyMoodPoints(entriesByDay: [Date: [JournalEntrySnapshot]]) -> [MoodTrendPoint] {
         entriesByDay.compactMap { day, dayEntries -> MoodTrendPoint? in
             let moods = dayEntries.map(\.mood).filter { $0 != .none }
@@ -277,7 +277,7 @@ struct WeekActivityChartCard: View {
 
     var summary: String {
         switch journaledCount {
-        case 0: return "Nothing saved in the last 7 days yet. Any day is a good one to start."
+        case 0: return "No entries in the last 7 days."
         case days.count: return "You journaled every day this week."
         default: return "You journaled on \(journaledCount) of the last \(days.count) days."
         }
@@ -339,11 +339,11 @@ private struct WeekActivityAXDescriptor: AXChartDescriptorRepresentable {
         let names = days.map(\.weekdayName)
         let maxCount = Double(max(1, days.map(\.entryCount).max() ?? 1))
         return AXChartDescriptor(
-            title: "Last 7 days",
+            title: "Last 7 Days",
             summary: summary,
             xAxis: AXCategoricalDataAxisDescriptor(title: "Day", categoryOrder: names),
             yAxis: AXNumericDataAxisDescriptor(title: "Entries", range: 0...maxCount, gridlinePositions: []) { value in
-                "\(Int(value)) \(Int(value) == 1 ? "entry" : "entries")"
+                String(AttributedString(localized: "^[\(Int(value)) entry](inflect: true)").characters)
             },
             additionalAxes: [],
             series: [
@@ -397,22 +397,22 @@ enum MoodTrendRange: Int, CaseIterable, Identifiable {
 enum MoodTrendNarrator {
     static func summary(for points: [MoodTrendPoint], periodPhrase: String) -> String {
         guard !points.isEmpty else {
-            return "No mood check-ins \(periodPhrase) yet. Tag a mood on your next entry to start the line."
+            return "No moods logged \(periodPhrase)."
         }
 
         let average = points.reduce(0) { $0 + $1.valence } / Double(points.count)
         let tone: String
         switch average {
-        case 0.35...: tone = "leaned bright"
-        case -0.1..<0.35: tone = "felt fairly balanced"
-        default: tone = "sat on the heavier side"
+        case 0.35...: tone = "mostly positive"
+        case -0.1..<0.35: tone = "mixed"
+        default: tone = "mostly low"
         }
 
         var counts: [Mood: Int] = [:]
         for point in points { counts[point.mood, default: 0] += point.entryCount }
         let topMood = counts.max { $0.value == $1.value ? $0.key.valence > $1.key.valence : $0.value < $1.value }?.key
 
-        var sentence = "\(periodPhrase.prefix(1).uppercased() + periodPhrase.dropFirst()) your moods \(tone)"
+        var sentence = "\(periodPhrase.prefix(1).uppercased() + periodPhrase.dropFirst()), your moods were \(tone)"
         if let topMood { sentence += ", most often \(topMood.displayName.lowercased())" }
 
         if points.count >= 4 {
@@ -420,9 +420,9 @@ enum MoodTrendNarrator {
             let early = points.prefix(half).reduce(0) { $0 + $1.valence } / Double(half)
             let late = points.suffix(half).reduce(0) { $0 + $1.valence } / Double(half)
             if late - early > 0.25 {
-                sentence += ", and they've been lifting lately"
+                sentence += ", and improving"
             } else if early - late > 0.25 {
-                sentence += ", with a gentle dip lately"
+                sentence += ", and dipping"
             }
         }
         return sentence + "."
@@ -479,13 +479,13 @@ struct MoodTrendChartCard: View {
             if visiblePoints.isEmpty {
                 InsightChartEmptyState(
                     systemImage: "face.smiling",
-                    message: "Moods you tag on entries will draw a gentle line here."
+                    message: "Add moods to entries to see them here."
                 )
             } else {
                 chart
                     .frame(height: chartHeight)
                     .accessibilityChartDescriptor(
-                        MoodTrendAXDescriptor(points: visiblePoints, title: "Mood over time", summary: summary)
+                        MoodTrendAXDescriptor(points: visiblePoints, title: "Mood Over Time", summary: summary)
                     )
             }
         }
@@ -595,7 +595,7 @@ private struct MoodChartCallout: View {
                     .foregroundStyle(OffRecordColor.textPrimary)
             }
             if point.entryCount > 1 {
-                Text("\(point.entryCount) check-ins")
+                Text("\(point.entryCount) moods")
                     .font(OffRecordTypography.annotation)
                     .foregroundStyle(OffRecordColor.textSecondary)
             }
@@ -658,9 +658,9 @@ struct MoodTimeHeatmapCard: View {
 
     private var summary: String {
         guard let strongest = cells.max(by: { $0.count < $1.count }) else {
-            return "Tag a mood on a few entries to see when each feeling tends to show up."
+            return "Add moods to a few entries to see when each shows up."
         }
-        return "\(strongest.mood.displayName) shows up most \(strongest.timeOfDay.phrase), across your last 90 days."
+        return "Over the last 90 days, you’re most often \(strongest.mood.displayName.lowercased()) \(strongest.timeOfDay.phrase)."
     }
 
     var body: some View {
@@ -670,7 +670,7 @@ struct MoodTimeHeatmapCard: View {
             if snapshot.heatmapIsReady {
                 InsightChartSummary(text: summary)
                 heatmap
-                Text("Deeper color means that mood came up more often.")
+                Text("Darker means more often.")
                     .font(OffRecordTypography.annotation)
                     .foregroundStyle(OffRecordColor.textSecondary)
             } else {
@@ -687,9 +687,9 @@ struct MoodTimeHeatmapCard: View {
     private var emptyMessage: String {
         let remaining = max(0, InsightChartsSnapshot.heatmapMinimumCheckIns - snapshot.moodCheckInCount)
         if remaining > 0 {
-            return "Tag a mood on \(remaining) more \(remaining == 1 ? "entry" : "entries") and you'll see when each feeling tends to show up."
+            return String(AttributedString(localized: "Add a mood to ^[\(remaining) more entry](inflect: true) to see this.").characters)
         }
-        return "Journal at a few different times of day and a pattern will start to appear here."
+        return "Journal at different times of day to see this."
     }
 
     private var chart: some View {
@@ -711,7 +711,7 @@ struct MoodTimeHeatmapCard: View {
                     .background(OffRecordColor.surfacePrimary.opacity(0.85), in: Capsule())
             }
             .accessibilityLabel("\(cell.mood.displayName) \(cell.timeOfDay.phrase)")
-            .accessibilityValue("\(cell.count) \(cell.count == 1 ? "entry" : "entries")")
+            .accessibilityValue(String(AttributedString(localized: "^[\(cell.count) entry](inflect: true)").characters))
         }
         .chartXScale(domain: InsightTimeOfDay.allCases.map(\.label))
         .chartYScale(domain: moods.map(\.displayName))
@@ -745,6 +745,7 @@ struct MoodTimeHeatmapCard: View {
                 HStack(spacing: 0) {
                     ForEach(InsightTimeOfDay.allCases) { time in
                         Text(time.shortLabel)
+                            .accessibilityLabel(time.label)
                             .font(OffRecordTypography.annotation)
                             .foregroundStyle(OffRecordColor.textSecondary)
                             .lineLimit(1)
@@ -766,11 +767,11 @@ private struct MoodTimeAXDescriptor: AXChartDescriptorRepresentable {
     func makeChartDescriptor() -> AXChartDescriptor {
         let maxCount = Double(max(1, cells.map(\.count).max() ?? 1))
         return AXChartDescriptor(
-            title: "Mood by time of day",
+            title: "Mood by Time of Day",
             summary: summary,
             xAxis: AXCategoricalDataAxisDescriptor(title: "Time of day", categoryOrder: InsightTimeOfDay.allCases.map(\.label)),
             yAxis: AXNumericDataAxisDescriptor(title: "Entries", range: 0...maxCount, gridlinePositions: []) { value in
-                "\(Int(value)) \(Int(value) == 1 ? "entry" : "entries")"
+                String(AttributedString(localized: "^[\(Int(value)) entry](inflect: true)").characters)
             },
             additionalAxes: [],
             series: moods.map { mood in
@@ -808,7 +809,7 @@ struct WeeklyMoodArcChart: View {
         if points.isEmpty {
             InsightChartEmptyState(
                 systemImage: "face.smiling",
-                message: "No mood check-ins this week, so there's no arc to draw yet."
+                message: "No moods logged this week."
             )
         } else {
             Chart {
@@ -857,7 +858,7 @@ struct WeeklyMoodArcChart: View {
             }
             .frame(height: chartHeight)
             .accessibilityChartDescriptor(
-                MoodTrendAXDescriptor(points: points, title: "Emotional arc", summary: summary)
+                MoodTrendAXDescriptor(points: points, title: "Mood", summary: summary)
             )
         }
     }

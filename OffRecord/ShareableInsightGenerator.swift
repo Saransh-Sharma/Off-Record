@@ -6,8 +6,8 @@
 //  feel personal but reveal nothing private: names of people are hidden from
 //  shared images unless the person explicitly opts in.
 //
-//  All analysis is performed on-device using existing data from
-//  FridayAssistantEngine, LocalAIEngine, and raw diary entries.
+//  Built from existing data in FridayAssistantEngine, LocalAIEngine, and
+//  raw diary entries.
 //
 
 import CoreData
@@ -19,7 +19,7 @@ import NaturalLanguage
 struct ShareableInsight: Identifiable {
     let id = UUID()
     let headline: String      // The main line
-    let subtext: String        // Supporting detail
+    let subtext: String        // Supporting detail; empty when the headline stands alone
     let category: Category
     let dataPoint: String?     // Optional stat to display
     let generatedAt: Date
@@ -263,11 +263,11 @@ struct ShareableInsightGenerator {
 
         return ShareableInsight(
             headline: "Your most common mood this week:\n\(topMood.key.displayName).",
-            subtext: "\(percentage)% of your check-ins. The rest were a mix.",
+            subtext: "\(percentage)% of your moods.",
             category: .emotion,
             dataPoint: "\(topMood.key.displayName) \(percentage)%",
             generatedAt: Date(),
-            rationale: "Counted from \(tagged.count) mood check-ins in the last 7 days.",
+            rationale: "Based on \(tagged.count) moods from the last 7 days.",
             supportingEntryIDs: evidence(tagged.filter { $0.1 == topMood.key }.map(\.0))
         )
     }
@@ -322,7 +322,7 @@ struct ShareableInsightGenerator {
             category: .people,
             dataPoint: "\(topPerson.value.count)x",
             generatedAt: Date(),
-            rationale: "Names are recognized on-device. Tone is estimated from the entries that mention them.",
+            rationale: "Based on the tone of entries that mention this person.",
             supportingEntryIDs: evidence(topPerson.value.entries),
             personNames: [topPerson.key]
         )
@@ -347,12 +347,12 @@ struct ShareableInsightGenerator {
         }
 
         guard obligationCount >= 3 || desireCount >= 3 else { return nil }
-        let rationale = "Counts words like \u{201C}should\u{201D} and \u{201C}have to\u{201D} against \u{201C}want\u{201D} and \u{201C}hope\u{201D} in this week's entries."
+        let rationale = "Based on words like \u{201C}should\u{201D} and \u{201C}want\u{201D} in this week’s entries."
 
         if obligationCount > desireCount * 2 && obligationCount >= 5 {
             return ShareableInsight(
-                headline: "You said \"should\" \(obligationCount) times this week.\n\"Want\"? \(desireCount).",
-                subtext: "Lots of obligations on the page. Just something to notice.",
+                headline: "You said \u{201C}should\u{201D} \(obligationCount) times this week.\n\u{201C}Want\u{201D}? \(desireCount).",
+                subtext: "More obligations than wants.",
                 category: .language,
                 dataPoint: "should: \(obligationCount) vs want: \(desireCount)",
                 generatedAt: Date(),
@@ -361,8 +361,8 @@ struct ShareableInsightGenerator {
             )
         } else if desireCount > obligationCount * 2 && desireCount >= 5 {
             return ShareableInsight(
-                headline: "You said \"want\" \(desireCount) times this week.\n\"Should\"? \(obligationCount).",
-                subtext: "Plenty of wants and hopes on the page this week.",
+                headline: "You said \u{201C}want\u{201D} \(desireCount) times this week.\n\u{201C}Should\u{201D}? \(obligationCount).",
+                subtext: "More wants than obligations.",
                 category: .language,
                 dataPoint: "want: \(desireCount) vs should: \(obligationCount)",
                 generatedAt: Date(),
@@ -421,11 +421,11 @@ struct ShareableInsightGenerator {
 
         return ShareableInsight(
             headline: "Most \(worstLabel) on \(dayNames[worstDay.day]).\nMost \(bestLabel) on \(dayNames[bestDay.day]).",
-            subtext: "Your week had a shape to it.",
+            subtext: "",
             category: .time,
             dataPoint: nil,
             generatedAt: Date(),
-            rationale: "Compares the moods you tagged on each day of the last week.",
+            rationale: "Based on your moods by day over the last 7 days.",
             supportingEntryIDs: evidence(supporting.map(\.entry))
         )
     }
@@ -443,12 +443,12 @@ struct ShareableInsightGenerator {
             let lowered = topic.lowercased()
             if !weekText.contains(lowered) {
                 return ShareableInsight(
-                    headline: "\"\(topic)\" didn't come up this week.",
-                    subtext: "It used to appear often. Just noticing.",
+                    headline: "\u{201C}\(topic)\u{201D} didn’t come up this week.",
+                    subtext: "It used to come up often.",
                     category: .pattern,
                     dataPoint: "\(count) mentions before",
                     generatedAt: Date(),
-                    rationale: "Compares this week's entries with topics from earlier entries.",
+                    rationale: "Based on topics from your earlier entries.",
                     personNames: ShareableInsightPrivacy.isLikelyPersonName(topic) ? [topic] : []
                 )
             }
@@ -486,12 +486,12 @@ struct ShareableInsightGenerator {
         let ratioText = ratio >= 2.5 ? "\(Int(ratio))x" : String(format: "%.1fx", ratio)
 
         return ShareableInsight(
-            headline: "You write \(ratioText) more when you're \(longest.key.displayName.lowercased()).",
-            subtext: "Entries tagged \(shortest.key.displayName.lowercased()) tend to be shorter.",
+            headline: "You write \(ratioText) more when you’re \(longest.key.displayName.lowercased()).",
+            subtext: "Your \(shortest.key.displayName.lowercased()) entries tend to be shorter.",
             category: .pattern,
             dataPoint: "\(Int(longest.value)) vs \(Int(shortest.value)) words",
             generatedAt: Date(),
-            rationale: "Average word count of this week's entries, grouped by mood.",
+            rationale: "Based on average entry length for each mood this week.",
             supportingEntryIDs: evidence((moodEntries[longest.key] ?? []) + (moodEntries[shortest.key] ?? []))
         )
     }
@@ -515,8 +515,8 @@ struct ShareableInsightGenerator {
 
         if percentage >= 60 {
             return ShareableInsight(
-                headline: "\(percentage)% of your sentences start with \"I\".",
-                subtext: "Your journal centers on you, which is exactly what it's for.",
+                headline: "\(percentage)% of your sentences start with \u{201C}I.\u{201D}",
+                subtext: "Your journal is about you. That’s the point.",
                 category: .language,
                 dataPoint: "\(percentage)%",
                 generatedAt: Date(),
@@ -548,12 +548,12 @@ struct ShareableInsightGenerator {
         let firstAvg = firstHalf.reduce(0, +) / Double(firstHalf.count)
         let secondAvg = secondHalf.reduce(0, +) / Double(secondHalf.count)
         let diff = secondAvg - firstAvg
-        let rationale = "Tone of \(scored.count) entries, estimated on-device, early in the week versus later."
+        let rationale = "Based on how the tone of \(scored.count) entries changed this week."
 
         if diff > 0.2 {
             return ShareableInsight(
                 headline: "Your entries brightened as the week went on.",
-                subtext: "Whatever you're doing, it seems to be helping.",
+                subtext: "Something’s working.",
                 category: .growth,
                 dataPoint: nil,
                 generatedAt: Date(),
@@ -563,7 +563,7 @@ struct ShareableInsightGenerator {
         } else if diff < -0.2 {
             return ShareableInsight(
                 headline: "Your entries got a little heavier as the week went on.",
-                subtext: "Dips are a normal part of any week. Be gentle with yourself.",
+                subtext: "Weeks have dips.",
                 category: .emotion,
                 dataPoint: nil,
                 generatedAt: Date(),
@@ -603,11 +603,11 @@ struct ShareableInsightGenerator {
 
         return ShareableInsight(
             headline: "Brightest entries around \(formatHour(bestHour.key)).\nHeavier ones around \(formatHour(worstHour.key)).",
-            subtext: "Time of day seems to color how you write.",
+            subtext: "Time of day shows in your writing.",
             category: .time,
             dataPoint: nil,
             generatedAt: Date(),
-            rationale: "Tone of this week's entries, estimated on-device and grouped by hour.",
+            rationale: "Based on the tone of this week’s entries, by hour.",
             supportingEntryIDs: evidence(supporting.map(\.entry))
         )
     }
@@ -620,17 +620,14 @@ struct ShareableInsightGenerator {
 
         guard words.count >= 50 else { return nil }
 
-        let richness = Double(uniqueWords.count) / Double(words.count)
-        let percentage = Int(richness * 100)
-
         if uniqueWords.count > 200 {
             return ShareableInsight(
                 headline: "\(uniqueWords.count) unique words this week.",
-                subtext: "Vocabulary richness: \(percentage)%. You had a lot to say.",
+                subtext: "You had a lot to say.",
                 category: .language,
                 dataPoint: "\(uniqueWords.count) words",
                 generatedAt: Date(),
-                rationale: "Counts distinct words across \(weekEntries.count) entries from the last 7 days.",
+                rationale: "Based on distinct words in \(weekEntries.count) entries from the last 7 days.",
                 supportingEntryIDs: evidence(weekEntries.filter { !($0.text ?? "").isEmpty })
             )
         }
@@ -647,11 +644,11 @@ struct ShareableInsightGenerator {
 
         return ShareableInsight(
             headline: "You asked \(questionCount) questions this week.",
-            subtext: "Asking is a good sign you're thinking things through.",
+            subtext: "You’re working things out on the page.",
             category: .pattern,
             dataPoint: "\(questionCount) questions",
             generatedAt: Date(),
-            rationale: "Counts question marks in this week's entries.",
+            rationale: "Based on question marks in this week’s entries.",
             supportingEntryIDs: evidence(questionEntries)
         )
     }
@@ -694,12 +691,12 @@ struct ShareableInsightGenerator {
         let topic = topTopic.key.capitalized
 
         return ShareableInsight(
-            headline: "Your #1 topic this week:\n\"\(topic)\"",
+            headline: "Your #1 topic this week:\n\u{201C}\(topic)\u{201D}",
             subtext: "It showed up in \(ratioText).",
             category: .pattern,
             dataPoint: "\(count)/\(weekEntries.count) entries",
             generatedAt: Date(),
-            rationale: "The noun that appeared in the most entries this week.",
+            rationale: "Based on the word that appeared in the most entries.",
             supportingEntryIDs: evidence(topTopic.value),
             personNames: ShareableInsightPrivacy.isLikelyPersonName(topic) ? [topic] : []
         )

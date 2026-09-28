@@ -10,7 +10,7 @@ import SwiftUI
 struct StreakSummaryView: View {
     let currentStreak: Int
     let dayLabel: String
-    let statusMessage: String
+    var statusMessage: String?
     let accentColor: Color
 
     var body: some View {
@@ -29,10 +29,12 @@ struct StreakSummaryView: View {
                     .minimumScaleFactor(0.85)
             }
 
-            Text(statusMessage)
-                .font(OffRecordTypography.bodySmall)
-                .foregroundStyle(OffRecordColor.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
+            if let statusMessage {
+                Text(statusMessage)
+                    .font(OffRecordTypography.bodySmall)
+                    .foregroundStyle(OffRecordColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -42,7 +44,7 @@ struct StreakSummaryView: View {
     StreakSummaryView(
         currentStreak: 7,
         dayLabel: "days",
-        statusMessage: "Your writing rhythm is intact.",
+        statusMessage: nil,
         accentColor: OffRecordColor.textPeach
     )
     .padding()

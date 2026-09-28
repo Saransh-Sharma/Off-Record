@@ -53,28 +53,14 @@ struct MilestoneCelebrationView: View {
         VStack(spacing: OffRecordSpacing.lg) {
             badge
 
-            VStack(spacing: OffRecordSpacing.sm) {
-                Text("Milestone")
-                    .font(OffRecordTypography.badgeLabel)
-                    .textCase(.uppercase)
-                    .tracking(1.2)
-                    .foregroundStyle(OffRecordColor.textPeach)
-
-                Text("\(days)-Day Streak")
-                    .font(OffRecordTypography.titleLarge)
-                    .foregroundStyle(OffRecordColor.textHeading)
-                    .multilineTextAlignment(.center)
-                    .accessibilityAddTraits(.isHeader)
-
-                Text("You've journaled \(days) days in a row. That's real momentum.")
-                    .font(OffRecordTypography.bodySmall)
-                    .foregroundStyle(OffRecordColor.textSecondary)
-                    .multilineTextAlignment(.center)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            Text("\(days) Days in a Row")
+                .font(OffRecordTypography.titleLarge)
+                .foregroundStyle(OffRecordColor.textHeading)
+                .multilineTextAlignment(.center)
+                .accessibilityAddTraits(.isHeader)
 
             Button(action: onDismiss) {
-                Text("Keep Going")
+                Text("Done")
                     .frame(maxWidth: .infinity)
                     .offRecordPillButton()
             }
