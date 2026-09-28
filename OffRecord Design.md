@@ -409,15 +409,98 @@ Use Apple-native typography for app screens. The design should feel native to iO
 
 ### Voice
 
-Microcopy should be emotionally safe and direct. It should avoid therapy-speak, exaggerated positivity, and judgment.
+Copy should be short, specific, and calm. It should read like a well-made Apple app, not a wellness brochure. The complete standard is below; `scripts/copy-lint.sh` enforces the mechanical parts.
+
+#### Principles
+
+1. **Say it once.** A fact appears in one place, where it matters, and nowhere else. Privacy is the main example.
+2. **Lead with the fact.** Numbers and names beat adjectives: “You mentioned Maya in 4 entries,” not “Maya seems to be an important thread.”
+3. **One idea per string.** No second clause that reassures, explains, or cheers.
+4. **Plain words.** Say what something does, never how it is built. No “index,” “embedding,” “baseline,” or “semantic.”
+5. **Calm, not cheerful.** No exclamation marks, no emoji in system text, no guilt, no validation formulas.
+
+#### Friday’s voice
+
+- Friday speaks on AI and Friday surfaces: the Friday tab and chat, “From Friday” cards on Today, AI rows on Insights, Weekly Reflection, the entry’s From Friday section and Go Deeper, AI-gated empty states, and smart-prompt notifications (title “Friday”).
+- App chrome stays neutral: buttons, Settings, alerts, errors, widgets, Apple Watch, Siri, and permission strings. Settings never says “I.”
+- Friday talks to **you** and says **I** only about her own actions or limits (“I need 3 more entries,” “I’m not sure yet”).
+- Never write “Friday noticed.” No card starts with “I noticed.” At most one “I” per card.
+- Thin evidence is said once, with a number: “I’m not sure yet. Only 2 entries mention this.”
+- “Not enough data” always gives the real threshold from code.
+- Heavy content gets one plain line and no advice: “That sounds heavy. Talking to someone you trust could help.”
+- Explanations start with “Based on…” and stay at 12 words or fewer.
+
+#### Glossary
+
+| Use | Don’t use |
+|---|---|
+| **entry** (one day’s page) | note (as the unit), moment, diary, journal memory, data point |
+| **text**, **recording**, **photo**, **mood** (parts of an entry) | block, voice note, voice moment, audio note, voice thought, check-in |
+| **Record** (iPhone capture verb) | Speak (on iPhone), Record privately, Add a thought |
+| **Speak** (dictation on Apple Watch only) | |
+| **Transcribing…**, **transcript** | Transcribing on this device… |
+| **Friday** (she) | assistant, AI assistant, companion |
+| **Weekly Reflection** | Your Week in Review, Your Week, Decoded, weekly recap, report |
+| **insight** | observation, evidence-backed observation |
+| **search index** (Settings only) | Semantic Memory, embeddings, chunks, lexical fallback |
+| **streak**, **days in a row** | rhythm |
+| **Lock** | Privacy Lock |
+| **OffRecord** (in the app) | OffRecord AI Journal (App Store and marketing only), AI Voice Diary |
+| **iPhone** / **iPad** (via `DeviceNoun`) | this device, your device, locally |
+
+#### Length
+
+| Surface | Budget |
+|---|---|
+| Tab or navigation title | 1–2 words |
+| Button or menu item | 1–3 words, verb first |
+| Section or card header | 1–3 words |
+| Subtitle | Omit by default; otherwise 1 sentence, ≤12 words |
+| Empty state | Title ≤4 words, 1 sentence ≤12 words, at most 1 button |
+| Alert | Title ≤6 words; message ≤20 words or none |
+| Error | 1 sentence saying what to do next, ≤15 words |
+| Toast | ≤3 words (“Entry deleted”) |
+| Notification | Title ≤25 characters or none; body ≤60 characters |
+| Prompt | One question, ≤10 words |
+| Friday card | Title ≤7 words; body ≤20 words; explanation ≤12 words |
+| Accessibility label | 1–3 words, no control type. Hints are 3rd-person verb phrases with a period, only when the action isn’t obvious |
+| Widget gallery description | Starts with a verb, ≤10 words |
+| Permission string | 1 sentence, ≤15 words, says what it enables |
+
+#### Capitalization and punctuation
+
+- **Title Case:** tabs, navigation titles, buttons, menu items, toggles and row labels, section and card headers, alert titles, empty-state titles, widget names, intent titles, notification titles.
+- **Sentence case:** body text, subtitles, footers, placeholders, prompts, Friday’s speech, insight titles, accessibility hints, notification bodies.
+- Use `…` (one character) only for progress text and commands that open more input. Placeholders get no ellipsis.
+- No em dashes in UI strings; split the sentence. Use an en dash for ranges (`Sep 22–28`).
+- `·` is the only separator. Use curly apostrophes and quotes (’ “ ”).
+- Digits for numbers, contractions, and the serial comma. Never “please,” “Oops,” or “!”.
+
+#### Banned
+
+- **Words:** gentle, gently, softly, space to, safe space, journey, unlock, effortless, seamless, thread (as a metaphor), carry forward, Let’s, Here’s, It looks like, valid, brave, self-care, actually, simply, just (as filler), worth naming, worth noticing, Friday noticed.
+- **Patterns:** stacked rhetorical questions, groups of three, a second reassuring clause, and quotation marks around generated sentences.
+
+#### Where privacy is stated
+
+1. The onboarding privacy page.
+2. The privacy sheet on Today.
+3. The Privacy card in Settings.
+4. Permission strings.
+5. Moments where data would leave the app: share cards, export, the Apple Health toggle, the iCloud toggle, transcription consent, and the Spotlight toggle.
+6. One small “On-device” label in the Friday chat header.
+
+Everywhere else, leave it out.
+
+#### Examples
 
 Good:
 
 - “What do you want to remember?”
-- “Write or record”
-- “Your journal stays on this device.”
-- “Ask Friday what she noticed.”
-- “Starting to see patterns.”
+- “Record” / “Write”
+- “Nothing leaves your iPhone unless you export it or turn on iCloud.”
+- “I’m starting to see patterns.”
+- “Entry deleted”
 
 Avoid:
 
@@ -425,6 +508,8 @@ Avoid:
 - “Optimize your mental health.”
 - “AI-powered transformation.”
 - “We know how you feel.”
+- “Begin softly.” / “Hold it gently.”
+- “Everything stays on this device.” (on a screen that isn’t about privacy)
 
 ## Layout
 
