@@ -13,7 +13,7 @@ struct TodayHeroMetadataChip: View {
             if !iconOnly {
                 Text(title)
                     .font(OffRecordTypography.labelMedium)
-                    .lineLimit(1)
+                    .fixedSize(horizontal: false, vertical: true)
             }
         } icon: {
             Image(systemName: systemImage)
@@ -22,6 +22,7 @@ struct TodayHeroMetadataChip: View {
         .labelStyle(.titleAndIcon)
         .foregroundStyle(foreground)
         .padding(.horizontal, iconOnly ? 0 : OffRecordSpacing.md)
+        .padding(.vertical, iconOnly ? 0 : OffRecordSpacing.xs)
         .frame(minWidth: OffRecordLayout.minimumTapTarget, minHeight: OffRecordLayout.minimumTapTarget)
         .background(fill.opacity(0.94), in: Capsule())
         .overlay(Capsule().stroke(border, lineWidth: 1))

@@ -29,8 +29,9 @@ struct TodayHeroEntryPreviewCard: View {
 
                     Text(previewText)
                         .font(OffRecordTypography.bodyMedium)
-                        .foregroundStyle(primaryText.opacity(isNight ? 0.94 : 0.88))
+                        .foregroundStyle(primaryText)
                         .lineLimit(2)
+                        .accessibilityIdentifier("todayEntry.preview")
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
@@ -44,7 +45,7 @@ struct TodayHeroEntryPreviewCard: View {
             .padding(.horizontal, OffRecordSpacing.lg)
             .padding(.vertical, OffRecordSpacing.md)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: cardFill, useGlass: true)
+            .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: cardFill)
             .contentShape(RoundedRectangle(cornerRadius: OffRecordRadius.lg))
         }
         .buttonStyle(.plain)
@@ -83,8 +84,9 @@ struct TodayHeroEntryPreviewCard: View {
         isNight ? Color(hex: 0xD9CFDD) : OffRecordColor.textSecondary
     }
 
+    /// Opaque enough that small metadata stays readable over any part of the illustration.
     private var cardFill: Color {
-        isNight ? OffRecordColor.darkSurface.opacity(0.56) : OffRecordColor.surfacePrimary.opacity(0.78)
+        isNight ? OffRecordColor.darkSurface.opacity(0.86) : OffRecordColor.surfacePrimary
     }
 
     private var cardBorder: Color {

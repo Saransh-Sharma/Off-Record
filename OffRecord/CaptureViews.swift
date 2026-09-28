@@ -100,9 +100,18 @@ struct CaptureAccessoryBar: View {
                             .font(OffRecordTypography.labelMedium)
                             .foregroundStyle(OffRecordColor.textPrimary)
                         if !isInline {
-                            Text(capture.isCaptureDateToday ? "Private · on this device" : "For \(capture.captureDate.formatted(.dateTime.month(.abbreviated).day()))")
-                                .font(OffRecordTypography.annotation)
-                                .foregroundStyle(capture.isCaptureDateToday ? OffRecordColor.textSage : OffRecordColor.textWarm)
+                            // Text stays in the primary color so it reads on any glass backdrop;
+                            // the small icon carries the privacy (sage) or other-day (warm) cue.
+                            Label {
+                                Text(capture.isCaptureDateToday ? "Private · on this device" : "For \(capture.captureDate.formatted(.dateTime.month(.abbreviated).day()))")
+                                    .foregroundStyle(OffRecordColor.textPrimary)
+                            } icon: {
+                                Image(systemName: capture.isCaptureDateToday ? "lock.fill" : "calendar")
+                                    .foregroundStyle(capture.isCaptureDateToday ? OffRecordColor.textSage : OffRecordColor.textWarm)
+                                    .accessibilityHidden(true)
+                            }
+                            .labelStyle(.titleAndIcon)
+                            .font(OffRecordTypography.annotation)
                         }
                     }
                     .lineLimit(1)

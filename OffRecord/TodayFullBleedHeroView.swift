@@ -17,6 +17,7 @@ struct TodayFullBleedHeroView: View {
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private static let artReveal: CGFloat = 150
 
@@ -78,16 +79,7 @@ struct TodayFullBleedHeroView: View {
     private var readabilityOverlay: some View {
         ZStack {
             // A soft wash rising from the bottom keeps text readable over any illustration.
-            LinearGradient(
-                stops: [
-                    .init(color: .clear, location: 0.0),
-                    .init(color: washColor.opacity(0.18), location: 0.35),
-                    .init(color: washColor.opacity(isDarkPresentation ? 0.78 : 0.72), location: 0.72),
-                    .init(color: washColor.opacity(isDarkPresentation ? 0.92 : 0.9), location: 1.0)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
+            LinearGradient(stops: washStops, startPoint: .top, endPoint: .bottom)
             if colorScheme == .dark && !isNight {
                 Color.black.opacity(0.18)
             }
@@ -98,7 +90,11 @@ struct TodayFullBleedHeroView: View {
     // MARK: Chrome
 
     private var topChrome: some View {
-        HStack(alignment: .center, spacing: OffRecordSpacing.sm) {
+        // Same buttons at every size; very large text stacks them instead of clipping.
+        let layout = dynamicTypeSize >= .xxLarge
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: OffRecordSpacing.sm))
+            : AnyLayout(HStackLayout(alignment: .center, spacing: OffRecordSpacing.sm))
+        return layout {
             TodayHeroMetadataChip(
                 title: "\(entriesThisYear) this year",
                 systemImage: "calendar"
@@ -136,8 +132,9 @@ struct TodayFullBleedHeroView: View {
             VStack(alignment: .leading, spacing: OffRecordSpacing.xs) {
                 Text(greeting)
                     .font(OffRecordTypography.bodyLarge)
-                    .foregroundStyle(secondaryText)
-                    .lineLimit(2)
+                    // Primary color: it sits over the illustration, where secondary text is too faint.
+                    .foregroundStyle(primaryText)
+                    .fixedSize(horizontal: false, vertical: true)
 
                 Text(date.formatted(.dateTime.weekday(.wide).month(.wide).day()))
                     .font(.system(.largeTitle, design: .default, weight: .heavy))
@@ -179,19 +176,15 @@ struct TodayFullBleedHeroView: View {
     }
 
     private var actionRow: some View {
-        ViewThatFits(in: .horizontal) {
-            HStack(spacing: OffRecordSpacing.sm) {
-                speakButton
-                writeButton
-                anotherPromptButton
-            }
-            VStack(alignment: .leading, spacing: OffRecordSpacing.sm) {
-                HStack(spacing: OffRecordSpacing.sm) {
-                    speakButton
-                    writeButton
-                }
-                anotherPromptButton
-            }
+        // AnyLayout keeps the same buttons as the arrangement changes, so each one grows with
+        // Dynamic Type instead of being swapped out; large sizes stack them one per row.
+        let layout = dynamicTypeSize >= .xxLarge
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: OffRecordSpacing.sm))
+            : AnyLayout(HStackLayout(spacing: OffRecordSpacing.sm))
+        return layout {
+            speakButton
+            writeButton
+            anotherPromptButton
         }
     }
 
@@ -236,6 +229,25 @@ struct TodayFullBleedHeroView: View {
     /// Night art is dark; in dark mode every daypart is dimmed. Both use light text.
     private var isDarkPresentation: Bool {
         isNight || colorScheme == .dark
+    }
+
+    /// Dark mode puts light text over the bright daytime art, so the wash starts higher there.
+    private var washStops: [Gradient.Stop] {
+        if colorScheme == .dark && !isNight {
+            return [
+                .init(color: .clear, location: 0.0),
+                .init(color: washColor.opacity(0.45), location: 0.3),
+                .init(color: washColor.opacity(0.78), location: 0.5),
+                .init(color: washColor.opacity(0.9), location: 0.75),
+                .init(color: washColor.opacity(0.95), location: 1.0)
+            ]
+        }
+        return [
+            .init(color: .clear, location: 0.0),
+            .init(color: washColor.opacity(0.18), location: 0.35),
+            .init(color: washColor.opacity(isDarkPresentation ? 0.78 : 0.72), location: 0.72),
+            .init(color: washColor.opacity(isDarkPresentation ? 0.92 : 0.9), location: 1.0)
+        ]
     }
 
     private var washColor: Color {
