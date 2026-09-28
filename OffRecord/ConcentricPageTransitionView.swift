@@ -313,7 +313,6 @@ private struct ConcentricCircleButton: View {
     let action: () -> Void
 
     private let size: CGFloat = 60
-    @State private var glowPulse = false
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     private var isGlowActive: Bool { !isDisabled && !isAnimating && !reduceMotion }
@@ -334,19 +333,6 @@ private struct ConcentricCircleButton: View {
                         x: 0,
                         y: 6
                     )
-                    .overlay(
-                        Circle()
-                            .stroke(circleColor.opacity(isGlowActive ? 0.5 : 0), lineWidth: 3)
-                            .frame(width: size + 10, height: size + 10)
-                            .scaleEffect(glowPulse ? 1.18 : 1.0)
-                            .opacity(glowPulse ? 0.0 : 0.7)
-                            .animation(
-                                isGlowActive
-                                    ? .easeInOut(duration: 1.5).repeatForever(autoreverses: false)
-                                    : .default,
-                                value: glowPulse
-                            )
-                    )
                     .shadow(
                         color: circleColor.opacity(isGlowActive ? 0.45 : 0),
                         radius: isGlowActive ? 16 : 0,
@@ -360,16 +346,32 @@ private struct ConcentricCircleButton: View {
             }
         }
         .buttonStyle(.plain)
+        // The pulse ring sits outside the button so the tappable and accessibility frame
+        // stays the 60pt circle instead of growing and shrinking with the animation.
+        .background {
+            if isGlowActive {
+                // phaseAnimator only animates the ring's own scale and opacity, so the pulse can
+                // never loop a layout move of the button (a repeatForever transaction would).
+                Circle()
+                    .stroke(circleColor.opacity(0.5), lineWidth: 3)
+                    .frame(width: size + 10, height: size + 10)
+                    .phaseAnimator([false, true]) { ring, expanded in
+                        ring
+                            .scaleEffect(expanded ? 1.18 : 1.0)
+                            .opacity(expanded ? 0.0 : 0.7)
+                    } animation: { expanded in
+                        expanded ? .easeOut(duration: 1.5) : nil
+                    }
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
+        }
         .disabled(isDisabled)
         .opacity(isAnimating ? 0 : (isDisabled ? 0.55 : 1))
         .animation(.easeInOut(duration: 0.15), value: isAnimating)
         // VoiceOver reads the same words sighted people see next to the button.
         .accessibilityLabel(title)
         .accessibilityIdentifier("onboarding.primaryCTA")
-        .onAppear { glowPulse = true }
-        .onChange(of: isGlowActive) { _, active in
-            glowPulse = active
-        }
     }
 }
 
