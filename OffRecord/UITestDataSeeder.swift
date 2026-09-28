@@ -65,7 +65,7 @@ struct UITestDataSeeder {
         try? context.save()
     }
 
-    private static func seedPendingRouteIfNeeded(arguments: [String]) {
+    static func seedPendingRouteIfNeeded(arguments: [String]) {
         guard let marker = arguments.firstIndex(of: "-OpenRoute"),
               arguments.indices.contains(arguments.index(after: marker)) else {
             return

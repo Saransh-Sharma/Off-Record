@@ -504,13 +504,13 @@ final class OffRecordUITests: XCTestCase {
     }
 
     private func openSeededCherryBlossomEntry(in app: XCUIApplication) {
-        let firstEntry = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "cherry blossoms")).firstMatch
+        let firstEntry = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "maples are just starting")).firstMatch
         if firstEntry.waitForExistence(timeout: 5) {
             firstEntry.tap()
             return
         }
 
-        let fallbackEntry = app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] %@", "cherry blossoms")).firstMatch
+        let fallbackEntry = app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] %@", "maples are just starting")).firstMatch
         XCTAssertTrue(fallbackEntry.waitForExistence(timeout: 5))
         fallbackEntry.tap()
     }

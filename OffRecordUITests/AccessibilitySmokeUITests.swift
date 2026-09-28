@@ -27,7 +27,7 @@ final class AccessibilitySmokeUITests: XCTestCase {
         XCTAssertTrue(app.searchFields["timeline.searchField"].firstMatch.waitForExistence(timeout: 8))
         try auditCurrentScreen(app)
 
-        let entry = app.staticTexts.containingLabel("cherry blossoms").firstMatch
+        let entry = app.staticTexts.containingLabel("maples are just starting").firstMatch
         XCTAssertTrue(entry.waitForExistence(timeout: 8))
         entry.tap()
         XCTAssertTrue(app.staticTexts["entryDetail.mainText"].firstMatch.waitForExistence(timeout: 8))
