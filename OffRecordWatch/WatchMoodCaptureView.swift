@@ -27,13 +27,6 @@ struct WatchMoodCaptureView: View {
                     select(mood)
                 }
 
-                Text(selectedMood.supportiveCopy)
-                    .font(.caption.bold())
-                    .foregroundStyle(WatchPalette.secondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.72)
-                    .frame(maxWidth: .infinity)
-
                 WatchPrimaryButton(
                     title: saved ? "Saved" : "Save",
                     systemImage: saved ? "checkmark.circle.fill" : "heart.fill",
@@ -73,7 +66,7 @@ struct WatchMoodCaptureView: View {
         .animation(reduceMotion ? nil : .spring(response: 0.22, dampingFraction: 0.74), value: selectedMood)
         .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: saved)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Mood capture")
+        .accessibilityLabel("Mood")
         .accessibilityValue(selectedMood.displayName)
         .accessibilityHint("Turn the Digital Crown or choose a mood, then save.")
     }

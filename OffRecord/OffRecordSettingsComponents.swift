@@ -418,7 +418,7 @@ struct PrivacyGlanceRow: Identifiable {
     let isPositive: Bool
 }
 
-/// One place that answers "what leaves my device?" with live status.
+/// The one place Settings states privacy, with live status for each row.
 struct PrivacyAtAGlanceCard: View {
     let rows: [PrivacyGlanceRow]
     let onSelect: (String) -> Void
@@ -434,11 +434,11 @@ struct PrivacyAtAGlanceCard: View {
                     iconSize: 18
                 )
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("Privacy at a glance")
+                    Text("Privacy")
                         .font(OffRecordTypography.cardTitle)
                         .foregroundStyle(OffRecordColor.textHeading)
                         .accessibilityAddTraits(.isHeader)
-                    Text("Your journal, audio, and AI stay on this device.")
+                    Text("Your entries, recordings, and AI stay on this \(DeviceNoun.current).")
                         .font(OffRecordTypography.metadata)
                         .foregroundStyle(OffRecordColor.textSecondary)
                 }

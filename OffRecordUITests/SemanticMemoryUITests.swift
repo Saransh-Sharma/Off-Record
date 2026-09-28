@@ -329,7 +329,7 @@ final class SemanticMemoryUITests: XCTestCase {
         XCTAssertTrue(deleteButton.waitForExistence(timeout: 4))
         deleteButton.tap()
 
-        let confirm = app.buttons["Delete Local Index"]
+        let confirm = app.alerts.buttons["Delete Index"]
         XCTAssertTrue(confirm.waitForExistence(timeout: 4))
         confirm.tap()
     }

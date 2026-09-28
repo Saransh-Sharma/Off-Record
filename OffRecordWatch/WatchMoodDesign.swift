@@ -41,20 +41,6 @@ enum WatchMoodValue: String, CaseIterable, Identifiable, Codable {
         return "I feel \(displayName.lowercased())."
     }
 
-    var supportiveCopy: String {
-        switch self {
-        case .happy: return "Let it land."
-        case .calm: return "A steady moment."
-        case .grateful: return "Something mattered."
-        case .excited: return "There's energy here."
-        case .tired: return "Move slowly."
-        case .anxious: return "Come back to now."
-        case .sad: return "Hold it softly."
-        case .angry: return "Name it gently."
-        case .none: return "Nothing to force."
-        }
-    }
-
     var faceAssetName: String {
         switch self {
         case .happy: return "Happy_face"

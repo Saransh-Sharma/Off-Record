@@ -14,8 +14,8 @@ struct QuickCaptureHomeView: View {
                     header
 
                     QuickCaptureActionCard(
-                        title: "Mood capture",
-                        subtitle: "Capture how you feel",
+                        title: "Mood",
+                        subtitle: "Log how you feel",
                         systemImage: "leaf.fill",
                         fill: WatchPalette.mintSurface,
                         foreground: WatchPalette.sageText,
@@ -26,7 +26,7 @@ struct QuickCaptureHomeView: View {
 
                     QuickCaptureActionCard(
                         title: "Speak",
-                        subtitle: "Save a voice thought",
+                        subtitle: "Say what’s on your mind",
                         systemImage: "quote.bubble.fill",
                         fill: WatchPalette.lavenderSurface,
                         foreground: WatchPalette.lavenderText,
@@ -57,9 +57,6 @@ struct QuickCaptureHomeView: View {
     private var header: some View {
         VStack(alignment: .leading, spacing: 1) {
             Text("OffRecord")
-                .font(.caption.bold())
-                .foregroundStyle(WatchPalette.mutedText)
-            Text("Quick Capture")
                 .font(.title3.bold())
                 .foregroundStyle(WatchPalette.text)
                 .lineLimit(1)

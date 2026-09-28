@@ -16,10 +16,10 @@ struct RecordEntryControl: ControlWidget {
     var body: some ControlWidgetConfiguration {
         StaticControlConfiguration(kind: Self.kind) {
             ControlWidgetButton(action: RecordJournalIntent()) {
-                Label("Record entry", systemImage: "mic.fill")
+                Label("Record Entry", systemImage: "mic.fill")
             }
         }
-        .displayName("Record entry")
-        .description("Start a private voice entry in OffRecord.")
+        .displayName("Record Entry")
+        .description("Starts a recording in OffRecord.")
     }
 }

@@ -40,8 +40,8 @@ enum JournalMoodIntentValue: String, AppEnum {
 /// Used by Siri, App Shortcuts, the Quick Record widget, and the Control Center control.
 @available(iOS 17.0, *)
 struct RecordJournalIntent: AppIntent {
-    static var title: LocalizedStringResource = "Record Journal"
-    static var description = IntentDescription("Opens OffRecord to record a private voice journal entry.")
+    static var title: LocalizedStringResource = "Record Entry"
+    static var description = IntentDescription("Starts a recording in OffRecord.")
     static var openAppWhenRun: Bool = true
     static var authenticationPolicy: IntentAuthenticationPolicy = .requiresLocalDeviceAuthentication
 
@@ -49,7 +49,7 @@ struct RecordJournalIntent: AppIntent {
         #if !OFFRECORD_WIDGET_EXTENSION
         await SystemSurfaceActions.openRecording()
         #endif
-        return .result(dialog: "Opening OffRecord to record.")
+        return .result(dialog: "Opening OffRecord.")
     }
 }
 
@@ -59,7 +59,7 @@ struct RecordJournalIntent: AppIntent {
 @available(iOS 17.0, *)
 struct LogMoodIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Log Mood"
-    static var description = IntentDescription("Saves a mood on today's private journal entry.")
+    static var description = IntentDescription("Sets today’s mood.")
     static var isDiscoverable: Bool = false
     static var authenticationPolicy: IntentAuthenticationPolicy = .requiresLocalDeviceAuthentication
 
@@ -84,7 +84,7 @@ struct LogMoodIntent: LiveActivityIntent {
 @available(iOS 17.0, *)
 struct StopCaptureIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Stop Recording"
-    static var description = IntentDescription("Stops the current OffRecord recording and saves it privately.")
+    static var description = IntentDescription("Stops and saves the recording.")
     static var isDiscoverable: Bool = false
 
     func perform() async throws -> some IntentResult {
@@ -99,7 +99,7 @@ struct StopCaptureIntent: LiveActivityIntent {
 @available(iOS 17.0, *)
 struct ToggleCapturePauseIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Pause or Resume Recording"
-    static var description = IntentDescription("Pauses or resumes the current OffRecord recording.")
+    static var description = IntentDescription("Pauses or resumes the recording.")
     static var isDiscoverable: Bool = false
 
     func perform() async throws -> some IntentResult {

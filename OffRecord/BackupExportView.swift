@@ -2,11 +2,14 @@
 //  BackupExportView.swift
 //  OffRecord
 //
-//  View for exporting diary data in various formats.
+//  Export and restore screens for journal backups and readable files.
 //
 
 import SwiftUI
 import UniformTypeIdentifiers
+import os.log
+
+private let backupLogger = Logger(subsystem: "com.singularity.offrecord", category: "Backup")
 
 struct BackupExportView: View {
     let entries: [DiaryEntry]
@@ -52,12 +55,10 @@ struct BackupExportView: View {
 
     private var filterFooterText: String {
         switch selectedFormat {
-        case .json:
-            return "JSON backups always include all entries so they can be restored completely."
-        case .encryptedBackup:
-            return "Encrypted backups always include all entries and can be imported back into OffRecord."
+        case .json, .encryptedBackup:
+            return "Backups include every entry."
         default:
-            return "\(filteredEntryCount) entries will be exported."
+            return String(AttributedString(localized: "^[\(filteredEntryCount) entry](inflect: true)").characters)
         }
     }
     
@@ -65,8 +66,7 @@ struct BackupExportView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: OffRecordSpacing.lg) {
                 SettingsCard(
-                    title: "Export Format",
-                    subtitle: "Choose a restore-ready backup or a readable file for safekeeping.",
+                    title: "Format",
                     systemImage: "doc.badge.arrow.up",
                     tint: OffRecordColor.textSky,
                     fill: OffRecordColor.surfacePrimary
@@ -79,7 +79,7 @@ struct BackupExportView: View {
                         HStack(spacing: 12) {
                             SettingsRow(
                                 systemImage: format.icon,
-                                title: format.rawValue,
+                                title: format.title,
                                 subtitle: format.description,
                                 tint: selectedFormat == format ? OffRecordColor.textSky : OffRecordColor.textSecondary
                             )
@@ -92,37 +92,35 @@ struct BackupExportView: View {
                         }
                     }
                     .buttonStyle(.plain)
-                    .accessibilityLabel(format.rawValue)
-                    .accessibilityValue(selectedFormat == format ? "Selected" : "Not selected")
+                    .accessibilityLabel(format.title)
                     .accessibilityHint(format.description)
                     .accessibilityAddTraits(selectedFormat == format ? [.isSelected] : [])
                 }
             }
             
                 SettingsCard(
-                    title: "Filter",
-                    subtitle: filterFooterText,
+                    title: "Entries",
+                    footer: filterFooterText,
                     systemImage: "line.3.horizontal.decrease.circle",
                     tint: OffRecordColor.textAqua,
                     fill: OffRecordColor.surfaceMint
                 ) {
-                Toggle("Include all entries", isOn: $includeAllEntries)
+                Toggle("All Entries", isOn: $includeAllEntries)
                 
                 if !includeAllEntries {
                     DatePicker("From", selection: $startDate, displayedComponents: .date)
                     DatePicker("To", selection: $endDate, displayedComponents: .date)
                 }
                 
-                Toggle("Starred entries only", isOn: $starredOnly)
+                Toggle("Starred Only", isOn: $starredOnly)
             }
             .disabled(filtersAreDisabled)
 
             // Password fields for encrypted backup
             if selectedFormat == .encryptedBackup {
                     SettingsCard(
-                        title: "Encryption Password",
-                        subtitle: "Choose a strong password. You'll need it to restore this backup.",
-                        footer: "There is no way to recover a forgotten password.",
+                        title: "Password",
+                        footer: "You’ll need this to restore. It can’t be recovered.",
                         systemImage: "lock.shield.fill",
                         tint: OffRecordColor.textSage,
                         fill: OffRecordColor.surfaceSage
@@ -133,31 +131,13 @@ struct BackupExportView: View {
                             .textFieldStyle(.roundedBorder)
 
                     if !encryptionPassword.isEmpty && !confirmPassword.isEmpty && encryptionPassword != confirmPassword {
-                        Text("Passwords do not match")
+                        Text("Passwords don’t match")
                             .font(OffRecordTypography.metadata)
                             .foregroundColor(OffRecordColor.textCoral)
                     }
                 }
             }
 
-                SettingsCard(
-                    title: "Export Privacy",
-                    subtitle: "Exports are created on this device.",
-                    systemImage: "lock.fill",
-                    tint: OffRecordColor.textSage,
-                    fill: OffRecordColor.surfacePrimary
-                ) {
-                if selectedFormat == .json || selectedFormat == .encryptedBackup {
-                        SettingsRow(systemImage: "arrow.triangle.2.circlepath", title: "Can be imported back into OffRecord", tint: OffRecordColor.textSage)
-                }
-
-                if selectedFormat == .encryptedBackup {
-                        SettingsRow(systemImage: "lock.shield.fill", title: "AES-256 encrypted with your password", tint: OffRecordColor.textSage)
-                }
-                
-                    SettingsRow(systemImage: "lock.fill", title: "File saved to your device only", tint: OffRecordColor.textSky)
-                }
-            
                 Button {
                     exportData()
                 } label: {
@@ -165,8 +145,10 @@ struct BackupExportView: View {
                         if isExporting {
                             ProgressView()
                                 .tint(OffRecordColor.textInverse)
+                            Text("Exporting…")
+                        } else {
+                            Text("Export ^[\(filteredEntryCount) Entry](inflect: true)")
                         }
-                        Text(isExporting ? "Exporting..." : "Export \(filteredEntryCount) Entries")
                     }
                 }
                 .buttonStyle(SettingsPrimaryButtonStyle())
@@ -178,9 +160,9 @@ struct BackupExportView: View {
             .padding(.vertical, OffRecordSpacing.screenY)
         }
         .background(OffRecordAppBackground())
-        .navigationTitle("Export Data")
+        .navigationTitle("Export")
         .navigationBarTitleDisplayMode(.inline)
-        .alert("Export Error", isPresented: $showError) {
+        .alert("Couldn’t Export", isPresented: $showError) {
             Button("OK", role: .cancel) { }
         } message: {
             Text(errorMessage)
@@ -250,9 +232,10 @@ struct BackupExportView: View {
                     HapticManager.shared.entrySaved()
                 }
             } catch {
+                backupLogger.error("Export failed: \(error.localizedDescription, privacy: .public)")
                 await MainActor.run {
                     isExporting = false
-                    errorMessage = error.localizedDescription
+                    errorMessage = "Try again."
                     showError = true
                     HapticManager.shared.error()
                 }
@@ -284,28 +267,15 @@ struct ImportBackupView: View {
         ScrollView {
             VStack(alignment: .leading, spacing: OffRecordSpacing.lg) {
                 SettingsCard(
-                    title: "Import Backup",
-                    subtitle: "Restore entries from a JSON backup or encrypted .dvx backup exported from OffRecord.",
+                    title: "Restore from Backup",
+                    subtitle: "Choose a backup file exported from OffRecord.",
                     systemImage: "doc.badge.plus",
                     tint: OffRecordColor.textSky,
                     fill: OffRecordColor.surfaceBlue
                 ) {
-                    Text("Select a backup file. OffRecord will skip duplicates and preserve existing entries.")
-                        .font(OffRecordTypography.bodySmall)
-                        .foregroundColor(OffRecordColor.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-
-                SettingsCard(
-                    title: "How it works",
-                    subtitle: "Imports are additive and stay under your control.",
-                    systemImage: "checkmark.seal",
-                    tint: OffRecordColor.textSage,
-                    fill: OffRecordColor.surfacePrimary
-                ) {
-                    SettingsRow(systemImage: "checkmark.circle.fill", title: "Duplicate entries are automatically skipped", tint: OffRecordColor.textSage)
-                    SettingsRow(systemImage: "arrow.triangle.merge", title: "Existing entries are preserved", tint: OffRecordColor.textSky)
-                    SettingsRow(systemImage: "icloud.and.arrow.up", title: "Imported entries sync to iCloud when sync is enabled", tint: OffRecordColor.textLavender)
+                    SettingsRow(systemImage: "checkmark.circle.fill", title: "Entries you already have are skipped.", tint: OffRecordColor.textSage)
+                    SettingsRow(systemImage: "arrow.triangle.merge", title: "Nothing is deleted.", tint: OffRecordColor.textSky)
+                    SettingsRow(systemImage: "icloud.and.arrow.up", title: "Restored entries sync if iCloud is on.", tint: OffRecordColor.textLavender)
                 }
 
                 Button {
@@ -317,7 +287,7 @@ struct ImportBackupView: View {
                             ProgressView()
                                 .tint(OffRecordColor.textInverse)
                         }
-                        Text(isImporting ? "Importing..." : "Select Backup File")
+                        Text(isImporting ? "Restoring…" : "Choose Backup File")
                     }
                 }
                 .buttonStyle(SettingsPrimaryButtonStyle())
@@ -329,7 +299,7 @@ struct ImportBackupView: View {
             .padding(.vertical, OffRecordSpacing.screenY)
         }
         .background(OffRecordAppBackground())
-        .navigationTitle("Import Backup")
+        .navigationTitle("Restore from Backup")
         .navigationBarTitleDisplayMode(.inline)
         .fileImporter(
             isPresented: $showFilePicker,
@@ -344,7 +314,7 @@ struct ImportBackupView: View {
                     VStack(alignment: .leading, spacing: OffRecordSpacing.lg) {
                         SettingsCard(
                             title: "Encrypted Backup",
-                            subtitle: "Enter the password used when this encrypted backup was created.",
+                            subtitle: "Enter this backup’s password.",
                             systemImage: "lock.shield.fill",
                             tint: OffRecordColor.textSage,
                             fill: OffRecordColor.surfaceSage
@@ -361,7 +331,7 @@ struct ImportBackupView: View {
                             showPasswordPrompt = false
                             importEncryptedBackup(from: url, password: password)
                         } label: {
-                            Text("Decrypt & Import")
+                            Text("Restore")
                         }
                         .buttonStyle(SettingsPrimaryButtonStyle())
                         .disabled(importPassword.isEmpty)
@@ -381,7 +351,7 @@ struct ImportBackupView: View {
             }
             .presentationDetents([.medium])
         }
-        .alert("Import Complete", isPresented: $showResult) {
+        .alert(resultTitle, isPresented: $showResult) {
             Button("OK") {
                 if case .success = importResult {
                     dismiss()
@@ -390,7 +360,7 @@ struct ImportBackupView: View {
         } message: {
             switch importResult {
             case .success(let count):
-                Text("Successfully imported \(count) new entries.")
+                Text("^[\(count) entry](inflect: true) added.")
             case .error(let message):
                 Text(message)
             case .none:
@@ -399,6 +369,13 @@ struct ImportBackupView: View {
         }
     }
     
+    private var resultTitle: String {
+        if case .error = importResult {
+            return "Couldn’t Restore"
+        }
+        return "Restore Complete"
+    }
+
     private func handleFileSelection(_ result: Result<[URL], Error>) {
         switch result {
         case .success(let urls):
@@ -408,7 +385,7 @@ struct ImportBackupView: View {
                 guard url.startAccessingSecurityScopedResource() else {
                     pendingEncryptedURL = nil
                     importPassword = ""
-                    importResult = .error("Unable to access the selected file.")
+                    importResult = .error("Couldn’t open that file.")
                     showResult = true
                     return
                 }
@@ -419,7 +396,8 @@ struct ImportBackupView: View {
                 importBackup(from: url)
             }
         case .failure(let error):
-            importResult = .error(error.localizedDescription)
+            backupLogger.error("Backup file selection failed: \(error.localizedDescription, privacy: .public)")
+            importResult = .error("Couldn’t open that file.")
             showResult = true
         }
     }
@@ -442,8 +420,9 @@ struct ImportBackupView: View {
                 showResult = true
                 HapticManager.shared.entrySaved()
             } catch {
+                backupLogger.error("Restore failed: \(error.localizedDescription, privacy: .public)")
                 isImporting = false
-                importResult = .error("Failed to import: \(error.localizedDescription)")
+                importResult = .error("Couldn’t restore. Check the password and try again.")
                 showResult = true
                 HapticManager.shared.error()
             }
@@ -455,7 +434,7 @@ struct ImportBackupView: View {
         
         // Start accessing security-scoped resource
         guard url.startAccessingSecurityScopedResource() else {
-            importResult = .error("Unable to access the selected file.")
+            importResult = .error("Couldn’t open that file.")
             showResult = true
             isImporting = false
             return
@@ -472,8 +451,9 @@ struct ImportBackupView: View {
                 showResult = true
                 HapticManager.shared.entrySaved()
             } catch {
+                backupLogger.error("Restore failed: \(error.localizedDescription, privacy: .public)")
                 isImporting = false
-                importResult = .error("Failed to import: \(error.localizedDescription)")
+                importResult = .error("Couldn’t restore this backup.")
                 showResult = true
                 HapticManager.shared.error()
             }

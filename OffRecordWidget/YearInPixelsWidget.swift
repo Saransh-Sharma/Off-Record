@@ -53,7 +53,7 @@ struct YearInPixelsView: View {
     private var header: some View {
         HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 0) {
-                Text("Year in pixels")
+                Text("Year in Pixels")
                     .font(OffRecordWidgetTypography.eyebrow)
                     .foregroundStyle(OffRecordColor.textSecondary)
                 Text(String(summary.year))
@@ -65,7 +65,7 @@ struct YearInPixelsView: View {
                 Text("\(summary.journaledDays)")
                     .font(OffRecordWidgetTypography.numberSmall)
                     .foregroundStyle(OffRecordColor.textHeading)
-                Text(summary.topMood.map { "days · mostly \($0.displayName.lowercased())" } ?? "days journaled")
+                Text(summary.topMood.map { "\(dayUnit) · mostly \($0.displayName.lowercased())" } ?? "\(dayUnit) journaled")
                     .font(OffRecordWidgetTypography.micro)
                     .foregroundStyle(OffRecordColor.textSecondary)
                     .lineLimit(1)
@@ -86,8 +86,13 @@ struct YearInPixelsView: View {
         .accessibilityHidden(true)
     }
 
+    /// The unit under the day count, which is drawn as its own larger number.
+    private var dayUnit: String {
+        summary.journaledDays == 1 ? "day" : "days"
+    }
+
     private var accessibilitySummary: String {
-        var text = "\(summary.journaledDays) days journaled in \(summary.year)"
+        var text = String(AttributedString(localized: "^[\(summary.journaledDays) day](inflect: true) journaled in \(String(summary.year))").characters)
         if let mood = summary.topMood {
             text += ", most often \(mood.displayName)"
         }
@@ -191,7 +196,7 @@ struct YearInPixelsWidget: Widget {
                 .widgetURL(OffRecordWidgetRoute.timeline)
         }
         .configurationDisplayName("Year in Pixels")
-        .description("Every day of the year, colored by the mood you logged.")
+        .description("See your year, colored by mood.")
         .supportedFamilies([.systemLarge, .systemExtraLarge])
     }
 }

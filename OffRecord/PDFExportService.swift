@@ -2,7 +2,7 @@
 //  PDFExportService.swift
 //  OffRecord
 //
-//  Generates PDF exports of diary entries.
+//  Generates PDF exports of journal entries.
 //  PDFs are created locally and stored in temporary directory until shared.
 //
 //  Privacy: PDF generation happens entirely on-device.
@@ -37,7 +37,7 @@ enum PDFPaperSize: String, CaseIterable, Identifiable {
 }
 
 struct PDFExportService {
-    private static let footerText = "Created with OffRecord AI Journal"
+    private static let footerText = "Made with OffRecord"
     private static let margin: CGFloat = 40
     private static let footerHeight: CGFloat = 30
 
@@ -240,7 +240,7 @@ struct PDFExportService {
 
         // Create safe filename from period title
         let safeTitle = periodTitle.replacingOccurrences(of: " ", with: "-")
-        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("OffRecord AI Journal-\(safeTitle)-\(UUID().uuidString).pdf")
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("OffRecord Journal-\(safeTitle)-\(UUID().uuidString).pdf")
         try data.write(to: tempURL)
         return tempURL
     }
@@ -258,7 +258,7 @@ struct PDFExportService {
         var yPosition: CGFloat = pageRect.height * 0.3
 
         // App name / Title
-        let titleText = "OffRecord AI Journal"
+        let titleText = "Journal"
         let titleAttrs: [NSAttributedString.Key: Any] = [
             .font: UIFont.systemFont(ofSize: 36, weight: .light),
             .foregroundColor: PDFExportPalette.textSecondary
@@ -326,7 +326,7 @@ struct PDFExportService {
             .foregroundColor: PDFExportPalette.textSecondary
         ]
 
-        let countText = "\(entryCount) entr\(entryCount == 1 ? "y" : "ies")"
+        let countText = String(AttributedString(localized: "^[\(entryCount) entry](inflect: true)").characters)
         let countSize = (countText as NSString).size(withAttributes: infoAttrs)
         (countText as NSString).draw(
             at: CGPoint(x: centerX - countSize.width / 2, y: bottomY),

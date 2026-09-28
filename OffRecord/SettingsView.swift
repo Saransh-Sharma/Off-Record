@@ -2,9 +2,12 @@ import SwiftUI
 import TranscriptionKit
 import CoreData
 import AppIntents
+import os.log
 #if os(iOS)
 import UIKit
 #endif
+
+private let settingsLogger = Logger(subsystem: "com.singularity.offrecord", category: "Settings")
 
 struct SettingsView: View {
     @Environment(\.managedObjectContext) private var viewContext
@@ -96,7 +99,6 @@ struct SettingsView: View {
 
                     settingsGroup(
                         title: "Journal & Reminders",
-                        subtitle: "Tune the habit-building parts of OffRecord without exposing journal content.",
                         columns: columns,
                         items: [
                             .init(id: "goal", keywords: "weekly goal journaling target habit", view: AnyView(journalingGoalSection)),
@@ -107,20 +109,18 @@ struct SettingsView: View {
 
                     settingsGroup(
                         title: "Privacy & AI",
-                        subtitle: "Control local intelligence, search surfaces, and device-level privacy.",
                         columns: columns,
                         items: [
-                            .init(id: "lock", keywords: "privacy lock face id touch id passcode security", view: AnyView(securitySection)),
-                            .init(id: "localAI", keywords: "local ai transcription speech offline privacy", view: AnyView(localAIPrivacySection)),
+                            .init(id: "lock", keywords: "lock face id touch id passcode privacy security", view: AnyView(securitySection)),
+                            .init(id: "localAI", keywords: "on-device ai transcription speech offline privacy", view: AnyView(localAIPrivacySection)),
                             .init(id: "health", keywords: "apple health state of mind mood sync", view: AnyView(healthSection)),
-                            .init(id: "semantic", keywords: "semantic memory index search friday rebuild delete", view: AnyView(semanticMemorySection)),
+                            .init(id: "semantic", keywords: "search index meaning friday rebuild delete", view: AnyView(semanticMemorySection)),
                             .init(id: "spotlight", keywords: "siri spotlight system search shortcuts", view: AnyView(systemSearchSection))
                         ]
                     )
 
                     settingsGroup(
                         title: "Data & Export",
-                        subtitle: "Export, back up, sync, and review what OffRecord stores on this device.",
                         columns: columns,
                         items: [
                             .init(id: "export", keywords: "export pdf print", view: AnyView(exportSection)),
@@ -132,7 +132,6 @@ struct SettingsView: View {
 
                     settingsGroup(
                         title: "Appearance",
-                        subtitle: nil,
                         columns: columns,
                         items: [
                             .init(id: "theme", keywords: "theme appearance dark light color accent", view: AnyView(appearanceSection))
@@ -141,7 +140,6 @@ struct SettingsView: View {
 
                     settingsGroup(
                         title: "About",
-                        subtitle: nil,
                         columns: columns,
                         items: [
                             .init(id: "privacyPolicy", keywords: "privacy policy data not collected", view: AnyView(privacySection)),
@@ -161,7 +159,7 @@ struct SettingsView: View {
             }
         }
         .background(OffRecordAppBackground())
-        .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search settings")
+        .searchable(text: $searchText, placement: .navigationBarDrawer(displayMode: .automatic), prompt: "Search")
         .onAppear {
             calculateStorage()
         }
@@ -169,7 +167,7 @@ struct SettingsView: View {
             await refreshSettingsStats()
         }
         .navigationTitle("Settings")
-        .alert("Notifications Disabled", isPresented: $showPermissionDeniedAlert) {
+        .alert("Notifications Are Off", isPresented: $showPermissionDeniedAlert) {
             #if os(iOS)
             Button("Open Settings") {
                 if let url = URL(string: UIApplication.openSettingsURLString) {
@@ -179,9 +177,9 @@ struct SettingsView: View {
             #endif
             Button("OK", role: .cancel) { }
         } message: {
-            Text("Please enable notifications for OffRecord in Settings to receive daily reminders.")
+            Text("Turn on notifications for OffRecord in Settings to get reminders.")
         }
-        .alert("Weekly Notifications Disabled", isPresented: $showWeeklyNotificationPermissionDeniedAlert) {
+        .alert("Notifications Are Off", isPresented: $showWeeklyNotificationPermissionDeniedAlert) {
             #if os(iOS)
             Button("Open Settings") {
                 if let url = URL(string: UIApplication.openNotificationSettingsURLString) {
@@ -193,9 +191,9 @@ struct SettingsView: View {
             #endif
             Button("OK", role: .cancel) { }
         } message: {
-            Text("Enable notifications for OffRecord to receive your private weekly reflection reminder.")
+            Text("Turn on notifications for OffRecord in Settings to get the weekly reminder.")
         }
-        .alert("Export error", isPresented: Binding(
+        .alert("Couldn’t Export", isPresented: Binding(
             get: { exportError != nil },
             set: { if !$0 { exportError = nil } }
         )) {
@@ -203,18 +201,18 @@ struct SettingsView: View {
         } message: {
             Text(exportError ?? "")
         }
-        .alert("Restart Required", isPresented: $showCloudSyncRestartAlert) {
+        .alert("Restart OffRecord", isPresented: $showCloudSyncRestartAlert) {
             Button("OK", role: .cancel) { }
         } message: {
-            Text("Restart OffRecord for the iCloud sync change to take effect.")
+            Text("Close and reopen OffRecord to apply the iCloud change.")
         }
-        .alert("Delete Semantic Memory Index?", isPresented: $showDeleteSemanticIndexConfirm) {
-            Button("Delete Local Index", role: .destructive) {
+        .alert("Delete Search Index?", isPresented: $showDeleteSemanticIndexConfirm) {
+            Button("Delete Index", role: .destructive) {
                 semanticMemory.deleteIndex()
             }
             Button("Cancel", role: .cancel) { }
         } message: {
-            Text("This removes only derived local search data. Your journal entries, photos, audio, exports, widgets, and iCloud sync are not affected.")
+            Text("Your entries aren’t affected. You can rebuild it anytime.")
         }
         .sheet(item: Binding(
             get: { exportURL.map { IdentifiableURL(url: $0) } },
@@ -266,8 +264,8 @@ struct SettingsView: View {
     private var allSearchKeywords: [String] {
         [
             "weekly goal journaling target habit", "daily reminder notification time", "weekly reflection report notification",
-            "privacy lock face id touch id passcode security", "local ai transcription speech offline privacy",
-            "apple health state of mind mood sync", "semantic memory index search friday rebuild delete",
+            "lock face id touch id passcode privacy security", "on-device ai transcription speech offline privacy",
+            "apple health state of mind mood sync", "search index meaning friday rebuild delete",
             "siri spotlight system search shortcuts", "export pdf print", "backup encrypted json markdown csv import restore",
             "icloud sync cloud devices", "storage space audio photos delete", "theme appearance dark light color accent",
             "privacy policy data not collected", "about version support"
@@ -277,13 +275,12 @@ struct SettingsView: View {
     @ViewBuilder
     private func settingsGroup(
         title: String,
-        subtitle: String?,
         columns: [GridItem],
         items: [SettingsItem]
     ) -> some View {
         let visible = items.filter(matches)
         if !visible.isEmpty {
-            SettingsGroup(title: title, subtitle: isSearching ? nil : subtitle) {
+            SettingsGroup(title: title) {
                 LazyVGrid(columns: columns, spacing: OffRecordSpacing.lg) {
                     ForEach(visible) { item in
                         item.view.id(item.id)
@@ -298,22 +295,22 @@ struct SettingsView: View {
             PrivacyGlanceRow(
                 id: "lock",
                 systemImage: "lock.shield.fill",
-                title: "Privacy lock",
+                title: "Lock",
                 status: lockManager.isEnabled ? "On" : "Off",
                 isPositive: lockManager.isEnabled
             ),
             PrivacyGlanceRow(
                 id: "localAI",
                 systemImage: "cpu.fill",
-                title: "AI & transcription",
-                status: "On this device",
+                title: "AI & Transcription",
+                status: "On-device",
                 isPositive: true
             ),
             PrivacyGlanceRow(
                 id: "icloud",
                 systemImage: iCloudSyncEnabled ? "icloud.fill" : "icloud.slash",
                 title: "iCloud Sync",
-                status: iCloudSyncEnabled ? "Your iCloud only" : "Off",
+                status: iCloudSyncEnabled ? "Your iCloud" : "Off",
                 isPositive: true
             ),
             PrivacyGlanceRow(
@@ -327,7 +324,7 @@ struct SettingsView: View {
                 id: "spotlight",
                 systemImage: "magnifyingglass",
                 title: "Spotlight",
-                status: spotlightMetadataIndexingEnabled ? "Metadata only" : "Off",
+                status: spotlightMetadataIndexingEnabled ? "Dates and moods only" : "Off",
                 isPositive: true
             )
         ]
@@ -336,13 +333,12 @@ struct SettingsView: View {
     private var healthSection: some View {
         SettingsCard(
             title: "Apple Health",
-            subtitle: "Save the moods you pick to Health as State of Mind.",
-            footer: "Only the mood and time are written — never journal text, transcripts, or people. OffRecord doesn't read any Health data.",
+            footer: "Only the mood and time are saved. OffRecord never reads Health data.",
             systemImage: "heart.text.square.fill",
             tint: OffRecordColor.textBlush,
             fill: OffRecordColor.surfaceBlush
         ) {
-            Toggle("Save moods to Apple Health", isOn: Binding(
+            Toggle("Save Moods to Health", isOn: Binding(
                 get: { health.isEnabled },
                 set: { newValue in
                     Task { await health.setEnabled(newValue) }
@@ -352,7 +348,7 @@ struct SettingsView: View {
             .accessibilityIdentifier("settings.health.toggle")
 
             if !health.isAvailable {
-                Text("Apple Health isn't available on this device.")
+                Text("Apple Health isn’t available on this \(DeviceNoun.current).")
                     .font(OffRecordTypography.metadata)
                     .foregroundStyle(OffRecordColor.textSecondary)
             } else if let error = health.lastError {
@@ -368,22 +364,20 @@ struct SettingsView: View {
     private var exportSection: some View {
         SettingsCard(
             title: "PDF Export",
-            subtitle: "Create a readable PDF for a month, quarter, or year.",
-            footer: "Your name and description appear only on the exported PDF cover page.",
+            footer: "Name and subtitle appear on the cover only.",
             systemImage: "doc.richtext",
             tint: OffRecordColor.textSky,
             fill: OffRecordColor.surfaceBlue
         ) {
-            TextField("Your name", text: $authorName)
+            TextField("Name", text: $authorName)
                 .textFieldStyle(.roundedBorder)
-            TextField("Description (optional)", text: $authorDescription)
+            TextField("Subtitle (optional)", text: $authorDescription)
                 .textFieldStyle(.roundedBorder)
 
             if years.isEmpty {
                 SettingsRow(
                     systemImage: "tray",
-                    title: "No entries to export yet",
-                    subtitle: "Record a few private entries first, then come back to create a PDF.",
+                    title: "No entries to export yet.",
                     tint: OffRecordColor.textSky
                 )
             } else {
@@ -424,24 +418,24 @@ struct SettingsView: View {
                             )
 
                             Picker("Quarter", selection: quarterBinding) {
-                                Text("Q1 (Jan - Mar)").tag(1)
-                                Text("Q2 (Apr - Jun)").tag(2)
-                                Text("Q3 (Jul - Sep)").tag(3)
-                                Text("Q4 (Oct - Dec)").tag(4)
+                                Text("Q1 (Jan–Mar)").tag(1)
+                                Text("Q2 (Apr–Jun)").tag(2)
+                                Text("Q3 (Jul–Sep)").tag(3)
+                                Text("Q4 (Oct–Dec)").tag(4)
                             }
                         }
 
-                        Picker("Paper size", selection: $selectedPaperSize) {
+                        Picker("Paper Size", selection: $selectedPaperSize) {
                             ForEach(PDFPaperSize.allCases) { size in
                                 Text(size.rawValue).tag(size)
                             }
                         }
 
-                        Toggle("Only starred entries", isOn: $starredOnly)
+                        Toggle("Starred Only", isOn: $starredOnly)
                     }
                     .padding(.top, OffRecordSpacing.sm)
                 } label: {
-                    Label("Export options", systemImage: "slider.horizontal.3")
+                    Label("Options", systemImage: "slider.horizontal.3")
                         .font(OffRecordTypography.labelMedium)
                         .foregroundStyle(OffRecordColor.textSky)
                 }
@@ -456,7 +450,7 @@ struct SettingsView: View {
                         } else {
                             Image(systemName: "square.and.arrow.up")
                         }
-                        Text(isExporting ? "Exporting PDF..." : "Export as PDF")
+                        Text(isExporting ? "Exporting…" : "Export PDF")
                     }
                 }
                 .buttonStyle(SettingsPrimaryButtonStyle())
@@ -469,7 +463,7 @@ struct SettingsView: View {
     private var appearanceSection: some View {
         SettingsCard(
             title: "Theme",
-            subtitle: "Sets the background wash and accent. System follows your device's light or dark appearance.",
+            footer: "System matches your \(DeviceNoun.current)’s appearance.",
             systemImage: "paintpalette",
             tint: themeManager.selectedTheme.readableAccentColor,
             fill: OffRecordColor.surfacePrimary
@@ -492,18 +486,19 @@ struct SettingsView: View {
     @ViewBuilder
     private var journalingGoalSection: some View {
         SettingsCard(
-            title: "Journaling Goal",
-            subtitle: "Set a weekly target to build a consistent habit.",
+            title: "Weekly Goal",
             systemImage: "target",
             tint: OffRecordColor.textAqua,
             fill: OffRecordColor.surfaceMint
         ) {
-            Toggle("Enable weekly goal", isOn: $goalManager.isEnabled)
+            Toggle("Weekly Goal", isOn: $goalManager.isEnabled)
 
             if goalManager.isEnabled {
-                Stepper("Target: \(goalManager.weeklyTarget) entries/week", value: $goalManager.weeklyTarget, in: 1...7)
+                Stepper(value: $goalManager.weeklyTarget, in: 1...7) {
+                    Text("^[\(goalManager.weeklyTarget) day](inflect: true) a week")
+                }
 
-                Toggle("Notify when goal reached", isOn: $goalManager.notifyOnGoal)
+                Toggle("Notify When Reached", isOn: $goalManager.notifyOnGoal)
             }
         }
     }
@@ -511,47 +506,32 @@ struct SettingsView: View {
     @ViewBuilder
     private var securitySection: some View {
         SettingsCard(
-            title: "Privacy Lock",
-            subtitle: "Require device authentication before opening your journal.",
+            title: "Lock",
+            footer: "Locks when you leave the app. Falls back to your passcode.",
             systemImage: "lock.shield.fill",
             tint: OffRecordColor.textSage,
             fill: OffRecordColor.surfaceSage
         ) {
-            Toggle("Require \(lockManager.biometryTypeName) to open OffRecord", isOn: $lockManager.isEnabled)
-
-            if lockManager.isEnabled {
-                Text("Your journal locks when you leave the app. OffRecord never sees or stores your \(lockManager.biometryTypeName).")
-                    .font(OffRecordTypography.metadata)
-                    .foregroundColor(OffRecordColor.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-
-            if !lockManager.biometricsAvailable {
-                Text("If \(lockManager.biometryTypeName) is unavailable, iOS will use your device passcode.")
-                    .font(OffRecordTypography.metadata)
-                    .foregroundColor(OffRecordColor.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
+            Toggle("Require \(lockManager.biometryTypeName)", isOn: $lockManager.isEnabled)
         }
     }
 
     @ViewBuilder
     private var localAIPrivacySection: some View {
         SettingsCard(
-            title: "Local AI & Offline Privacy",
-            subtitle: "Private intelligence and voice transcription stay on this device.",
-            footer: "Optional iCloud Sync is separate and uses your personal Apple iCloud account, not an OffRecord server.",
+            title: "On-Device AI",
+            footer: "iCloud Sync uses your own iCloud account.",
             systemImage: "cpu.fill",
             tint: OffRecordColor.textLavender,
             fill: OffRecordColor.surfaceLavender
         ) {
             VStack(alignment: .leading, spacing: 12) {
-                Text("Mood analysis, Friday, Semantic Memory, and transcription run on this device and work offline. No accounts, analytics, or developer AI servers.")
+                Text("Friday, search, and transcription run on this \(DeviceNoun.current) and work offline.")
                     .font(OffRecordTypography.bodySmall)
                     .foregroundColor(OffRecordColor.textSecondary)
                     .fixedSize(horizontal: false, vertical: true)
 
-                Toggle("On-device transcription", isOn: $appleSpeechProcessingConsentGranted)
+                Toggle("Transcription", isOn: $appleSpeechProcessingConsentGranted)
                     .accessibilityIdentifier("settings.privacy.appleSpeechConsentToggle")
                     .onChange(of: appleSpeechProcessingConsentGranted) { _, granted in
                         if granted {
@@ -572,9 +552,8 @@ struct SettingsView: View {
     @ViewBuilder
     private var semanticMemorySection: some View {
         SettingsCard(
-            title: "Semantic Memory",
-            subtitle: "Derived local search memory for Friday and journal recall.",
-            footer: "Embeddings are derived locally from journal entries and are not synced to iCloud.",
+            title: "Search Index",
+            footer: "Lets search and Friday find entries by meaning. Built on this \(DeviceNoun.current), never synced.",
             systemImage: "brain.head.profile",
             tint: OffRecordColor.textLavender,
             fill: OffRecordColor.surfacePrimary
@@ -582,7 +561,7 @@ struct SettingsView: View {
             VStack(alignment: .leading, spacing: 12) {
                 HStack(spacing: 12) {
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("Semantic Memory")
+                        Text("Status")
                             .font(OffRecordTypography.labelMedium)
                         Text(semanticMemory.statusMessage)
                             .font(OffRecordTypography.metadata)
@@ -603,17 +582,10 @@ struct SettingsView: View {
                         .accessibilityIdentifier("semanticMemory.progress")
                 }
 
-                SettingsRow(systemImage: "number", title: "Indexed chunks", tint: OffRecordColor.textLavender) {
-                    Text("\(semanticMemory.chunkCount)")
-                        .font(OffRecordTypography.bodySmall)
-                        .foregroundColor(OffRecordColor.textPrimary)
-                        .accessibilityIdentifier("semanticMemory.chunkCount")
-                }
-
                 if semanticMemory.usesFallbackEmbeddings {
                     HStack(alignment: .top, spacing: 6) {
                         Image(systemName: "exclamationmark.triangle.fill")
-                        Text("Sentence embeddings were unavailable, so OffRecord is using a local lexical fallback until rebuild succeeds.")
+                        Text("Running in basic mode. Rebuild to fix.")
                     }
                     .font(OffRecordTypography.metadata)
                     .foregroundColor(OffRecordColor.textPeach)
@@ -625,7 +597,7 @@ struct SettingsView: View {
                     semanticMemory.rebuildIndex(entries: startedEntries)
                     JournalSpotlightIndexer.shared.rebuild(entries: startedEntries)
                 } label: {
-                    Label("Rebuild Semantic Memory", systemImage: "arrow.clockwise")
+                    Label("Rebuild Index", systemImage: "arrow.clockwise")
                 }
                 .buttonStyle(SettingsSecondaryButtonStyle(tint: OffRecordColor.textLavender, fill: OffRecordColor.surfaceLavender))
                 .accessibilityIdentifier("semanticMemory.rebuild")
@@ -634,7 +606,7 @@ struct SettingsView: View {
                 Button(role: .destructive) {
                     showDeleteSemanticIndexConfirm = true
                 } label: {
-                    Label("Delete Local Semantic Index", systemImage: "trash")
+                    Label("Delete Index", systemImage: "trash")
                 }
                 .buttonStyle(SettingsSecondaryButtonStyle(tint: OffRecordColor.textCoral, fill: OffRecordColor.backgroundBlushTint))
                 .accessibilityIdentifier("semanticMemory.delete")
@@ -648,17 +620,15 @@ struct SettingsView: View {
     @ViewBuilder
     private var systemSearchSection: some View {
         SettingsCard(
-            title: "Siri & System Search",
-            subtitle: "Let system surfaces open private OffRecord destinations without exposing journal text.",
-            footer: "Reading and searching entry text still happens inside the locked app.",
+            title: "Siri & Search",
             systemImage: "magnifyingglass",
             tint: OffRecordColor.textSky,
             fill: OffRecordColor.surfacePrimary
         ) {
-            Toggle("Show entries in Spotlight", isOn: $spotlightMetadataIndexingEnabled)
+            Toggle("Show in Spotlight", isOn: $spotlightMetadataIndexingEnabled)
                 .accessibilityIdentifier("settings.systemSearch.spotlightToggle")
 
-            Text("Spotlight uses private metadata only: date, mood, starred state, word count, and whether an entry has voice or photos. Raw journal text, transcripts, photo thumbnails, and audio filenames stay out of system search.")
+            Text("Spotlight sees only dates, moods, and word counts, never your writing.")
                 .font(OffRecordTypography.metadata)
                 .foregroundColor(OffRecordColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
@@ -672,7 +642,7 @@ struct SettingsView: View {
             Button {
                 JournalSpotlightIndexer.shared.rebuild(entries: startedEntries)
             } label: {
-                Label("Rebuild Spotlight Metadata", systemImage: "magnifyingglass")
+                Label("Rebuild Spotlight Index", systemImage: "magnifyingglass")
             }
             .buttonStyle(SettingsSecondaryButtonStyle(tint: OffRecordColor.textSky, fill: OffRecordColor.surfaceBlue))
             .accessibilityIdentifier("settings.systemSearch.rebuildSpotlight")
@@ -685,12 +655,12 @@ struct SettingsView: View {
     private var dailyReminderSection: some View {
         SettingsCard(
             title: "Daily Reminder",
-            subtitle: "Send one privacy-safe notification at your chosen time.",
+            footer: "Reminders never include anything from your entries.",
             systemImage: "bell.badge",
             tint: OffRecordColor.textPeach,
             fill: OffRecordColor.surfacePeach
         ) {
-            Toggle("Remind me to record", isOn: Binding(
+            Toggle("Daily Reminder", isOn: Binding(
                 get: { reminderManager.isEnabled },
                 set: { newValue in
                     if newValue {
@@ -709,7 +679,7 @@ struct SettingsView: View {
 
             if reminderManager.isEnabled {
                 DatePicker(
-                    "Reminder time",
+                    "Time",
                     selection: Binding(
                         get: { reminderManager.reminderTime },
                         set: { reminderManager.reminderTime = $0 }
@@ -718,35 +688,27 @@ struct SettingsView: View {
                 )
             }
 
-            Toggle("Use Friday smart prompts", isOn: $reminderManager.usesFridaySmartPrompts)
+            Toggle("Smart Prompts from Friday", isOn: $reminderManager.usesFridaySmartPrompts)
                 .accessibilityIdentifier("proactiveReflection.smartReminderToggle")
-
-            if reminderManager.usesFridaySmartPrompts {
-                Text("Reminder text stays privacy-safe and never includes names, topics, moods, regrets, or journal snippets.")
-                    .font(OffRecordTypography.metadata)
-                    .foregroundColor(OffRecordColor.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
         }
     }
 
     private var weeklyReflectionSection: some View {
         SettingsCard(
             title: "Weekly Reflection",
-            subtitle: "Summarize selected journal entries locally and optionally remind you weekly.",
-            footer: "Notifications never include journal content, themes, moods, names, or quotes.",
+            footer: "Notifications never include anything from your entries.",
             systemImage: "calendar.badge.clock",
             tint: OffRecordColor.textAqua,
             fill: OffRecordColor.surfaceMint
         ) {
-            Toggle("Enable weekly reflection", isOn: Binding(
+            Toggle("Weekly Reflection", isOn: Binding(
                 get: { weeklyReflection.settings.isEnabled },
                 set: { value in weeklyReflection.updateSettings { $0.isEnabled = value } }
             ))
             .accessibilityIdentifier("weeklyReflection.settings.enabled")
 
             if weeklyReflection.settings.isEnabled {
-                Picker("Reflection day", selection: Binding(
+                Picker("Day", selection: Binding(
                     get: { weeklyReflection.settings.reminderWeekday },
                     set: { value in weeklyReflection.updateSettings { $0.reminderWeekday = value } }
                 )) {
@@ -760,7 +722,7 @@ struct SettingsView: View {
                 }
 
                 DatePicker(
-                    "Reminder time",
+                    "Time",
                     selection: Binding(
                         get: {
                             var components = DateComponents()
@@ -779,24 +741,15 @@ struct SettingsView: View {
                     displayedComponents: .hourAndMinute
                 )
 
-                Toggle("Show Home card", isOn: Binding(
+                Toggle("Show on Today", isOn: Binding(
                     get: { weeklyReflection.settings.showHomeCard },
                     set: { value in weeklyReflection.updateSettings { $0.showHomeCard = value } }
                 ))
 
-                Toggle("Send notification", isOn: Binding(
+                Toggle("Notify Me", isOn: Binding(
                     get: { weeklyReflection.settings.sendNotification },
                     set: { value in handleWeeklyNotificationToggle(value) }
                 ))
-
-                Label("Processing: Local only", systemImage: "lock.shield.fill")
-                    .font(OffRecordTypography.metadata)
-                    .foregroundColor(OffRecordColor.textSage)
-
-                Text("Weekly reflections use selected journal entries on this device. You can hide entries inside a report and regenerate without changing the original entry.")
-                    .font(OffRecordTypography.metadata)
-                    .foregroundColor(OffRecordColor.textSecondary)
-                    .fixedSize(horizontal: false, vertical: true)
             }
         }
     }
@@ -823,54 +776,29 @@ struct SettingsView: View {
         SettingsCard(
             title: "iCloud Sync",
             subtitle: syncStatusText,
-            footer: iCloudSyncEnabled
-                ? (PersistenceController.isCloudAvailable
-                   ? "Your data syncs securely through your personal iCloud account. Only you can access it."
-                   : "Sign in to iCloud in iOS Settings to enable sync.")
-                : "Sync is off. Your entries are stored only on this device.",
+            footer: iCloudSyncEnabled ? "Recordings stay on this \(DeviceNoun.current) and don’t sync." : nil,
             systemImage: iCloudSyncEnabled && PersistenceController.isCloudAvailable ? "icloud.fill" : "icloud.slash",
             tint: iCloudSyncEnabled && PersistenceController.isCloudAvailable ? OffRecordColor.textSky : OffRecordColor.textTertiary,
             fill: OffRecordColor.surfaceBlue
         ) {
             Toggle(isOn: $iCloudSyncEnabled) {
-                Text("Sync entries with iCloud")
+                Text("iCloud Sync")
             }
             .onChange(of: iCloudSyncEnabled) { _, newValue in
                 PersistenceController.shared.setCloudSyncEnabled(newValue)
                 showCloudSyncRestartAlert = true
             }
 
-            if iCloudSyncEnabled && PersistenceController.isCloudAvailable {
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack(spacing: 8) {
-                        Image(systemName: "checkmark.circle.fill")
-                            .foregroundColor(OffRecordColor.textSage)
-                            .font(OffRecordTypography.metadata)
-                            .accessibilityHidden(true)
-                        Text("Entries sync automatically via your personal iCloud")
-                            .font(OffRecordTypography.metadata)
-                            .foregroundColor(OffRecordColor.textSecondary)
-                    }
-                    HStack(spacing: 8) {
-                        Image(systemName: "lock.fill")
-                            .foregroundColor(OffRecordColor.textSage)
-                            .font(OffRecordTypography.metadata)
-                            .accessibilityHidden(true)
-                        Text("Encrypted through your Apple ID")
-                            .font(OffRecordTypography.metadata)
-                            .foregroundColor(OffRecordColor.textSecondary)
-                    }
-                }
-                .padding(.vertical, 4)
-            } else if iCloudSyncEnabled && !PersistenceController.isCloudAvailable {
+            if iCloudSyncEnabled && !PersistenceController.isCloudAvailable {
                 HStack(spacing: 8) {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundColor(OffRecordColor.textPeach)
                         .font(OffRecordTypography.metadata)
                         .accessibilityHidden(true)
-                    Text("iCloud unavailable")
+                    Text("Sign in to iCloud in Settings to sync.")
                         .font(OffRecordTypography.metadata)
                         .foregroundColor(OffRecordColor.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
                 }
                 .padding(.vertical, 4)
             }
@@ -879,26 +807,30 @@ struct SettingsView: View {
 
     private var syncStatusText: String {
         if !iCloudSyncEnabled {
-            return "Off — entries stay on this device only"
+            return "Off"
         }
         if PersistenceController.isCloudAvailable {
-            return "Syncing across your devices"
+            return "On"
         }
-        return "iCloud not available — sign in to enable"
+        return "Not Signed In"
     }
 
     @ViewBuilder
     private var privacySection: some View {
         SettingsCard(
             title: "Privacy Policy",
-            subtitle: "OffRecord carries Apple's \"Data Not Collected\" label. Your journal stays yours.",
             systemImage: "hand.raised.fill",
             tint: OffRecordColor.textSage,
             fill: OffRecordColor.surfaceSage
         ) {
+            Text("OffRecord collects no data.")
+                .font(OffRecordTypography.bodySmall)
+                .foregroundColor(OffRecordColor.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
+
             if let privacyPolicyURL = OffRecordExternalLinks.privacyPolicyURL {
                 Link(destination: privacyPolicyURL) {
-                    Label("Read the Privacy Policy", systemImage: "hand.raised.fill")
+                    Label("Privacy Policy", systemImage: "hand.raised.fill")
                 }
                 .buttonStyle(SettingsSecondaryButtonStyle(tint: OffRecordColor.textSage, fill: OffRecordColor.surfacePrimary))
             }
@@ -909,8 +841,7 @@ struct SettingsView: View {
     private var backupSection: some View {
         SettingsCard(
             title: "Backup & Export",
-            subtitle: "Create portable backups or restore a previous archive.",
-            footer: "Encrypted backups are password protected. OffRecord cannot recover a forgotten backup password.",
+            footer: "Encrypted backups can’t be opened without their password.",
             systemImage: "archivebox",
             tint: OffRecordColor.textSky,
             fill: OffRecordColor.surfacePrimary
@@ -920,8 +851,8 @@ struct SettingsView: View {
             } label: {
                 SettingsActionRow(
                     systemImage: "square.and.arrow.up",
-                    title: "Export Data",
-                    subtitle: "JSON, encrypted backup, Text, Markdown, CSV",
+                    title: "Export",
+                    subtitle: "Backup, text, Markdown, CSV",
                     tint: OffRecordColor.textSky
                 )
             }
@@ -931,8 +862,7 @@ struct SettingsView: View {
             } label: {
                 SettingsActionRow(
                     systemImage: "square.and.arrow.down",
-                    title: "Import Backup",
-                    subtitle: "Restore JSON or encrypted backup files",
+                    title: "Restore from Backup",
                     tint: OffRecordColor.textSky
                 )
             }
@@ -943,21 +873,19 @@ struct SettingsView: View {
     private var storageSection: some View {
         SettingsCard(
             title: "Storage",
-            subtitle: "See what OffRecord is storing on this device.",
-            footer: "Entries and photos sync through iCloud when enabled. Audio recordings stay on this device.",
             systemImage: "internaldrive",
             tint: OffRecordColor.textAqua,
             fill: OffRecordColor.surfacePrimary
         ) {
             if isCalculatingStorage {
-                SettingsRow(systemImage: "hourglass", title: "Calculating storage", tint: OffRecordColor.textAqua) {
+                SettingsRow(systemImage: "hourglass", title: "Calculating…", tint: OffRecordColor.textAqua) {
                     ProgressView()
                 }
             } else {
                 let total = audioStorageBytes + photoStorageBytes + databaseStorageBytes
-                StorageRow(label: "Audio Recordings", bytes: audioStorageBytes, totalBytes: total, icon: "waveform", color: OffRecordColor.textAqua)
+                StorageRow(label: "Recordings", bytes: audioStorageBytes, totalBytes: total, icon: "waveform", color: OffRecordColor.textAqua)
                 StorageRow(label: "Photos", bytes: photoStorageBytes, totalBytes: total, icon: "photo", color: OffRecordColor.textBlush)
-                StorageRow(label: "Database", bytes: databaseStorageBytes, totalBytes: total, icon: "cylinder", color: OffRecordColor.textPeach)
+                StorageRow(label: "Entries", bytes: databaseStorageBytes, totalBytes: total, icon: "cylinder", color: OffRecordColor.textPeach)
 
                 SettingsRow(systemImage: "sum", title: "Total", tint: OffRecordColor.textBrand) {
                     Text(formatBytes(total))
@@ -970,7 +898,7 @@ struct SettingsView: View {
             Button {
                 calculateStorage()
             } label: {
-                Label("Refresh storage", systemImage: "arrow.clockwise")
+                Label("Refresh", systemImage: "arrow.clockwise")
             }
             .buttonStyle(SettingsSecondaryButtonStyle(tint: OffRecordColor.textAqua, fill: OffRecordColor.surfaceMint))
             .accessibilityLabel("Refresh storage")
@@ -1036,7 +964,6 @@ struct SettingsView: View {
     private var aboutSection: some View {
         SettingsCard(
             title: "About OffRecord",
-            subtitle: "App version and local journal summary.",
             systemImage: "info.circle",
             tint: OffRecordColor.textBrand,
             fill: OffRecordColor.surfacePrimary
@@ -1047,7 +974,7 @@ struct SettingsView: View {
                     .foregroundColor(OffRecordColor.textPrimary)
             }
 
-            SettingsRow(systemImage: "book.pages", title: "Total entries", tint: OffRecordColor.textBrand) {
+            SettingsRow(systemImage: "book.pages", title: "Entries", tint: OffRecordColor.textBrand) {
                 Text("\(totalEntriesCount)")
                     .font(OffRecordTypography.bodySmall)
                     .foregroundColor(OffRecordColor.textPrimary)
@@ -1129,8 +1056,9 @@ struct SettingsView: View {
                     PerformanceSignposts.end(token)
                 }
             } catch {
+                settingsLogger.error("PDF export failed: \(error.localizedDescription, privacy: .public)")
                 await MainActor.run {
-                    exportError = error.localizedDescription
+                    exportError = "Try again."
                     isExporting = false
                     PerformanceSignposts.end(token)
                 }

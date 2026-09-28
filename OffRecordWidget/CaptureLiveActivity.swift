@@ -40,8 +40,6 @@ struct CaptureLiveActivityWidget: Widget {
                 }
                 DynamicIslandExpandedRegion(.bottom) {
                     HStack(spacing: 10) {
-                        PrivacyLabel()
-                            .foregroundStyle(.white.opacity(0.72))
                         Spacer(minLength: 4)
                         PauseResumeButton(isPaused: context.state.isPaused, fill: .white.opacity(0.16), foreground: .white)
                         StopCaptureButton()
@@ -62,7 +60,7 @@ struct CaptureLiveActivityWidget: Widget {
                 Image(systemName: context.state.isPaused ? "pause.fill" : "mic.fill")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(OffRecordColor.recording)
-                    .accessibilityLabel(context.state.isPaused ? "Recording paused" : "Recording")
+                    .accessibilityLabel(context.state.isPaused ? "Paused" : "Recording")
             }
             .keylineTint(OffRecordColor.recording)
             .widgetURL(OffRecordWidgetRoute.record)
@@ -93,8 +91,6 @@ struct CaptureLockScreenView: View {
                     .font(.system(.title, design: .rounded, weight: .semibold).monospacedDigit())
                     .foregroundStyle(OffRecordColor.textHeading)
                     .lineLimit(1)
-                PrivacyLabel()
-                    .foregroundStyle(OffRecordColor.textSecondary)
             }
 
             Spacer(minLength: 8)
@@ -138,16 +134,7 @@ struct RecordingIndicator: View {
                     .frame(width: size, height: size)
             }
         }
-        .accessibilityLabel(isPaused ? "Recording paused" : "Recording")
-    }
-}
-
-struct PrivacyLabel: View {
-    var body: some View {
-        Label("Private · on this device", systemImage: "lock.fill")
-            .font(OffRecordWidgetTypography.micro)
-            .lineLimit(1)
-            .minimumScaleFactor(0.8)
+        .accessibilityLabel(isPaused ? "Paused" : "Recording")
     }
 }
 
@@ -165,7 +152,7 @@ struct PauseResumeButton: View {
                 .background(Circle().fill(fill))
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(isPaused ? "Resume recording" : "Pause recording")
+        .accessibilityLabel(isPaused ? "Resume" : "Pause")
     }
 }
 
@@ -179,7 +166,7 @@ struct StopCaptureButton: View {
                 .background(Circle().fill(OffRecordColor.recording))
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Stop and save recording")
+        .accessibilityLabel("Stop and save")
     }
 }
 

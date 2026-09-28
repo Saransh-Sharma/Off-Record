@@ -22,7 +22,7 @@ struct JournalSpotlightMetadata: Equatable, Sendable {
     }
 
     var title: String {
-        "Journal Entry - \(Self.shortDateFormatter.string(from: date))"
+        "Journal Entry, \(Self.shortDateFormatter.string(from: date))"
     }
 
     var subtitle: String {
@@ -31,10 +31,10 @@ struct JournalSpotlightMetadata: Equatable, Sendable {
             parts.append("\(moodDisplayName) mood")
         }
         if wordCount > 0 {
-            parts.append("\(wordCount) \(wordCount == 1 ? "word" : "words")")
+            parts.append(String(AttributedString(localized: "^[\(wordCount) word](inflect: true)").characters))
         }
         if hasAudio {
-            parts.append("voice note")
+            parts.append("recording")
         }
         if hasPhotos {
             parts.append("photos")
@@ -42,7 +42,7 @@ struct JournalSpotlightMetadata: Equatable, Sendable {
         if isStarred {
             parts.append("starred")
         }
-        return parts.isEmpty ? "Private journal entry" : parts.joined(separator: ", ")
+        return parts.isEmpty ? "Journal entry" : parts.joined(separator: ", ")
     }
 
     var keywords: [String] {

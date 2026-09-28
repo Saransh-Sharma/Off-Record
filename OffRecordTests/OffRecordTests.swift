@@ -179,7 +179,7 @@ struct SystemDiscoverabilityTests {
         #expect(entity.title.contains("Journal Entry"))
         #expect(entity.subtitle.contains("Happy mood"))
         #expect(entity.subtitle.contains("42 words"))
-        #expect(entity.subtitle.contains("voice note"))
+        #expect(entity.subtitle.contains("recording"))
         #expect(entity.subtitle.contains("photos"))
         #expect(entity.subtitle.contains("starred"))
     }

@@ -60,7 +60,7 @@ struct WatchSpeakCaptureView: View {
         .onDisappear(perform: cleanupIfNeeded)
         .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: recorder.isRecording)
         .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: saved)
-        .accessibilityLabel("Start dictation")
+        .accessibilityLabel("Speak")
     }
 
     /// Title, prompt, and elapsed time share one row below the system clock.
@@ -72,7 +72,7 @@ struct WatchSpeakCaptureView: View {
                     .foregroundStyle(WatchPalette.text)
                     .lineLimit(1)
                     .minimumScaleFactor(0.8)
-                Text("Say what's on your mind.")
+                Text("Say what’s on your mind.")
                     .font(.caption2)
                     .foregroundStyle(WatchPalette.secondary)
                     .lineLimit(2)
@@ -128,11 +128,13 @@ struct WatchSpeakCaptureView: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.74)
 
-            Text(cardMessage)
-                .font(.caption2)
-                .foregroundStyle(WatchPalette.lavenderText.opacity(0.82))
-                .lineLimit(2)
-                .minimumScaleFactor(0.72)
+            if let cardMessage {
+                Text(cardMessage)
+                    .font(.caption2)
+                    .foregroundStyle(WatchPalette.lavenderText.opacity(0.82))
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.72)
+            }
         }
         .frame(maxWidth: .infinity, minHeight: 42, alignment: .topLeading)
         .padding(8)
@@ -151,7 +153,7 @@ struct WatchSpeakCaptureView: View {
                 minHeight: 34,
                 action: toggleRecording
             )
-            .accessibilityLabel(recorder.isRecording ? "Stop recording" : "Start dictation")
+            .accessibilityLabel(recorder.isRecording ? "Stop recording" : "Start recording")
 
             WatchPrimaryButton(
                 title: saved ? "Saved" : "Save",
@@ -162,16 +164,16 @@ struct WatchSpeakCaptureView: View {
                 minHeight: 34,
                 action: saveVoice
             )
-            .accessibilityLabel("Save journal capture")
+            .accessibilityLabel("Save")
         }
     }
 
     private var cardTitle: String {
-        if saved { return "Saved privately" }
+        if saved { return "Saved" }
         if pendingRecording != nil { return "Ready to save" }
-        if recorder.isRecording { return "Voice moment" }
+        if recorder.isRecording { return "Recording" }
         if recorder.errorMessage != nil { return "Try again" }
-        return "Start speaking"
+        return "Speak now"
     }
 
     private var cardSymbol: String {
@@ -180,20 +182,17 @@ struct WatchSpeakCaptureView: View {
         return "text.bubble.fill"
     }
 
-    private var cardMessage: String {
+    private var cardMessage: String? {
         if let message = recorder.errorMessage {
             return message
         }
         if recorder.didReachSoftLimit {
-            return "Finish soon to keep this light."
+            return "Almost at the limit."
         }
-        if pendingRecording != nil {
-            return "Transcript later on iPhone."
+        if pendingRecording != nil || recorder.isRecording {
+            return "Transcribed on iPhone."
         }
-        if recorder.isRecording {
-            return "Transcript later on iPhone."
-        }
-        return "Tap Start and speak naturally."
+        return nil
     }
 
     private func startIfNeeded() {

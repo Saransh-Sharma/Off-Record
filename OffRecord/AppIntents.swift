@@ -2,14 +2,23 @@ import AppIntents
 import CoreData
 import CoreSpotlight
 import Foundation
+import os.log
+
+private let intentLogger = Logger(subsystem: "com.singularity.offrecord", category: "AppIntents")
 
 @available(iOS 17.0, *)
 private struct JournalIntentPersistenceError: LocalizedError {
     let action: String
     let underlyingError: Error
 
+    init(action: String, underlyingError: Error) {
+        self.action = action
+        self.underlyingError = underlyingError
+        intentLogger.error("Intent couldn’t \(action, privacy: .public): \(underlyingError.localizedDescription, privacy: .public)")
+    }
+
     var errorDescription: String? {
-        "OffRecord could not \(action): \(underlyingError.localizedDescription)"
+        "Couldn’t \(action). Try again in OffRecord."
     }
 }
 
@@ -53,7 +62,7 @@ struct JournalEntryEntity: AppEntity, IndexedEntity {
     @Property(title: "Starred")
     var isStarred: Bool
 
-    @Property(title: "Has Voice Note")
+    @Property(title: "Has Recording")
     var hasAudio: Bool
 
     @Property(title: "Has Photos")
@@ -71,7 +80,7 @@ struct JournalEntryEntity: AppEntity, IndexedEntity {
     }
 
     var title: String {
-        "Journal Entry - \(Self.shortDateFormatter.string(from: date))"
+        "Journal Entry, \(Self.shortDateFormatter.string(from: date))"
     }
 
     var subtitle: String {
@@ -80,10 +89,10 @@ struct JournalEntryEntity: AppEntity, IndexedEntity {
             parts.append("\(moodName) mood")
         }
         if wordCount > 0 {
-            parts.append("\(wordCount) \(wordCount == 1 ? "word" : "words")")
+            parts.append(String(AttributedString(localized: "^[\(wordCount) word](inflect: true)").characters))
         }
         if hasAudio {
-            parts.append("voice note")
+            parts.append("recording")
         }
         if hasPhotos {
             parts.append("photos")
@@ -91,7 +100,7 @@ struct JournalEntryEntity: AppEntity, IndexedEntity {
         if isStarred {
             parts.append("starred")
         }
-        return parts.isEmpty ? "Private journal entry" : parts.joined(separator: ", ")
+        return parts.isEmpty ? "Journal entry" : parts.joined(separator: ", ")
     }
 
     private var moodName: String? {
@@ -134,11 +143,11 @@ struct JournalEntryQuery: EntityQuery, EntityStringQuery {
 
 @available(iOS 17.0, *)
 struct WriteJournalEntryIntent: AppIntent {
-    static var title: LocalizedStringResource = "Write Journal Entry"
-    static var description = IntentDescription("Adds private text to today's OffRecord journal entry.")
+    static var title: LocalizedStringResource = "Write in Journal"
+    static var description = IntentDescription("Adds text to today’s entry.")
     static var authenticationPolicy: IntentAuthenticationPolicy = .requiresLocalDeviceAuthentication
 
-    @Parameter(title: "Text", requestValueDialog: "What would you like to add to your journal?")
+    @Parameter(title: "Text", requestValueDialog: "What do you want to add?")
     var text: String?
 
     static var parameterSummary: some ParameterSummary {
@@ -148,35 +157,35 @@ struct WriteJournalEntryIntent: AppIntent {
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let trimmed = text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         guard !trimmed.isEmpty else {
-            throw $text.needsValueError("What would you like to add to your journal?")
+            throw $text.needsValueError("What do you want to add?")
         }
 
         do {
             try await DiaryEntryIntentStore.appendToToday(text: trimmed)
         } catch {
-            throw JournalIntentPersistenceError(action: "add to today's journal entry", underlyingError: error)
+            throw JournalIntentPersistenceError(action: "add to today’s entry", underlyingError: error)
         }
-        return .result(dialog: "Added to today's private journal entry.")
+        return .result(dialog: "Added to today’s entry.")
     }
 }
 
 @available(iOS 17.0, *)
 struct OpenTodayIntent: AppIntent {
     static var title: LocalizedStringResource = "Open Today"
-    static var description = IntentDescription("Opens today's private journal surface in OffRecord.")
+    static var description = IntentDescription("Opens Today.")
     static var openAppWhenRun: Bool = true
     static var authenticationPolicy: IntentAuthenticationPolicy = .requiresLocalDeviceAuthentication
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
         OffRecordNavigationRouter.storePendingRoute(.today)
-        return .result(dialog: "Opening Today in OffRecord.")
+        return .result(dialog: "Opening Today.")
     }
 }
 
 @available(iOS 17.0, *)
 struct SearchJournalIntent: AppIntent {
     static var title: LocalizedStringResource = "Search Journal"
-    static var description = IntentDescription("Opens OffRecord timeline search inside the private app.")
+    static var description = IntentDescription("Searches your journal.")
     static var openAppWhenRun: Bool = true
     static var authenticationPolicy: IntentAuthenticationPolicy = .requiresLocalDeviceAuthentication
 
@@ -190,14 +199,14 @@ struct SearchJournalIntent: AppIntent {
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let trimmed = query?.trimmingCharacters(in: .whitespacesAndNewlines)
         OffRecordNavigationRouter.storePendingRoute(.timeline(query: trimmed?.isEmpty == false ? trimmed : nil))
-        return .result(dialog: "Opening private journal search.")
+        return .result(dialog: "Searching.")
     }
 }
 
 @available(iOS 17.0, *)
 struct OpenJournalEntryIntent: AppIntent {
     static var title: LocalizedStringResource = "Open Journal Entry"
-    static var description = IntentDescription("Opens a selected private journal entry in OffRecord.")
+    static var description = IntentDescription("Opens an entry.")
     static var openAppWhenRun: Bool = true
     static var authenticationPolicy: IntentAuthenticationPolicy = .requiresLocalDeviceAuthentication
 
@@ -210,37 +219,37 @@ struct OpenJournalEntryIntent: AppIntent {
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
         OffRecordNavigationRouter.storePendingRoute(.entry(entry.id))
-        return .result(dialog: "Opening the selected journal entry.")
+        return .result(dialog: "Opening entry.")
     }
 }
 
 @available(iOS 17.0, *)
 struct SetTodayMoodIntent: AppIntent {
-    static var title: LocalizedStringResource = "Set Today's Mood"
-    static var description = IntentDescription("Sets the mood on today's private OffRecord journal entry.")
+    static var title: LocalizedStringResource = "Set Today’s Mood"
+    static var description = IntentDescription("Sets today’s mood.")
     static var authenticationPolicy: IntentAuthenticationPolicy = .requiresLocalDeviceAuthentication
 
-    @Parameter(title: "Mood", requestValueDialog: "Which mood should OffRecord save for today?")
+    @Parameter(title: "Mood", requestValueDialog: "Which mood?")
     var mood: JournalMoodIntentValue
 
     static var parameterSummary: some ParameterSummary {
-        Summary("Set today's mood to \(\.$mood)")
+        Summary("Set today’s mood to \(\.$mood)")
     }
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
         do {
             try await DiaryEntryIntentStore.setTodayMood(mood.mood)
         } catch {
-            throw JournalIntentPersistenceError(action: "save today's mood", underlyingError: error)
+            throw JournalIntentPersistenceError(action: "save today’s mood", underlyingError: error)
         }
-        return .result(dialog: "Saved today's mood in OffRecord.")
+        return .result(dialog: "Mood set to \(mood.mood.displayName).")
     }
 }
 
 @available(iOS 17.0, *)
 struct StarJournalEntryIntent: AppIntent {
     static var title: LocalizedStringResource = "Star Journal Entry"
-    static var description = IntentDescription("Marks a private journal entry as starred or unstarred.")
+    static var description = IntentDescription("Stars or unstars an entry.")
     static var authenticationPolicy: IntentAuthenticationPolicy = .requiresLocalDeviceAuthentication
 
     @Parameter(title: "Entry")
@@ -259,14 +268,14 @@ struct StarJournalEntryIntent: AppIntent {
         } catch {
             throw JournalIntentPersistenceError(action: state == .starred ? "star the entry" : "unstar the entry", underlyingError: error)
         }
-        return .result(dialog: state == .starred ? "Entry starred." : "Entry unstarred.")
+        return .result(dialog: state == .starred ? "Starred." : "Unstarred.")
     }
 }
 
 @available(iOS 17.0, *)
 struct OpenFridayIntent: AppIntent {
     static var title: LocalizedStringResource = "Open Friday"
-    static var description = IntentDescription("Opens OffRecord's private on-device reflection assistant.")
+    static var description = IntentDescription("Opens Friday.")
     static var openAppWhenRun: Bool = true
     static var authenticationPolicy: IntentAuthenticationPolicy = .requiresLocalDeviceAuthentication
 
@@ -279,11 +288,11 @@ struct OpenFridayIntent: AppIntent {
 @available(iOS 17.0, *)
 struct AskFridayIntent: AppIntent {
     static var title: LocalizedStringResource = "Ask Friday"
-    static var description = IntentDescription("Opens Friday with a private question about your journal.")
+    static var description = IntentDescription("Asks Friday about your journal.")
     static var openAppWhenRun: Bool = true
     static var authenticationPolicy: IntentAuthenticationPolicy = .requiresLocalDeviceAuthentication
 
-    @Parameter(title: "Question", requestValueDialog: "What would you like to ask Friday?")
+    @Parameter(title: "Question", requestValueDialog: "What do you want to ask?")
     var question: String?
 
     static var parameterSummary: some ParameterSummary {
@@ -293,7 +302,7 @@ struct AskFridayIntent: AppIntent {
     func perform() async throws -> some IntentResult & ProvidesDialog {
         let trimmed = question?.trimmingCharacters(in: .whitespacesAndNewlines)
         OffRecordNavigationRouter.storePendingRoute(.friday(question: trimmed?.isEmpty == false ? trimmed : nil))
-        return .result(dialog: "Opening Friday privately.")
+        return .result(dialog: "Opening Friday.")
     }
 }
 
@@ -306,9 +315,9 @@ struct OffRecordShortcuts: AppShortcutsProvider {
         AppShortcut(
             intent: RecordJournalIntent(),
             phrases: [
-                "Record journal in \(.applicationName)",
+                "Record in \(.applicationName)",
                 "Start recording in \(.applicationName)",
-                "Add a voice note in \(.applicationName)"
+                "Record an entry in \(.applicationName)"
             ],
             shortTitle: "Record",
             systemImageName: "mic.fill"
@@ -318,8 +327,7 @@ struct OffRecordShortcuts: AppShortcutsProvider {
             intent: WriteJournalEntryIntent(),
             phrases: [
                 "Write in \(.applicationName)",
-                "Add to my journal in \(.applicationName)",
-                "Save a thought in \(.applicationName)"
+                "Add to my journal in \(.applicationName)"
             ],
             shortTitle: "Write",
             systemImageName: "square.and.pencil"
@@ -329,8 +337,7 @@ struct OffRecordShortcuts: AppShortcutsProvider {
             intent: SearchJournalIntent(),
             phrases: [
                 "Search my journal in \(.applicationName)",
-                "Find an entry in \(.applicationName)",
-                "Look up my diary in \(.applicationName)"
+                "Find an entry in \(.applicationName)"
             ],
             shortTitle: "Search",
             systemImageName: "magnifyingglass"
@@ -340,8 +347,7 @@ struct OffRecordShortcuts: AppShortcutsProvider {
             intent: SetTodayMoodIntent(),
             phrases: [
                 "Set my mood in \(.applicationName)",
-                "Log my mood in \(.applicationName)",
-                "Save today's mood in \(.applicationName)"
+                "Log my mood in \(.applicationName)"
             ],
             shortTitle: "Mood",
             systemImageName: "face.smiling.fill"
@@ -351,8 +357,7 @@ struct OffRecordShortcuts: AppShortcutsProvider {
             intent: AskFridayIntent(),
             phrases: [
                 "Ask Friday in \(.applicationName)",
-                "Talk to Friday in \(.applicationName)",
-                "Ask my journal assistant in \(.applicationName)"
+                "Talk to Friday in \(.applicationName)"
             ],
             shortTitle: "Ask Friday",
             systemImageName: "sparkles"

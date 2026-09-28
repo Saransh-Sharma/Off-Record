@@ -188,14 +188,14 @@ enum Mood: String, CaseIterable {
 
 // MARK: - Shared pieces
 
-/// Formats today's metadata ("142 words · voice") without any journal text.
+/// Formats today's metadata ("142 words · recording") without any journal text.
 func todayMetadataLine(for entry: JournalWidgetEntry) -> String? {
     var parts: [String] = []
     if entry.todayWordCount > 0 {
-        parts.append("\(entry.todayWordCount) \(entry.todayWordCount == 1 ? "word" : "words")")
+        parts.append(String(AttributedString(localized: "^[\(entry.todayWordCount) word](inflect: true)").characters))
     }
     if entry.todayHasVoice {
-        parts.append("voice")
+        parts.append("recording")
     }
     return parts.isEmpty ? nil : parts.joined(separator: " · ")
 }
@@ -208,7 +208,7 @@ struct RecordIntentButton<Label: View>: View {
             label()
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Record a voice entry")
+        .accessibilityLabel("Record")
     }
 }
 
@@ -236,12 +236,12 @@ struct StreakBadge: View {
             Image(systemName: "flame.fill")
                 .foregroundStyle(streak > 0 ? OffRecordColor.textWarm : OffRecordColor.textSecondary)
                 .widgetAccentable()
-            Text(streak == 1 ? "1 day" : "\(streak) days")
+            Text("^[\(streak) day](inflect: true)")
                 .foregroundStyle(OffRecordColor.textSecondary)
         }
         .font(OffRecordWidgetTypography.micro)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel(streak == 1 ? "1 day streak" : "\(streak) day streak")
+        .accessibilityLabel("\(streak)-day streak")
     }
 }
 
@@ -306,7 +306,7 @@ struct TodaySmallView: View {
                             .foregroundStyle(OffRecordColor.textHeading)
                     }
                 }
-                Text("Nothing saved yet today")
+                Text("Nothing yet today")
                     .font(OffRecordWidgetTypography.metadata)
                     .foregroundStyle(OffRecordColor.textSecondary)
                     .lineLimit(2)
@@ -372,7 +372,7 @@ struct TodayMediumView: View {
             RecordIntentButton {
                 VStack(spacing: 6) {
                     RecordGlyph(diameter: 56)
-                    Text(entry.hasEntryToday ? "Add more" : "Record")
+                    Text(entry.hasEntryToday ? "Add More" : "Record")
                         .font(OffRecordWidgetTypography.label)
                         .foregroundStyle(OffRecordColor.textHeading)
                 }
@@ -388,7 +388,7 @@ struct TodayMediumView: View {
             }
             return "Journaled today"
         }
-        return "What's on your mind?"
+        return "What’s on your mind?"
     }
 }
 
@@ -422,7 +422,7 @@ struct TodayCircularView: View {
                     .font(OffRecordWidgetTypography.micro.monospacedDigit())
             }
         }
-        .accessibilityLabel(entry.hasEntryToday ? "Journaled today, \(entry.streak) day streak" : "Record today's entry")
+        .accessibilityLabel(entry.hasEntryToday ? "Journaled today, \(entry.streak)-day streak" : "Record today’s entry")
     }
 }
 
@@ -437,7 +437,7 @@ struct TodayRectangularView: View {
             Text(entry.hasEntryToday ? "Journaled today" : "Not yet today")
                 .font(OffRecordWidgetTypography.cardTitle)
                 .lineLimit(1)
-            Text(entry.streak == 1 ? "1-day streak" : "\(entry.streak)-day streak")
+            Text("\(entry.streak)-day streak")
                 .font(OffRecordWidgetTypography.metadata)
                 .foregroundStyle(.secondary)
         }
@@ -452,7 +452,7 @@ struct TodayInlineView: View {
         if entry.hasEntryToday {
             Label("Journaled · \(entry.streak)-day streak", systemImage: "checkmark.circle")
         } else {
-            Label("Record today's entry", systemImage: "mic")
+            Label("Record today’s entry", systemImage: "mic")
         }
     }
 }
@@ -467,7 +467,7 @@ struct OffRecordWidget: Widget {
                 .widgetURL(entry.hasEntryToday ? OffRecordWidgetRoute.today : OffRecordWidgetRoute.record)
         }
         .configurationDisplayName("Today")
-        .description("See whether you've journaled today and record in one tap. Shows no journal text.")
+        .description("See if you’ve journaled today and start a recording.")
         .supportedFamilies([.systemSmall, .systemMedium, .accessoryCircular, .accessoryRectangular, .accessoryInline])
     }
 }
@@ -492,9 +492,9 @@ struct StreakWidgetView: View {
                         .minimumScaleFactor(0.6)
                 }
             }
-            .accessibilityLabel("\(entry.streak) day streak")
+            .accessibilityLabel("\(entry.streak)-day streak")
         case .accessoryInline:
-            Label(entry.streak == 1 ? "1-day streak" : "\(entry.streak)-day streak", systemImage: "flame")
+            Label("\(entry.streak)-day streak", systemImage: "flame")
         default:
             SmallStreakView(entry: entry)
         }
@@ -524,14 +524,14 @@ struct SmallStreakView: View {
                 .font(OffRecordWidgetTypography.numberLarge)
                 .foregroundStyle(OffRecordColor.textHeading)
                 .contentTransition(.numericText())
-            Text(entry.streak == 1 ? "day streak" : "days in a row")
+            Text("day streak")
                 .font(OffRecordWidgetTypography.metadata)
                 .foregroundStyle(OffRecordColor.textSecondary)
 
             Spacer(minLength: 0)
 
             WeekDots(days: entry.lastSevenDays)
-            Text(entry.hasEntryToday ? "Done today" : "Keep it going today")
+            Text(entry.hasEntryToday ? "Done today" : "Not yet today")
                 .font(OffRecordWidgetTypography.micro)
                 .foregroundStyle(entry.hasEntryToday ? OffRecordColor.textSage : OffRecordColor.textSecondary)
                 .lineLimit(1)
@@ -556,7 +556,7 @@ struct StreakWidget: Widget {
                 .widgetURL(entry.hasEntryToday ? OffRecordWidgetRoute.timeline : OffRecordWidgetRoute.record)
         }
         .configurationDisplayName("Streak")
-        .description("Track how many days in a row you've journaled.")
+        .description("See how many days in a row you’ve journaled.")
         .supportedFamilies([.systemSmall, .accessoryCircular, .accessoryInline])
     }
 }
@@ -575,7 +575,7 @@ struct QuickRecordWidgetView: View {
                     .font(.system(size: 20, weight: .semibold))
                     .widgetAccentable()
             }
-            .accessibilityLabel("Record a voice entry")
+            .accessibilityLabel("Record")
         default:
             RecordIntentButton {
                 VStack(alignment: .leading, spacing: 6) {
@@ -584,11 +584,6 @@ struct QuickRecordWidgetView: View {
                     Text("Record")
                         .font(OffRecordWidgetTypography.titleSmall)
                         .foregroundStyle(OffRecordColor.textHeading)
-                    Label("Private · on this device", systemImage: "lock.fill")
-                        .font(OffRecordWidgetTypography.micro)
-                        .foregroundStyle(OffRecordColor.textSecondary)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.85)
                 }
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             }
@@ -606,7 +601,7 @@ struct QuickRecordWidget: Widget {
                 .widgetURL(OffRecordWidgetRoute.record)
         }
         .configurationDisplayName("Quick Record")
-        .description("Start a private voice entry in one tap.")
+        .description("Start a recording in one tap.")
         .supportedFamilies([.systemSmall, .accessoryCircular])
     }
 }

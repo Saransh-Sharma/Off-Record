@@ -45,12 +45,12 @@ final class WatchCaptureStore: ObservableObject {
 
     var syncLine: String {
         if queueCount == 0 {
-            return "Synced to iPhone"
+            return "All synced"
         }
         if connectivity.isReachable {
             return "\(queueCount) sending to iPhone"
         }
-        return "\(queueCount) saved on watch"
+        return "\(queueCount) waiting on watch"
     }
 
     func start() {
@@ -96,7 +96,7 @@ final class WatchCaptureStore: ObservableObject {
             captureID: captureID,
             kind: .audio,
             sourceSurface: source,
-            textPreview: "Voice moment",
+            textPreview: "Recording",
             speechTruthState: .transcriptOnIPhoneLater,
             audioManifest: manifest
         )
@@ -119,12 +119,12 @@ final class WatchCaptureStore: ObservableObject {
         case .mood:
             return item.envelope.moodValue.flatMap { WatchMoodValue(rawValue: $0)?.displayName } ?? "Mood"
         case .speak:
-            return "Private thought"
+            return "Dictation"
         case .audio:
             if let duration = item.envelope.audioManifest?.duration {
-                return "Audio \(Self.durationFormatter.string(from: duration) ?? "")"
+                return "Recording, \(Self.durationFormatter.string(from: duration) ?? "")"
             }
-            return "Audio note"
+            return "Recording"
         }
     }
 
@@ -148,7 +148,7 @@ final class WatchCaptureStore: ObservableObject {
         if envelope.kind == .audio {
             guard let fileURL = knownAudioURL ?? audioFileURL(for: envelope),
                   FileManager.default.fileExists(atPath: fileURL.path) else {
-                markFailed(envelope.captureID, message: "Audio file missing.", missingFile: true)
+                markFailed(envelope.captureID, message: "Recording not found.", missingFile: true)
                 return
             }
             markTransferAttempt(for: envelope.captureID, kind: .audioFile)
@@ -266,22 +266,15 @@ final class WatchCaptureStore: ObservableObject {
         for (index, file) in retained.enumerated() {
             totalBytes += file.size
             if index >= Self.audioFileRetentionLimit || totalBytes > Self.audioByteRetentionLimit {
-                let removalError: String?
                 do {
                     try FileManager.default.removeItem(at: file.url)
                     totalBytes -= file.size
-                    removalError = nil
                 } catch {
                     watchStoreLogger.warning("Could not remove watch audio over retention limit: \(error.localizedDescription, privacy: .public)")
-                    removalError = error.localizedDescription
                 }
                 if let captureIndex = outbox.firstIndex(where: { $0.envelope.audioManifest?.fileName == file.url.lastPathComponent }) {
                     outbox[captureIndex].syncState = .failed
-                    if let removalError {
-                        outbox[captureIndex].lastError = "Storage limit reached; audio file could not be removed: \(removalError)"
-                    } else {
-                        outbox[captureIndex].lastError = "Storage limit reached; audio file removed."
-                    }
+                    outbox[captureIndex].lastError = "Watch storage is full."
                     outbox[captureIndex].updatedAtUTC = Date()
                 }
             }

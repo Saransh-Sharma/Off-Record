@@ -48,7 +48,7 @@ struct SmallMoodView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            Text("Today's mood")
+            Text("Today")
                 .font(OffRecordWidgetTypography.eyebrow)
                 .foregroundStyle(OffRecordColor.textSecondary)
 
@@ -89,13 +89,13 @@ struct MoodPickerView: View {
                 Spacer(minLength: 0)
                 TodayMoodBadge(mood: entry.todayMood, diameter: 40)
                     .invalidatableContent()
-                Text(entry.todayMood?.displayName ?? "Tap one")
+                Text(entry.todayMood?.displayName ?? "Choose one")
                     .font(OffRecordWidgetTypography.cardTitle)
                     .foregroundStyle(entry.todayMood?.readableColor ?? OffRecordColor.textHeading)
                     .lineLimit(1)
                     .minimumScaleFactor(0.75)
                     .invalidatableContent()
-                Text("today")
+                Text("Today")
                     .font(OffRecordWidgetTypography.micro)
                     .foregroundStyle(OffRecordColor.textSecondary)
             }
@@ -165,7 +165,7 @@ struct MoodWidget: Widget {
                 .widgetURL(OffRecordWidgetRoute.today)
         }
         .configurationDisplayName("Mood")
-        .description("See today's mood, or log one right from the Home Screen.")
+        .description("See or set today’s mood.")
         .supportedFamilies([.systemSmall, .systemMedium])
     }
 }
