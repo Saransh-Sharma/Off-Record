@@ -34,12 +34,24 @@
     "%@ I’ll be ready soon." : {
       "comment" : "The placeholder is a progress sentence, like “12 of 40 entries.”"
     },
-    "%@ The recording is saved." : {},
-    "%@ You can still listen or add text." : {},
-    "%@ came up more than once." : {},
-    "%@ comes up a lot for you." : {},
-    "%@ feels heavier now" : {},
-    "%@ feels lighter now" : {},
+    "%@ The recording is saved." : {
+
+    },
+    "%@ You can still listen or add text." : {
+
+    },
+    "%@ came up more than once." : {
+
+    },
+    "%@ comes up a lot for you." : {
+
+    },
+    "%@ feels heavier now" : {
+
+    },
+    "%@ feels lighter now" : {
+
+    },
     "%@ from %@ mention %@." : {
       "comment" : "The first argument is a count like “3 entries”; the second is a date, a date range, or “your journal”; the third is the words asked about.",
       "localizations" : {
@@ -84,13 +96,21 @@
         }
       }
     },
-    "%@ home" : {},
-    "%@ is back" : {},
+    "%@ home" : {
+
+    },
+    "%@ is back" : {
+
+    },
     "%@ is when you journal most." : {
       "comment" : "The placeholder is a weekday name, e.g. Sunday"
     },
-    "%@ isn’t set up. Your passcode will be used instead." : {},
-    "%@ keeps coming up" : {},
+    "%@ isn’t set up. Your passcode will be used instead." : {
+
+    },
+    "%@ keeps coming up" : {
+
+    },
     "%@ mood" : {
       "comment" : "Entry subtitle part, e.g. Happy mood\nVoiceOver label for an entry’s mood icon. The argument is the mood name."
     },
@@ -104,17 +124,27 @@
         }
       }
     },
-    "%@ recording" : {},
-    "%@ section" : {},
-    "%@ seems to lift you" : {},
-    "%@ seems to weigh on you" : {},
+    "%@ recording" : {
+
+    },
+    "%@ section" : {
+
+    },
+    "%@ seems to lift you" : {
+
+    },
+    "%@ seems to weigh on you" : {
+
+    },
     "%@ tend to lift it." : {
       "comment" : "The placeholder is a list of topics"
     },
     "%@ tends to lift it." : {
       "comment" : "The placeholder is one topic"
     },
-    "%@ theme" : {},
+    "%@ theme" : {
+
+    },
     "%@ to %@" : {
       "comment" : "A date range, from the first date to the last.",
       "localizations" : {
@@ -126,7 +156,9 @@
         }
       }
     },
-    "%@ wasn’t turned on. You can turn it on in Settings." : {},
+    "%@ wasn’t turned on. You can turn it on in Settings." : {
+
+    },
     "%@ · %@" : {
       "comment" : "When a block was added: a part of the day, then the time. For example, “Evening · 6:42 PM”.",
       "localizations" : {
@@ -274,10 +306,18 @@
       },
       "shouldTranslate" : false
     },
-    "%lld Days in a Row" : {},
-    "%lld days in a row so far." : {},
-    "%lld days in a row." : {},
-    "%lld entries" : {},
+    "%lld Days in a Row" : {
+
+    },
+    "%lld days in a row so far." : {
+
+    },
+    "%lld days in a row." : {
+
+    },
+    "%lld entries" : {
+
+    },
     "%lld hidden · %lld deleted" : {
       "localizations" : {
         "en" : {
@@ -288,8 +328,12 @@
         }
       }
     },
-    "%lld mentions before" : {},
-    "%lld moods" : {},
+    "%lld mentions before" : {
+
+    },
+    "%lld moods" : {
+
+    },
     "%lld of %lld" : {
       "comment" : "Onboarding progress, e.g. “2 of 6”",
       "localizations" : {
@@ -321,8 +365,12 @@
         }
       }
     },
-    "%lld of 7 days this week" : {},
-    "%lld percent" : {},
+    "%lld of 7 days this week" : {
+
+    },
+    "%lld percent" : {
+
+    },
     "%lld percent, %@" : {
       "localizations" : {
         "en" : {
@@ -376,9 +424,15 @@
     "%lld questions" : {
       "comment" : "Share card stat: number of questions asked"
     },
-    "%lld this year" : {},
-    "%lld to go" : {},
-    "%lld unique words this week." : {},
+    "%lld this year" : {
+
+    },
+    "%lld to go" : {
+
+    },
+    "%lld unique words this week." : {
+
+    },
     "%lld vs %lld words" : {
       "comment" : "Share card stat: average words per entry for two moods",
       "localizations" : {
@@ -407,11 +461,21 @@
       "comment" : "Share card stat: a percentage",
       "shouldTranslate" : false
     },
-    "%lld%% done." : {},
-    "%lld%% of your moods this week were positive." : {},
-    "%lld%% of your moods." : {},
-    "%lld%% of your sentences start with “I.”" : {},
-    "%lld-day streak" : {},
+    "%lld%% done." : {
+
+    },
+    "%lld%% of your moods this week were positive." : {
+
+    },
+    "%lld%% of your moods." : {
+
+    },
+    "%lld%% of your sentences start with “I.”" : {
+
+    },
+    "%lld-day streak" : {
+
+    },
     "%lld/%lld" : {
       "localizations" : {
         "en" : {
@@ -455,10 +519,18 @@
     "(No text)" : {
       "comment" : "Export placeholder for an entry without text"
     },
-    "+%lld more" : {},
-    ", and dipping" : {},
-    ", and improving" : {},
-    ", most often %@" : {},
+    "+%lld more" : {
+
+    },
+    ", and dipping" : {
+
+    },
+    ", and improving" : {
+
+    },
+    ", most often %@" : {
+
+    },
     "." : {
       "comment" : "Sentence-ending period for the mood trend summary",
       "shouldTranslate" : false
@@ -466,101 +538,219 @@
     "1M" : {
       "comment" : "Segmented control: 1 month"
     },
-    "2 weeks" : {},
+    "2 weeks" : {
+
+    },
     "2W" : {
       "comment" : "Segmented control: 2 weeks"
     },
-    "3 months" : {},
+    "3 months" : {
+
+    },
     "3M" : {
       "comment" : "Segmented control: 3 months"
     },
-    "A decision or regret came up in ^[%lld entry](inflect: true)." : {},
-    "A few things stood out this week." : {},
-    "A good week" : {},
-    "A harder week" : {},
-    "A sentence counts." : {},
-    "A sentence is enough." : {},
-    "A set time each day can make it easier." : {},
-    "A short look back at your week." : {},
-    "AI & Transcription" : {},
+    "A decision or regret came up in ^[%lld entry](inflect: true)." : {
+
+    },
+    "A few things stood out this week." : {
+
+    },
+    "A good week" : {
+
+    },
+    "A harder week" : {
+
+    },
+    "A sentence counts." : {
+
+    },
+    "A sentence is enough." : {
+
+    },
+    "A set time each day can make it easier." : {
+
+    },
+    "A short look back at your week." : {
+
+    },
+    "AI & Transcription" : {
+
+    },
     "About" : {
       "comment" : "Settings group title"
     },
-    "About OffRecord" : {},
-    "About as much as last week." : {},
-    "About the same as last week." : {},
+    "About OffRecord" : {
+
+    },
+    "About as much as last week." : {
+
+    },
+    "About the same as last week." : {
+
+    },
     "Abstract" : {
       "comment" : "High end of the “Abstraction” scale"
     },
-    "Abstraction" : {},
+    "Abstraction" : {
+
+    },
     "Adaptive" : {
       "comment" : "Writing style label"
     },
     "Add" : {
-      "comment" : "Section header above the Add Text and Add Photos buttons.\nShort label above a writing prompt on the Today screen"
+      "comment" : "Section header above the Add Text and Add Photos buttons."
     },
-    "Add Mood" : {},
-    "Add Photos" : {},
-    "Add Text" : {},
-    "Add a mood to ^[%lld more entry](inflect: true) to see this." : {},
-    "Add moods to a few entries to see when each shows up." : {},
-    "Add moods to entries to see them here." : {},
-    "Add text, a photo, or a mood." : {},
-    "Add today’s entry to keep it going." : {},
-    "Added to today’s entry." : {},
-    "Adds a recording to that day’s entry." : {},
-    "Adds a recording to today’s entry." : {},
-    "Adds text to today’s entry." : {},
+    "Add Mood" : {
+
+    },
+    "Add Photos" : {
+
+    },
+    "Add Text" : {
+
+    },
+    "Add a mood to ^[%lld more entry](inflect: true) to see this." : {
+
+    },
+    "Add moods to a few entries to see when each shows up." : {
+
+    },
+    "Add moods to entries to see them here." : {
+
+    },
+    "Add text, a photo, or a mood." : {
+
+    },
+    "Add today’s entry to keep it going." : {
+
+    },
+    "Added to today’s entry." : {
+
+    },
+    "Adds a recording to that day’s entry." : {
+
+    },
+    "Adds a recording to today’s entry." : {
+
+    },
+    "Adds text to today’s entry." : {
+
+    },
     "Adjust" : {
       "comment" : "Short label above a writing prompt on the Today screen"
     },
     "Aft" : {
       "comment" : "Short chart column label for afternoon"
     },
-    "After %lld entries this week, I’ll put a reflection here." : {},
-    "After 5 entries, I can start telling you what I see." : {},
-    "After hard days, you tend to bounce back quickly." : {},
+    "After %lld entries this week, I’ll put a reflection here." : {
+
+    },
+    "After 5 entries, I can start telling you what I see." : {
+
+    },
+    "After hard days, you tend to bounce back quickly." : {
+
+    },
     "Afternoon" : {
       "comment" : "Part of the day, noon to 5 PM."
     },
     "Afterthought" : {
       "comment" : "Short label above a writing prompt on the Today screen"
     },
-    "All Entries" : {},
-    "Allow OffRecord in the Health app to turn this on." : {},
+    "All Entries" : {
+
+    },
+    "Allow OffRecord in the Health app to turn this on." : {
+
+    },
     "Analytical" : {
       "comment" : "High end of the “Processing” scale\nHigh end of the “Thinking” scale\nWhere the user leans on the “Thinking” scale"
     },
-    "Angry" : {},
-    "Another Prompt" : {},
-    "Another Question" : {},
-    "Another app might be using the microphone." : {},
-    "Anxious" : {},
-    "Anything else worth adding?" : {},
-    "Anything you held back?" : {},
-    "Anything you want to say about %@?" : {},
-    "Appearance" : {},
-    "Apple Health" : {},
-    "Apple Health isn’t available on this %@." : {},
-    "Ask Friday" : {},
-    "Ask Friday ${question}" : {},
-    "Ask me about your journal" : {},
-    "Ask me about your journal." : {},
-    "Ask me about your moods, people, and patterns." : {},
-    "Asks Friday about your journal." : {},
-    "BY FRIDAY" : {},
-    "Back" : {},
-    "Backup & Export" : {},
-    "Backup (JSON)" : {},
-    "Backup, text, Markdown, CSV" : {},
-    "Backups include every entry." : {},
+    "Angry" : {
+
+    },
+    "Another Prompt" : {
+
+    },
+    "Another Question" : {
+
+    },
+    "Another app might be using the microphone." : {
+
+    },
+    "Anxious" : {
+
+    },
+    "Anything else worth adding?" : {
+
+    },
+    "Anything you held back?" : {
+
+    },
+    "Anything you want to say about %@?" : {
+
+    },
+    "Appearance" : {
+
+    },
+    "Apple Health" : {
+
+    },
+    "Apple Health isn’t available on this %@." : {
+
+    },
+    "Ask Friday" : {
+
+    },
+    "Ask Friday ${question}" : {
+
+    },
+    "Ask me about your journal" : {
+
+    },
+    "Ask me about your journal." : {
+
+    },
+    "Ask me about your moods, people, and patterns." : {
+
+    },
+    "Asks Friday about your journal." : {
+
+    },
+    "BY FRIDAY" : {
+
+    },
+    "Back" : {
+
+    },
+    "Backup & Export" : {
+
+    },
+    "Backup (JSON)" : {
+
+    },
+    "Backup, text, Markdown, CSV" : {
+
+    },
+    "Backups include every entry." : {
+
+    },
     "Balanced" : {
       "comment" : "Where the user leans on the “Expression” scale\nWhere the user leans on the “Thinking” scale"
     },
-    "Based On" : {},
-    "Based on %lld moods from the last 7 days." : {},
-    "Based on %lld sentences written this week." : {},
-    "Based on ^[%lld entry](inflect: true)" : {},
+    "Based On" : {
+
+    },
+    "Based on %lld moods from the last 7 days." : {
+
+    },
+    "Based on %lld sentences written this week." : {
+
+    },
+    "Based on ^[%lld entry](inflect: true)" : {
+
+    },
     "Based on ^[%lld entry](inflect: true) about %@." : {
       "localizations" : {
         "en" : {
@@ -571,7 +761,9 @@
         }
       }
     },
-    "Based on ^[%lld entry](inflect: true)." : {},
+    "Based on ^[%lld entry](inflect: true)." : {
+
+    },
     "Based on ^[%lld recent entry](inflect: true) vs. ^[%lld earlier entry](inflect: true)." : {
       "localizations" : {
         "en" : {
@@ -582,34 +774,90 @@
         }
       }
     },
-    "Based on ^[%lld recent entry](inflect: true)." : {},
-    "Based on a recent entry." : {},
-    "Based on average entry length for each mood this week." : {},
-    "Based on distinct words in %lld entries from the last 7 days." : {},
-    "Based on earlier entries and the last 2 weeks." : {},
-    "Based on how the tone of %lld entries changed this week." : {},
-    "Based on patterns in your journal." : {},
-    "Based on question marks in this week’s entries." : {},
-    "Based on recent entries and ones from over a month ago." : {},
-    "Based on the gaps between recent entries." : {},
-    "Based on the tone of entries that mention this person." : {},
-    "Based on the tone of this week’s entries, by hour." : {},
-    "Based on the word that appeared in the most entries." : {},
-    "Based on this entry’s wording." : {},
-    "Based on this week’s entries." : {},
-    "Based on topics from your earlier entries." : {},
-    "Based on when you wrote your last ^[%lld entry](inflect: true)." : {},
-    "Based on words like “should” and “want” in this week’s entries." : {},
-    "Based on your last %lld entries." : {},
-    "Based on your last 3 entries vs. earlier ones." : {},
-    "Based on your last 5 entries." : {},
-    "Based on your last few entries." : {},
-    "Based on your moods by day over the last 7 days." : {},
-    "Based on your overall patterns" : {},
-    "Based on your recent and earlier %@ entries." : {},
-    "Based on your recent entry lengths." : {},
-    "Based on your words. Not medical advice." : {},
-    "Baseline" : {},
+    "Based on ^[%lld recent entry](inflect: true)." : {
+
+    },
+    "Based on a recent entry." : {
+
+    },
+    "Based on average entry length for each mood this week." : {
+
+    },
+    "Based on distinct words in %lld entries from the last 7 days." : {
+
+    },
+    "Based on earlier entries and the last 2 weeks." : {
+
+    },
+    "Based on how the tone of %lld entries changed this week." : {
+
+    },
+    "Based on patterns in your journal." : {
+
+    },
+    "Based on question marks in this week’s entries." : {
+
+    },
+    "Based on recent entries and ones from over a month ago." : {
+
+    },
+    "Based on the gaps between recent entries." : {
+
+    },
+    "Based on the tone of entries that mention this person." : {
+
+    },
+    "Based on the tone of this week’s entries, by hour." : {
+
+    },
+    "Based on the word that appeared in the most entries." : {
+
+    },
+    "Based on this entry’s wording." : {
+
+    },
+    "Based on this week’s entries." : {
+
+    },
+    "Based on topics from your earlier entries." : {
+
+    },
+    "Based on when you wrote your last ^[%lld entry](inflect: true)." : {
+
+    },
+    "Based on words like “should” and “want” in this week’s entries." : {
+
+    },
+    "Based on your last %lld entries." : {
+
+    },
+    "Based on your last 3 entries vs. earlier ones." : {
+
+    },
+    "Based on your last 5 entries." : {
+
+    },
+    "Based on your last few entries." : {
+
+    },
+    "Based on your moods by day over the last 7 days." : {
+
+    },
+    "Based on your overall patterns" : {
+
+    },
+    "Based on your recent and earlier %@ entries." : {
+
+    },
+    "Based on your recent entry lengths." : {
+
+    },
+    "Based on your words. Not medical advice." : {
+
+    },
+    "Baseline" : {
+
+    },
     "Body" : {
       "comment" : "Title of a writing prompt about how your body feels"
     },
@@ -623,95 +871,219 @@
         }
       }
     },
-    "Building a habit" : {},
-    "Building…" : {},
-    "Builds on your next search" : {},
-    "CSV" : {},
-    "Calculating…" : {},
+    "Building a habit" : {
+
+    },
+    "Building…" : {
+
+    },
+    "Builds on your next search" : {
+
+    },
+    "CSV" : {
+
+    },
+    "Calculating…" : {
+
+    },
     "Calendar" : {
       "comment" : "Timeline view option: entries on a mood calendar."
     },
-    "Calendar Scale" : {},
-    "Calm" : {},
-    "Came up in ^[%lld entry](inflect: true)." : {},
-    "Can be restored in OffRecord." : {},
-    "Cancel" : {},
+    "Calendar Scale" : {
+
+    },
+    "Calm" : {
+
+    },
+    "Came up in ^[%lld entry](inflect: true)." : {
+
+    },
+    "Can be restored in OffRecord." : {
+
+    },
+    "Cancel" : {
+
+    },
     "Casual" : {
       "comment" : "Low end of the “Formality” scale"
     },
-    "Casual & Expressive" : {},
-    "Change Mood" : {},
-    "Change Reminder Time" : {},
-    "Changes the entry date." : {},
+    "Casual & Expressive" : {
+
+    },
+    "Change Mood" : {
+
+    },
+    "Change Reminder Time" : {
+
+    },
+    "Changes the entry date." : {
+
+    },
     "Check-in" : {
       "comment" : "Short label above a writing prompt on the Today screen"
     },
-    "Choose Backup File" : {},
-    "Choose a backup file exported from OffRecord." : {},
-    "Choose any." : {},
-    "Clear & Professional" : {},
-    "Clear All" : {},
-    "Clear Dates" : {},
-    "Clear Filters" : {},
-    "Clear my head" : {},
-    "Clears this conversation." : {},
-    "Close" : {},
-    "Close and reopen OffRecord to apply the iCloud change." : {},
-    "Comes up a lot" : {},
-    "Comes up rarely" : {},
-    "Comes up sometimes" : {},
-    "Communication" : {},
-    "Compared with your recent entries." : {},
-    "Conceptual Thinker" : {},
+    "Choose Backup File" : {
+
+    },
+    "Choose a backup file exported from OffRecord." : {
+
+    },
+    "Choose any." : {
+
+    },
+    "Clear & Professional" : {
+
+    },
+    "Clear All" : {
+
+    },
+    "Clear Dates" : {
+
+    },
+    "Clear Filters" : {
+
+    },
+    "Clear my head" : {
+
+    },
+    "Clears this conversation." : {
+
+    },
+    "Close" : {
+
+    },
+    "Close and reopen OffRecord to apply the iCloud change." : {
+
+    },
+    "Comes up a lot" : {
+
+    },
+    "Comes up rarely" : {
+
+    },
+    "Comes up sometimes" : {
+
+    },
+    "Communication" : {
+
+    },
+    "Compared with your recent entries." : {
+
+    },
+    "Conceptual Thinker" : {
+
+    },
     "Concrete" : {
       "comment" : "Low end of the “Abstraction” scale"
     },
-    "Confirm Password" : {},
-    "Continue" : {},
+    "Confirm Password" : {
+
+    },
+    "Continue" : {
+
+    },
     "Copy" : {
       "comment" : "Copies Friday’s message"
     },
-    "Copy Text" : {},
-    "Couldn’t Export" : {},
-    "Couldn’t Make This Reflection" : {},
-    "Couldn’t Open Entry" : {},
-    "Couldn’t Open Today’s Entry" : {},
-    "Couldn’t Restore" : {},
-    "Couldn’t Start Recording" : {},
-    "Couldn’t access storage." : {},
-    "Couldn’t add to today’s entry. Try again in OffRecord." : {},
-    "Couldn’t ask for Health access. Try again." : {},
+    "Copy Text" : {
+
+    },
+    "Couldn’t Export" : {
+
+    },
+    "Couldn’t Make This Reflection" : {
+
+    },
+    "Couldn’t Open Entry" : {
+
+    },
+    "Couldn’t Open Today’s Entry" : {
+
+    },
+    "Couldn’t Restore" : {
+
+    },
+    "Couldn’t Start Recording" : {
+
+    },
+    "Couldn’t access storage." : {
+
+    },
+    "Couldn’t add to today’s entry. Try again in OffRecord." : {
+
+    },
+    "Couldn’t ask for Health access. Try again." : {
+
+    },
     "Couldn’t be made" : {
       "comment" : "Weekly reflection history row: the reflection failed to generate"
     },
-    "Couldn’t load the recording." : {},
-    "Couldn’t open that file." : {},
-    "Couldn’t restore this backup." : {},
-    "Couldn’t restore. Check the password and try again." : {},
-    "Couldn’t save today’s mood. Try again in OffRecord." : {},
-    "Couldn’t save. Try again." : {},
-    "Couldn’t star the entry. Try again in OffRecord." : {},
-    "Couldn’t unlock. Try again." : {},
-    "Couldn’t unstar the entry. Try again in OffRecord." : {},
-    "Couldn’t update" : {},
-    "Creative Dreamer" : {},
-    "Daily Reminder" : {},
-    "Daily log" : {},
-    "Daily mood" : {},
+    "Couldn’t load the recording." : {
+
+    },
+    "Couldn’t open that file." : {
+
+    },
+    "Couldn’t restore this backup." : {
+
+    },
+    "Couldn’t restore. Check the password and try again." : {
+
+    },
+    "Couldn’t save today’s mood. Try again in OffRecord." : {
+
+    },
+    "Couldn’t save. Try again." : {
+
+    },
+    "Couldn’t star the entry. Try again in OffRecord." : {
+
+    },
+    "Couldn’t unlock. Try again." : {
+
+    },
+    "Couldn’t unstar the entry. Try again in OffRecord." : {
+
+    },
+    "Couldn’t update" : {
+
+    },
+    "Creative Dreamer" : {
+
+    },
+    "Daily Reminder" : {
+
+    },
+    "Daily log" : {
+
+    },
+    "Daily mood" : {
+
+    },
     "Dark" : {
       "comment" : "Theme name: always dark appearance"
     },
-    "Darker means more often." : {},
-    "Data & Export" : {},
+    "Darker means more often." : {
+
+    },
+    "Data & Export" : {
+
+    },
     "Date" : {
       "comment" : "Chart axis title"
     },
-    "Date, %@" : {},
-    "Dates and moods only" : {},
+    "Date, %@" : {
+
+    },
+    "Dates and moods only" : {
+
+    },
     "Day" : {
       "comment" : "Chart axis title: day of the week"
     },
-    "Days in a row with at least one entry." : {},
+    "Days in a row with at least one entry." : {
+
+    },
     "Decision" : {
       "comment" : "Insight category badge"
     },
@@ -721,34 +1093,66 @@
     "Delete" : {
       "comment" : "Action that deletes an entry.\nMenu action that deletes a block from the entry."
     },
-    "Delete Entry" : {},
-    "Delete Index" : {},
-    "Delete Photo?" : {},
-    "Delete Recording?" : {},
-    "Delete Reflection" : {},
-    "Delete Reflection?" : {},
-    "Delete Search Index?" : {},
-    "Delete Text?" : {},
-    "Delete This Entry?" : {},
-    "Delete?" : {},
+    "Delete Entry" : {
+
+    },
+    "Delete Index" : {
+
+    },
+    "Delete Photo?" : {
+
+    },
+    "Delete Recording?" : {
+
+    },
+    "Delete Reflection" : {
+
+    },
+    "Delete Reflection?" : {
+
+    },
+    "Delete Search Index?" : {
+
+    },
+    "Delete Text?" : {
+
+    },
+    "Delete This Entry?" : {
+
+    },
+    "Delete?" : {
+
+    },
     "Deleted" : {
       "comment" : "Search index status: the index was deleted."
     },
-    "Deletes this recording." : {},
+    "Deletes this recording." : {
+
+    },
     "Developing" : {
       "comment" : "Low end of the “Self-Awareness” scale"
     },
     "Direct" : {
       "comment" : "High end of the “Directness” scale\nWhere the user leans on the “Directness” scale"
     },
-    "Direct & Reserved" : {},
+    "Direct & Reserved" : {
+
+    },
     "Directness" : {
       "comment" : "Personality card trait"
     },
-    "Discard" : {},
-    "Discard Recording?" : {},
-    "Dismiss" : {},
-    "Done" : {},
+    "Discard" : {
+
+    },
+    "Discard Recording?" : {
+
+    },
+    "Dismiss" : {
+
+    },
+    "Done" : {
+
+    },
     "Don’t Lose It" : {
       "comment" : "Short label above a writing prompt on the Today screen"
     },
@@ -758,42 +1162,66 @@
     "END OF EXPORT" : {
       "comment" : "Plain-text export closing line, in capitals"
     },
-    "Each one read a bit heavier than the last." : {},
+    "Each one read a bit heavier than the last." : {
+
+    },
     "Earlier" : {
       "comment" : "Tag on an entry cited as earlier, comparison evidence for a Friday insight"
     },
-    "Earlier Entries" : {},
-    "Earlier Weeks" : {},
+    "Earlier Entries" : {
+
+    },
+    "Earlier Weeks" : {
+
+    },
     "Early morning" : {
       "comment" : "Part of the day, 5 to 8 AM."
     },
     "Edit" : {
       "comment" : "Menu action that edits a text block."
     },
-    "Elapsed time" : {},
+    "Elapsed time" : {
+
+    },
     "Emotions" : {
       "comment" : "Friday screen section tab"
     },
-    "Encrypted Backup" : {},
-    "Encrypted backups can’t be opened without their password." : {},
+    "Encrypted Backup" : {
+
+    },
+    "Encrypted backups can’t be opened without their password." : {
+
+    },
     "Energy" : {
       "comment" : "Meter label: the user's usual energy\nShort label above a writing prompt on the Today screen"
     },
-    "Enter this backup’s password." : {},
+    "Enter this backup’s password." : {
+
+    },
     "Entries" : {
       "comment" : "About row: number of journal entries\nChart axis title: number of journal entries\nExport filter section: which entries to include\nLabel under the number of entries this month (plural).\nNumber of journal entries\nStorage row: space used by journal entries"
     },
-    "Entries about %@ read heavier than your others." : {},
-    "Entries about %@ read lighter than your others." : {},
-    "Entries per day" : {},
-    "Entries you already have are skipped." : {},
+    "Entries about %@ read heavier than your others." : {
+
+    },
+    "Entries about %@ read lighter than your others." : {
+
+    },
+    "Entries per day" : {
+
+    },
+    "Entries you already have are skipped." : {
+
+    },
     "Entries:" : {
       "comment" : "Export header label, followed by the number of entries"
     },
     "Entry" : {
       "comment" : "Label under the number of entries this month (singular)."
     },
-    "Entry deleted" : {},
+    "Entry deleted" : {
+
+    },
     "Entry from %@, %@. %@" : {
       "localizations" : {
         "en" : {
@@ -814,44 +1242,66 @@
         }
       }
     },
-    "Estimated from the wording of your last ^[%lld entry](inflect: true)." : {},
+    "Estimated from the wording of your last ^[%lld entry](inflect: true)." : {
+
+    },
     "Eve" : {
       "comment" : "Short chart column label for evening"
     },
     "Evening" : {
       "comment" : "Part of the day, 5 to 9 PM."
     },
-    "Evening writer" : {},
+    "Evening writer" : {
+
+    },
     "Evolving" : {
       "comment" : "Where the user leans on the “Mindset” scale"
     },
-    "Excited" : {},
+    "Excited" : {
+
+    },
     "Export" : {
       "comment" : "Settings row that opens export options"
     },
-    "Export PDF" : {},
-    "Export Reflection" : {},
-    "Export ^[%lld Entry](inflect: true)" : {},
+    "Export PDF" : {
+
+    },
+    "Export Reflection" : {
+
+    },
+    "Export ^[%lld Entry](inflect: true)" : {
+
+    },
     "Exported on %@" : {
       "comment" : "PDF export cover: date the PDF was made"
     },
     "Exported:" : {
       "comment" : "Export header label, followed by the export date"
     },
-    "Exporting…" : {},
-    "Exports never include full entries." : {},
+    "Exporting…" : {
+
+    },
+    "Exports never include full entries." : {
+
+    },
     "Expression" : {
       "comment" : "Personality card trait"
     },
     "Expressive" : {
       "comment" : "High end of the “Expression” scale\nHigh end of the “Expressiveness” scale\nWhere the user leans on the “Expression” scale"
     },
-    "Expressiveness" : {},
-    "Filters" : {},
+    "Expressiveness" : {
+
+    },
+    "Filters" : {
+
+    },
     "Fixed" : {
       "comment" : "Low end of the “Growth Mindset” scale\nLow end of the “Mindset” scale"
     },
-    "Flexible Thinker" : {},
+    "Flexible Thinker" : {
+
+    },
     "Focus" : {
       "comment" : "Short label above a writing prompt on the Today screen"
     },
@@ -861,16 +1311,30 @@
     "Follow-up" : {
       "comment" : "Short label above a writing prompt on the Today screen"
     },
-    "For %@" : {},
-    "For notes apps." : {},
-    "For reading and printing." : {},
-    "For spreadsheets." : {},
-    "Forget" : {},
-    "Forget %@?" : {},
+    "For %@" : {
+
+    },
+    "For notes apps." : {
+
+    },
+    "For reading and printing." : {
+
+    },
+    "For spreadsheets." : {
+
+    },
+    "Forget" : {
+
+    },
+    "Forget %@?" : {
+
+    },
     "Formal" : {
       "comment" : "High end of the “Formality” scale"
     },
-    "Formality" : {},
+    "Formality" : {
+
+    },
     "Format" : {
       "comment" : "Export section: file format"
     },
@@ -883,13 +1347,27 @@
     "Friday" : {
       "comment" : "Name of the in-app assistant\nName of the in-app assistant, not the weekday.\nName of the in-app assistant, shown as the reminder notification title\nTab name; Friday is the AI companion, not the weekday"
     },
-    "Friday is thinking" : {},
-    "Friday listening" : {},
-    "Friday thinking" : {},
-    "Friday walking" : {},
-    "Friday waving" : {},
-    "Friday, search, and transcription run on this %@ and work offline." : {},
-    "Friday: %@" : {},
+    "Friday is thinking" : {
+
+    },
+    "Friday listening" : {
+
+    },
+    "Friday thinking" : {
+
+    },
+    "Friday walking" : {
+
+    },
+    "Friday waving" : {
+
+    },
+    "Friday, search, and transcription run on this %@ and work offline." : {
+
+    },
+    "Friday: %@" : {
+
+    },
     "From" : {
       "comment" : "Button that sets the start date of the date filter."
     },
@@ -899,9 +1377,15 @@
     "From Friday" : {
       "comment" : "Header for the assistant’s notes on this entry. Friday is the assistant’s name, not the weekday."
     },
-    "From ^[%lld entry](inflect: true)" : {},
-    "From your entry: %@" : {},
-    "From your overall patterns" : {},
+    "From ^[%lld entry](inflect: true)" : {
+
+    },
+    "From your entry: %@" : {
+
+    },
+    "From your overall patterns" : {
+
+    },
     "Future" : {
       "comment" : "High end of the “Time Focus” scale"
     },
@@ -911,114 +1395,252 @@
     "General" : {
       "comment" : "What an entry is about, when no clear theme stands out."
     },
-    "Get a Question" : {},
-    "Go Deeper" : {},
-    "Goal Reached" : {},
-    "Goals" : {},
+    "Get a Question" : {
+
+    },
+    "Go Deeper" : {
+
+    },
+    "Goal Reached" : {
+
+    },
+    "Goals" : {
+
+    },
     "Good" : {
       "comment" : "How the user usually feels at this time"
     },
     "Good Thing" : {
       "comment" : "Short label above a writing prompt on the Today screen"
     },
-    "Good afternoon" : {},
-    "Good evening" : {},
-    "Good morning" : {},
-    "Good news" : {},
-    "Good night" : {},
+    "Good afternoon" : {
+
+    },
+    "Good evening" : {
+
+    },
+    "Good morning" : {
+
+    },
+    "Good news" : {
+
+    },
+    "Good night" : {
+
+    },
     "Got Heavier" : {
       "comment" : "Weekly mood arc: entries got heavier over the week"
     },
     "Got Lighter" : {
       "comment" : "Weekly mood arc: entries got lighter over the week"
     },
-    "Grateful" : {},
+    "Grateful" : {
+
+    },
     "Gratitude" : {
       "comment" : "Title of a writing prompt"
     },
     "Great" : {
       "comment" : "How the user usually feels at this time"
     },
-    "Grounded Feeler" : {},
+    "Grounded Feeler" : {
+
+    },
     "Growing" : {
       "comment" : "How well Friday knows the user: middle level"
     },
     "Growth" : {
       "comment" : "Card heading: how the user is growing\nHigh end of the “Growth Mindset” scale\nHigh end of the “Mindset” scale"
     },
-    "Growth Mindset" : {},
+    "Growth Mindset" : {
+
+    },
     "Growth-minded" : {
       "comment" : "Where the user leans on the “Mindset” scale"
     },
-    "Happy" : {},
-    "Has Photos" : {},
-    "Has Recording" : {},
-    "Heavier lately" : {},
+    "Happy" : {
+
+    },
+    "Has Photos" : {
+
+    },
+    "Has Recording" : {
+
+    },
+    "Heavier lately" : {
+
+    },
     "Heavy" : {
       "comment" : "Tone of an entry: mostly negative."
     },
-    "Hidden" : {},
-    "Hidden entries are left out of this reflection only." : {},
-    "Hide This Week" : {},
-    "Hide Transcript" : {},
-    "Hides this from Friday." : {},
+    "Hidden" : {
+
+    },
+    "Hidden entries are left out of this reflection only." : {
+
+    },
+    "Hide This Week" : {
+
+    },
+    "Hide Transcript" : {
+
+    },
+    "Hides this from Friday." : {
+
+    },
     "Highlight" : {
       "comment" : "Short label above a writing prompt on the Today screen"
     },
-    "How I Got This" : {},
-    "How Well I Know You" : {},
-    "How You Think" : {},
-    "How You Write" : {},
-    "How are you feeling?" : {},
-    "How are you starting the day?" : {},
-    "How can you keep this feeling?" : {},
-    "How could you make more room for it?" : {},
-    "How did that feel?" : {},
-    "How did this week compare to last week?" : {},
-    "How do I feel about %@ lately?" : {},
-    "How do I write?" : {},
-    "How do you feel about it now?" : {},
-    "How does %@ affect my mood?" : {},
-    "How does your body feel right now?" : {},
-    "How has %@ changed since I first wrote about it?" : {},
-    "How has my mood changed?" : {},
+    "How I Got This" : {
+
+    },
+    "How Well I Know You" : {
+
+    },
+    "How You Think" : {
+
+    },
+    "How You Write" : {
+
+    },
+    "How are you feeling?" : {
+
+    },
+    "How are you starting the day?" : {
+
+    },
+    "How can you keep this feeling?" : {
+
+    },
+    "How could you make more room for it?" : {
+
+    },
+    "How did that feel?" : {
+
+    },
+    "How did this week compare to last week?" : {
+
+    },
+    "How do I feel about %@ lately?" : {
+
+    },
+    "How do I write?" : {
+
+    },
+    "How do you feel about it now?" : {
+
+    },
+    "How does %@ affect my mood?" : {
+
+    },
+    "How does your body feel right now?" : {
+
+    },
+    "How has %@ changed since I first wrote about it?" : {
+
+    },
+    "How has my mood changed?" : {
+
+    },
     "How has this changed since %@?" : {
       "comment" : "The placeholder is a month name"
     },
-    "How often have I been writing lately?" : {},
-    "How was today?" : {},
-    "How’s my mood this week?" : {},
-    "I can’t point to specific entries right now." : {},
-    "I couldn’t find supporting entries for this." : {},
-    "I couldn’t put this week together." : {},
-    "I couldn’t read your journal." : {},
-    "I couldn’t search your journal just now." : {},
-    "I do not have enough journal evidence to answer that yet." : {},
-    "I don’t have anything on that." : {},
-    "I don’t have enough to go on yet. A few more entries will help." : {},
-    "I don’t know you yet." : {},
-    "I have a question for you tonight." : {},
-    "I have enough from this week for a recap." : {},
-    "I haven’t seen %@ in the last 2 weeks. They used to come up often." : {},
-    "I haven’t seen anyone by name yet. Mention people by name and I’ll keep track." : {},
-    "I know you well." : {},
-    "I know your patterns well." : {},
-    "I learn from what you write." : {},
-    "I left the heaviest entries out of this reflection." : {},
-    "I looked back at ^[%lld entry](inflect: true) from this week." : {},
-    "I need 3 entries before I can spot patterns." : {},
-    "I only answer from journal evidence I can find." : {},
-    "I only answer from your entries." : {},
-    "I pulled a question from this week’s entries." : {},
-    "I spotted a pattern worth a look." : {},
-    "If %@ went the way you hoped, what would change?" : {},
-    "Importance" : {},
-    "Include" : {},
-    "Included" : {},
+    "How often have I been writing lately?" : {
+
+    },
+    "How was today?" : {
+
+    },
+    "How’s my mood this week?" : {
+
+    },
+    "I can’t point to specific entries right now." : {
+
+    },
+    "I couldn’t find supporting entries for this." : {
+
+    },
+    "I couldn’t put this week together." : {
+
+    },
+    "I couldn’t read your journal." : {
+
+    },
+    "I couldn’t search your journal just now." : {
+
+    },
+    "I do not have enough journal evidence to answer that yet." : {
+
+    },
+    "I don’t have anything on that." : {
+
+    },
+    "I don’t have enough to go on yet. A few more entries will help." : {
+
+    },
+    "I don’t know you yet." : {
+
+    },
+    "I have a question for you tonight." : {
+
+    },
+    "I have enough from this week for a recap." : {
+
+    },
+    "I haven’t seen %@ in the last 2 weeks. They used to come up often." : {
+
+    },
+    "I haven’t seen anyone by name yet. Mention people by name and I’ll keep track." : {
+
+    },
+    "I know you well." : {
+
+    },
+    "I know your patterns well." : {
+
+    },
+    "I learn from what you write." : {
+
+    },
+    "I left the heaviest entries out of this reflection." : {
+
+    },
+    "I looked back at ^[%lld entry](inflect: true) from this week." : {
+
+    },
+    "I need 3 entries before I can spot patterns." : {
+
+    },
+    "I only answer from journal evidence I can find." : {
+
+    },
+    "I only answer from your entries." : {
+
+    },
+    "I pulled a question from this week’s entries." : {
+
+    },
+    "I spotted a pattern worth a look." : {
+
+    },
+    "If %@ went the way you hoped, what would change?" : {
+
+    },
+    "Importance" : {
+
+    },
+    "Include" : {
+
+    },
+    "Included" : {
+
+    },
     "Indexed Passages" : {
       "comment" : "How many pieces of the journal the search index holds"
     },
-    "Insight" : {},
+    "Insight" : {
+
+    },
     "Insights" : {
       "comment" : "Tab name"
     },
@@ -1028,14 +1650,30 @@
     "Intuitive" : {
       "comment" : "Low end of the “Processing” scale\nLow end of the “Thinking” scale\nWhere the user leans on the “Thinking” scale"
     },
-    "Is this feeling pointing to a boundary?" : {},
-    "It hasn’t been saved yet." : {},
-    "It showed up in %@." : {},
-    "It used to come up often." : {},
-    "Its text, recordings, photos, and moods will be deleted. This can’t be undone." : {},
-    "I’ll answer once I’ve read everything." : {},
-    "I’ll ask one question about what you wrote." : {},
-    "I’ll be ready soon." : {},
+    "Is this feeling pointing to a boundary?" : {
+
+    },
+    "It hasn’t been saved yet." : {
+
+    },
+    "It showed up in %@." : {
+
+    },
+    "It used to come up often." : {
+
+    },
+    "Its text, recordings, photos, and moods will be deleted. This can’t be undone." : {
+
+    },
+    "I’ll answer once I’ve read everything." : {
+
+    },
+    "I’ll ask one question about what you wrote." : {
+
+    },
+    "I’ll be ready soon." : {
+
+    },
     "I’ll make this after %lld entries. You have %lld." : {
       "localizations" : {
         "en" : {
@@ -1046,37 +1684,72 @@
         }
       }
     },
-    "I’ll stop bringing this up. Your entries won’t change, and you can restore it in My World." : {},
-    "I’ll use this name from now on. Your entries won’t change." : {},
+    "I’ll stop bringing this up. Your entries won’t change, and you can restore it in My World." : {
+
+    },
+    "I’ll use this name from now on. Your entries won’t change." : {
+
+    },
     "I’m Friday." : {
       "comment" : "Friday introduces herself; followed by an invitation to talk"
     },
-    "I’m getting a clearer picture." : {},
-    "I’m getting your journal ready." : {},
-    "I’m just getting to know you." : {},
-    "I’m not sure about this one. It’s based on only a few entries." : {},
-    "I’m not sure. Only a few entries match." : {},
-    "I’m reading your journal. This takes a minute." : {},
-    "I’m starting to see patterns." : {},
-    "I’m still reading your journal." : {},
+    "I’m getting a clearer picture." : {
+
+    },
+    "I’m getting your journal ready." : {
+
+    },
+    "I’m just getting to know you." : {
+
+    },
+    "I’m not sure about this one. It’s based on only a few entries." : {
+
+    },
+    "I’m not sure. Only a few entries match." : {
+
+    },
+    "I’m reading your journal. This takes a minute." : {
+
+    },
+    "I’m starting to see patterns." : {
+
+    },
+    "I’m still reading your journal." : {
+
+    },
     "Journal" : {
       "comment" : "PDF export cover title, above the period (e.g. 2026)"
     },
-    "Journal & Reminders" : {},
-    "Journal Entry" : {},
-    "Journal Entry, %@" : {},
-    "Journal Locked" : {},
-    "Journal at different times of day to see this." : {},
-    "Journal entry" : {},
-    "Keep" : {
-      "comment" : "Short label above a writing prompt on the Today screen"
+    "Journal & Reminders" : {
+
     },
-    "Keep Recording" : {},
+    "Journal Entry" : {
+
+    },
+    "Journal Entry, %@" : {
+
+    },
+    "Journal Locked" : {
+
+    },
+    "Journal at different times of day to see this." : {
+
+    },
+    "Journal entry" : {
+
+    },
+    "Keep Recording" : {
+
+    },
     "Kindness" : {
       "comment" : "Title of a writing prompt about self-kindness"
     },
-    "Last 7 Days" : {},
-    "Last Mentioned" : {},
+    "Last 7 Days" : {
+
+    },
+    "Last Mentioned" : {
+
+    },
     "Last Thought" : {
       "comment" : "Short label above a writing prompt on the Today screen"
     },
@@ -1095,23 +1768,33 @@
     "Learning" : {
       "comment" : "How well Friday knows the user: second level"
     },
-    "Leaves only when you export or turn on iCloud" : {},
-    "Less writing than last week." : {},
+    "Leaves only when you export or turn on iCloud" : {
+
+    },
+    "Less writing than last week." : {
+
+    },
     "Let Go" : {
       "comment" : "Short label above a writing prompt on the Today screen"
     },
-    "Lets search and Friday find entries by meaning. Built on this %@, never synced." : {},
+    "Lets search and Friday find entries by meaning. Built on this %@, never synced." : {
+
+    },
     "Letting Go" : {
       "comment" : "Title of a writing prompt"
     },
-    "Lifts Your Mood" : {},
+    "Lifts Your Mood" : {
+
+    },
     "Light" : {
       "comment" : "Theme name: always light appearance\nTone of an entry: mostly positive."
     },
     "Limited evidence · %@" : {
       "comment" : "The placeholder is an entry count, like “4 entries”"
     },
-    "Limited evidence, based on %@" : {},
+    "Limited evidence, based on %@" : {
+
+    },
     "List" : {
       "comment" : "Timeline view option: entries as a list."
     },
@@ -1121,12 +1804,24 @@
     "Lock" : {
       "comment" : "Settings section: app lock"
     },
-    "Lock your journal" : {},
-    "Locks again when you leave the app." : {},
-    "Locks when you leave the app. Falls back to your passcode." : {},
-    "Log Mood" : {},
-    "Long recording. Save and start a new one?" : {},
-    "Longer than your recent entries." : {},
+    "Lock your journal" : {
+
+    },
+    "Locks again when you leave the app." : {
+
+    },
+    "Locks when you leave the app. Falls back to your passcode." : {
+
+    },
+    "Log Mood" : {
+
+    },
+    "Long recording. Save and start a new one?" : {
+
+    },
+    "Longer than your recent entries." : {
+
+    },
     "Longest" : {
       "comment" : "Streak card metric: longest streak"
     },
@@ -1140,21 +1835,36 @@
         }
       }
     },
-    "Looking for advice" : {},
+    "Looking for advice" : {
+
+    },
     "Loose Ends" : {
       "comment" : "Short label above a writing prompt on the Today screen"
     },
     "Low" : {
       "comment" : "How the user usually feels at this time"
     },
-    "MY WORDS" : {},
-    "Made by OffRecord on your device. Not medical advice." : {},
+    "MY WORDS" : {
+
+    },
+    "Made by OffRecord on your device. Not medical advice." : {
+
+    },
     "Made with OffRecord" : {
       "comment" : "PDF export page footer"
     },
-    "Make it a habit" : {},
-    "Mark as Done" : {},
-    "Markdown" : {},
+    "Make Weekly Reflections" : {
+
+    },
+    "Make it a habit" : {
+
+    },
+    "Mark as Done" : {
+
+    },
+    "Markdown" : {
+
+    },
     "Measured" : {
       "comment" : "Where the user leans on the “Directness” scale"
     },
@@ -1167,8 +1877,12 @@
     "Mentions this." : {
       "comment" : "Why an entry is cited as evidence for a weekly reflection theme"
     },
-    "Message Friday" : {},
-    "Microphone Access Is Off" : {},
+    "Message Friday" : {
+
+    },
+    "Microphone Access Is Off" : {
+
+    },
     "Mindset" : {
       "comment" : "Personality card trait"
     },
@@ -1187,10 +1901,18 @@
     "Mood" : {
       "comment" : "Card heading: the user's mood\nChart axis title: mood level\nChart title: mood over the week\nExport heading for the weekly mood arc\nLabel before the row of mood filters.\nMeter label: the user's usual mood\nPlaceholder snippet for an entry with only a mood\nWeekly reflection section title: mood over the week"
     },
-    "Mood Over Time" : {},
-    "Mood by Time of Day" : {},
-    "Mood set to %@." : {},
-    "Mood, %@" : {},
+    "Mood Over Time" : {
+
+    },
+    "Mood by Time of Day" : {
+
+    },
+    "Mood set to %@." : {
+
+    },
+    "Mood, %@" : {
+
+    },
     "Mood, %@, %@" : {
       "comment" : "VoiceOver label for a mood block in an entry. The arguments are the mood and when it was added.",
       "localizations" : {
@@ -1205,25 +1927,39 @@
     "Mood:" : {
       "comment" : "Export label, followed by the entry's mood"
     },
-    "Moods only" : {},
+    "Moods only" : {
+
+    },
     "More" : {
       "comment" : "Accessibility label for the insight card’s options menu\nAccessibility label for the menu with more actions for this block.\nAccessibility label for the menu with more actions for this entry."
     },
-    "More Moods" : {},
+    "More Moods" : {
+
+    },
     "More about %@" : {
       "comment" : "Follow-up chip; the placeholder is a person, place, or theme"
     },
-    "More obligations than wants." : {},
-    "More of your moods this week were low." : {},
-    "More wants than obligations." : {},
-    "More writing than last week." : {},
+    "More obligations than wants." : {
+
+    },
+    "More of your moods this week were low." : {
+
+    },
+    "More wants than obligations." : {
+
+    },
+    "More writing than last week." : {
+
+    },
     "Morn" : {
       "comment" : "Short chart column label for morning"
     },
     "Morning" : {
       "comment" : "Part of the day, 8 AM to noon."
     },
-    "Morning writer" : {},
+    "Morning writer" : {
+
+    },
     "Most %@ on %@.\nMost %@ on %@." : {
       "localizations" : {
         "en" : {
@@ -1234,7 +1970,9 @@
         }
       }
     },
-    "Most Common Moods" : {},
+    "Most Common Moods" : {
+
+    },
     "Most were tagged %@." : {
       "comment" : "The argument is a mood name."
     },
@@ -1244,15 +1982,27 @@
     "Mostly positive" : {
       "comment" : "Overall feeling of entries that mention a remembered person, place, or topic"
     },
-    "My Personality Card" : {},
+    "My Personality Card" : {
+
+    },
     "My World" : {
       "comment" : "Friday screen section tab: people, places, and topics Friday remembers"
     },
-    "My personality card from OffRecord, a private voice journal." : {},
-    "Name" : {},
-    "Name and subtitle appear on the cover only." : {},
-    "Names are replaced with “someone.”" : {},
-    "Names will be visible in the image." : {},
+    "My personality card from OffRecord, a private voice journal." : {
+
+    },
+    "Name" : {
+
+    },
+    "Name and subtitle appear on the cover only." : {
+
+    },
+    "Names are replaced with “someone.”" : {
+
+    },
+    "Names will be visible in the image." : {
+
+    },
     "Needs" : {
       "comment" : "Short label above a writing prompt on the Today screen"
     },
@@ -1262,64 +2012,156 @@
     "New" : {
       "comment" : "How well Friday knows the user: lowest level"
     },
-    "New Chat" : {},
-    "New Entry" : {},
-    "New text" : {},
-    "Next Month" : {},
+    "New Chat" : {
+
+    },
+    "New Entry" : {
+
+    },
+    "New text" : {
+
+    },
+    "Next Month" : {
+
+    },
     "Night" : {
       "comment" : "Part of the day, 9 PM to midnight."
     },
-    "No Entries Yet" : {},
-    "No Entry Selected" : {},
-    "No Insights Yet" : {},
-    "No OffRecord servers" : {},
-    "No Photos" : {},
-    "No Results" : {},
-    "No Transcript" : {},
-    "No account" : {},
-    "No ads or tracking" : {},
-    "No clear topics yet. I’ll see more after a few entries." : {},
-    "No entries" : {},
-    "No entries in the last 7 days." : {},
-    "No entries this week." : {},
-    "No entries to export yet." : {},
-    "No entries yet" : {},
-    "No microphone found." : {},
-    "No moods logged %@." : {},
-    "No moods logged this week." : {},
-    "No speech detected. The recording is saved." : {},
-    "No text" : {},
-    "No text." : {},
-    "Not Enough Yet" : {},
-    "Not Now" : {},
+    "No Entries Yet" : {
+
+    },
+    "No Entry Selected" : {
+
+    },
+    "No Insights Yet" : {
+
+    },
+    "No OffRecord servers" : {
+
+    },
+    "No Photos" : {
+
+    },
+    "No Results" : {
+
+    },
+    "No Transcript" : {
+
+    },
+    "No account" : {
+
+    },
+    "No ads or tracking" : {
+
+    },
+    "No clear topics yet. I’ll see more after a few entries." : {
+
+    },
+    "No entries" : {
+
+    },
+    "No entries in the last 7 days." : {
+
+    },
+    "No entries this week." : {
+
+    },
+    "No entries to export yet." : {
+
+    },
+    "No entries yet" : {
+
+    },
+    "No microphone found." : {
+
+    },
+    "No moods logged %@." : {
+
+    },
+    "No moods logged this week." : {
+
+    },
+    "No speech detected. The recording is saved." : {
+
+    },
+    "No text" : {
+
+    },
+    "No text." : {
+
+    },
+    "Not Enough Yet" : {
+
+    },
+    "Not Now" : {
+
+    },
     "Not Signed In" : {
       "comment" : "iCloud Sync status: no iCloud account"
     },
-    "Not Sure Yet" : {},
-    "Not Useful" : {},
-    "Not available" : {},
-    "Not enough entries yet" : {},
-    "Not ready yet" : {},
-    "Nothing Here Yet" : {},
-    "Nothing is deleted." : {},
-    "Nothing leaves your %@ unless you export it or turn on iCloud." : {},
-    "Nothing stands out as a stressor yet." : {},
-    "Nothing stood out as hard this week." : {},
-    "Nothing to look back on yet." : {},
-    "Nothing yet today" : {},
-    "Nothing you write is used for ads." : {},
-    "Notifications Are Off" : {},
-    "Notifications never include anything from your entries." : {},
-    "Notify Me" : {},
-    "Notify When Reached" : {},
+    "Not Sure Yet" : {
+
+    },
+    "Not Useful" : {
+
+    },
+    "Not available" : {
+
+    },
+    "Not enough entries yet" : {
+
+    },
+    "Not ready yet" : {
+
+    },
+    "Nothing Here Yet" : {
+
+    },
+    "Nothing is deleted." : {
+
+    },
+    "Nothing leaves your %@ unless you export it or turn on iCloud." : {
+
+    },
+    "Nothing stands out as a stressor yet." : {
+
+    },
+    "Nothing stood out as hard this week." : {
+
+    },
+    "Nothing to look back on yet." : {
+
+    },
+    "Nothing yet today" : {
+
+    },
+    "Nothing you write is used for ads." : {
+
+    },
+    "Notifications Are Off" : {
+
+    },
+    "Notifications never include anything from your entries." : {
+
+    },
+    "Notify Me" : {
+
+    },
+    "Notify When Reached" : {
+
+    },
     "Nuanced" : {
       "comment" : "Low end of the “Directness” scale\nWhere the user leans on the “Directness” scale"
     },
-    "Numbers refer to the sources below." : {},
+    "Numbers refer to the sources below." : {
+
+    },
     "OFFRECORD JOURNAL" : {
       "comment" : "Plain-text export title, in capitals"
     },
-    "OK" : {},
+    "OK" : {
+
+    },
     "Occasional" : {
       "comment" : "Low end of the “Gratitude” scale"
     },
@@ -1329,46 +2171,111 @@
     "Off" : {
       "comment" : "Privacy status: feature is off\niCloud Sync status: turned off"
     },
-    "OffRecord" : {},
+    "OffRecord" : {
+
+    },
     "OffRecord Journal" : {
       "comment" : "Markdown export title"
     },
-    "OffRecord collects no data." : {},
-    "OffRecord uses Apple’s on-device speech recognition. Your audio is never sent to a server. iOS may download a language file first." : {},
-    "OffRecord will use your passcode." : {},
+    "OffRecord collects no data." : {
+
+    },
+    "OffRecord uses Apple’s on-device speech recognition. Your audio is never sent to a server. iOS may download a language file first." : {
+
+    },
+    "OffRecord will use your passcode." : {
+
+    },
     "On" : {
       "comment" : "Privacy status: feature is on\niCloud Sync status: turned on"
     },
-    "On This Day" : {},
-    "On a streak" : {},
-    "On-Device AI" : {},
-    "On-device" : {},
-    "One last thought before bed?" : {},
-    "Only the mood and time are saved. OffRecord never reads Health data." : {},
-    "Only the mood and time are shared, never what you said." : {},
-    "Only this image is shared." : {},
+    "On This Day" : {
+
+    },
+    "On a streak" : {
+
+    },
+    "On-Device AI" : {
+
+    },
+    "On-device" : {
+
+    },
+    "One More Thing" : {
+      "comment" : "Short label above a writing prompt on the Today screen"
+    },
+    "One last thought before bed?" : {
+
+    },
+    "Only the mood and time are saved. OffRecord never reads Health data." : {
+
+    },
+    "Only the mood and time are shared, never what you said." : {
+
+    },
+    "Only this image is shared." : {
+
+    },
     "Open" : {
       "comment" : "Button that opens the entry the recording was saved to"
     },
-    "Open ${entry}" : {},
-    "Open Entry" : {},
-    "Open Friday" : {},
-    "Open Journal Entry" : {},
-    "Open Settings" : {},
-    "Open Today" : {},
-    "Open the app and start." : {},
-    "Opening Friday." : {},
-    "Opening OffRecord." : {},
-    "Opening Today." : {},
-    "Opening entry." : {},
-    "Opens Friday." : {},
-    "Opens Today." : {},
-    "Opens an entry." : {},
-    "Opens recording controls." : {},
-    "Opens the entry." : {},
-    "Opens the mood dial." : {},
-    "Optional. You can change these in Settings." : {},
-    "Options" : {},
+    "Open ${entry}" : {
+
+    },
+    "Open Entry" : {
+
+    },
+    "Open Friday" : {
+
+    },
+    "Open Journal Entry" : {
+
+    },
+    "Open Settings" : {
+
+    },
+    "Open Today" : {
+
+    },
+    "Open the app and start." : {
+
+    },
+    "Opening Friday." : {
+
+    },
+    "Opening OffRecord." : {
+
+    },
+    "Opening Today." : {
+
+    },
+    "Opening entry." : {
+
+    },
+    "Opens Friday." : {
+
+    },
+    "Opens Today." : {
+
+    },
+    "Opens an entry." : {
+
+    },
+    "Opens recording controls." : {
+
+    },
+    "Opens the entry." : {
+
+    },
+    "Opens the mood dial." : {
+
+    },
+    "Optional. You can change these in Settings." : {
+
+    },
+    "Options" : {
+
+    },
     "Other %@ days" : {
       "comment" : "Follow-up chip; the placeholder is a mood, like happy"
     },
@@ -1385,54 +2292,96 @@
         }
       }
     },
-    "Overall, it leans low." : {},
-    "Overall, it leans positive." : {},
-    "Overall, it’s fairly even." : {},
+    "Overall, it leans low." : {
+
+    },
+    "Overall, it leans positive." : {
+
+    },
+    "Overall, it’s fairly even." : {
+
+    },
     "Overview" : {
       "comment" : "Friday screen section tab"
     },
-    "PDF" : {},
-    "PDF Export" : {},
-    "Paper Size" : {},
-    "Parts of the week were heavier." : {},
-    "Passcode" : {},
+    "PDF" : {
+
+    },
+    "PDF Export" : {
+
+    },
+    "Paper Size" : {
+
+    },
+    "Parts of the week were heavier." : {
+
+    },
+    "Passcode" : {
+
+    },
     "Password" : {
       "comment" : "Encrypted backup password section"
     },
-    "Password-protected. Can be restored in OffRecord." : {},
-    "Passwords don’t match" : {},
+    "Password-protected. Can be restored in OffRecord." : {
+
+    },
+    "Passwords don’t match" : {
+
+    },
     "Past" : {
       "comment" : "Low end of the “Time Focus” scale"
     },
     "Pattern" : {
       "comment" : "Insight category badge"
     },
-    "Pause" : {},
-    "Pause or Resume Recording" : {},
+    "Pause" : {
+
+    },
+    "Pause or Resume Recording" : {
+
+    },
     "Paused" : {
       "comment" : "Recording status while recording is paused"
     },
-    "Paused. Another app used the microphone." : {},
-    "Pauses or resumes the recording." : {},
+    "Paused. Another app used the microphone." : {
+
+    },
+    "Pauses or resumes the recording." : {
+
+    },
     "Peak Time" : {
       "comment" : "Hour the user journals most"
     },
-    "People" : {},
-    "People & Topics" : {},
-    "People and places you mention will show up here." : {},
+    "People" : {
+
+    },
+    "People & Topics" : {
+
+    },
+    "People and places you mention will show up here." : {
+
+    },
     "People: %@." : {
       "comment" : "Followed by a comma-separated list of names"
     },
-    "Period" : {},
+    "Period" : {
+
+    },
     "Personality" : {
       "comment" : "Card heading: the user's personality\nFriday screen section tab"
     },
-    "Personality Card" : {},
-    "Perspective" : {},
+    "Personality Card" : {
+
+    },
+    "Perspective" : {
+
+    },
     "Photo" : {
       "comment" : "Placeholder snippet for an entry with only photos\nStands in for an On This Day entry that has only photos"
     },
-    "Photo from %@" : {},
+    "Photo from %@" : {
+
+    },
     "Photo · %@" : {
       "comment" : "Source row: a photo entry and its word count"
     },
@@ -1442,20 +2391,42 @@
     "Photos" : {
       "comment" : "Timeline view option: a grid of every photo."
     },
-    "Photos added." : {},
-    "Photos you add to entries show up here." : {},
-    "Places" : {},
-    "Plain Text" : {},
-    "Planning" : {},
-    "Play" : {},
-    "Playback position" : {},
-    "Playback speed %@" : {},
-    "Practical Analyst" : {},
-    "Preparing voice search…" : {},
+    "Photos added." : {
+
+    },
+    "Photos you add to entries show up here." : {
+
+    },
+    "Places" : {
+
+    },
+    "Plain Text" : {
+
+    },
+    "Planning" : {
+
+    },
+    "Play" : {
+
+    },
+    "Playback position" : {
+
+    },
+    "Playback speed %@" : {
+
+    },
+    "Practical Analyst" : {
+
+    },
+    "Preparing voice search…" : {
+
+    },
     "Present-focused" : {
       "comment" : "Where the user leans on the “Time Focus” scale"
     },
-    "Preview" : {},
+    "Preview" : {
+
+    },
     "Preview: %@ %@" : {
       "localizations" : {
         "en" : {
@@ -1466,30 +2437,48 @@
         }
       }
     },
-    "Previous Month" : {},
+    "Previous Month" : {
+
+    },
     "Priority" : {
       "comment" : "Short label above a writing prompt on the Today screen"
     },
-    "Privacy" : {},
-    "Privacy & AI" : {},
-    "Privacy Policy" : {},
+    "Privacy" : {
+
+    },
+    "Privacy & AI" : {
+
+    },
+    "Privacy Policy" : {
+
+    },
     "Private" : {
       "comment" : "Badge saying the content is kept private"
     },
-    "Private voice journal" : {},
-    "Processed on your %@" : {},
+    "Private voice journal" : {
+
+    },
+    "Processed on your %@" : {
+
+    },
     "Processing" : {
       "comment" : "Trait scale: how the user processes things"
     },
-    "Processing feelings" : {},
+    "Processing feelings" : {
+
+    },
     "Progress" : {
       "comment" : "Short label above a writing prompt on the Today screen"
     },
     "Prompt" : {
       "comment" : "Insight category badge"
     },
-    "Prompt from Friday, based on ^[%lld entry](inflect: true)" : {},
-    "Prompts" : {},
+    "Prompt from Friday, based on ^[%lld entry](inflect: true)" : {
+
+    },
+    "Prompts" : {
+
+    },
     "Q%lld %@" : {
       "comment" : "PDF export period title: quarter number and year, e.g. Q3 2026",
       "localizations" : {
@@ -1501,15 +2490,27 @@
         }
       }
     },
-    "Q1 (Jan–Mar)" : {},
-    "Q2 (Apr–Jun)" : {},
-    "Q3 (Jul–Sep)" : {},
-    "Q4 (Oct–Dec)" : {},
-    "Quarter" : {},
+    "Q1 (Jan–Mar)" : {
+
+    },
+    "Q2 (Apr–Jun)" : {
+
+    },
+    "Q3 (Jul–Sep)" : {
+
+    },
+    "Q4 (Oct–Dec)" : {
+
+    },
+    "Quarter" : {
+
+    },
     "Quarterly" : {
       "comment" : "PDF export period"
     },
-    "Question" : {},
+    "Question" : {
+
+    },
     "Question %lld: %@" : {
       "localizations" : {
         "en" : {
@@ -1520,38 +2521,72 @@
         }
       }
     },
-    "Questions for Next Week" : {},
-    "Quotes from Entries" : {},
+    "Questions for Next Week" : {
+
+    },
+    "Quotes from Entries" : {
+
+    },
     "Range" : {
       "comment" : "How widely the user’s mood varies\nMeter label: how widely the user's mood varies"
     },
-    "Readable anywhere." : {},
+    "Readable anywhere." : {
+
+    },
     "Ready" : {
       "comment" : "Search index status: ready to use."
     },
-    "Ready (basic mode)" : {},
-    "Rebuild Index" : {},
-    "Rebuild Spotlight Index" : {},
+    "Ready (basic mode)" : {
+
+    },
+    "Rebuild Index" : {
+
+    },
+    "Rebuild Spotlight Index" : {
+
+    },
     "Recent" : {
       "comment" : "Tag on an entry cited as recent evidence for a Friday insight"
     },
-    "Recent Entries" : {},
+    "Recent Entries" : {
+
+    },
     "Record" : {
       "comment" : "Button that answers the question by recording audio.\nButton that starts a voice recording\nButton that starts a voice recording.\nKeyboard shortcut (⌘R) that starts or stops a voice recording"
     },
-    "Record Entry" : {},
-    "Record: %@" : {},
+    "Record Entry" : {
+
+    },
+    "Record: %@" : {
+
+    },
     "Recording" : {
       "comment" : "Placeholder snippet for an entry with only a voice recording\nRecording status while recording\nStands in for an On This Day entry that has a voice recording but no text"
     },
-    "Recording Not Saved" : {},
-    "Recording couldn’t start." : {},
-    "Recording didn’t start. You can type instead." : {},
-    "Recording on another device" : {},
-    "Recording paused" : {},
-    "Recording saved." : {},
-    "Recording saved. Add a few words before continuing." : {},
-    "Recording saved. Transcription didn’t start." : {},
+    "Recording Not Saved" : {
+
+    },
+    "Recording couldn’t start." : {
+
+    },
+    "Recording didn’t start. You can type instead." : {
+
+    },
+    "Recording on another device" : {
+
+    },
+    "Recording paused" : {
+
+    },
+    "Recording saved." : {
+
+    },
+    "Recording saved. Add a few words before continuing." : {
+
+    },
+    "Recording saved. Transcription didn’t start." : {
+
+    },
     "Recording · %@" : {
       "comment" : "Source row: a voice entry and its word count"
     },
@@ -1565,207 +2600,432 @@
         }
       }
     },
-    "Recordings" : {},
-    "Recordings stay on this %@ and don’t sync." : {},
+    "Recordings" : {
+
+    },
+    "Recordings stay on this %@ and don’t sync." : {
+
+    },
     "Reflective" : {
       "comment" : "Where the user leans on the “Time Focus” scale"
     },
-    "Refresh" : {},
-    "Refresh storage" : {},
+    "Refresh" : {
+
+    },
+    "Refresh storage" : {
+
+    },
     "Remember" : {
       "comment" : "Short label above a writing prompt on the Today screen"
     },
-    "Remember my days" : {},
-    "Reminders never include anything from your entries." : {},
-    "Remove" : {},
-    "Remove %@" : {},
-    "Remove Mood?" : {},
-    "Rename" : {},
-    "Rename %@" : {},
-    "Rename anything, or ask me to forget it." : {},
+    "Remember my days" : {
+
+    },
+    "Remind Me Every Day" : {
+
+    },
+    "Reminders never include anything from your entries." : {
+
+    },
+    "Remove" : {
+
+    },
+    "Remove %@" : {
+
+    },
+    "Remove Mood?" : {
+
+    },
+    "Rename" : {
+
+    },
+    "Rename %@" : {
+
+    },
+    "Rename anything, or ask me to forget it." : {
+
+    },
     "Replay" : {
       "comment" : "Short label above a writing prompt on the Today screen"
     },
-    "Require %@" : {},
+    "Require %@" : {
+
+    },
     "Require %@ to open OffRecord." : {
       "comment" : "The placeholder is Face ID, Touch ID, or Optic ID"
     },
-    "Require your passcode to open OffRecord." : {},
+    "Require your passcode to open OffRecord." : {
+
+    },
     "Reserved" : {
       "comment" : "Low end of the “Expression” scale\nLow end of the “Expressiveness” scale\nWhere the user leans on the “Expression” scale"
     },
     "Reset" : {
       "comment" : "Short label above a writing prompt on the Today screen"
     },
-    "Reset Name" : {},
-    "Restart OffRecord" : {},
-    "Restore" : {},
-    "Restore Complete" : {},
-    "Restore from Backup" : {},
-    "Restored entries sync if iCloud is on." : {},
-    "Restoring…" : {},
-    "Results will improve when it’s done." : {},
-    "Resume" : {},
+    "Reset Name" : {
+
+    },
+    "Restart OffRecord" : {
+
+    },
+    "Restore" : {
+
+    },
+    "Restore Complete" : {
+
+    },
+    "Restore from Backup" : {
+
+    },
+    "Restored entries sync if iCloud is on." : {
+
+    },
+    "Restoring…" : {
+
+    },
+    "Results will improve when it’s done." : {
+
+    },
+    "Resume" : {
+
+    },
     "Rose" : {
       "comment" : "Theme name: rose pink accent"
     },
-    "Running in basic mode. Rebuild to fix." : {},
-    "Sad" : {},
+    "Running in basic mode. Rebuild to fix." : {
+
+    },
+    "Sad" : {
+
+    },
     "Sage" : {
       "comment" : "Theme name: sage green accent"
     },
     "Save" : {
       "comment" : "Button that stops and saves the recording\nMenu action that saves a Friday insight\nOnboarding button that saves the typed first entry"
     },
-    "Save Moods to Health" : {},
-    "Save moods to Apple Health?" : {},
-    "Save recording" : {},
-    "Saved" : {},
-    "Saved to %@" : {},
-    "Say a few sentences about today." : {},
-    "Say one thing about today" : {},
-    "Search" : {},
-    "Search Index" : {},
-    "Search Journal" : {},
-    "Search OffRecord Timeline" : {},
-    "Search entries" : {},
-    "Search my journal for ${query}" : {},
-    "Searches your journal." : {},
-    "Searches your timeline for %@." : {},
-    "Searching." : {},
-    "Searching…" : {},
-    "Select Date" : {},
-    "Selected" : {},
+    "Save Moods to Health" : {
+
+    },
+    "Save moods to Apple Health?" : {
+
+    },
+    "Save recording" : {
+
+    },
+    "Saved" : {
+
+    },
+    "Saved to %@" : {
+
+    },
+    "Say a few sentences about today." : {
+
+    },
+    "Say one thing about today" : {
+
+    },
+    "Search" : {
+
+    },
+    "Search Index" : {
+
+    },
+    "Search Journal" : {
+
+    },
+    "Search OffRecord Timeline" : {
+
+    },
+    "Search entries" : {
+
+    },
+    "Search my journal for ${query}" : {
+
+    },
+    "Searches your journal." : {
+
+    },
+    "Searches your timeline for %@." : {
+
+    },
+    "Searching." : {
+
+    },
+    "Searching…" : {
+
+    },
+    "Select Date" : {
+
+    },
+    "Selected" : {
+
+    },
     "Self" : {
       "comment" : "High end of the “Perspective” scale"
     },
-    "Self-Awareness" : {},
-    "Send" : {},
-    "Set ${entry} to ${state}" : {},
+    "Self-Awareness" : {
+
+    },
+    "Send" : {
+
+    },
+    "Set ${entry} to ${state}" : {
+
+    },
     "Set It Down" : {
       "comment" : "Short label above a writing prompt on the Today screen"
     },
-    "Set Today’s Mood" : {},
-    "Set today’s mood to ${mood}" : {},
-    "Sets today’s mood." : {},
+    "Set Today’s Mood" : {
+
+    },
+    "Set today’s mood to ${mood}" : {
+
+    },
+    "Sets today’s mood." : {
+
+    },
     "Settings" : {
       "comment" : "Tab name"
     },
     "Share" : {
       "comment" : "Button that shares the personality card\nShares Friday’s message"
     },
-    "Share Image" : {},
-    "Share Insight" : {},
-    "Share Personality Card" : {},
-    "Shares the card as a tall or wide image." : {},
-    "Shorter than your recent entries." : {},
-    "Show Entries" : {},
-    "Show Names" : {},
-    "Show Transcript" : {},
-    "Show in Spotlight" : {},
-    "Show on Today" : {},
-    "Shows a preview before sharing." : {},
-    "Shows details and options." : {},
-    "Shows hidden items again." : {},
-    "Shows the entries behind this insight." : {},
-    "Shows the entries used and lets you hide some." : {},
-    "Shows this setting." : {},
-    "Sign in to iCloud in Settings to sync." : {},
-    "Siri & Search" : {},
+    "Share Image" : {
+
+    },
+    "Share Insight" : {
+
+    },
+    "Share Personality Card" : {
+
+    },
+    "Shares the card as a tall or wide image." : {
+
+    },
+    "Shorter than your recent entries." : {
+
+    },
+    "Show Entries" : {
+
+    },
+    "Show Names" : {
+
+    },
+    "Show Transcript" : {
+
+    },
+    "Show in Spotlight" : {
+
+    },
+    "Show on Today" : {
+
+    },
+    "Shows a preview before sharing." : {
+
+    },
+    "Shows details and options." : {
+
+    },
+    "Shows hidden items again." : {
+
+    },
+    "Shows the entries behind this insight." : {
+
+    },
+    "Shows the entries used and lets you hide some." : {
+
+    },
+    "Shows this setting." : {
+
+    },
+    "Sign in to iCloud in Settings to sync." : {
+
+    },
+    "Siri & Search" : {
+
+    },
     "Skip" : {
       "comment" : "Button that skips an onboarding step"
     },
     "Small Win" : {
       "comment" : "Short label above a writing prompt on the Today screen"
     },
-    "Smart Prompts from Friday" : {},
-    "Snooze" : {},
+    "Smart Prompts from Friday" : {
+
+    },
+    "Snooze" : {
+
+    },
     "Soft-Spoken" : {
       "comment" : "Writing style label"
     },
     "Solid" : {
       "comment" : "How well Friday knows the user: fourth level"
     },
-    "Some Photos Weren’t Added" : {},
-    "Some entries behind this answer were deleted." : {},
-    "Some entries this week were heavier than usual, so I’ve kept this short and didn’t quote them." : {},
-    "Some entries this week were heavier than usual. If you need support, reach out to someone you trust. OffRecord isn’t an emergency service." : {},
-    "Some entries were heavier than usual." : {},
-    "Some entries were heavy, so I’ve kept this brief." : {},
-    "Some entries were upbeat or grateful." : {},
+    "Some Photos Weren’t Added" : {
+
+    },
+    "Some entries behind this answer were deleted." : {
+
+    },
+    "Some entries this week were heavier than usual, so I’ve kept this short and didn’t quote them." : {
+
+    },
+    "Some entries this week were heavier than usual. If you need support, reach out to someone you trust. OffRecord isn’t an emergency service." : {
+
+    },
+    "Some entries were heavier than usual." : {
+
+    },
+    "Some entries were heavy, so I’ve kept this brief." : {
+
+    },
+    "Some entries were upbeat or grateful." : {
+
+    },
     "Some evidence · %@" : {
       "comment" : "The placeholder is an entry count, like “4 entries”"
     },
-    "Some evidence, based on %@" : {},
-    "Something Went Wrong" : {},
-    "Something new is coming up" : {},
-    "Something went wrong on my end. Your entries are fine." : {},
-    "Something’s working." : {},
-    "Sounds like a calm day." : {},
-    "Sounds like a good day." : {},
-    "Sounds like you have people to lean on." : {},
-    "Sounds like you’re looking ahead." : {},
+    "Some evidence, based on %@" : {
+
+    },
+    "Something Went Wrong" : {
+
+    },
+    "Something new is coming up" : {
+
+    },
+    "Something went wrong on my end. Your entries are fine." : {
+
+    },
+    "Something’s working." : {
+
+    },
+    "Sounds like a calm day." : {
+
+    },
+    "Sounds like a good day." : {
+
+    },
+    "Sounds like you have people to lean on." : {
+
+    },
+    "Sounds like you’re looking ahead." : {
+
+    },
     "Source %lld" : {
       "comment" : "VoiceOver: a numbered journal entry an answer cites"
     },
     "Sources" : {
       "comment" : "Heading above the journal entries an answer cites"
     },
-    "Speed" : {},
-    "Spot patterns" : {},
+    "Speed" : {
+
+    },
+    "Spot patterns" : {
+
+    },
     "Spotlight" : {
       "comment" : "Privacy row: iOS Spotlight search"
     },
-    "Spotlight sees only dates, moods, and word counts, never your writing." : {},
-    "Star" : {},
-    "Star Journal Entry" : {},
-    "Star State" : {},
+    "Spotlight sees only dates, moods, and word counts, never your writing." : {
+
+    },
+    "Star" : {
+
+    },
+    "Star Journal Entry" : {
+
+    },
+    "Star State" : {
+
+    },
     "Starred" : {
       "comment" : "Accessibility label for the toolbar button that shows only starred entries.\nActive filter chip: showing only starred entries.\nExport: marks a starred entry after its date\nStat label: number of starred entries"
     },
-    "Starred Only" : {},
-    "Starred." : {},
-    "Stars or unstars an entry." : {},
-    "Start Journaling" : {},
-    "Start a New Chat?" : {},
-    "Start with today." : {},
+    "Starred Only" : {
+
+    },
+    "Starred." : {
+
+    },
+    "Stars or unstars an entry." : {
+
+    },
+    "Start Journaling" : {
+
+    },
+    "Start a New Chat?" : {
+
+    },
+    "Start with today." : {
+
+    },
     "Starting…" : {
       "comment" : "Shown while the microphone gets ready to record"
     },
-    "Starts a recording in OffRecord." : {},
-    "Starts an entry with this prompt." : {},
-    "Starts recording." : {},
-    "State" : {},
+    "Starts a recording in OffRecord." : {
+
+    },
+    "Starts an entry with this prompt." : {
+
+    },
+    "Starts recording." : {
+
+    },
+    "State" : {
+
+    },
     "Status" : {
       "comment" : "Search index status heading"
     },
-    "Stays on your %@" : {},
+    "Stays on your %@" : {
+
+    },
     "Steady" : {
       "comment" : "How much the user’s mood varies\nWeekly mood arc: mood stayed about the same\nWhere the user leans on the “Mindset” scale"
     },
-    "Still Getting to Know You" : {},
-    "Still learning." : {},
-    "Stop Recording" : {},
-    "Stop and Save" : {},
+    "Still Getting to Know You" : {
+
+    },
+    "Still learning." : {
+
+    },
+    "Stop Recording" : {
+
+    },
+    "Stop and Save" : {
+
+    },
     "Stopped" : {
       "comment" : "Search index status: the rebuild was cancelled."
     },
-    "Stops and saves the recording." : {},
+    "Stops and saves the recording." : {
+
+    },
     "Storage" : {
       "comment" : "Settings section: space used on device"
     },
-    "Stored on your %@" : {},
+    "Stored on your %@" : {
+
+    },
     "Streak" : {
       "comment" : "Insights card title for the journaling streak"
     },
     "Strong evidence · %@" : {
       "comment" : "The placeholder is an entry count, like “4 entries”"
     },
-    "Strong evidence, based on %@" : {},
+    "Strong evidence, based on %@" : {
+
+    },
     "Stuck With You" : {
       "comment" : "Short label above a writing prompt on the Today screen"
     },
-    "Subtitle (optional)" : {},
+    "Subtitle (optional)" : {
+
+    },
     "Summary" : {
       "comment" : "Export heading for the weekly reflection summary\nWeekly reflection section title"
     },
@@ -1775,61 +3035,117 @@
     "System" : {
       "comment" : "Theme name: follow the device appearance"
     },
-    "System matches your %@’s appearance." : {},
+    "System matches your %@’s appearance." : {
+
+    },
     "Takeaway" : {
       "comment" : "Weekly reflection section title: one thing to remember"
     },
-    "Talk or type. It all stays on your %@." : {},
-    "Talk things through" : {},
-    "Talk to Friday" : {},
-    "Tall (Stories)" : {},
+    "Talk or type. It all stays on your %@." : {
+
+    },
+    "Talk things through" : {
+
+    },
+    "Talk to Friday" : {
+
+    },
+    "Tall (Stories)" : {
+
+    },
     "Tell me what’s on your mind, or ask what I’ve noticed" : {
       "comment" : "No final period: the app may add “, <first name>” and then a period"
     },
-    "Text" : {},
-    "Text can’t be empty. Delete it instead?" : {},
+    "Text" : {
+
+    },
+    "Text can’t be empty. Delete it instead?" : {
+
+    },
     "Text · %@" : {
       "comment" : "Source row: a text entry and its word count"
     },
     "Text, %@" : {
       "comment" : "VoiceOver label for a text block in an entry. The argument is when it was added."
     },
-    "That sounds frustrating." : {},
-    "That sounds hard." : {},
-    "That sounds heavy. Talking to someone you trust could help." : {},
-    "That sounds scary." : {},
-    "That was unexpected." : {},
-    "That’s a lot to work through." : {},
-    "The audio and transcript will be deleted." : {},
+    "That sounds frustrating." : {
+
+    },
+    "That sounds hard." : {
+
+    },
+    "That sounds heavy. Talking to someone you trust could help." : {
+
+    },
+    "That sounds scary." : {
+
+    },
+    "That was unexpected." : {
+
+    },
+    "That’s a lot to work through." : {
+
+    },
+    "The audio and transcript will be deleted." : {
+
+    },
     "The clearest example: “%@”" : {
       "comment" : "The argument is a quote from one of the person’s entries."
     },
-    "The entries behind this answer were deleted." : {},
-    "The transcript couldn’t be added." : {},
+    "The entries behind this answer were deleted." : {
+
+    },
+    "The transcript couldn’t be added." : {
+
+    },
     "Theme" : {
       "comment" : "Settings section: app color theme"
     },
     "Themes" : {
       "comment" : "Export heading for weekly reflection themes\nWeekly reflection section title: recurring topics"
     },
-    "These entries were deleted." : {},
+    "These entries were deleted." : {
+
+    },
     "Thinking" : {
       "comment" : "Personality card trait"
     },
-    "Thinking it through" : {},
-    "This Entry" : {},
+    "Thinking it through" : {
+
+    },
+    "This Entry" : {
+
+    },
     "This Month" : {
       "comment" : "Streak card metric: entries this month"
     },
-    "This Week" : {},
-    "This can’t be undone." : {},
-    "This conversation will be cleared. Your journal won’t change." : {},
-    "This entry reads heavier than usual" : {},
-    "This entry reads lighter than usual" : {},
-    "This question has come up in ^[%lld entry](inflect: true)." : {},
-    "This was a heavy week." : {},
-    "This week read heavier than last." : {},
-    "This week read lighter than last." : {},
+    "This Week" : {
+
+    },
+    "This can’t be undone." : {
+
+    },
+    "This conversation will be cleared. Your journal won’t change." : {
+
+    },
+    "This entry reads heavier than usual" : {
+
+    },
+    "This entry reads lighter than usual" : {
+
+    },
+    "This question has come up in ^[%lld entry](inflect: true)." : {
+
+    },
+    "This was a heavy week." : {
+
+    },
+    "This week read heavier than last." : {
+
+    },
+    "This week read lighter than last." : {
+
+    },
     "This week was mostly about %@, and %@." : {
       "localizations" : {
         "en" : {
@@ -1850,28 +3166,54 @@
         }
       }
     },
-    "This week’s patterns" : {},
-    "Those entries are usually upbeat." : {},
-    "Those entries read about the same as the rest." : {},
-    "Those entries tend to be heavier." : {},
-    "Those entries tend to read a little heavier." : {},
-    "Those entries tend to read a little lighter." : {},
+    "This week’s patterns" : {
+
+    },
+    "Those entries are usually upbeat." : {
+
+    },
+    "Those entries read about the same as the rest." : {
+
+    },
+    "Those entries tend to be heavier." : {
+
+    },
+    "Those entries tend to read a little heavier." : {
+
+    },
+    "Those entries tend to read a little lighter." : {
+
+    },
     "Time" : {
       "comment" : "Label for the reminder's time of day"
     },
     "Time Focus" : {
       "comment" : "Personality card trait"
     },
-    "Time of day" : {},
-    "Time of day shows in your writing." : {},
-    "Time range" : {},
-    "Time to check in on a decision" : {},
-    "Time to check in on a decision." : {},
-    "Time to revisit a regret" : {},
+    "Time of day" : {
+
+    },
+    "Time of day shows in your writing." : {
+
+    },
+    "Time range" : {
+
+    },
+    "Time to check in on a decision" : {
+
+    },
+    "Time to check in on a decision." : {
+
+    },
+    "Time to revisit a regret" : {
+
+    },
     "Timeline" : {
       "comment" : "Tab name"
     },
-    "Tired" : {},
+    "Tired" : {
+
+    },
     "To" : {
       "comment" : "Button that sets the end date of the date filter."
     },
@@ -1881,10 +3223,18 @@
     "Today" : {
       "comment" : "Date of the entry a recording will be added to\nDay a recording was saved to, as in “Saved to Today”\nHeading of the card that previews today’s entry\nTab name\nTitle of the daily reflection writing prompt"
     },
-    "Today I…" : {},
-    "Today with Friday" : {},
-    "Today’s entry" : {},
-    "Today’s entry keeps it going." : {},
+    "Today I…" : {
+
+    },
+    "Today with Friday" : {
+
+    },
+    "Today’s entry" : {
+
+    },
+    "Today’s entry keeps it going." : {
+
+    },
     "Tomorrow" : {
       "comment" : "Short label above a writing prompt on the Today screen\nTitle of a writing prompt about the next day"
     },
@@ -1894,9 +3244,15 @@
     "Tonight" : {
       "comment" : "Short label above a writing prompt on the Today screen"
     },
-    "Top Mood" : {},
-    "Top Results" : {},
-    "Topics" : {},
+    "Top Mood" : {
+
+    },
+    "Top Results" : {
+
+    },
+    "Topics" : {
+
+    },
     "Topics: %@." : {
       "comment" : "Followed by a comma-separated list of topics"
     },
@@ -1906,51 +3262,120 @@
     "Tough" : {
       "comment" : "How the user usually feels at this time"
     },
-    "Track my mood" : {},
-    "Transcribe" : {},
-    "Transcribe Recordings?" : {},
-    "Transcribing…" : {},
-    "Transcript" : {},
-    "Transcript appears here." : {},
-    "Transcription" : {},
-    "Transcription Off" : {},
-    "Transcription and Friday run on your %@." : {},
-    "Transcription didn’t finish." : {},
+    "Track a Weekly Goal" : {
+
+    },
+    "Track my mood" : {
+
+    },
+    "Transcribe" : {
+
+    },
+    "Transcribe Recordings?" : {
+
+    },
+    "Transcribing…" : {
+
+    },
+    "Transcript" : {
+
+    },
+    "Transcript appears here." : {
+
+    },
+    "Transcription" : {
+
+    },
+    "Transcription Off" : {
+
+    },
+    "Transcription and Friday run on your %@." : {
+
+    },
+    "Transcription didn’t finish." : {
+
+    },
     "Trend" : {
       "comment" : "Tag on an entry cited as part of a mood trend"
     },
-    "Try Again" : {},
-    "Try Asking" : {},
-    "Try again in a moment." : {},
-    "Try again." : {},
-    "Try asking about a person, topic, mood, or time you’ve written about." : {},
-    "Try recording again." : {},
-    "Turn On" : {},
-    "Turn it on to get text from recordings." : {},
-    "Turn on microphone access in Settings to record." : {},
-    "Turn on microphone access in Settings to search by voice." : {},
-    "Turn on notifications for OffRecord in Settings to get reminders." : {},
-    "Turn on notifications for OffRecord in Settings to get the weekly reminder." : {},
-    "Turn on transcription in Settings to search by voice." : {},
-    "Undo" : {},
+    "Try Again" : {
+
+    },
+    "Try Asking" : {
+
+    },
+    "Try again in a moment." : {
+
+    },
+    "Try again." : {
+
+    },
+    "Try asking about a person, topic, mood, or time you’ve written about." : {
+
+    },
+    "Try recording again." : {
+
+    },
+    "Turn On" : {
+
+    },
+    "Turn it on to get text from recordings." : {
+
+    },
+    "Turn on microphone access in Settings to record." : {
+
+    },
+    "Turn on microphone access in Settings to search by voice." : {
+
+    },
+    "Turn on notifications for OffRecord in Settings to get reminders." : {
+
+    },
+    "Turn on notifications for OffRecord in Settings to get the weekly reminder." : {
+
+    },
+    "Turn on transcription in Settings to search by voice." : {
+
+    },
+    "Undo" : {
+
+    },
     "Unknown" : {
       "comment" : "Section title when an entry’s month can’t be determined."
     },
-    "Unlock with %@" : {},
-    "Unlock your journal." : {},
+    "Unlock with %@" : {
+
+    },
+    "Unlock your journal." : {
+
+    },
     "Unsave" : {
       "comment" : "Menu action that removes a Friday insight from saved"
     },
-    "Unstar" : {},
-    "Unstarred" : {},
-    "Unstarred." : {},
-    "Up to date" : {},
-    "Upbeat lately" : {},
+    "Unstar" : {
+
+    },
+    "Unstarred" : {
+
+    },
+    "Unstarred." : {
+
+    },
+    "Up to date" : {
+
+    },
+    "Upbeat lately" : {
+
+    },
     "Update" : {
       "comment" : "Short label above a writing prompt on the Today screen"
     },
-    "Updated" : {},
-    "Updated %@" : {},
+    "Updated" : {
+
+    },
+    "Updated %@" : {
+
+    },
     "Updated %@ · %@" : {
       "comment" : "Today’s entry preview metadata: last edit time, then word count",
       "localizations" : {
@@ -1962,24 +3387,42 @@
         }
       }
     },
-    "Updating Search" : {},
-    "Updating soon" : {},
-    "Use %@" : {},
-    "Uses Apple’s on-device speech recognition. Unsupported languages keep the recording without a transcript." : {},
-    "Vent" : {},
-    "Venting" : {},
+    "Updating Search" : {
+
+    },
+    "Updating soon" : {
+
+    },
+    "Use %@" : {
+
+    },
+    "Uses Apple’s on-device speech recognition. Unsupported languages keep the recording without a transcript." : {
+
+    },
+    "Vent" : {
+
+    },
+    "Venting" : {
+
+    },
     "Version" : {
       "comment" : "Settings row: app version number"
     },
     "View" : {
       "comment" : "Accessibility label for the picker that switches the timeline between list, calendar, and photos."
     },
-    "Voice Search" : {},
+    "Voice Search" : {
+
+    },
     "Warm" : {
       "comment" : "Theme name: warm peach accent"
     },
-    "Weekday" : {},
-    "Weekdays and weekends feel about the same." : {},
+    "Weekday" : {
+
+    },
+    "Weekdays and weekends feel about the same." : {
+
+    },
     "Weekdays feel %@. Weekends feel %@." : {
       "localizations" : {
         "en" : {
@@ -1990,178 +3433,462 @@
         }
       }
     },
-    "Weekend" : {},
+    "Weekend" : {
+
+    },
     "Weekly" : {
       "comment" : "Insight category badge"
     },
-    "Weekly Goal" : {},
-    "Weekly Goal Reached" : {},
-    "Weekly Reflection" : {},
-    "Weeks have dips." : {},
-    "Weighs on You" : {},
-    "Welcome back" : {},
-    "What Affects Your Mood" : {},
-    "What I Remember" : {},
-    "What Was Hard" : {},
-    "What are 3 small things you’re grateful for?" : {},
-    "What are you glad happened today?" : {},
-    "What are you ready to leave behind tonight?" : {},
-    "What are you ready to stop replaying?" : {},
-    "What brings you here?" : {},
-    "What brought you back?" : {},
-    "What can wait until tomorrow?" : {},
-    "What can you leave here tonight?" : {},
-    "What can you let go of before tonight?" : {},
-    "What can you stop thinking about tonight?" : {},
-    "What changed?" : {},
-    "What decisions have I written about lately?" : {},
-    "What did this teach you?" : {},
-    "What did you handle better than before?" : {},
-    "What do I keep asking about %@?" : {},
-    "What do you need for the next few hours?" : {},
-    "What do you need more of tonight?" : {},
-    "What do you need right now?" : {},
-    "What do you need today?" : {},
-    "What do you want from tomorrow?" : {},
-    "What do you want more of today?" : {},
-    "What do you want to add?" : {},
-    "What do you want to ask?" : {},
-    "What do you want to come back to today?" : {},
-    "What do you want to remember about %@?" : {},
-    "What do you want to remember about today?" : {},
-    "What do you want to remember from today?" : {},
-    "What do you want to remember?" : {},
-    "What do you wish %@ knew about how this felt?" : {},
-    "What does your gut say?" : {},
-    "What does your time with %@ tend to bring out in you?" : {},
-    "What else from today should you remember?" : {},
-    "What else have I written about %@?" : {},
-    "What else is on your mind?" : {},
-    "What feels different now?" : {},
-    "What feels heavier than it should?" : {},
-    "What from this morning do you want to keep?" : {},
-    "What from this week do you want to keep?" : {},
-    "What have I been writing about lately?" : {},
-    "What have I written about %@?" : {},
-    "What helped before?" : {},
-    "What helped me when I felt like this before?" : {},
-    "What helped you feel settled today?" : {},
-    "What keeps coming up?" : {},
-    "What made this entry feel lighter?" : {},
-    "What made this possible?" : {},
-    "What made today heavier?" : {},
-    "What made today lighter?" : {},
-    "What matters most this morning?" : {},
-    "What moment from today stuck with you?" : {},
-    "What needed the extra space?" : {},
-    "What needs to change for the rest of today?" : {},
-    "What part of this do you want to understand?" : {},
-    "What regrets have I written about lately?" : {},
-    "What stands out to you?" : {},
-    "What stayed with you after writing?" : {},
-    "What stood out in my week?" : {},
-    "What worry can you put down tonight?" : {},
-    "What would help right now?" : {},
-    "What would help you feel steady right now?" : {},
-    "What would make it easier?" : {},
-    "What would make next week feel 10% lighter?" : {},
-    "What would make the next few days easier?" : {},
-    "What would make today a good day?" : {},
-    "What would make tomorrow easier?" : {},
-    "What would you do differently now?" : {},
-    "What would you regret not writing down?" : {},
-    "What would you tell a friend in your place?" : {},
-    "What would you tell a friend who wrote this?" : {},
-    "What’s a first small step?" : {},
-    "What’s been helping me lately?" : {},
-    "What’s been stressing me?" : {},
-    "What’s been weighing on me?" : {},
+    "Weekly Goal" : {
+
+    },
+    "Weekly Goal Reached" : {
+
+    },
+    "Weekly Reflection" : {
+
+    },
+    "Weeks have dips." : {
+
+    },
+    "Weighs on You" : {
+
+    },
+    "Welcome back" : {
+
+    },
+    "What Affects Your Mood" : {
+
+    },
+    "What I Remember" : {
+
+    },
+    "What Was Hard" : {
+
+    },
+    "What are 3 small things you’re grateful for?" : {
+
+    },
+    "What are you glad happened today?" : {
+
+    },
+    "What are you ready to leave behind tonight?" : {
+
+    },
+    "What are you ready to stop replaying?" : {
+
+    },
+    "What brings you here?" : {
+
+    },
+    "What brought you back?" : {
+
+    },
+    "What can wait until tomorrow?" : {
+
+    },
+    "What can you leave here tonight?" : {
+
+    },
+    "What can you let go of before tonight?" : {
+
+    },
+    "What can you stop thinking about tonight?" : {
+
+    },
+    "What changed?" : {
+
+    },
+    "What decisions have I written about lately?" : {
+
+    },
+    "What did this teach you?" : {
+
+    },
+    "What did you handle better than before?" : {
+
+    },
+    "What do I keep asking about %@?" : {
+
+    },
+    "What do you need for the next few hours?" : {
+
+    },
+    "What do you need more of tonight?" : {
+
+    },
+    "What do you need right now?" : {
+
+    },
+    "What do you need today?" : {
+
+    },
+    "What do you want from tomorrow?" : {
+
+    },
+    "What do you want more of today?" : {
+
+    },
+    "What do you want to add?" : {
+
+    },
+    "What do you want to ask?" : {
+
+    },
+    "What do you want to come back to today?" : {
+
+    },
+    "What do you want to remember about %@?" : {
+
+    },
+    "What do you want to remember about today?" : {
+
+    },
+    "What do you want to remember from today?" : {
+
+    },
+    "What do you want to remember?" : {
+
+    },
+    "What do you wish %@ knew about how this felt?" : {
+
+    },
+    "What does your gut say?" : {
+
+    },
+    "What does your time with %@ tend to bring out in you?" : {
+
+    },
+    "What else from today should you remember?" : {
+
+    },
+    "What else have I written about %@?" : {
+
+    },
+    "What else is on your mind?" : {
+
+    },
+    "What feels different now?" : {
+
+    },
+    "What feels heavier than it should?" : {
+
+    },
+    "What from this morning do you want to keep?" : {
+
+    },
+    "What from this week do you want to keep?" : {
+
+    },
+    "What have I been writing about lately?" : {
+
+    },
+    "What have I written about %@?" : {
+
+    },
+    "What helped before?" : {
+
+    },
+    "What helped me when I felt like this before?" : {
+
+    },
+    "What helped you feel settled today?" : {
+
+    },
+    "What keeps coming up?" : {
+
+    },
+    "What made this entry feel lighter?" : {
+
+    },
+    "What made this possible?" : {
+
+    },
+    "What made today heavier?" : {
+
+    },
+    "What made today lighter?" : {
+
+    },
+    "What matters most this morning?" : {
+
+    },
+    "What moment from today stuck with you?" : {
+
+    },
+    "What needed the extra space?" : {
+
+    },
+    "What needs to change for the rest of today?" : {
+
+    },
+    "What part of this do you want to understand?" : {
+
+    },
+    "What regrets have I written about lately?" : {
+
+    },
+    "What stands out to you?" : {
+
+    },
+    "What stayed with you after writing?" : {
+
+    },
+    "What stood out in my week?" : {
+
+    },
+    "What worry can you put down tonight?" : {
+
+    },
+    "What would help right now?" : {
+
+    },
+    "What would help you feel steady right now?" : {
+
+    },
+    "What would make it easier?" : {
+
+    },
+    "What would make next week feel 10% lighter?" : {
+
+    },
+    "What would make the next few days easier?" : {
+
+    },
+    "What would make today a good day?" : {
+
+    },
+    "What would make tomorrow easier?" : {
+
+    },
+    "What would you do differently now?" : {
+
+    },
+    "What would you regret not writing down?" : {
+
+    },
+    "What would you tell a friend in your place?" : {
+
+    },
+    "What would you tell a friend who wrote this?" : {
+
+    },
+    "What’s a first small step?" : {
+
+    },
+    "What’s been helping me lately?" : {
+
+    },
+    "What’s been stressing me?" : {
+
+    },
+    "What’s been weighing on me?" : {
+
+    },
     "What’s changed since %@?" : {
       "comment" : "Follow-up chip; the placeholder is a month name"
     },
-    "What’s changed since this morning?" : {},
-    "What’s changed with %@?" : {},
-    "What’s different this time?" : {},
-    "What’s draining you right now?" : {},
-    "What’s going on with %@?" : {},
-    "What’s gone better than expected today?" : {},
-    "What’s helping?" : {},
-    "What’s made it harder to write lately?" : {},
-    "What’s making it harder?" : {},
-    "What’s my overall tone?" : {},
-    "What’s my personality like?" : {},
-    "What’s one moment from today you want to remember?" : {},
-    "What’s one small moment worth writing down this week?" : {},
-    "What’s one small thing that would make next week easier?" : {},
-    "What’s still on your mind about %@?" : {},
-    "What’s still on your mind from this morning?" : {},
-    "What’s unfinished but okay to pause?" : {},
-    "What’s worth your energy today?" : {},
-    "What’s your honest answer right now?" : {},
-    "When You Feel Best" : {},
-    "When am I happiest?" : {},
-    "When did you feel most like yourself today?" : {},
-    "When do I journal most?" : {},
-    "When do I write less than usual?" : {},
-    "When do I write more than usual?" : {},
+    "What’s changed since this morning?" : {
+
+    },
+    "What’s changed with %@?" : {
+
+    },
+    "What’s different this time?" : {
+
+    },
+    "What’s draining you right now?" : {
+
+    },
+    "What’s going on with %@?" : {
+
+    },
+    "What’s gone better than expected today?" : {
+
+    },
+    "What’s helping?" : {
+
+    },
+    "What’s made it harder to write lately?" : {
+
+    },
+    "What’s making it harder?" : {
+
+    },
+    "What’s my overall tone?" : {
+
+    },
+    "What’s my personality like?" : {
+
+    },
+    "What’s one moment from today you want to remember?" : {
+
+    },
+    "What’s one small moment worth writing down this week?" : {
+
+    },
+    "What’s one small thing that would make next week easier?" : {
+
+    },
+    "What’s still on your mind about %@?" : {
+
+    },
+    "What’s still on your mind from this morning?" : {
+
+    },
+    "What’s unfinished but okay to pause?" : {
+
+    },
+    "What’s worth your energy today?" : {
+
+    },
+    "What’s your honest answer right now?" : {
+
+    },
+    "When You Feel Best" : {
+
+    },
+    "When am I happiest?" : {
+
+    },
+    "When did you feel most like yourself today?" : {
+
+    },
+    "When do I journal most?" : {
+
+    },
+    "When do I write less than usual?" : {
+
+    },
+    "When do I write more than usual?" : {
+
+    },
     "When else did I feel %@?" : {
       "comment" : "The placeholder is a mood, like happy"
     },
-    "Where did you feel most like yourself this week?" : {},
-    "Which decision from this week needs another look?" : {},
-    "Which mood?" : {},
-    "Who could help?" : {},
-    "Who could you lean on this week?" : {},
-    "Who do I mention most?" : {},
-    "Who would you tell about this?" : {},
-    "Who would you tell?" : {},
-    "Why You’re Seeing This" : {},
-    "Why did this entry feel heavier?" : {},
+    "Where did you feel most like yourself this week?" : {
+
+    },
+    "Which decision from this week needs another look?" : {
+
+    },
+    "Which mood?" : {
+
+    },
+    "Who could help?" : {
+
+    },
+    "Who could you lean on this week?" : {
+
+    },
+    "Who do I mention most?" : {
+
+    },
+    "Who would you tell about this?" : {
+
+    },
+    "Who would you tell?" : {
+
+    },
+    "Why You’re Seeing This" : {
+
+    },
+    "Why did this entry feel heavier?" : {
+
+    },
     "Why?" : {
       "comment" : "Button on an insight card that explains where it came from"
     },
     "Wide" : {
       "comment" : "How much the user’s mood varies"
     },
-    "Wide (Posts)" : {},
+    "Wide (Posts)" : {
+
+    },
     "Wins" : {
       "comment" : "Export heading: things that went well this week\nWeekly reflection section title: things that went well"
     },
-    "With Recordings" : {},
-    "Word Count" : {},
+    "With Recordings" : {
+
+    },
+    "Word Count" : {
+
+    },
     "Words" : {
       "comment" : "Label under the number of words written this month.\nStat label: total words written"
     },
-    "Words You Use" : {},
-    "Words per Entry" : {},
+    "Words You Use" : {
+
+    },
+    "Words per Entry" : {
+
+    },
     "Words that come up most: %@." : {
       "comment" : "The argument is a comma-separated list of words."
     },
-    "Words you use often: %@." : {},
-    "Working through something" : {},
-    "Worries" : {},
+    "Words you use often: %@." : {
+
+    },
+    "Working through something" : {
+
+    },
+    "Worries" : {
+
+    },
     "Write" : {
       "comment" : "Button that answers the question by writing.\nButton that starts a typed journal entry"
     },
-    "Write ${text} in my journal" : {},
-    "Write About This" : {},
-    "Write ^[%lld more entry](inflect: true) this week and I’ll put one together." : {},
-    "Write a few entries and I’ll have more to go on." : {},
-    "Write a few entries this week and I’ll put a reflection together." : {},
-    "Write a little more this week and I’ll put one together." : {},
-    "Write in Journal" : {},
-    "Write in OffRecord" : {},
-    "Write it down" : {},
-    "Write or record a few entries and I’ll start seeing patterns. You can still talk to me now." : {},
-    "Write something first." : {},
-    "Write today to start a streak." : {},
-    "Write: %@" : {},
+    "Write ${text} in my journal" : {
+
+    },
+    "Write About This" : {
+
+    },
+    "Write ^[%lld more entry](inflect: true) this week and I’ll put one together." : {
+
+    },
+    "Write a few entries and I’ll have more to go on." : {
+
+    },
+    "Write a few entries this week and I’ll put a reflection together." : {
+
+    },
+    "Write a little more this week and I’ll put one together." : {
+
+    },
+    "Write in Journal" : {
+
+    },
+    "Write in OffRecord" : {
+
+    },
+    "Write it down" : {
+
+    },
+    "Write or record a few entries and I’ll start seeing patterns. You can still talk to me now." : {
+
+    },
+    "Write something first." : {
+
+    },
+    "Write today to start a streak." : {
+
+    },
+    "Write: %@" : {
+
+    },
     "Writing" : {
       "comment" : "Insights card title for word and entry counts"
     },
-    "Writing habit" : {},
-    "Writing more" : {},
-    "Writing prompt" : {},
+    "Writing habit" : {
+
+    },
+    "Writing more" : {
+
+    },
+    "Writing prompt" : {
+
+    },
     "Writing style: %@. Thinking style: %@." : {
       "localizations" : {
         "en" : {
@@ -2172,27 +3899,51 @@
         }
       }
     },
-    "YOUR WORDS" : {},
+    "YOUR WORDS" : {
+
+    },
     "Year" : {
       "comment" : "Calendar scale showing the whole year"
     },
     "Yearly" : {
       "comment" : "PDF export period"
     },
-    "Yesterday" : {},
-    "You also mention %@ often." : {},
-    "You asked %lld questions this week." : {},
-    "You can turn on reminders later in Settings." : {},
-    "You come across as %@." : {},
-    "You get to the point." : {},
-    "You had a lot to say." : {},
-    "You haven’t mentioned %@ lately" : {},
+    "Yesterday" : {
+
+    },
+    "You also mention %@ often." : {
+
+    },
+    "You asked %lld questions this week." : {
+
+    },
+    "You can turn on reminders later in Settings." : {
+
+    },
+    "You come across as %@." : {
+
+    },
+    "You get to the point." : {
+
+    },
+    "You had a lot to say." : {
+
+    },
+    "You haven’t mentioned %@ lately" : {
+
+    },
     "You journal most around %@." : {
       "comment" : "The placeholder is an hour of the day, like “9 PM”"
     },
-    "You journal regularly." : {},
-    "You journaled ^[%lld day](inflect: true) this week." : {},
-    "You journaled every day this week." : {},
+    "You journal regularly." : {
+
+    },
+    "You journaled ^[%lld day](inflect: true) this week." : {
+
+    },
+    "You journaled every day this week." : {
+
+    },
     "You journaled on %lld of the last %lld days." : {
       "localizations" : {
         "en" : {
@@ -2203,9 +3954,15 @@
         }
       }
     },
-    "You keep asking about %@" : {},
-    "You keep your feelings understated." : {},
-    "You kept writing through a hard week." : {},
+    "You keep asking about %@" : {
+
+    },
+    "You keep your feelings understated." : {
+
+    },
+    "You kept writing through a hard week." : {
+
+    },
     "You mention %@ most, %@ so far." : {
       "localizations" : {
         "en" : {
@@ -2226,8 +3983,12 @@
         }
       }
     },
-    "You notice a lot about yourself." : {},
-    "You often write about what you’re grateful for." : {},
+    "You notice a lot about yourself." : {
+
+    },
+    "You often write about what you’re grateful for." : {
+
+    },
     "You said “should” %lld times this week.\n“Want”? %lld." : {
       "localizations" : {
         "en" : {
@@ -2248,9 +4009,15 @@
         }
       }
     },
-    "You think things through on the page." : {},
-    "You usually journal after 6 PM." : {},
-    "You usually journal before noon." : {},
+    "You think things through on the page." : {
+
+    },
+    "You usually journal after 6 PM." : {
+
+    },
+    "You usually journal before noon." : {
+
+    },
     "You write %@ and %@. About %lld words per sentence." : {
       "localizations" : {
         "en" : {
@@ -2271,21 +4038,51 @@
         }
       }
     },
-    "You write a lot about learning and improving." : {},
-    "You write formally." : {},
-    "You write most about %@." : {},
-    "You write somewhere between casual and formal." : {},
-    "You write the way you talk." : {},
-    "You write with a lot of feeling." : {},
-    "You wrote about a decision recently." : {},
-    "You wrote about a regret recently." : {},
-    "You wrote less than usual" : {},
-    "You wrote more than usual" : {},
-    "You wrote most about %@." : {},
-    "You wrote on ^[%lld day](inflect: true)." : {},
-    "You: %@" : {},
-    "Your #1 topic this week:\n“%@”" : {},
-    "Your %@ entries tend to be shorter." : {},
+    "You write a lot about learning and improving." : {
+
+    },
+    "You write formally." : {
+
+    },
+    "You write most about %@." : {
+
+    },
+    "You write somewhere between casual and formal." : {
+
+    },
+    "You write the way you talk." : {
+
+    },
+    "You write with a lot of feeling." : {
+
+    },
+    "You wrote about a decision recently." : {
+
+    },
+    "You wrote about a regret recently." : {
+
+    },
+    "You wrote less than usual" : {
+
+    },
+    "You wrote more than usual" : {
+
+    },
+    "You wrote most about %@." : {
+
+    },
+    "You wrote on ^[%lld day](inflect: true)." : {
+
+    },
+    "You: %@" : {
+
+    },
+    "Your #1 topic this week:\n“%@”" : {
+
+    },
+    "Your %@ entries tend to be shorter." : {
+
+    },
     "Your %lldth entry was on %@." : {
       "localizations" : {
         "en" : {
@@ -2296,37 +4093,99 @@
         }
       }
     },
-    "Your First Entry" : {},
-    "Your Privacy" : {},
-    "Your Usual Mood" : {},
-    "Your biggest worries are %@." : {},
-    "Your biggest worry is %@." : {},
-    "Your entries are an even mix of good and hard days." : {},
-    "Your entries are fine. Try again in a bit." : {},
-    "Your entries aren’t affected. You can rebuild it anytime." : {},
-    "Your entries brightened as the week went on." : {},
-    "Your entries got a little heavier as the week went on." : {},
-    "Your entries got heavier toward the end of the week." : {},
-    "Your entries got lighter toward the end of the week." : {},
-    "Your entries lean positive." : {},
-    "Your entries lean slightly positive." : {},
-    "Your entries lean slightly toward hard days." : {},
-    "Your entries will show up here." : {},
-    "Your entries won’t be affected." : {},
-    "Your entries, recordings, and AI stay on this %@." : {},
-    "Your entries, recordings, and transcripts are stored on this %@. Transcription and Friday run here too, so nothing you write goes to a server." : {},
-    "Your evening entries are more upbeat." : {},
-    "Your iCloud" : {},
-    "Your journal is about you. That’s the point." : {},
-    "Your last 3 entries cover different ground than usual." : {},
-    "Your last 5 entries got heavier" : {},
-    "Your last few entries read lighter than usual." : {},
-    "Your last few entries were closer together than usual." : {},
-    "Your last few entries were further apart than usual." : {},
-    "Your mood has been dipping lately." : {},
-    "Your mood has been improving lately." : {},
-    "Your mood has been steady lately." : {},
-    "Your mood has dipped a bit lately." : {},
+    "Your First Entry" : {
+
+    },
+    "Your Privacy" : {
+
+    },
+    "Your Usual Mood" : {
+
+    },
+    "Your biggest worries are %@." : {
+
+    },
+    "Your biggest worry is %@." : {
+
+    },
+    "Your entries are an even mix of good and hard days." : {
+
+    },
+    "Your entries are fine. Try again in a bit." : {
+
+    },
+    "Your entries aren’t affected. You can rebuild it anytime." : {
+
+    },
+    "Your entries brightened as the week went on." : {
+
+    },
+    "Your entries got a little heavier as the week went on." : {
+
+    },
+    "Your entries got heavier toward the end of the week." : {
+
+    },
+    "Your entries got lighter toward the end of the week." : {
+
+    },
+    "Your entries lean positive." : {
+
+    },
+    "Your entries lean slightly positive." : {
+
+    },
+    "Your entries lean slightly toward hard days." : {
+
+    },
+    "Your entries will show up here." : {
+
+    },
+    "Your entries won’t be affected." : {
+
+    },
+    "Your entries, recordings, and AI stay on this %@." : {
+
+    },
+    "Your entries, recordings, and transcripts are stored on this %@. Transcription and Friday run here too, so nothing you write goes to a server." : {
+
+    },
+    "Your evening entries are more upbeat." : {
+
+    },
+    "Your iCloud" : {
+
+    },
+    "Your journal is about you. That’s the point." : {
+
+    },
+    "Your last 3 entries cover different ground than usual." : {
+
+    },
+    "Your last 5 entries got heavier" : {
+
+    },
+    "Your last few entries read lighter than usual." : {
+
+    },
+    "Your last few entries were closer together than usual." : {
+
+    },
+    "Your last few entries were further apart than usual." : {
+
+    },
+    "Your mood has been dipping lately." : {
+
+    },
+    "Your mood has been improving lately." : {
+
+    },
+    "Your mood has been steady lately." : {
+
+    },
+    "Your mood has dipped a bit lately." : {
+
+    },
     "Your mood is %@ and %@." : {
       "localizations" : {
         "en" : {
@@ -2337,43 +4196,111 @@
         }
       }
     },
-    "Your mood lifts when you write about %@." : {},
-    "Your mood stayed about the same all week." : {},
-    "Your mood stays about the same through the day." : {},
-    "Your mood tends to drop when you write about %@." : {},
-    "Your moods stay fairly steady." : {},
-    "Your moods swing quite a bit." : {},
-    "Your morning entries are more upbeat." : {},
-    "Your most common mood is %@." : {},
-    "Your most common mood this week:\n%@." : {},
-    "Your most common mood was %@." : {},
-    "Your most common moods are %@." : {},
-    "Your name (optional)" : {},
-    "Your private voice journal" : {},
-    "Your recent entries feel lighter" : {},
-    "Your recent entries read heavier. Want to note one good thing today?" : {},
-    "Your recent entries read positive." : {},
-    "Your recent mood has been %@." : {},
-    "Your sentences average %lld words." : {},
-    "Your usual mood is %@." : {},
-    "Your week is ready to look back on." : {},
-    "Your week so far" : {},
-    "Your weekly reflection is ready." : {},
+    "Your mood lifts when you write about %@." : {
+
+    },
+    "Your mood stayed about the same all week." : {
+
+    },
+    "Your mood stays about the same through the day." : {
+
+    },
+    "Your mood tends to drop when you write about %@." : {
+
+    },
+    "Your moods stay fairly steady." : {
+
+    },
+    "Your moods swing quite a bit." : {
+
+    },
+    "Your morning entries are more upbeat." : {
+
+    },
+    "Your most common mood is %@." : {
+
+    },
+    "Your most common mood this week:\n%@." : {
+
+    },
+    "Your most common mood was %@." : {
+
+    },
+    "Your most common moods are %@." : {
+
+    },
+    "Your name (optional)" : {
+
+    },
+    "Your private voice journal" : {
+
+    },
+    "Your recent entries feel lighter" : {
+
+    },
+    "Your recent entries read heavier. Want to note one good thing today?" : {
+
+    },
+    "Your recent entries read positive." : {
+
+    },
+    "Your recent mood has been %@." : {
+
+    },
+    "Your sentences average %lld words." : {
+
+    },
+    "Your usual mood is %@." : {
+
+    },
+    "Your week is ready to look back on." : {
+
+    },
+    "Your week so far" : {
+
+    },
+    "Your weekly reflection is ready." : {
+
+    },
     "Yourself" : {
       "comment" : "Short label above a writing prompt on the Today screen"
     },
-    "You’ll need this to restore. It can’t be recovered." : {},
-    "You’re happier in the evening." : {},
-    "You’re happier in the morning." : {},
-    "You’re happier on weekdays." : {},
-    "You’re happier on weekends." : {},
-    "You’re working things out on the page." : {},
-    "You’re writing about %@ again after more than a month." : {},
-    "You’re writing about %@ again, and it reads heavier than before." : {},
-    "You’re writing about %@ again, and it reads lighter than before." : {},
-    "You’re writing less often" : {},
-    "You’re writing more often" : {},
-    "You’ve been writing through some hard things lately." : {},
+    "You’ll need this to restore. It can’t be recovered." : {
+
+    },
+    "You’re happier in the evening." : {
+
+    },
+    "You’re happier in the morning." : {
+
+    },
+    "You’re happier on weekdays." : {
+
+    },
+    "You’re happier on weekends." : {
+
+    },
+    "You’re working things out on the page." : {
+
+    },
+    "You’re writing about %@ again after more than a month." : {
+
+    },
+    "You’re writing about %@ again, and it reads heavier than before." : {
+
+    },
+    "You’re writing about %@ again, and it reads lighter than before." : {
+
+    },
+    "You’re writing less often" : {
+
+    },
+    "You’re writing more often" : {
+
+    },
+    "You’ve been writing through some hard things lately." : {
+
+    },
     "You’ve mentioned %@ in ^[%lld recent entry](inflect: true)." : {
       "localizations" : {
         "en" : {
@@ -2384,10 +4311,18 @@
         }
       }
     },
-    "You’ve saved %lld entries." : {},
-    "You’ve written %lld%% more this month." : {},
-    "^[%lld day](inflect: true)" : {},
-    "^[%lld day](inflect: true) a week" : {},
+    "You’ve saved %lld entries." : {
+
+    },
+    "You’ve written %lld%% more this month." : {
+
+    },
+    "^[%lld day](inflect: true)" : {
+
+    },
+    "^[%lld day](inflect: true) a week" : {
+
+    },
     "^[%lld day](inflect: true) in %@" : {
       "localizations" : {
         "en" : {
@@ -2398,8 +4333,12 @@
         }
       }
     },
-    "^[%lld entry](inflect: true)" : {},
-    "^[%lld entry](inflect: true) added." : {},
+    "^[%lld entry](inflect: true)" : {
+
+    },
+    "^[%lld entry](inflect: true) added." : {
+
+    },
     "^[%lld entry](inflect: true) so far. You write %@." : {
       "localizations" : {
         "en" : {
@@ -2410,7 +4349,9 @@
         }
       }
     },
-    "^[%lld entry](inflect: true) this year" : {},
+    "^[%lld entry](inflect: true) this year" : {
+
+    },
     "^[%lld entry](inflect: true), ^[%lld word](inflect: true)." : {
       "localizations" : {
         "en" : {
@@ -2431,27 +4372,45 @@
         }
       }
     },
-    "^[%lld hidden item](inflect: true)" : {},
-    "^[%lld mention](inflect: true)" : {},
-    "^[%lld photo](inflect: true)" : {},
-    "^[%lld photo](inflect: true) couldn’t be added. Try choosing again." : {},
-    "^[%lld time](inflect: true)" : {},
-    "^[%lld word](inflect: true)" : {},
-    "^[%lld year](inflect: true) ago" : {},
+    "^[%lld hidden item](inflect: true)" : {
+
+    },
+    "^[%lld mention](inflect: true)" : {
+
+    },
+    "^[%lld photo](inflect: true)" : {
+
+    },
+    "^[%lld photo](inflect: true) couldn’t be added. Try choosing again." : {
+
+    },
+    "^[%lld time](inflect: true)" : {
+
+    },
+    "^[%lld word](inflect: true)" : {
+
+    },
+    "^[%lld year](inflect: true) ago" : {
+
+    },
     "a bit low" : {
       "comment" : "Fills “Weekdays feel … Weekends feel …”\nFills “Your recent mood has been …”"
     },
     "activity" : {
       "comment" : "Kind of thing Friday remembers, lowercase noun"
     },
-    "almost every entry" : {},
+    "almost every entry" : {
+
+    },
     "analytical" : {
       "comment" : "Personality trait, listed in “You come across as …”"
     },
     "articulate" : {
       "comment" : "Personality trait, listed in “You come across as …”"
     },
-    "at night" : {},
+    "at night" : {
+
+    },
     "briefly" : {
       "comment" : "Fills “You write … and …”: how much the user writes"
     },
@@ -2500,20 +4459,36 @@
     "holding steady" : {
       "comment" : "Fills “Your mood is … and …”: mood trend"
     },
-    "iCloud Sync" : {},
-    "iCloud Sync uses your own iCloud account." : {},
+    "iCloud Sync" : {
+
+    },
+    "iCloud Sync uses your own iCloud account." : {
+
+    },
     "improving" : {
       "comment" : "Fills “Your mood is … and …”: mood trend"
     },
     "in detail" : {
       "comment" : "Fills “You write … and …”: how much the user writes"
     },
-    "in the afternoon" : {},
-    "in the evening" : {},
-    "in the morning" : {},
-    "it got heavier as it went" : {},
-    "it got lighter as it went" : {},
-    "it stayed steady" : {},
+    "in the afternoon" : {
+
+    },
+    "in the evening" : {
+
+    },
+    "in the morning" : {
+
+    },
+    "it got heavier as it went" : {
+
+    },
+    "it got lighter as it went" : {
+
+    },
+    "it stayed steady" : {
+
+    },
     "low" : {
       "comment" : "Fallback mood word, as in \"Most low on Sunday\""
     },
@@ -2541,7 +4516,9 @@
     "okay" : {
       "comment" : "Fills “Weekdays feel … Weekends feel …”"
     },
-    "over the last %@" : {},
+    "over the last %@" : {
+
+    },
     "person" : {
       "comment" : "Kind of thing Friday remembers, lowercase noun"
     },
@@ -2609,7 +4586,9 @@
     "your journal" : {
       "comment" : "Used in place of a date range, as in “3 entries from your journal mention this.”"
     },
-    "“%@” didn’t come up this week." : {}
+    "“%@” didn’t come up this week." : {
+
+    }
   },
   "version" : "1.0"
 }

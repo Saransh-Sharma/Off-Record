@@ -499,7 +499,7 @@ struct SettingsView: View {
             tint: OffRecordColor.textAqua,
             fill: OffRecordColor.surfaceMint
         ) {
-            Toggle("Weekly Goal", isOn: $goalManager.isEnabled)
+            Toggle("Track a Weekly Goal", isOn: $goalManager.isEnabled)
 
             if goalManager.isEnabled {
                 Stepper(value: $goalManager.weeklyTarget, in: 1...7) {
@@ -675,7 +675,7 @@ struct SettingsView: View {
             tint: OffRecordColor.textPeach,
             fill: OffRecordColor.surfacePeach
         ) {
-            Toggle("Daily Reminder", isOn: Binding(
+            Toggle("Remind Me Every Day", isOn: Binding(
                 get: { reminderManager.isEnabled },
                 set: { newValue in
                     if newValue {
@@ -717,7 +717,7 @@ struct SettingsView: View {
             tint: OffRecordColor.textAqua,
             fill: OffRecordColor.surfaceMint
         ) {
-            Toggle("Weekly Reflection", isOn: Binding(
+            Toggle("Make Weekly Reflections", isOn: Binding(
                 get: { weeklyReflection.settings.isEnabled },
                 set: { value in weeklyReflection.updateSettings { $0.isEnabled = value } }
             ))
