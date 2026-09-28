@@ -1,0 +1,80 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%@, %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, %2$@"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
+    "%@. %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@. %2$@"
+          }
+        }
+      },
+      "shouldTranslate" : false
+    },
+    "All Synced" : {},
+    "All synced" : {},
+    "All synced. Captures wait here until they reach your iPhone." : {},
+    "Almost at the limit." : {},
+    "Angry" : {},
+    "Anxious" : {},
+    "Back" : {},
+    "Calm" : {},
+    "Cancel" : {},
+    "Captures wait here until they reach your iPhone." : {},
+    "Couldn’t start recording." : {},
+    "Dictation" : {},
+    "Excited" : {},
+    "Grateful" : {},
+    "Happy" : {},
+    "I feel %@." : {},
+    "I feel neutral." : {},
+    "Listening" : {},
+    "Log how you feel" : {},
+    "Mood" : {},
+    "Mood: %@" : {},
+    "Neutral" : {},
+    "OffRecord" : {},
+    "On Watch" : {},
+    "On iPhone" : {},
+    "Ready to save" : {},
+    "Recent" : {},
+    "Recording" : {},
+    "Recording not found." : {},
+    "Recording paused." : {},
+    "Recording time %@" : {},
+    "Recording, %@" : {},
+    "Retrying" : {},
+    "Sad" : {},
+    "Save" : {},
+    "Save mood" : {},
+    "Saved" : {},
+    "Say what’s on your mind" : {},
+    "Say what’s on your mind." : {},
+    "Sending" : {},
+    "Speak" : {},
+    "Speak now" : {},
+    "Start" : {},
+    "Start recording" : {},
+    "Stop" : {},
+    "Stop recording" : {},
+    "Tired" : {},
+    "Transcribed on iPhone." : {},
+    "Try again" : {},
+    "Turn on microphone access in Settings." : {},
+    "Turn the Digital Crown or choose a mood, then save." : {},
+    "Watch storage is full." : {}
+  },
+  "version" : "1.0"
+}
