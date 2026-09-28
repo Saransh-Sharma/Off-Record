@@ -95,12 +95,6 @@ public struct MoodDialSelectedMoodView: View {
             }
             .frame(width: 220 * layoutScale, height: 176 * layoutScale)
 
-            Text(mood.supportiveCopy)
-                .font(theme.captionFont)
-                .foregroundStyle(theme.textTertiary)
-                .multilineTextAlignment(.center)
-                .contentTransition(.opacity)
-
             Image(systemName: "chevron.compact.down")
                 .font(.system(size: 40 * layoutScale, weight: .heavy))
                 .foregroundStyle(theme.textTertiary.opacity(0.70))

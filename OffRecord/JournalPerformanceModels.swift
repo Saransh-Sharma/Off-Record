@@ -161,7 +161,7 @@ struct JournalStatsSnapshot: Equatable, Sendable {
         starredCount: 0,
         audioCount: 0,
         insights: [],
-        weeklySummary: "No entries this week. Start journaling to see your weekly summary!",
+        weeklySummary: "No entries this week.",
         goal: .empty,
         availableYears: []
     )
@@ -315,7 +315,7 @@ actor JournalAnalyticsWorker {
         }
 
         guard !weekEntries.isEmpty else {
-            return "No entries this week. Start journaling to see your weekly summary!"
+            return "No entries this week."
         }
 
         var summary = "This week you wrote \(weekEntries.count) \(weekEntries.count == 1 ? "entry" : "entries") with \(weekEntries.reduce(0) { $0 + $1.wordCount }) words. "

@@ -84,19 +84,6 @@ public enum Mood: String, CaseIterable, Identifiable, Sendable, Codable {
         }
     }
 
-    public var supportiveCopy: String {
-        switch self {
-        case .none: return "Nothing to force."
-        case .happy: return "Something feels lighter."
-        case .calm: return "A steady moment."
-        case .grateful: return "Something mattered today."
-        case .excited: return "There's energy here."
-        case .tired: return "Move gently."
-        case .anxious: return "Come back to now."
-        case .sad: return "Hold this softly."
-        case .angry: return "Name it without judging it."
-        }
-    }
 
     public var largeMoodAssetName: String {
         switch self {
