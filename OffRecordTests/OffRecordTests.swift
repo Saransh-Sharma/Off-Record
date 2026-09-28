@@ -1388,7 +1388,7 @@ struct ProactiveReflectionTests {
         let longText = Array(repeating: "I needed more space to name the day clearly.", count: 30).joined(separator: " ")
         entries.append(makeReflectionEntry(daysAgo: 0, sentiment: 0.1, text: longText, now: now))
 
-        let insight = ProactiveReflectionAnalyzer.detectAnomalies(in: entries, now: now).first { $0.title.contains("more to say") }
+        let insight = ProactiveReflectionAnalyzer.detectAnomalies(in: entries, now: now).first { $0.title.contains("more than usual") }
 
         #expect(insight?.evidence.contains { $0.role == .source } == true)
         #expect((insight?.evidence.filter { $0.role == .baseline }.count ?? 0) >= 2)
@@ -2014,15 +2014,10 @@ struct MoodTests {
 
 struct OnboardingResponseTests {
 
-    @Test func defaultResponseUsesWarmPreferenceDefaults() {
+    @Test func defaultResponseStartsUnanswered() {
         let response = OnboardingResponse()
 
-        #expect(response.goal == nil)
         #expect(response.painPoints.isEmpty)
-        #expect(response.relatableStatements.isEmpty)
-        #expect(response.reflectionFocus == .emotions)
-        #expect(response.moodBaseline == .mixed)
-        #expect(response.promptStyle == .gentle)
         #expect(response.faceIDChoice == .notAsked)
         #expect(response.microphoneChoice == .notAsked)
         #expect(response.speechChoice == .notAsked)
@@ -2031,12 +2026,7 @@ struct OnboardingResponseTests {
 
     @Test func responseCodableRoundTrip() throws {
         var response = OnboardingResponse()
-        response.goal = .fridayInsights
         response.painPoints = [.typingSlow, .privacyWorry]
-        response.relatableStatements = [.honestVersion, .patternWish]
-        response.reflectionFocus = .relationships
-        response.promptStyle = .gentle
-        response.moodBaseline = .hopeful
         response.firstEntryText = "Today I noticed I needed a private place to think."
         response.faceIDChoice = .enabled
         response.microphoneChoice = .granted
@@ -2044,6 +2034,25 @@ struct OnboardingResponseTests {
 
         let data = try JSONEncoder().encode(response)
         let decoded = try JSONDecoder().decode(OnboardingResponse.self, from: data)
+
+        #expect(decoded == response)
+    }
+
+    @Test func decodesResponsesSavedWithRetiredFields() throws {
+        var response = OnboardingResponse()
+        response.painPoints = [.blankPage]
+        response.firstEntryText = "Saved before the goal and prompt style steps were removed."
+
+        // Responses saved by earlier builds also carry these keys; they must still load.
+        var object = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(response)) as? [String: Any])
+        object["goal"] = "fridayInsights"
+        object["relatableStatements"] = ["honestVersion"]
+        object["reflectionFocus"] = "relationships"
+        object["promptStyle"] = "gentle"
+        object["moodBaseline"] = "hopeful"
+        let legacyData = try JSONSerialization.data(withJSONObject: object)
+
+        let decoded = try JSONDecoder().decode(OnboardingResponse.self, from: legacyData)
 
         #expect(decoded == response)
     }
