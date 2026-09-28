@@ -10,7 +10,7 @@ struct TodayNudgeSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
-            Text("Need a nudge?")
+            Text("Prompts")
                 .font(OffRecordTypography.sectionTitle)
                 .foregroundStyle(OffRecordColor.textHeading)
                 .accessibilityAddTraits(.isHeader)
@@ -69,7 +69,7 @@ struct TodayNudgeSection: View {
                     HapticManager.shared.selectionChanged()
                     onSpeak(prompt)
                 } label: {
-                    Label("Speak", systemImage: "mic.fill")
+                    Label("Record", systemImage: "mic.fill")
                         .font(OffRecordTypography.labelSmall)
                         .foregroundStyle(OffRecordColor.textOnAccent)
                         .padding(.horizontal, OffRecordSpacing.md)
@@ -77,7 +77,7 @@ struct TodayNudgeSection: View {
                         .background(OffRecordColor.brandPlum, in: Capsule())
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Speak about \(prompt.title)")
+                .accessibilityLabel("Record: \(prompt.title)")
 
                 Button {
                     HapticManager.shared.selectionChanged()
@@ -92,7 +92,7 @@ struct TodayNudgeSection: View {
                         .overlay(Capsule().stroke(style.border, lineWidth: 1))
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("Write about \(prompt.title)")
+                .accessibilityLabel("Write: \(prompt.title)")
                 .accessibilityIdentifier("today.nudge.\(index)")
             }
         }

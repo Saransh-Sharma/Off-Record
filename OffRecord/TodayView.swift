@@ -242,7 +242,7 @@ struct TodayView: View {
     }
 
     private var todayKeyboardShortcuts: some View {
-        Button("New journal note") {
+        Button("New Entry") {
             guard !capture.phase.isCapturing else { return }
             startTypedNote(promptContext: nil, heroPromptID: nil)
         }
@@ -414,10 +414,10 @@ private struct TodayFirstEntryCard: View {
                 FridayMascotView(pose: .wave, size: 56)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: OffRecordSpacing.xs) {
-                    Text("Your first entry starts here")
+                    Text("Your First Entry")
                         .font(OffRecordTypography.cardTitle)
                         .foregroundStyle(OffRecordColor.textHeading)
-                    Text("Say a few sentences about today. It stays on this device, and Friday starts learning what matters to you.")
+                    Text("Say a few sentences about today.")
                         .font(OffRecordTypography.bodySmall)
                         .foregroundStyle(OffRecordColor.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
@@ -425,7 +425,7 @@ private struct TodayFirstEntryCard: View {
             }
             HStack(spacing: OffRecordSpacing.md) {
                 Button(action: onSpeak) {
-                    Label("Speak", systemImage: "mic.fill")
+                    Label("Record", systemImage: "mic.fill")
                         .frame(maxWidth: .infinity)
                         .offRecordPillButton()
                 }
@@ -463,7 +463,7 @@ struct OnThisDayCard: View {
                             .font(OffRecordTypography.labelSmall)
                             .foregroundStyle(OffRecordColor.textSky)
                             .tracking(0.6)
-                        Text("On this day")
+                        Text("On This Day")
                             .font(OffRecordTypography.cardTitle)
                             .foregroundStyle(OffRecordColor.textHeading)
                         Text(snippet(for: entry))
@@ -472,7 +472,7 @@ struct OnThisDayCard: View {
                             .lineLimit(3)
                             .fixedSize(horizontal: false, vertical: true)
                         if entries.count > 1 {
-                            Text("+\(entries.count - 1) more from this date")
+                            Text("+\(entries.count - 1) more")
                                 .font(OffRecordTypography.metadata)
                                 .foregroundStyle(OffRecordColor.textTertiary)
                         }
@@ -488,7 +488,7 @@ struct OnThisDayCard: View {
             }
             .buttonStyle(.plain)
             .accessibilityElement(children: .combine)
-            .accessibilityHint("Opens the entry from \(yearsAgoText(for: entry)).")
+            .accessibilityHint("Opens the entry.")
             .accessibilityIdentifier("today.onThisDay")
         }
     }
@@ -514,14 +514,14 @@ struct OnThisDayCard: View {
 
     private func yearsAgoText(for entry: DiaryEntry) -> String {
         let years = Calendar.current.dateComponents([.year], from: entry.date ?? Date(), to: Date()).year ?? 1
-        return years <= 1 ? "1 year ago" : "\(years) years ago"
+        return String(AttributedString(localized: "^[\(max(years, 1)) year](inflect: true) ago").characters)
     }
 
     private func snippet(for entry: DiaryEntry) -> String {
         let text = entry.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         if !text.isEmpty { return text }
-        if entry.hasStartedEntryAudio { return "A voice note you recorded." }
-        return "A moment you saved."
+        if entry.hasStartedEntryAudio { return "Recording" }
+        return "Photo"
     }
 }
 
@@ -538,7 +538,7 @@ struct TodayProgressStrip: View {
 
     private var headline: String {
         if stats.currentStreak >= 2 {
-            return "\(stats.currentStreak)-day rhythm"
+            return "\(stats.currentStreak)-day streak"
         }
         if stats.entryCount > 0 && !hasEntryToday && stats.currentStreak == 0 {
             return "Welcome back"
@@ -548,12 +548,12 @@ struct TodayProgressStrip: View {
 
     private var subtitle: String {
         if stats.currentStreak >= 2 {
-            return hasEntryToday ? "Today's entry keeps it going." : "A few words today keeps it going."
+            return hasEntryToday ? "Today’s entry keeps it going." : "Add today’s entry to keep it going."
         }
         if stats.entryCount > 0 && !hasEntryToday && stats.currentStreak == 0 {
-            return "No catching up needed — just start with today."
+            return "Start with today."
         }
-        return "\(stats.entriesThisYear) \(stats.entriesThisYear == 1 ? "entry" : "entries") this year"
+        return String(AttributedString(localized: "^[\(stats.entriesThisYear) entry](inflect: true) this year").characters)
     }
 
     var body: some View {
@@ -621,33 +621,33 @@ struct EntryPrompt: Identifiable, Equatable {
     static let defaultPrompts: [EntryPrompt] = [
         EntryPrompt(
             kind: .dailyReflection,
-            title: "Daily reflection",
-            detail: "What is one moment from today that you want to remember?"
+            title: "Today",
+            detail: "What’s one moment from today you want to remember?"
         ),
         EntryPrompt(
             kind: .gratitude,
             title: "Gratitude",
-            detail: "What are three small things you feel grateful for right now?"
+            detail: "What are 3 small things you’re grateful for?"
         ),
         EntryPrompt(
             kind: .energyCheck,
-            title: "Energy check",
-            detail: "How does your body feel today - tense, tired, or calm?"
+            title: "Body",
+            detail: "How does your body feel right now?"
         ),
         EntryPrompt(
             kind: .lettingGo,
-            title: "Letting go",
-            detail: "What is one worry you can gently put down for tonight?"
+            title: "Letting Go",
+            detail: "What worry can you put down tonight?"
         ),
         EntryPrompt(
             kind: .selfKindness,
-            title: "Self-kindness",
-            detail: "If you spoke to yourself like a friend, what would you say?"
+            title: "Kindness",
+            detail: "What would you tell a friend in your place?"
         ),
         EntryPrompt(
             kind: .tomorrow,
             title: "Tomorrow",
-            detail: "What is one gentle intention you have for tomorrow?"
+            detail: "What do you want from tomorrow?"
         )
     ]
 }

@@ -1541,7 +1541,7 @@ struct ProactiveReflectionTests {
 
         let insights = ProactiveReflectionAnalyzer.detectRepeatedTheme(in: recent + baseline, now: now)
 
-        #expect(insights.first?.title == "A theme is taking shape")
+        #expect(insights.first?.title == "Garden keeps coming up")
         #expect((insights.first?.evidence.filter { $0.role == .source }.count ?? 0) >= 3)
         #expect(insights.first?.message.localizedCaseInsensitiveContains("garden") == true)
     }
@@ -1584,7 +1584,7 @@ struct ProactiveReflectionTests {
         let insights = ProactiveReflectionAnalyzer.detectTopicMoodContrasts(in: entries, now: now)
 
         #expect(insights.first?.kind == .contrast)
-        #expect(insights.first?.title == "Same topic, different feeling")
+        #expect(insights.first.map { $0.title.hasSuffix("feels lighter now") || $0.title.hasSuffix("feels heavier now") } == true)
         #expect(insights.first?.evidence.contains { $0.role == .baseline } == true)
     }
 
@@ -1803,7 +1803,7 @@ struct ProactiveReflectionTests {
 
     @Test func smartReminderBodyIsPrivacySafeAndFallsBack() {
         let fallback = ProactiveReflectionController.privacySafeReminderBody(for: nil)
-        #expect(fallback == "Take a minute to speak about your day.")
+        #expect(fallback == "How was today?")
 
         let sensitivePrompt = ReflectionInsight(
             id: "test",

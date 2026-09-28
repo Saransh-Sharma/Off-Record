@@ -18,7 +18,7 @@ struct TodayHeroEntryPreviewCard: View {
                 )
 
                 VStack(alignment: .leading, spacing: 5) {
-                    Text("Today's entry")
+                    Text("Today")
                         .accessibilityAddTraits(.isHeader)
                         .font(OffRecordTypography.labelLarge)
                         .foregroundStyle(primaryText)
@@ -50,7 +50,7 @@ struct TodayHeroEntryPreviewCard: View {
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Today's entry")
+        .accessibilityLabel("Today’s entry")
         .accessibilityIdentifier("homeHero.todayEntryPreview")
     }
 
@@ -60,12 +60,12 @@ struct TodayHeroEntryPreviewCard: View {
             return text
         }
         if entry.hasStartedEntryAudio {
-            return "Recording saved. Tap to add text or play your recording."
+            return "Recording saved."
         }
         if entry.photos?.count ?? 0 > 0 {
-            return "Photos added. Tap to add text or more photos."
+            return "Photos added."
         }
-        return "Draft note. Tap to start writing."
+        return "Draft"
     }
 
     private var metadataText: String {
@@ -73,7 +73,7 @@ struct TodayHeroEntryPreviewCard: View {
         let time = updatedAt.formatted(date: .omitted, time: .shortened)
         let text = entry.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let words = text.isEmpty ? 0 : text.split { $0.isWhitespace || $0.isNewline }.count
-        return "Updated \(time) · \(words) \(words == 1 ? "word" : "words")"
+        return "Updated \(time) · " + String(AttributedString(localized: "^[\(words) word](inflect: true)").characters)
     }
 
     private var primaryText: Color {

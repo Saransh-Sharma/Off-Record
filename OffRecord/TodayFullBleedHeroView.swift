@@ -120,7 +120,7 @@ struct TodayFullBleedHeroView: View {
                 )
             }
             .buttonStyle(.plain)
-            .accessibilityLabel("Privacy and local AI")
+            .accessibilityLabel("Privacy")
             .accessibilityIdentifier("homeHero.privacy")
         }
     }
@@ -190,11 +190,11 @@ struct TodayFullBleedHeroView: View {
 
     private var speakButton: some View {
         Button(action: onSpeak) {
-            Label(todayEntry == nil ? "Speak" : "Add a thought", systemImage: "mic.fill")
+            Label("Record", systemImage: "mic.fill")
                 .offRecordPillButton()
         }
         .buttonStyle(.plain)
-        .accessibilityHint("Starts a private voice recording for this prompt.")
+        .accessibilityHint("Starts recording.")
         .accessibilityIdentifier("homeHero.speak")
     }
 
@@ -216,7 +216,7 @@ struct TodayFullBleedHeroView: View {
                 .overlay(Circle().stroke(OffRecordColor.borderSoft, lineWidth: 1))
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Show another prompt")
+        .accessibilityLabel("Another Prompt")
         .accessibilityIdentifier("homeHero.anotherPrompt")
     }
 
