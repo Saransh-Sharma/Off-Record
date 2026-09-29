@@ -76,6 +76,9 @@ let package = Package(
         .target(
             name: "ReflectionKit",
             dependencies: ["JournalFoundation", "SemanticMemoryKit"],
+            resources: [
+                .process("Localizable.xcstrings")
+            ],
             swiftSettings: [
                 .swiftLanguageMode(.v5)
             ]

@@ -1,0 +1,145 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%@ feels heavier now" : {},
+    "%@ feels lighter now" : {},
+    "%@ is back" : {},
+    "%@ keeps coming up" : {},
+    "%@ seems to lift you" : {},
+    "%@ seems to weigh on you" : {},
+    "A decision or regret came up in ^[%lld entry](inflect: true)." : {},
+    "About as much as last week." : {},
+    "About the same as last week." : {},
+    "Anything you held back?" : {},
+    "Anything you want to say about %@?" : {},
+    "Based on ^[%lld entry](inflect: true) about %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Based on ^[%1$lld entry](inflect: true) about %2$@."
+          }
+        }
+      }
+    },
+    "Based on ^[%lld entry](inflect: true)." : {},
+    "Based on ^[%lld recent entry](inflect: true) vs. ^[%lld earlier entry](inflect: true)." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Based on ^[%1$lld recent entry](inflect: true) vs. ^[%2$lld earlier entry](inflect: true)."
+          }
+        }
+      }
+    },
+    "Based on ^[%lld recent entry](inflect: true)." : {},
+    "Based on a recent entry." : {},
+    "Based on earlier entries and the last 2 weeks." : {},
+    "Based on patterns in your journal." : {},
+    "Based on recent entries and ones from over a month ago." : {},
+    "Based on the gaps between recent entries." : {},
+    "Based on this entry’s wording." : {},
+    "Based on this week’s entries." : {},
+    "Based on your last 3 entries vs. earlier ones." : {},
+    "Based on your last 5 entries." : {},
+    "Based on your last few entries." : {},
+    "Based on your recent and earlier %@ entries." : {},
+    "Based on your recent entry lengths." : {},
+    "Compared with your recent entries." : {},
+    "Each one read a bit heavier than the last." : {},
+    "Entries about %@ read heavier than your others." : {},
+    "Entries about %@ read lighter than your others." : {},
+    "How could you make more room for it?" : {},
+    "How did this week compare to last week?" : {},
+    "How do I feel about %@ lately?" : {},
+    "How do you feel about it now?" : {},
+    "How does %@ affect my mood?" : {},
+    "How has %@ changed since I first wrote about it?" : {},
+    "How often have I been writing lately?" : {},
+    "I have enough from this week for a recap." : {},
+    "I haven’t seen %@ in the last 2 weeks. They used to come up often." : {},
+    "I pulled a question from this week’s entries." : {},
+    "Less writing than last week." : {},
+    "Longer than your recent entries." : {},
+    "More writing than last week." : {},
+    "Shorter than your recent entries." : {},
+    "Something new is coming up" : {},
+    "This entry reads heavier than usual" : {},
+    "This entry reads lighter than usual" : {},
+    "This question has come up in ^[%lld entry](inflect: true)." : {},
+    "This week read heavier than last." : {},
+    "This week read lighter than last." : {},
+    "This week’s patterns" : {},
+    "Time to check in on a decision" : {},
+    "Time to revisit a regret" : {},
+    "What brought you back?" : {},
+    "What changed?" : {},
+    "What decisions have I written about lately?" : {},
+    "What do I keep asking about %@?" : {},
+    "What from this week do you want to keep?" : {},
+    "What have I been writing about lately?" : {},
+    "What have I written about %@?" : {},
+    "What made this entry feel lighter?" : {},
+    "What made today heavier?" : {},
+    "What made today lighter?" : {},
+    "What needed the extra space?" : {},
+    "What regrets have I written about lately?" : {},
+    "What stood out in my week?" : {},
+    "What would make it easier?" : {},
+    "What would make the next few days easier?" : {},
+    "What would you do differently now?" : {},
+    "What’s been helping me lately?" : {},
+    "What’s been weighing on me?" : {},
+    "What’s changed with %@?" : {},
+    "What’s different this time?" : {},
+    "What’s going on with %@?" : {},
+    "What’s helping?" : {},
+    "What’s made it harder to write lately?" : {},
+    "What’s making it harder?" : {},
+    "What’s your honest answer right now?" : {},
+    "When do I write less than usual?" : {},
+    "When do I write more than usual?" : {},
+    "Which decision from this week needs another look?" : {},
+    "Why did this entry feel heavier?" : {},
+    "You haven’t mentioned %@ lately" : {},
+    "You keep asking about %@" : {},
+    "You wrote about a decision recently." : {},
+    "You wrote about a regret recently." : {},
+    "You wrote less than usual" : {},
+    "You wrote more than usual" : {},
+    "Your last 3 entries cover different ground than usual." : {},
+    "Your last 5 entries got heavier" : {},
+    "Your last few entries read lighter than usual." : {},
+    "Your last few entries were closer together than usual." : {},
+    "Your last few entries were further apart than usual." : {},
+    "Your recent entries feel lighter" : {},
+    "Your week so far" : {},
+    "You’re writing about %@ again after more than a month." : {},
+    "You’re writing about %@ again, and it reads heavier than before." : {},
+    "You’re writing about %@ again, and it reads lighter than before." : {},
+    "You’re writing less often" : {},
+    "You’re writing more often" : {},
+    "You’ve mentioned %@ in ^[%lld recent entry](inflect: true)." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You’ve mentioned %1$@ in ^[%2$lld recent entry](inflect: true)."
+          }
+        }
+      }
+    },
+    "^[%lld entry](inflect: true), ^[%lld word](inflect: true)." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "^[%1$lld entry](inflect: true), ^[%2$lld word](inflect: true)."
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}
