@@ -181,4 +181,52 @@ struct ReflectionKitTests {
         #expect(first.weeklyRecap?.evidence.count == 2)
         #expect(first.selectedPrompt?.kind == .weeklyRecap)
     }
+
+    @Test func proactiveInsightCopyFollowsTheCopyStandard() {
+        let now = Date(timeIntervalSince1970: 1_800_000_000)
+        func entry(daysAgo: Int, _ text: String) -> ReflectionEntrySnapshot {
+            ReflectionEntrySnapshot(
+                id: UUID(),
+                date: now.addingTimeInterval(-Double(daysAgo) * 24 * 60 * 60),
+                mood: nil,
+                text: text,
+                sentiment: 0.1
+            )
+        }
+        let recent = [
+            entry(daysAgo: 0, "Garden seedlings needed more water and patient attention."),
+            entry(daysAgo: 1, "The garden soil and seedlings looked stronger today."),
+            entry(daysAgo: 2, "I checked the garden planters before work."),
+            entry(daysAgo: 3, "A quiet walk helped me reset.")
+        ]
+        let baseline = (4...12).map { entry(daysAgo: $0, "Meeting deadline office roadmap manager sprint.") }
+
+        let insight = ProactiveReflectionAnalyzer.detectRepeatedTheme(in: recent + baseline, now: now).first
+        #expect(insight?.title == "Garden keeps coming up")
+        #expect(insight?.message == "You’ve mentioned garden in 3 recent entries.")
+
+        let defaultExplanation = ReflectionInsight(
+            id: "default",
+            category: .pattern,
+            priority: .medium,
+            title: "Title",
+            message: "Message",
+            prompt: "Prompt",
+            evidence: [
+                ProactiveReflectionAnalyzer.evidence(from: recent[0], role: .source),
+                ProactiveReflectionAnalyzer.evidence(from: recent[1], role: .source),
+                ProactiveReflectionAnalyzer.evidence(from: baseline[0], role: .baseline)
+            ],
+            createdAt: now,
+            expiresAt: nil
+        ).explanation
+        #expect(defaultExplanation == "Based on 2 recent entries vs. 1 earlier entry.")
+
+        let insights = ProactiveReflectionAnalyzer.analyze(entries: recent + baseline, now: now).insights
+        #expect(!insights.isEmpty)
+        for insight in insights {
+            let copy = [insight.title, insight.message, insight.prompt, insight.explanation, insight.suggestedQuestion ?? ""]
+            #expect(!copy.contains { $0.contains("Shown because") || $0.contains("Your journal noticed") })
+        }
+    }
 }
