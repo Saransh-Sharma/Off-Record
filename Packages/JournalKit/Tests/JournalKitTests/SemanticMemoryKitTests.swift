@@ -11,11 +11,11 @@ struct SemanticMemoryKitTests {
             .appendingPathComponent("index.sqlite")
     }
 
-    private func entry(_ text: String, id: UUID = UUID(), starred: Bool = false) -> IndexableEntry {
+    private func entry(_ text: String, id: UUID = UUID(), mood: String? = "calm", starred: Bool = false) -> IndexableEntry {
         IndexableEntry(
             id: id,
             date: Date(timeIntervalSince1970: 1_750_000_000),
-            mood: "calm",
+            mood: mood,
             text: text,
             isStarred: starred
         )
@@ -68,6 +68,61 @@ struct SemanticMemoryKitTests {
         if case .ready(let remaining) = afterDelete {
             #expect(!remaining.contains { $0.entryID == bangaloreID })
         }
+    }
+
+    // MARK: Staleness
+
+    private func fallbackWorker(storeURL: URL) -> SemanticMemoryIndexActor {
+        let provider = UnavailableEmbeddingProvider()
+        return SemanticMemoryIndexActor(storeURL: storeURL, preferredProvider: provider, fallbackProvider: provider)
+    }
+
+    /// Friday and Timeline check this before every search; a spurious `true`
+    /// rebuilds the whole index and leaves Friday "still reading".
+    @Test func unchangedJournalNeverNeedsRebuild() async throws {
+        let storeURL = tempStoreURL()
+        let long = String(repeating: "Work stress made the week heavy, so I walked after dinner to reset. ", count: 40)
+        let records = [
+            entry("A calm morning walk with grateful thoughts about family."),
+            entry(long, mood: "anxious", starred: true),
+            entry("No mood picked for this one.", mood: nil),
+        ]
+        #expect(MemoryChunker.chunks(for: long).count > 1)
+
+        let worker = fallbackWorker(storeURL: storeURL)
+        #expect(await worker.needsRebuild(records: records))
+        _ = try await worker.rebuildAll(records: records) { _ in }
+        #expect(await !worker.needsRebuild(records: records))
+        #expect(await !worker.needsRebuild(records: records))
+
+        // After a relaunch the index comes back from disk.
+        let relaunched = fallbackWorker(storeURL: storeURL)
+        _ = try await relaunched.load()
+        #expect(await !relaunched.needsRebuild(records: records))
+    }
+
+    @Test func addedRemovedOrEditedEntriesNeedRebuild() async throws {
+        let coffee = entry("Coffee with Maya after the review.")
+        let run = entry("Evening run by the river.")
+        let worker = fallbackWorker(storeURL: tempStoreURL())
+        _ = try await worker.rebuildAll(records: [coffee, run]) { _ in }
+
+        #expect(await worker.needsRebuild(records: [coffee]))
+        #expect(await worker.needsRebuild(records: [coffee, run, entry("A new entry from another device.")]))
+        #expect(await worker.needsRebuild(records: [entry("Coffee with Maya after the long review.", id: coffee.id), run]))
+        #expect(await worker.needsRebuild(records: [entry(coffee.text, id: coffee.id, mood: "happy"), run]))
+        #expect(await worker.needsRebuild(records: [entry(coffee.text, id: coffee.id, starred: true), run]))
+    }
+
+    @Test func upsertedEditLeavesIndexCurrent() async throws {
+        let coffee = entry("Coffee with Maya after the review.")
+        let run = entry("Evening run by the river.")
+        let worker = fallbackWorker(storeURL: tempStoreURL())
+        _ = try await worker.rebuildAll(records: [coffee, run]) { _ in }
+
+        let edited = entry("Coffee with Maya after the long review.", id: coffee.id, mood: "happy", starred: true)
+        _ = try await worker.upsertEntry(edited)
+        #expect(await !worker.needsRebuild(records: [edited, run]))
     }
 
     // MARK: Exclusion contract
