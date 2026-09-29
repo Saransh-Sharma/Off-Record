@@ -18,9 +18,7 @@ from pathlib import Path
 
 ROOTS = ["OffRecord", "OffRecordWidget", "OffRecordWatch", "OffRecordWatchWidget",
          "OffRecordSystemShared", "OffRecordShared", "Packages/JournalKit/Sources"]
-# ProactiveReflectionModels.swift in ReflectionKit duplicates OffRecord/ProactiveReflection.swift, which
-# shadows it in the app; drop it from this list once the two are consolidated.
-SKIP_FILES = {"ScreenshotDataSeeder.swift", "UITestDataSeeder.swift", "ProactiveReflectionModels.swift"}
+SKIP_FILES = {"ScreenshotDataSeeder.swift", "UITestDataSeeder.swift"}
 SKIP_LINE = re.compile(r"[Ll]ogger\.|Logger\(|print\(|os_log|privacy: \.public|accessibilityIdentifier|systemName:|forKey:|"
                        r"UserDefaults|NSPredicate|copy-lint:ignore|^\s*//")
 
