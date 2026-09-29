@@ -46,12 +46,6 @@
     "%@ comes up a lot for you." : {
 
     },
-    "%@ feels heavier now" : {
-
-    },
-    "%@ feels lighter now" : {
-
-    },
     "%@ from %@ mention %@." : {
       "comment" : "The first argument is a count like “3 entries”; the second is a date, a date range, or “your journal”; the third is the words asked about.",
       "localizations" : {
@@ -99,16 +93,10 @@
     "%@ home" : {
 
     },
-    "%@ is back" : {
-
-    },
     "%@ is when you journal most." : {
       "comment" : "The placeholder is a weekday name, e.g. Sunday"
     },
     "%@ isn’t set up. Your passcode will be used instead." : {
-
-    },
-    "%@ keeps coming up" : {
 
     },
     "%@ mood" : {
@@ -128,12 +116,6 @@
 
     },
     "%@ section" : {
-
-    },
-    "%@ seems to lift you" : {
-
-    },
-    "%@ seems to weigh on you" : {
 
     },
     "%@ tend to lift it." : {
@@ -550,9 +532,6 @@
     "3M" : {
       "comment" : "Segmented control: 3 months"
     },
-    "A decision or regret came up in ^[%lld entry](inflect: true)." : {
-
-    },
     "A few things stood out this week." : {
 
     },
@@ -581,12 +560,6 @@
       "comment" : "Settings group title"
     },
     "About OffRecord" : {
-
-    },
-    "About as much as last week." : {
-
-    },
-    "About the same as last week." : {
 
     },
     "Abstract" : {
@@ -685,12 +658,6 @@
     "Anything else worth adding?" : {
 
     },
-    "Anything you held back?" : {
-
-    },
-    "Anything you want to say about %@?" : {
-
-    },
     "Appearance" : {
 
     },
@@ -751,33 +718,7 @@
     "Based on ^[%lld entry](inflect: true)" : {
 
     },
-    "Based on ^[%lld entry](inflect: true) about %@." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Based on ^[%1$lld entry](inflect: true) about %2$@."
-          }
-        }
-      }
-    },
     "Based on ^[%lld entry](inflect: true)." : {
-
-    },
-    "Based on ^[%lld recent entry](inflect: true) vs. ^[%lld earlier entry](inflect: true)." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "Based on ^[%1$lld recent entry](inflect: true) vs. ^[%2$lld earlier entry](inflect: true)."
-          }
-        }
-      }
-    },
-    "Based on ^[%lld recent entry](inflect: true)." : {
-
-    },
-    "Based on a recent entry." : {
 
     },
     "Based on average entry length for each mood this week." : {
@@ -786,22 +727,10 @@
     "Based on distinct words in %lld entries from the last 7 days." : {
 
     },
-    "Based on earlier entries and the last 2 weeks." : {
-
-    },
     "Based on how the tone of %lld entries changed this week." : {
 
     },
-    "Based on patterns in your journal." : {
-
-    },
     "Based on question marks in this week’s entries." : {
-
-    },
-    "Based on recent entries and ones from over a month ago." : {
-
-    },
-    "Based on the gaps between recent entries." : {
 
     },
     "Based on the tone of entries that mention this person." : {
@@ -811,12 +740,6 @@
 
     },
     "Based on the word that appeared in the most entries." : {
-
-    },
-    "Based on this entry’s wording." : {
-
-    },
-    "Based on this week’s entries." : {
 
     },
     "Based on topics from your earlier entries." : {
@@ -831,25 +754,10 @@
     "Based on your last %lld entries." : {
 
     },
-    "Based on your last 3 entries vs. earlier ones." : {
-
-    },
-    "Based on your last 5 entries." : {
-
-    },
-    "Based on your last few entries." : {
-
-    },
     "Based on your moods by day over the last 7 days." : {
 
     },
     "Based on your overall patterns" : {
-
-    },
-    "Based on your recent and earlier %@ entries." : {
-
-    },
-    "Based on your recent entry lengths." : {
 
     },
     "Based on your words. Not medical advice." : {
@@ -965,9 +873,6 @@
 
     },
     "Communication" : {
-
-    },
-    "Compared with your recent entries." : {
 
     },
     "Conceptual Thinker" : {
@@ -1162,9 +1067,6 @@
     "END OF EXPORT" : {
       "comment" : "Plain-text export closing line, in capitals"
     },
-    "Each one read a bit heavier than the last." : {
-
-    },
     "Earlier" : {
       "comment" : "Tag on an entry cited as earlier, comparison evidence for a Friday insight"
     },
@@ -1200,12 +1102,6 @@
     },
     "Entries" : {
       "comment" : "About row: number of journal entries\nChart axis title: number of journal entries\nExport filter section: which entries to include\nLabel under the number of entries this month (plural).\nNumber of journal entries\nStorage row: space used by journal entries"
-    },
-    "Entries about %@ read heavier than your others." : {
-
-    },
-    "Entries about %@ read lighter than your others." : {
-
     },
     "Entries per day" : {
 
@@ -1512,31 +1408,13 @@
     "How can you keep this feeling?" : {
 
     },
-    "How could you make more room for it?" : {
-
-    },
     "How did that feel?" : {
-
-    },
-    "How did this week compare to last week?" : {
-
-    },
-    "How do I feel about %@ lately?" : {
 
     },
     "How do I write?" : {
 
     },
-    "How do you feel about it now?" : {
-
-    },
-    "How does %@ affect my mood?" : {
-
-    },
     "How does your body feel right now?" : {
-
-    },
-    "How has %@ changed since I first wrote about it?" : {
 
     },
     "How has my mood changed?" : {
@@ -1544,9 +1422,6 @@
     },
     "How has this changed since %@?" : {
       "comment" : "The placeholder is a month name"
-    },
-    "How often have I been writing lately?" : {
-
     },
     "How was today?" : {
 
@@ -1584,12 +1459,6 @@
     "I have a question for you tonight." : {
 
     },
-    "I have enough from this week for a recap." : {
-
-    },
-    "I haven’t seen %@ in the last 2 weeks. They used to come up often." : {
-
-    },
     "I haven’t seen anyone by name yet. Mention people by name and I’ll keep track." : {
 
     },
@@ -1615,9 +1484,6 @@
 
     },
     "I only answer from your entries." : {
-
-    },
-    "I pulled a question from this week’s entries." : {
 
     },
     "I spotted a pattern worth a look." : {
@@ -1771,9 +1637,6 @@
     "Leaves only when you export or turn on iCloud" : {
 
     },
-    "Less writing than last week." : {
-
-    },
     "Let Go" : {
       "comment" : "Short label above a writing prompt on the Today screen"
     },
@@ -1817,9 +1680,6 @@
 
     },
     "Long recording. Save and start a new one?" : {
-
-    },
-    "Longer than your recent entries." : {
 
     },
     "Longest" : {
@@ -1946,9 +1806,6 @@
 
     },
     "More wants than obligations." : {
-
-    },
-    "More writing than last week." : {
 
     },
     "Morn" : {
@@ -2804,9 +2661,6 @@
     "Shares the card as a tall or wide image." : {
 
     },
-    "Shorter than your recent entries." : {
-
-    },
     "Show Entries" : {
 
     },
@@ -2892,9 +2746,6 @@
 
     },
     "Something Went Wrong" : {
-
-    },
-    "Something new is coming up" : {
 
     },
     "Something went wrong on my end. Your entries are fine." : {
@@ -3128,22 +2979,7 @@
     "This conversation will be cleared. Your journal won’t change." : {
 
     },
-    "This entry reads heavier than usual" : {
-
-    },
-    "This entry reads lighter than usual" : {
-
-    },
-    "This question has come up in ^[%lld entry](inflect: true)." : {
-
-    },
     "This was a heavy week." : {
-
-    },
-    "This week read heavier than last." : {
-
-    },
-    "This week read lighter than last." : {
 
     },
     "This week was mostly about %@, and %@." : {
@@ -3165,9 +3001,6 @@
           }
         }
       }
-    },
-    "This week’s patterns" : {
-
     },
     "Those entries are usually upbeat." : {
 
@@ -3199,13 +3032,7 @@
     "Time range" : {
 
     },
-    "Time to check in on a decision" : {
-
-    },
     "Time to check in on a decision." : {
-
-    },
-    "Time to revisit a regret" : {
 
     },
     "Timeline" : {
@@ -3478,9 +3305,6 @@
     "What brings you here?" : {
 
     },
-    "What brought you back?" : {
-
-    },
     "What can wait until tomorrow?" : {
 
     },
@@ -3493,19 +3317,10 @@
     "What can you stop thinking about tonight?" : {
 
     },
-    "What changed?" : {
-
-    },
-    "What decisions have I written about lately?" : {
-
-    },
     "What did this teach you?" : {
 
     },
     "What did you handle better than before?" : {
-
-    },
-    "What do I keep asking about %@?" : {
 
     },
     "What do you need for the next few hours?" : {
@@ -3574,15 +3389,6 @@
     "What from this morning do you want to keep?" : {
 
     },
-    "What from this week do you want to keep?" : {
-
-    },
-    "What have I been writing about lately?" : {
-
-    },
-    "What have I written about %@?" : {
-
-    },
     "What helped before?" : {
 
     },
@@ -3595,16 +3401,7 @@
     "What keeps coming up?" : {
 
     },
-    "What made this entry feel lighter?" : {
-
-    },
     "What made this possible?" : {
-
-    },
-    "What made today heavier?" : {
-
-    },
-    "What made today lighter?" : {
 
     },
     "What matters most this morning?" : {
@@ -3613,25 +3410,16 @@
     "What moment from today stuck with you?" : {
 
     },
-    "What needed the extra space?" : {
-
-    },
     "What needs to change for the rest of today?" : {
 
     },
     "What part of this do you want to understand?" : {
 
     },
-    "What regrets have I written about lately?" : {
-
-    },
     "What stands out to you?" : {
 
     },
     "What stayed with you after writing?" : {
-
-    },
-    "What stood out in my week?" : {
 
     },
     "What worry can you put down tonight?" : {
@@ -3643,22 +3431,13 @@
     "What would help you feel steady right now?" : {
 
     },
-    "What would make it easier?" : {
-
-    },
     "What would make next week feel 10% lighter?" : {
-
-    },
-    "What would make the next few days easier?" : {
 
     },
     "What would make today a good day?" : {
 
     },
     "What would make tomorrow easier?" : {
-
-    },
-    "What would you do differently now?" : {
 
     },
     "What would you regret not writing down?" : {
@@ -3673,13 +3452,7 @@
     "What’s a first small step?" : {
 
     },
-    "What’s been helping me lately?" : {
-
-    },
     "What’s been stressing me?" : {
-
-    },
-    "What’s been weighing on me?" : {
 
     },
     "What’s changed since %@?" : {
@@ -3688,28 +3461,10 @@
     "What’s changed since this morning?" : {
 
     },
-    "What’s changed with %@?" : {
-
-    },
-    "What’s different this time?" : {
-
-    },
     "What’s draining you right now?" : {
 
     },
-    "What’s going on with %@?" : {
-
-    },
     "What’s gone better than expected today?" : {
-
-    },
-    "What’s helping?" : {
-
-    },
-    "What’s made it harder to write lately?" : {
-
-    },
-    "What’s making it harder?" : {
 
     },
     "What’s my overall tone?" : {
@@ -3739,9 +3494,6 @@
     "What’s worth your energy today?" : {
 
     },
-    "What’s your honest answer right now?" : {
-
-    },
     "When You Feel Best" : {
 
     },
@@ -3754,19 +3506,10 @@
     "When do I journal most?" : {
 
     },
-    "When do I write less than usual?" : {
-
-    },
-    "When do I write more than usual?" : {
-
-    },
     "When else did I feel %@?" : {
       "comment" : "The placeholder is a mood, like happy"
     },
     "Where did you feel most like yourself this week?" : {
-
-    },
-    "Which decision from this week needs another look?" : {
 
     },
     "Which mood?" : {
@@ -3788,9 +3531,6 @@
 
     },
     "Why You’re Seeing This" : {
-
-    },
-    "Why did this entry feel heavier?" : {
 
     },
     "Why?" : {
@@ -3926,9 +3666,6 @@
     "You had a lot to say." : {
 
     },
-    "You haven’t mentioned %@ lately" : {
-
-    },
     "You journal most around %@." : {
       "comment" : "The placeholder is an hour of the day, like “9 PM”"
     },
@@ -3950,9 +3687,6 @@
           }
         }
       }
-    },
-    "You keep asking about %@" : {
-
     },
     "You keep your feelings understated." : {
 
@@ -4053,18 +3787,6 @@
     "You write with a lot of feeling." : {
 
     },
-    "You wrote about a decision recently." : {
-
-    },
-    "You wrote about a regret recently." : {
-
-    },
-    "You wrote less than usual" : {
-
-    },
-    "You wrote more than usual" : {
-
-    },
     "You wrote most about %@." : {
 
     },
@@ -4156,21 +3878,6 @@
     "Your journal is about you. That’s the point." : {
 
     },
-    "Your last 3 entries cover different ground than usual." : {
-
-    },
-    "Your last 5 entries got heavier" : {
-
-    },
-    "Your last few entries read lighter than usual." : {
-
-    },
-    "Your last few entries were closer together than usual." : {
-
-    },
-    "Your last few entries were further apart than usual." : {
-
-    },
     "Your mood has been dipping lately." : {
 
     },
@@ -4232,9 +3939,6 @@
     "Your private voice journal" : {
 
     },
-    "Your recent entries feel lighter" : {
-
-    },
     "Your recent entries read heavier. Want to note one good thing today?" : {
 
     },
@@ -4251,9 +3955,6 @@
 
     },
     "Your week is ready to look back on." : {
-
-    },
-    "Your week so far" : {
 
     },
     "Your weekly reflection is ready." : {
@@ -4280,33 +3981,8 @@
     "You’re working things out on the page." : {
 
     },
-    "You’re writing about %@ again after more than a month." : {
-
-    },
-    "You’re writing about %@ again, and it reads heavier than before." : {
-
-    },
-    "You’re writing about %@ again, and it reads lighter than before." : {
-
-    },
-    "You’re writing less often" : {
-
-    },
-    "You’re writing more often" : {
-
-    },
     "You’ve been writing through some hard things lately." : {
 
-    },
-    "You’ve mentioned %@ in ^[%lld recent entry](inflect: true)." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "You’ve mentioned %1$@ in ^[%2$lld recent entry](inflect: true)."
-          }
-        }
-      }
     },
     "You’ve saved %lld entries." : {
 
@@ -4348,16 +4024,6 @@
     },
     "^[%lld entry](inflect: true) this year" : {
 
-    },
-    "^[%lld entry](inflect: true), ^[%lld word](inflect: true)." : {
-      "localizations" : {
-        "en" : {
-          "stringUnit" : {
-            "state" : "new",
-            "value" : "^[%1$lld entry](inflect: true), ^[%2$lld word](inflect: true)."
-          }
-        }
-      }
     },
     "^[%lld entry](inflect: true), about %lld words." : {
       "localizations" : {
