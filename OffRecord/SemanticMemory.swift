@@ -160,6 +160,14 @@ final class SemanticMemoryIndexController: ObservableObject {
         return result
     }
 
+    /// Returns once no rebuild is running, or after `timeout`.
+    func waitForBuild(timeout: Duration) async {
+        let deadline = ContinuousClock.now + timeout
+        while isBuilding, ContinuousClock.now < deadline, !Task.isCancelled {
+            try? await Task.sleep(for: .milliseconds(200))
+        }
+    }
+
     private func rebuildIndex(records: [IndexableEntry]) {
         buildGeneration += 1
         let generation = buildGeneration
@@ -246,7 +254,15 @@ enum EvidenceFridayEngine {
         semanticMemoryLogger.notice(
             "Friday answer requested suggested=\(isSuggestedQuestion.description, privacy: .public) entries=\(entries.count, privacy: .public)"
         )
-        let searchResult = await SemanticMemoryIndexController.shared.search(query: question, entries: entries, limit: 6)
+        let index = SemanticMemoryIndexController.shared
+        var searchResult = await index.search(query: question, entries: entries, limit: 6)
+        if case .building = searchResult, !isSuggestedQuestion {
+            // Asked mid-build, as Ask Friday does at launch: finish reading and answer, rather
+            // than replying with a progress note she never follows up on.
+            semanticMemoryLogger.notice("Friday waiting for the index build before answering.")
+            await index.waitForBuild(timeout: .seconds(20))
+            searchResult = await index.search(query: question, entries: entries, limit: 6)
+        }
 
         switch searchResult {
         case .building(let progress, _):
