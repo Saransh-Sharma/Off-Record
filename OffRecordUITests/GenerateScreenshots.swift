@@ -51,22 +51,6 @@ final class ScreenshotTests: XCTestCase {
         app.launch()
     }
 
-    /// Starts the search index with a Timeline search, as the search tests do, and waits until
-    /// Settings shows indexed passages so Friday can answer with sources.
-    private func buildSearchIndex() {
-        tapOffRecordTab("timeline", in: app)
-        let search = app.searchFields["timeline.searchField"].firstMatch
-        XCTAssertTrue(search.waitForExistence(timeout: 10))
-        search.tap()
-        search.typeText("work stress\n")
-
-        tapOffRecordTab("settings", in: app)
-        let count = app.staticTexts["semanticMemory.chunkCount"].firstMatch
-        scrollUntilVisible(count, in: app)
-        let indexed = XCTNSPredicateExpectation(predicate: NSPredicate(format: "label MATCHES %@", "[1-9][0-9]*"), object: count)
-        XCTAssertEqual(XCTWaiter().wait(for: [indexed], timeout: 90), .completed, "The search index never finished")
-    }
-
     // MARK: - Screenshots
 
     func test01_Today() throws {
@@ -134,35 +118,19 @@ final class ScreenshotTests: XCTestCase {
     }
 
     func test09_FridayChat() throws {
+        // Asked at launch, as Ask Friday does, while semantic memory is still reading the
+        // freshly seeded journal. Friday should wait and answer from it.
         let question = "What helps me when work gets stressful?"
         let encoded = question.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? question
-        let route = URL(string: "offrecord://friday?question=\(encoded)")!
-        launch()
-        buildSearchIndex()
-        tapOffRecordTab("friday", in: app)
-        XCTAssertTrue(app.buttons["friday.talk"].firstMatch.waitForExistence(timeout: 10))
+        launch(route: "offrecord://friday?question=\(encoded)")
 
-        // Semantic memory builds right after seeding; ask again until Friday answers from it.
         let answer = app.descendants(matching: .any)
             .matching(NSPredicate(format: "identifier BEGINSWITH %@", "friday.answerMessage."))
             .firstMatch
-        let stillIndexing = app.staticTexts.containing(NSPredicate(format: "label CONTAINS[c] %@", "still reading")).firstMatch
-        for _ in 0..<6 {
-            Thread.sleep(forTimeInterval: 4)
-            app.open(route)
-            XCTAssertTrue(answer.waitForExistence(timeout: 20))
-            guard stillIndexing.exists else { break }
-            // Chats persist between visits, so clear the "still reading" reply before asking again.
-            app.buttons["friday.newChat"].firstMatch.tap()
-            let confirm = app.buttons
-                .matching(NSPredicate(format: "label == %@ AND identifier != %@", "New Chat", "friday.newChat"))
-                .firstMatch
-            XCTAssertTrue(confirm.waitForExistence(timeout: 4))
-            confirm.tap()
-            app.buttons["friday.backButton"].firstMatch.tap()
-        }
-        XCTAssertTrue(answer.exists, "Friday chat isn't showing an answer")
-        XCTAssertFalse(stillIndexing.exists, "Friday was still indexing")
+        XCTAssertTrue(answer.waitForExistence(timeout: 40), "Friday chat isn't showing an answer")
+        let stillReading = app.staticTexts.containing(NSPredicate(format: "label CONTAINS[c] %@", "still reading")).firstMatch
+        XCTAssertFalse(stillReading.exists, "Friday answered before she finished reading")
+        XCTAssertTrue(app.descendants(matching: .any)["friday.evidenceRail"].firstMatch.waitForExistence(timeout: 8), "Friday's answer has no sources")
         dismissKeyboardIfNeeded(in: app)
         takeScreenshot(named: "09_FridayChat")
     }
