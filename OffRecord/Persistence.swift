@@ -115,11 +115,10 @@ struct PersistenceController {
             object: coordinator,
             queue: .main
         ) { _ in
-            // Refresh the view context when remote changes arrive
+            // Refresh the view context when remote changes arrive. This also fires for the
+            // app's own saves, so it leaves the search index alone; the index compares
+            // entries against what it holds before each search.
             viewContext.refreshAllObjects()
-            Task { @MainActor in
-                SemanticMemoryIndexController.shared.markNeedsReconcile()
-            }
         }
     }
 

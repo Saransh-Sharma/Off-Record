@@ -35,17 +35,14 @@ public actor SemanticMemoryIndexActor {
         return snapshot
     }
 
-    public func needsRebuild(records: [IndexableEntry], forceRemoteReconcile: Bool) -> Bool {
-        if forceRemoteReconcile { return true }
-        guard currentIndexUsesSupportedProvider else { return true }
-        let expectedHashes = Dictionary(uniqueKeysWithValues: records.map { ($0.id, TextSignals.hash($0.text)) })
-        let expectedIDs = Set(expectedHashes.keys)
-        let indexedIDs = Set(chunks.map(\.entryID))
-        guard indexedIDs == expectedIDs else { return true }
-        let indexedHashes = Dictionary(grouping: chunks, by: \.entryID).mapValues { Set($0.map(\.entryTextHash)) }
-        return !expectedHashes.allSatisfy { entryID, hash in
-            indexedHashes[entryID]?.contains(hash) == true
-        }
+    /// True when the index doesn't match `records`: an entry was added, removed,
+    /// or changed in anything the index stores (text, mood, star), or the index
+    /// came from an unsupported embedding model. Store saves that leave every
+    /// record as indexed, such as Friday's own state, never trigger a rebuild.
+    public func needsRebuild(records: [IndexableEntry]) -> Bool {
+        guard let reason = staleReason(for: records) else { return false }
+        semanticMemoryLogger.notice("Semantic index needs a rebuild: \(reason, privacy: .public) records=\(records.count, privacy: .public)")
+        return true
     }
 
     public func rebuildAll(records: [IndexableEntry], progress: @Sendable @escaping (SemanticIndexProgress) async -> Void) async throws -> MemoryIndexSnapshot {
@@ -249,6 +246,20 @@ public actor SemanticMemoryIndexActor {
 
     private var shouldPauseForSystemConditions: Bool {
         ProcessInfo.processInfo.isLowPowerModeEnabled || ProcessInfo.processInfo.thermalState == .serious || ProcessInfo.processInfo.thermalState == .critical
+    }
+
+    private func staleReason(for records: [IndexableEntry]) -> String? {
+        guard currentIndexUsesSupportedProvider else { return "unsupported embedding model" }
+        let chunksByEntry = Dictionary(grouping: chunks, by: \.entryID)
+        guard Set(chunksByEntry.keys) == Set(records.map(\.id)) else { return "entries added or removed" }
+        for record in records {
+            let textHash = TextSignals.hash(record.text)
+            let isCurrent = chunksByEntry[record.id]?.allSatisfy { chunk in
+                chunk.entryTextHash == textHash && chunk.mood == record.mood && chunk.isStarred == record.isStarred
+            } ?? false
+            guard isCurrent else { return "entry changed" }
+        }
+        return nil
     }
 
     private var currentIndexUsesSupportedProvider: Bool {

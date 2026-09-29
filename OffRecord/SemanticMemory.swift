@@ -69,23 +69,16 @@ final class SemanticMemoryIndexController: ObservableObject {
     private let worker = SemanticMemoryIndexActor(storeURL: OffRecordSemanticIndexLocation.storeURL)
     private var buildTask: Task<Void, Never>?
     private var buildGeneration = 0
-    private var needsRemoteReconcile = false
 
     private init() {
         Task { await loadSnapshot() }
-    }
-
-    func markNeedsReconcile() {
-        needsRemoteReconcile = true
-        statusMessage = String(localized: "Updating soon")
     }
 
     func ensureIndexed(entries: [DiaryEntry]) {
         let records = Self.records(from: entries)
         guard !isBuilding else { return }
         Task {
-            let needsRebuild = await worker.needsRebuild(records: records, forceRemoteReconcile: needsRemoteReconcile)
-            if needsRebuild {
+            if await worker.needsRebuild(records: records) {
                 rebuildIndex(records: records)
             }
         }
@@ -93,11 +86,6 @@ final class SemanticMemoryIndexController: ObservableObject {
 
     func rebuildIndex(entries: [DiaryEntry]) {
         rebuildIndex(records: Self.records(from: entries))
-    }
-
-    func reconcileRemoteChanges(entries: [DiaryEntry]) {
-        needsRemoteReconcile = true
-        ensureIndexed(entries: entries)
     }
 
     func upsertEntry(_ entry: DiaryEntry) {
@@ -160,8 +148,7 @@ final class SemanticMemoryIndexController: ObservableObject {
             return state
         }
 
-        let needsRebuild = await worker.needsRebuild(records: records, forceRemoteReconcile: needsRemoteReconcile)
-        if needsRebuild {
+        if await worker.needsRebuild(records: records) {
             rebuildIndex(records: records)
             let state: SemanticMemorySearchResult = .building(progress: progress, message: statusMessage)
             lastSearchState = state
@@ -196,7 +183,6 @@ final class SemanticMemoryIndexController: ObservableObject {
                 guard !Task.isCancelled else { return }
                 await MainActor.run {
                     guard generation == self.buildGeneration else { return }
-                    self.needsRemoteReconcile = false
                     self.isBuilding = false
                     self.progress = snapshot.chunks.isEmpty ? 0 : 1
                     self.apply(snapshot: snapshot, message: snapshot.chunks.isEmpty ? String(localized: "No entries yet") : String(localized: "Ready", comment: "Search index status: ready to use."))
