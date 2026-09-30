@@ -8,31 +8,49 @@
 import SwiftUI
 
 struct FridayActiveChatHeader: View {
+    var onNewChat: (() -> Void)?
+
     var body: some View {
         HStack(spacing: OffRecordSpacing.md) {
             FridayMascotView(pose: .listening, size: 42)
                 .background(OffRecordColor.backgroundLavenderTint, in: Circle())
                 .accessibilityHidden(true)
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text("Friday")
+            VStack(alignment: .leading, spacing: OffRecordSpacing.xxs) {
+                Text("Friday", comment: "Name of the in-app assistant")
                     .font(OffRecordTypography.titleSmall)
                     .foregroundStyle(OffRecordColor.textHeading)
+                    .accessibilityAddTraits(.isHeader)
 
-                Label("Private • On device", systemImage: "lock.shield.fill")
+                Label("On-device", systemImage: "lock.shield.fill")
                     .font(OffRecordTypography.labelSmall)
                     .foregroundStyle(OffRecordColor.textSage)
             }
 
             Spacer(minLength: 0)
+
+            if let onNewChat {
+                Button(action: onNewChat) {
+                    Label("New Chat", systemImage: "square.and.pencil")
+                        .labelStyle(.iconOnly)
+                        .font(OffRecordTypography.titleSmall)
+                        .foregroundStyle(OffRecordColor.textLavender)
+                        .frame(width: OffRecordLayout.minimumTapTarget, height: OffRecordLayout.minimumTapTarget)
+                        .background(OffRecordColor.backgroundLavenderTint, in: Circle())
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("New Chat")
+                .accessibilityHint("Clears this conversation.")
+                .accessibilityIdentifier("friday.newChat")
+            }
         }
         .padding(.horizontal, OffRecordSpacing.lg)
         .padding(.vertical, OffRecordSpacing.md)
-        .background(OffRecordColor.surfacePrimary.opacity(0.82), in: RoundedRectangle(cornerRadius: 24))
+        .background(OffRecordColor.surfacePrimary.opacity(0.82), in: RoundedRectangle(cornerRadius: OffRecordRadius.xl, style: .continuous))
         .overlay {
-            RoundedRectangle(cornerRadius: 24)
+            RoundedRectangle(cornerRadius: OffRecordRadius.xl, style: .continuous)
                 .stroke(OffRecordColor.borderSoft, lineWidth: 1)
         }
-        .shadow(color: Color.black.opacity(0.04), radius: 18, x: 0, y: 8)
+        .offRecordShadow(.chip)
     }
 }

@@ -10,6 +10,7 @@ import Foundation
 import CoreData
 import SwiftUI
 import CryptoKit
+import JournalSecurityKit
 import UserNotifications
 #if canImport(UIKit)
 import UIKit
@@ -20,35 +21,25 @@ import UIKit
 
 @MainActor
 struct FridayChatLayoutTests {
-    @Test func compactKeyboardVisibleComposerClearsFloatingTabBar() {
+    // The tab bar is hidden in Friday chat, so the composer only keeps a small
+    // gap above the home indicator, and sits flush on the keyboard.
+    @Test func compactKeyboardVisibleComposerSitsOnKeyboard() {
         let clearance = FridayChatLayout.composerBottomClearance(
             horizontalSizeClass: .compact,
             isKeyboardVisible: true
         )
 
-        #expect(clearance == OffRecordCompactTabBarLayout.composerKeyboardVisibleClearance)
-        #expect(OffRecordCompactTabBarLayout.composerGapAboveTabBar == 0)
-        #expect(OffRecordCompactTabBarLayout.composerKeyboardFlushAlignmentOffset == 12)
+        #expect(clearance == 0)
     }
 
-    @Test func compactKeyboardVisibleComposerClearanceDoesNotIncludeKeyboardHeight() {
-        let clearance = FridayChatLayout.composerBottomClearance(
-            horizontalSizeClass: .compact,
-            isKeyboardVisible: true
-        )
-
-        #expect(clearance < 312)
-        #expect(clearance > OffRecordCompactTabBarLayout.reservedContentBottomInset)
-    }
-
-    @Test func compactKeyboardHiddenComposerKeepsExistingVisualSpacing() {
+    @Test func compactKeyboardHiddenComposerKeepsSmallGap() {
         let clearance = FridayChatLayout.composerBottomClearance(
             horizontalSizeClass: .compact,
             isKeyboardVisible: false
         )
 
         #expect(clearance == FridayChatLayout.compactComposerBottomClearance)
-        #expect(clearance == 52)
+        #expect(clearance == 8)
     }
 
     @Test func regularWidthComposerClearanceStaysCompact() {
@@ -188,7 +179,7 @@ struct SystemDiscoverabilityTests {
         #expect(entity.title.contains("Journal Entry"))
         #expect(entity.subtitle.contains("Happy mood"))
         #expect(entity.subtitle.contains("42 words"))
-        #expect(entity.subtitle.contains("voice note"))
+        #expect(entity.subtitle.contains("recording"))
         #expect(entity.subtitle.contains("photos"))
         #expect(entity.subtitle.contains("starred"))
     }
@@ -1147,7 +1138,7 @@ struct SemanticMemoryTests {
         #expect(answer.summary == profileSummary)
         #expect(answer.evidence.isEmpty)
         #expect(answer.confidence > 0)
-        #expect(answer.limitations?.localizedCaseInsensitiveContains("citations") == true)
+        #expect(answer.limitations?.localizedCaseInsensitiveContains("supporting entries") == true)
     }
 
     @Test func fridayRefusesWeakMeaningOnlyEvidence() async {
@@ -1166,7 +1157,7 @@ struct SemanticMemoryTests {
 
         #expect(answer.evidence.isEmpty)
         #expect(answer.confidence == 0)
-        #expect(answer.limitations?.localizedCaseInsensitiveContains("retrieved journal evidence") == true)
+        #expect(answer.limitations?.localizedCaseInsensitiveContains("journal evidence") == true)
     }
 
     @Test func fridaySuggestedPromptUsesProfileSummaryWhenEvidenceIsWeak() async {
@@ -1397,7 +1388,7 @@ struct ProactiveReflectionTests {
         let longText = Array(repeating: "I needed more space to name the day clearly.", count: 30).joined(separator: " ")
         entries.append(makeReflectionEntry(daysAgo: 0, sentiment: 0.1, text: longText, now: now))
 
-        let insight = ProactiveReflectionAnalyzer.detectAnomalies(in: entries, now: now).first { $0.title.contains("more to say") }
+        let insight = ProactiveReflectionAnalyzer.detectAnomalies(in: entries, now: now).first { $0.title.contains("more than usual") }
 
         #expect(insight?.evidence.contains { $0.role == .source } == true)
         #expect((insight?.evidence.filter { $0.role == .baseline }.count ?? 0) >= 2)
@@ -1550,7 +1541,7 @@ struct ProactiveReflectionTests {
 
         let insights = ProactiveReflectionAnalyzer.detectRepeatedTheme(in: recent + baseline, now: now)
 
-        #expect(insights.first?.title == "A theme is taking shape")
+        #expect(insights.first?.title == "Garden keeps coming up")
         #expect((insights.first?.evidence.filter { $0.role == .source }.count ?? 0) >= 3)
         #expect(insights.first?.message.localizedCaseInsensitiveContains("garden") == true)
     }
@@ -1593,7 +1584,7 @@ struct ProactiveReflectionTests {
         let insights = ProactiveReflectionAnalyzer.detectTopicMoodContrasts(in: entries, now: now)
 
         #expect(insights.first?.kind == .contrast)
-        #expect(insights.first?.title == "Same topic, different feeling")
+        #expect(insights.first.map { $0.title.hasSuffix("feels lighter now") || $0.title.hasSuffix("feels heavier now") } == true)
         #expect(insights.first?.evidence.contains { $0.role == .baseline } == true)
     }
 
@@ -1812,7 +1803,7 @@ struct ProactiveReflectionTests {
 
     @Test func smartReminderBodyIsPrivacySafeAndFallsBack() {
         let fallback = ProactiveReflectionController.privacySafeReminderBody(for: nil)
-        #expect(fallback == "Take a minute to speak about your day.")
+        #expect(fallback == "How was today?")
 
         let sensitivePrompt = ReflectionInsight(
             id: "test",
@@ -1992,9 +1983,9 @@ struct MoodTests {
             #expect(!mood.miniMoodAssetName.isEmpty)
             #expect(!mood.moodGlowAssetName.isEmpty)
             #if canImport(UIKit)
-            #expect(UIImage(named: mood.largeMoodAssetName) != nil, "Missing large asset for \(mood.displayName)")
-            #expect(UIImage(named: mood.miniMoodAssetName) != nil, "Missing mini asset for \(mood.displayName)")
-            #expect(UIImage(named: mood.moodGlowAssetName) != nil, "Missing glow asset for \(mood.displayName)")
+            #expect(UIImage(named: mood.largeMoodAssetName, in: Mood.assetBundle, with: nil) != nil, "Missing large asset for \(mood.displayName)")
+            #expect(UIImage(named: mood.miniMoodAssetName, in: Mood.assetBundle, with: nil) != nil, "Missing mini asset for \(mood.displayName)")
+            #expect(UIImage(named: mood.moodGlowAssetName, in: Mood.assetBundle, with: nil) != nil, "Missing glow asset for \(mood.displayName)")
             #endif
         }
     }
@@ -2023,15 +2014,10 @@ struct MoodTests {
 
 struct OnboardingResponseTests {
 
-    @Test func defaultResponseUsesWarmPreferenceDefaults() {
+    @Test func defaultResponseStartsUnanswered() {
         let response = OnboardingResponse()
 
-        #expect(response.goal == nil)
         #expect(response.painPoints.isEmpty)
-        #expect(response.relatableStatements.isEmpty)
-        #expect(response.reflectionFocus == .emotions)
-        #expect(response.moodBaseline == .mixed)
-        #expect(response.promptStyle == .gentle)
         #expect(response.faceIDChoice == .notAsked)
         #expect(response.microphoneChoice == .notAsked)
         #expect(response.speechChoice == .notAsked)
@@ -2040,12 +2026,7 @@ struct OnboardingResponseTests {
 
     @Test func responseCodableRoundTrip() throws {
         var response = OnboardingResponse()
-        response.goal = .fridayInsights
         response.painPoints = [.typingSlow, .privacyWorry]
-        response.relatableStatements = [.honestVersion, .patternWish]
-        response.reflectionFocus = .relationships
-        response.promptStyle = .gentle
-        response.moodBaseline = .hopeful
         response.firstEntryText = "Today I noticed I needed a private place to think."
         response.faceIDChoice = .enabled
         response.microphoneChoice = .granted
@@ -2053,6 +2034,25 @@ struct OnboardingResponseTests {
 
         let data = try JSONEncoder().encode(response)
         let decoded = try JSONDecoder().decode(OnboardingResponse.self, from: data)
+
+        #expect(decoded == response)
+    }
+
+    @Test func decodesResponsesSavedWithRetiredFields() throws {
+        var response = OnboardingResponse()
+        response.painPoints = [.blankPage]
+        response.firstEntryText = "Saved before the goal and prompt style steps were removed."
+
+        // Responses saved by earlier builds also carry these keys; they must still load.
+        var object = try #require(JSONSerialization.jsonObject(with: JSONEncoder().encode(response)) as? [String: Any])
+        object["goal"] = "fridayInsights"
+        object["relatableStatements"] = ["honestVersion"]
+        object["reflectionFocus"] = "relationships"
+        object["promptStyle"] = "gentle"
+        object["moodBaseline"] = "hopeful"
+        let legacyData = try JSONSerialization.data(withJSONObject: object)
+
+        let decoded = try JSONDecoder().decode(OnboardingResponse.self, from: legacyData)
 
         #expect(decoded == response)
     }
@@ -2117,11 +2117,11 @@ struct EncryptionTests {
         let data = Data("test".utf8)
         let encrypted = try EncryptionService.encrypt(data: data, password: "password")
 
-        // DVX1 magic bytes
+        // DVX2 magic bytes (current format with stored KDF parameters)
         #expect(encrypted[0] == 0x44) // D
         #expect(encrypted[1] == 0x56) // V
         #expect(encrypted[2] == 0x58) // X
-        #expect(encrypted[3] == 0x31) // 1
+        #expect(encrypted[3] == 0x32) // 2
     }
 
     @Test func encryptLargeData() throws {

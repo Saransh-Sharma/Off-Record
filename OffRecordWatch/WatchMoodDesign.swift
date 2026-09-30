@@ -22,37 +22,23 @@ enum WatchMoodValue: String, CaseIterable, Identifiable, Codable {
 
     var displayName: String {
         switch self {
-        case .happy: return "Happy"
-        case .calm: return "Calm"
-        case .grateful: return "Grateful"
-        case .excited: return "Excited"
-        case .tired: return "Tired"
-        case .anxious: return "Anxious"
-        case .sad: return "Sad"
-        case .angry: return "Angry"
-        case .none: return "Neutral"
+        case .happy: return String(localized: "Happy")
+        case .calm: return String(localized: "Calm")
+        case .grateful: return String(localized: "Grateful")
+        case .excited: return String(localized: "Excited")
+        case .tired: return String(localized: "Tired")
+        case .anxious: return String(localized: "Anxious")
+        case .sad: return String(localized: "Sad")
+        case .angry: return String(localized: "Angry")
+        case .none: return String(localized: "Neutral")
         }
     }
 
     var sentence: String {
         if self == .none {
-            return "I feel neutral."
+            return String(localized: "I feel neutral.")
         }
-        return "I feel \(displayName.lowercased())."
-    }
-
-    var supportiveCopy: String {
-        switch self {
-        case .happy: return "Let it land."
-        case .calm: return "A steady moment."
-        case .grateful: return "Something mattered."
-        case .excited: return "There's energy here."
-        case .tired: return "Move slowly."
-        case .anxious: return "Come back to now."
-        case .sad: return "Hold it softly."
-        case .angry: return "Name it gently."
-        case .none: return "Nothing to force."
-        }
+        return String(localized: "I feel \(displayName.lowercased()).")
     }
 
     var faceAssetName: String {

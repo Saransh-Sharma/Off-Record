@@ -1,6 +1,6 @@
 # OffRecord AI Journal Privacy Policy
 
-**Last Updated: May 27, 2026**
+**Last Updated: July 28, 2026**
 
 ## Our Promise
 
@@ -11,7 +11,7 @@ OffRecord AI Journal is built for private journaling. We do not run developer se
 OffRecord AI Journal processes the following data to provide journaling features:
 
 - **Voice Recordings**: Audio files recorded through the app
-- **Transcriptions**: Text converted from voice recordings using Apple Speech
+- **Transcriptions**: Text converted from voice recordings on device using Apple SpeechAnalyzer
 - **Journal Entries**: Text you write or dictate
 - **Mood Data**: Mood selections you make for your entries
 - **AI Analysis**: Emotional patterns, personality insights, Semantic Memory, Weekly Reflection, and your Friday model
@@ -19,19 +19,20 @@ OffRecord AI Journal processes the following data to provide journaling features
 - **Weekly Reflection Data**: Local weekly reports, report status, saved takeaways, evidence references, source visibility choices, and export preferences
 - **Photos**: Images you attach to diary entries
 - **Apple Watch Captures**: Mood, dictated text, audio manifests, audio files, transfer status, and receipts created by the watchOS companion
-- **Settings**: Preferences such as theme, reminders, Weekly Reflection settings, app lock, iCloud sync, and Apple Speech consent
+- **Settings**: Preferences such as theme, reminders, Weekly Reflection settings, app lock, iCloud sync, and on-device transcription consent
 
-## Apple Speech Transcription
+## On-Device SpeechAnalyzer Transcription
 
-If you choose to transcribe voice recordings, OffRecord uses Apple's Speech framework:
+If you choose to transcribe voice recordings, OffRecord uses Apple's SpeechAnalyzer framework:
 
-- OffRecord asks for your permission before transcription begins.
-- When your device is online, voice audio may be sent to Apple Speech for speech recognition.
-- Apple Speech returns the transcript, and OffRecord saves that transcript in your journal.
-- If you do not allow Apple Speech transcription, your recording is saved locally and you can type the entry manually.
-- You can revoke Apple Speech transcription consent in Settings.
+- OffRecord shows an in-app disclosure before transcription begins.
+- `SpeechTranscriber` is the preferred engine and `DictationTranscriber` provides additional locale coverage.
+- Recognition runs entirely on your device. Audio is not sent to Apple or a speech-recognition server.
+- iOS may download a language model from Apple before first use.
+- If the selected language is unsupported, or you turn off transcription, your recording remains saved locally and you can type the entry manually.
+- You can turn off on-device transcription in Settings.
 
-Apple Speech processing is provided by Apple and is subject to Apple's privacy protections and policies. OffRecord does not send your audio, transcripts, journal entries, photos, Friday prompts, Weekly Reflection reports, Semantic Memory, or AI analysis to developer servers or non-Apple AI services.
+OffRecord does not send your audio, transcripts, journal entries, photos, Friday prompts, Weekly Reflection reports, Semantic Memory, or AI analysis to developer servers, speech-recognition servers, or non-Apple AI services.
 
 ## Where Your Data Lives
 
@@ -137,7 +138,7 @@ OffRecord AI Journal does not knowingly collect data from children under 13. Sin
 
 OffRecord AI Journal uses the following Apple services and frameworks:
 
-- Apple Speech Framework for transcription
+- Apple SpeechAnalyzer with on-device SpeechTranscriber and DictationTranscriber for transcription
 - Apple NaturalLanguage Framework for local NLP
 - Apple Foundation Models on supported systems for local Friday phrasing
 - Apple CloudKit for optional iCloud Sync
@@ -151,7 +152,7 @@ We do not integrate non-Apple third-party SDKs, analytics tools, advertising net
 
 Based on Apple's App Privacy guidance:
 
-**Data Not Collected**: OffRecord AI Journal does not collect data on developer servers, and journal analysis stays on device. Apple services such as Apple Speech and iCloud are governed by Apple's privacy practices.
+**Data Not Collected**: OffRecord AI Journal does not collect data on developer servers, and journal analysis and speech recognition stay on device. Optional iCloud services are governed by Apple's privacy practices.
 
 **Data Linked to You**: None by OffRecord.
 
@@ -165,7 +166,7 @@ Since OffRecord does not collect your data on developer servers, control stays i
 - You can delete individual entries or all local app data.
 - You can dismiss, delete, regenerate, or export Weekly Reflection reports from the app.
 - You can disable iCloud Sync in Settings.
-- You can revoke Apple Speech transcription consent in Settings.
+- You can turn off on-device transcription in Settings.
 - You can uninstall the app to remove local data.
 - iCloud data can be managed through Apple's iCloud settings.
 

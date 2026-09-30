@@ -24,80 +24,86 @@ struct WatchSpeakCaptureView: View {
         ZStack {
             WatchScreenBackground(mood: .lavender)
 
-            VStack(alignment: .leading, spacing: 5) {
-                topBar
-                voiceOrb
-                dictationCard
+            // Scrolls only when larger text sizes need the room.
+            ScrollView {
+                VStack(alignment: .leading, spacing: 6) {
+                    header
+                    voiceOrb
+                    dictationCard
 
-                actionRow
+                    actionRow
+                }
+                .padding(.horizontal, 10)
+                .padding(.bottom, 4)
             }
-            .padding(.horizontal, 10)
-            .padding(.vertical, 4)
+            .scrollBounceBehavior(.basedOnSize)
 
             if saved {
-                SaveConfirmationToast(title: "Saved")
+                SaveConfirmationToast(title: String(localized: "Saved"))
                     .transition(.scale.combined(with: .opacity))
             }
         }
         .navigationBarBackButtonHidden(true)
+        .toolbar {
+            // A toolbar item sits beside the system clock instead of underneath it.
+            ToolbarItem(placement: .topBarLeading) {
+                Button {
+                    cancelAndDismiss()
+                } label: {
+                    Image(systemName: "xmark")
+                        .foregroundStyle(WatchPalette.lavenderText)
+                }
+                .accessibilityLabel("Cancel")
+            }
+        }
         .onAppear(perform: startIfNeeded)
         .onDisappear(perform: cleanupIfNeeded)
         .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: recorder.isRecording)
         .animation(reduceMotion ? nil : .easeOut(duration: 0.18), value: saved)
-        .accessibilityLabel("Start dictation")
+        .accessibilityLabel("Speak")
     }
 
-    private var topBar: some View {
-        HStack(alignment: .center, spacing: 8) {
-            Button {
-                cancelAndDismiss()
-            } label: {
-                Image(systemName: "xmark")
-                    .font(.caption.bold())
-                    .frame(width: 30, height: 30)
-                    .foregroundStyle(WatchPalette.lavenderText)
-                    .background(WatchPalette.lavenderSurface, in: Circle())
-            }
-            .buttonStyle(WatchPressButtonStyle())
-            .accessibilityLabel("Cancel")
-
+    /// Title, prompt, and elapsed time share one row below the system clock.
+    private var header: some View {
+        HStack(alignment: .firstTextBaseline, spacing: 6) {
             VStack(alignment: .leading, spacing: 1) {
                 Text(recorder.isRecording ? "Listening" : "Speak")
-                    .font(.callout.bold())
+                    .font(.headline)
                     .foregroundStyle(WatchPalette.text)
                     .lineLimit(1)
-                Text("Say what's on your mind.")
+                    .minimumScaleFactor(0.8)
+                Text("Say what’s on your mind.")
                     .font(.caption2)
                     .foregroundStyle(WatchPalette.secondary)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.74)
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
             }
-            .frame(maxWidth: 128, alignment: .leading)
+            .accessibilityElement(children: .combine)
 
-            Spacer(minLength: 0)
+            Spacer(minLength: 4)
+
+            Text(format(duration))
+                .font(.headline.monospacedDigit())
+                .foregroundStyle(WatchPalette.text)
+                .lineLimit(1)
+                .layoutPriority(1)
+                .accessibilityLabel("Recording time \(format(duration))")
         }
     }
 
     private var voiceOrb: some View {
-        VStack(spacing: 4) {
-            ZStack {
-                RoundedRectangle(cornerRadius: 34)
-                    .fill(WatchPalette.lavenderSurface.opacity(0.96))
-                    .frame(height: 72)
-                    .overlay {
-                        RoundedRectangle(cornerRadius: 34)
-                            .stroke(.white.opacity(0.42), lineWidth: 1)
-                    }
-                    .shadow(color: WatchPalette.lavender.opacity(recorder.isRecording ? 0.36 : 0.16), radius: recorder.isRecording ? 14 : 7)
-                waveform
-            }
-            .scaleEffect(recorder.isRecording && !reduceMotion ? 1.02 : 1)
-
-            Text(format(duration))
-                .font(.headline.monospacedDigit().bold())
-                .foregroundStyle(WatchPalette.text)
-                .accessibilityLabel("Recording time \(format(duration))")
+        ZStack {
+            RoundedRectangle(cornerRadius: 32)
+                .fill(WatchPalette.lavenderSurface.opacity(0.96))
+                .frame(height: 64)
+                .overlay {
+                    RoundedRectangle(cornerRadius: 32)
+                        .stroke(.white.opacity(0.42), lineWidth: 1)
+                }
+                .shadow(color: WatchPalette.lavender.opacity(recorder.isRecording ? 0.36 : 0.16), radius: recorder.isRecording ? 14 : 7)
+            waveform
         }
+        .scaleEffect(recorder.isRecording && !reduceMotion ? 1.02 : 1)
         .frame(maxWidth: .infinity)
     }
 
@@ -110,7 +116,7 @@ struct WatchSpeakCaptureView: View {
                     .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: recorder.level)
             }
         }
-        .frame(height: 54)
+        .frame(height: 56)
         .accessibilityHidden(true)
     }
 
@@ -122,11 +128,13 @@ struct WatchSpeakCaptureView: View {
                 .lineLimit(1)
                 .minimumScaleFactor(0.74)
 
-            Text(cardMessage)
-                .font(.caption2)
-                .foregroundStyle(WatchPalette.lavenderText.opacity(0.82))
-                .lineLimit(2)
-                .minimumScaleFactor(0.72)
+            if let cardMessage {
+                Text(cardMessage)
+                    .font(.caption2)
+                    .foregroundStyle(WatchPalette.lavenderText.opacity(0.82))
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.72)
+            }
         }
         .frame(maxWidth: .infinity, minHeight: 42, alignment: .topLeading)
         .padding(8)
@@ -140,15 +148,15 @@ struct WatchSpeakCaptureView: View {
     private var actionRow: some View {
         HStack(spacing: 8) {
             WatchSecondaryButton(
-                title: recorder.isRecording ? "Stop" : "Start",
+                title: recorder.isRecording ? String(localized: "Stop") : String(localized: "Start"),
                 systemImage: recorder.isRecording ? "stop.fill" : "mic.fill",
                 minHeight: 34,
                 action: toggleRecording
             )
-            .accessibilityLabel(recorder.isRecording ? "Stop recording" : "Start dictation")
+            .accessibilityLabel(recorder.isRecording ? "Stop recording" : "Start recording")
 
             WatchPrimaryButton(
-                title: saved ? "Saved" : "Save",
+                title: saved ? String(localized: "Saved") : String(localized: "Save"),
                 systemImage: saved ? "checkmark.circle.fill" : "tray.and.arrow.down.fill",
                 fill: WatchPalette.sageSurface,
                 foreground: WatchPalette.sageText,
@@ -156,16 +164,16 @@ struct WatchSpeakCaptureView: View {
                 minHeight: 34,
                 action: saveVoice
             )
-            .accessibilityLabel("Save journal capture")
+            .accessibilityLabel("Save")
         }
     }
 
     private var cardTitle: String {
-        if saved { return "Saved privately" }
-        if pendingRecording != nil { return "Ready to save" }
-        if recorder.isRecording { return "Voice moment" }
-        if recorder.errorMessage != nil { return "Try again" }
-        return "Start speaking"
+        if saved { return String(localized: "Saved") }
+        if pendingRecording != nil { return String(localized: "Ready to save") }
+        if recorder.isRecording { return String(localized: "Recording") }
+        if recorder.errorMessage != nil { return String(localized: "Try again") }
+        return String(localized: "Speak now")
     }
 
     private var cardSymbol: String {
@@ -174,20 +182,17 @@ struct WatchSpeakCaptureView: View {
         return "text.bubble.fill"
     }
 
-    private var cardMessage: String {
+    private var cardMessage: String? {
         if let message = recorder.errorMessage {
             return message
         }
         if recorder.didReachSoftLimit {
-            return "Finish soon to keep this light."
+            return String(localized: "Almost at the limit.")
         }
-        if pendingRecording != nil {
-            return "Transcript later on iPhone."
+        if pendingRecording != nil || recorder.isRecording {
+            return String(localized: "Transcribed on iPhone.")
         }
-        if recorder.isRecording {
-            return "Transcript later on iPhone."
-        }
-        return "Tap Start and speak naturally."
+        return nil
     }
 
     private func startIfNeeded() {
@@ -245,7 +250,7 @@ struct WatchSpeakCaptureView: View {
             return restingHeights[offset] * 0.58
         }
         let multipliers: [CGFloat] = [0.52, 0.72, 1.0, 1.28, 1.54, 1.12, 1.42, 1.06, 0.84, 0.66, 0.48]
-        return max(10, CGFloat(recorder.level) * multipliers[offset] * 54)
+        return min(56, max(10, CGFloat(recorder.level) * multipliers[offset] * 46))
     }
 
     private func format(_ time: TimeInterval) -> String {

@@ -13,11 +13,9 @@ struct FridayView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.managedObjectContext) private var viewContext
     @ObservedObject private var navigationRouter = OffRecordNavigationRouter.shared
+    @ObservedObject private var memoryPreferences = FridayMemoryPreferences.shared
     @State private var selectedSection: FridaySection = .overview
-    @State private var showingDetail = false
-    @State private var animateMascot = false
-    @State private var showFridayShareSheet = false
-    @State private var fridayShareImage: UIImage?
+    @State private var selectedMemoryNode: PersonalKnowledgeGraph.KnowledgeNode?
     @State private var noteEntry: DiaryEntry?
     @State private var isShowingPromptNote = false
     @State private var promptNoteContext: String?
@@ -39,6 +37,16 @@ struct FridayView: View {
         case personality = "Personality"
         case emotions = "Emotions"
         case world = "My World"
+
+        /// Shown in the UI. The raw value is only an identifier.
+        var title: String {
+            switch self {
+            case .overview: return String(localized: "Overview", comment: "Friday screen section tab")
+            case .personality: return String(localized: "Personality", comment: "Friday screen section tab")
+            case .emotions: return String(localized: "Emotions", comment: "Friday screen section tab")
+            case .world: return String(localized: "My World", comment: "Friday screen section tab: people, places, and topics Friday remembers")
+            }
+        }
     }
 
     var body: some View {
@@ -56,10 +64,9 @@ struct FridayView: View {
                 }
             }
         }
-        .navigationTitle("Friday")
-        .background(OffRecordColor.appBackgroundGradient.ignoresSafeArea())
+        .navigationTitle(Text("Friday", comment: "Name of the in-app assistant"))
+        .background(OffRecordAppBackground().ignoresSafeArea())
         .onAppear {
-            animateMascot = true
             startFridayPredictionActivity()
             applyRoutedFridayQuestion(navigationRouter.fridayQuestion)
         }
@@ -69,6 +76,12 @@ struct FridayView: View {
         }
         .onChange(of: navigationRouter.fridayQuestion) { _, question in
             applyRoutedFridayQuestion(question)
+        }
+        .sensoryFeedback(.selection, trigger: selectedSection)
+        .sheet(item: $selectedMemoryNode) { node in
+            FridayMemoryDetailSheet(node: node)
+                .presentationDetents([.medium, .large])
+                .presentationDragIndicator(.visible)
         }
         .navigationDestination(isPresented: $isShowingPromptNote) {
             if let noteEntry {
@@ -80,7 +93,7 @@ struct FridayView: View {
                 )
             }
         }
-        .alert("Could not open note", isPresented: Binding(
+        .alert("Couldn’t Open Entry", isPresented: Binding(
             get: { promptNoteError != nil },
             set: { if !$0 { promptNoteError = nil } }
         )) {
@@ -117,7 +130,6 @@ struct FridayView: View {
             maturityBadge
             sectionPicker
             selectedFridayContent
-            privacyBadge
         }
         .padding(.horizontal, metrics.pageHorizontalPadding)
         .padding(.vertical, 16)
@@ -132,7 +144,6 @@ struct FridayView: View {
                 talkToFridayButton
                 maturityBadge
                 fridaySectionRail
-                privacyBadge
             }
             .frame(width: 320)
             .padding(.top, OffRecordSpacing.lg)
@@ -166,12 +177,12 @@ struct FridayView: View {
         VStack(alignment: .leading, spacing: OffRecordSpacing.sm) {
             ForEach(FridaySection.allCases, id: \.self) { section in
                 Button {
-                    withAnimation(.spring(response: 0.3)) {
+                    withOffRecordAnimation(OffRecordMotion.snappy) {
                         selectedSection = section
                     }
                 } label: {
                     HStack {
-                        Text(section.rawValue)
+                        Text(section.title)
                             .font(OffRecordTypography.labelMedium)
                         Spacer()
                         if selectedSection == section {
@@ -192,7 +203,7 @@ struct FridayView: View {
                     )
                 }
                 .buttonStyle(.plain)
-                .accessibilityLabel("\(section.rawValue) section")
+                .accessibilityLabel("\(section.title) section")
                 .accessibilityAddTraits(selectedSection == section ? .isSelected : [])
                 .offRecordPointerLift()
             }
@@ -218,13 +229,14 @@ struct FridayView: View {
                         )
                     )
                     .frame(width: 200, height: 200)
-                    .scaleEffect(animateMascot ? 1.04 : 0.98)
+                    .modifier(FridayBreathingModifier())
+                    .accessibilityHidden(true)
 
                 FridayMascotView(pose: .idle, size: isIPad ? 132 : 110)
                     .shadow(color: orbColor.opacity(0.28), radius: 18, y: 8)
             }
 
-            Text("Friday")
+            Text("Friday", comment: "Name of the in-app assistant")
                 .font(OffRecordTypography.titleMedium)
                 .foregroundColor(OffRecordColor.textHeading)
 
@@ -232,7 +244,7 @@ struct FridayView: View {
                 .font(OffRecordTypography.bodyMedium)
                 .foregroundColor(OffRecordColor.textSecondary)
 
-            Text("A private AI assistant you can confide in.")
+            Text("I learn from what you write.")
                 .font(OffRecordTypography.bodySmall)
                 .foregroundColor(OffRecordColor.textSecondary)
         }
@@ -243,21 +255,19 @@ struct FridayView: View {
     private var talkToFridayButton: some View {
         NavigationLink(destination: FridayChatView()) {
             HStack(spacing: 12) {
-                ZStack {
-                    Circle()
-                        .fill(OffRecordColor.backgroundLavenderTint)
-                        .frame(width: 32, height: 32)
-
-                    Image(systemName: "bubble.left.and.bubble.right.fill")
-                        .font(.system(size: 13))
-                        .foregroundStyle(OffRecordColor.textLavender)
-                }
+                OffRecordIconBubble(
+                    systemImage: "bubble.left.and.bubble.right.fill",
+                    tint: OffRecordColor.textLavender,
+                    fill: OffRecordColor.backgroundLavenderTint,
+                    size: 32,
+                    iconSize: 13
+                )
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text("Talk to Friday")
                         .font(OffRecordTypography.labelMedium)
                         .foregroundColor(OffRecordColor.textHeading)
-                    Text("Ask what she has noticed in your journal")
+                    Text("Ask me about your journal.")
                         .font(OffRecordTypography.metadata)
                         .foregroundColor(OffRecordColor.textSecondary)
                 }
@@ -288,7 +298,7 @@ struct FridayView: View {
         fridayActivity?.resignCurrent()
         fridayActivity = JournalSpotlightIndexer.shared.predictionActivity(
             type: "com.singularity.offrecord.friday",
-            title: "Talk to Friday",
+            title: String(localized: "Talk to Friday"),
             route: .friday(question: nil)
         )
         fridayActivity?.becomeCurrent()
@@ -327,16 +337,20 @@ struct FridayView: View {
                 }
             }
             .frame(height: 8)
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("How Well I Know You")
+            .accessibilityValue("\(Int((assistant.summary.maturityLevel.progress * 100).rounded())) percent, \(assistant.summary.maturityLevel.displayName), \(String(AttributedString(localized: "^[\(assistant.summary.dataPointsCollected) entry](inflect: true)").characters))")
 
             HStack {
-                Text("\(assistant.summary.dataPointsCollected) data points")
+                Text("^[\(assistant.summary.dataPointsCollected) entry](inflect: true)")
                     .font(OffRecordTypography.metadata)
                     .foregroundColor(OffRecordColor.textSecondary)
                 Spacer()
-                Text(assistant.summary.maturityLevel.rawValue.capitalized)
+                Text(assistant.summary.maturityLevel.displayName)
                     .font(OffRecordTypography.labelSmall)
                     .foregroundColor(OffRecordColor.textLavender)
             }
+            .accessibilityHidden(true)
         }
         .padding(.horizontal)
     }
@@ -348,11 +362,11 @@ struct FridayView: View {
             HStack(spacing: 12) {
                 ForEach(FridaySection.allCases, id: \.self) { section in
                     Button {
-                        withAnimation(.spring(response: 0.3)) {
+                        withOffRecordAnimation(OffRecordMotion.snappy) {
                             selectedSection = section
                         }
                     } label: {
-                        Text(section.rawValue)
+                        Text(section.title)
                             .font(selectedSection == section ? OffRecordTypography.labelMedium : OffRecordTypography.bodySmall)
                             .foregroundColor(selectedSection == section ? OffRecordReadableTintStyle.friday.foreground : OffRecordColor.textPrimary)
                             .padding(.horizontal, 16)
@@ -364,7 +378,7 @@ struct FridayView: View {
                                 border: selectedSection == section ? OffRecordReadableTintStyle.friday.border : OffRecordReadableTintStyle.neutral.border
                             )
                     }
-                    .accessibilityLabel("\(section.rawValue) section")
+                    .accessibilityLabel("\(section.title) section")
                     .accessibilityAddTraits(selectedSection == section ? .isSelected : [])
                 }
             }
@@ -376,7 +390,7 @@ struct FridayView: View {
 
     private var overviewSection: some View {
         VStack(spacing: 16) {
-            // Proactive Reflection Loop — "Friday noticed"
+            // Proactive Reflection Loop ("From Friday" cards)
             ProactiveReflectionSection(entries: startedEntries) { insight in
                 startPromptNote(from: insight)
             }
@@ -385,19 +399,19 @@ struct FridayView: View {
             FridayProfileCardSection()
 
             if !assistant.summary.personalitySnapshot.isEmpty {
-                insightCard(title: "Who You Are", icon: "person.fill", content: assistant.summary.personalitySnapshot)
+                insightCard(title: String(localized: "Personality", comment: "Card heading: the user's personality"), icon: "person.fill", content: assistant.summary.personalitySnapshot)
             }
             if !assistant.summary.communicationSnapshot.isEmpty {
-                insightCard(title: "How You Express", icon: "text.bubble.fill", content: assistant.summary.communicationSnapshot)
+                insightCard(title: String(localized: "How You Write"), icon: "text.bubble.fill", content: assistant.summary.communicationSnapshot)
             }
             if !assistant.summary.emotionalSnapshot.isEmpty {
-                insightCard(title: "How You Feel", icon: "heart.fill", content: assistant.summary.emotionalSnapshot)
+                insightCard(title: String(localized: "Mood", comment: "Card heading: the user's mood"), icon: "heart.fill", content: assistant.summary.emotionalSnapshot)
             }
-            if !assistant.summary.lifeSnapshot.isEmpty {
-                insightCard(title: "Your World", icon: "globe", content: assistant.summary.lifeSnapshot)
+            if !worldSnapshot.isEmpty {
+                insightCard(title: String(localized: "People & Topics"), icon: "globe", content: worldSnapshot)
             }
             if !assistant.summary.growthSnapshot.isEmpty {
-                insightCard(title: "Your Growth", icon: "arrow.up.right", content: assistant.summary.growthSnapshot)
+                insightCard(title: String(localized: "Growth", comment: "Card heading: how the user is growing"), icon: "arrow.up.right", content: assistant.summary.growthSnapshot)
             }
 
             if assistant.summary.dataPointsCollected < 5 {
@@ -412,34 +426,34 @@ struct FridayView: View {
         VStack(spacing: 16) {
             // Communication Style
             VStack(alignment: .leading, spacing: 12) {
-                sectionHeader("Communication Style", icon: "text.quote")
+                sectionHeader(String(localized: "How You Write"), icon: "text.quote")
 
-                traitBar(label: "Expressiveness", value: assistant.communicationStyle.expressiveness, lowLabel: "Reserved", highLabel: "Expressive")
-                traitBar(label: "Directness", value: assistant.communicationStyle.directness, lowLabel: "Nuanced", highLabel: "Direct")
-                traitBar(label: "Formality", value: assistant.communicationStyle.formalityLevel, lowLabel: "Casual", highLabel: "Formal")
+                traitBar(label: String(localized: "Expressiveness"), value: assistant.communicationStyle.expressiveness, lowLabel: String(localized: "Reserved", comment: "Low end of the “Expressiveness” scale"), highLabel: String(localized: "Expressive", comment: "High end of the “Expressiveness” scale"))
+                traitBar(label: String(localized: "Directness"), value: assistant.communicationStyle.directness, lowLabel: String(localized: "Nuanced", comment: "Low end of the “Directness” scale"), highLabel: String(localized: "Direct", comment: "High end of the “Directness” scale"))
+                traitBar(label: String(localized: "Formality"), value: assistant.communicationStyle.formalityLevel, lowLabel: String(localized: "Casual", comment: "Low end of the “Formality” scale"), highLabel: String(localized: "Formal", comment: "High end of the “Formality” scale"))
             }
             .padding()
             .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceWarm)
 
             // Thinking Style
             VStack(alignment: .leading, spacing: 12) {
-                sectionHeader("Thinking Style", icon: "brain")
+                sectionHeader(String(localized: "How You Think"), icon: "brain")
 
-                traitBar(label: "Processing", value: assistant.thoughtPatterns.analyticalScore, lowLabel: "Intuitive", highLabel: "Analytical")
-                traitBar(label: "Abstraction", value: assistant.thoughtPatterns.abstractScore, lowLabel: "Concrete", highLabel: "Abstract")
-                traitBar(label: "Time Focus", value: assistant.thoughtPatterns.futureOriented, lowLabel: "Past", highLabel: "Future")
-                traitBar(label: "Perspective", value: assistant.thoughtPatterns.selfFocused, lowLabel: "Others", highLabel: "Self")
+                traitBar(label: String(localized: "Processing", comment: "Trait scale: how the user processes things"), value: assistant.thoughtPatterns.analyticalScore, lowLabel: String(localized: "Intuitive", comment: "Low end of the “Processing” scale"), highLabel: String(localized: "Analytical", comment: "High end of the “Processing” scale"))
+                traitBar(label: String(localized: "Abstraction"), value: assistant.thoughtPatterns.abstractScore, lowLabel: String(localized: "Concrete", comment: "Low end of the “Abstraction” scale"), highLabel: String(localized: "Abstract", comment: "High end of the “Abstraction” scale"))
+                traitBar(label: String(localized: "Time Focus"), value: assistant.thoughtPatterns.futureOriented, lowLabel: String(localized: "Past", comment: "Low end of the “Time Focus” scale"), highLabel: String(localized: "Future", comment: "High end of the “Time Focus” scale"))
+                traitBar(label: String(localized: "Perspective"), value: assistant.thoughtPatterns.selfFocused, lowLabel: String(localized: "Others", comment: "Low end of the “Perspective” scale"), highLabel: String(localized: "Self", comment: "High end of the “Perspective” scale"))
             }
             .padding()
             .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceWarm)
 
             // Growth Indicators
             VStack(alignment: .leading, spacing: 12) {
-                sectionHeader("Growth Indicators", icon: "arrow.up.heart.fill")
+                sectionHeader(String(localized: "Growth", comment: "Card heading: how the user is growing"), icon: "arrow.up.heart.fill")
 
-                traitBar(label: "Growth Mindset", value: assistant.thoughtPatterns.growthMindsetScore, lowLabel: "Fixed", highLabel: "Growth")
-                traitBar(label: "Self-Awareness", value: assistant.thoughtPatterns.selfAwarenessLevel, lowLabel: "Developing", highLabel: "Deep")
-                traitBar(label: "Gratitude", value: assistant.thoughtPatterns.gratitudeTendency, lowLabel: "Occasional", highLabel: "Frequent")
+                traitBar(label: String(localized: "Growth Mindset"), value: assistant.thoughtPatterns.growthMindsetScore, lowLabel: String(localized: "Fixed", comment: "Low end of the “Growth Mindset” scale"), highLabel: String(localized: "Growth", comment: "High end of the “Growth Mindset” scale"))
+                traitBar(label: String(localized: "Self-Awareness"), value: assistant.thoughtPatterns.selfAwarenessLevel, lowLabel: String(localized: "Developing", comment: "Low end of the “Self-Awareness” scale"), highLabel: String(localized: "Deep", comment: "High end of the “Self-Awareness” scale"))
+                traitBar(label: String(localized: "Gratitude"), value: assistant.thoughtPatterns.gratitudeTendency, lowLabel: String(localized: "Occasional", comment: "Low end of the “Gratitude” scale"), highLabel: String(localized: "Frequent", comment: "High end of the “Gratitude” scale"))
             }
             .padding()
             .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceWarm)
@@ -447,7 +461,7 @@ struct FridayView: View {
             // Signature Words
             if !assistant.communicationStyle.signatureWords.isEmpty {
                 VStack(alignment: .leading, spacing: 12) {
-                    sectionHeader("Your Vocabulary", icon: "textformat")
+                    sectionHeader(String(localized: "Words You Use"), icon: "textformat")
 
                     let topWords = assistant.communicationStyle.signatureWords
                         .sorted { $0.value > $1.value }
@@ -472,60 +486,6 @@ struct FridayView: View {
                 .padding()
                 .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceLavender)
             }
-
-            // Share a personality card only after Friday has enough context.
-            if assistant.behavioralPatterns.totalEntries >= 10 {
-                shareFridayButton
-            }
-        }
-        .sheet(isPresented: $showFridayShareSheet) {
-            if let image = fridayShareImage {
-                ShareSheet(activityItems: [
-                    image,
-                    PersonalityCardRenderer.shareText
-                ])
-            }
-        }
-    }
-
-    // MARK: - Share Personality Card Button
-
-    private var shareFridayButton: some View {
-        Button {
-            shareFridayCard()
-        } label: {
-            HStack(spacing: 10) {
-                    Image(systemName: "square.and.arrow.up")
-                        .font(.system(size: 16, weight: .semibold))
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Share Your Personality Card")
-                        .font(OffRecordTypography.labelMedium)
-                    Text("A snapshot of the patterns Friday has noticed")
-                        .font(OffRecordTypography.metadata)
-                        .foregroundColor(OffRecordColor.textSecondary)
-                }
-                Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundColor(OffRecordColor.textSecondary)
-            }
-            .foregroundColor(OffRecordColor.textPrimary)
-            .padding(16)
-            .offRecordGlassControl(
-                tint: OffRecordColor.brandAqua,
-                in: RoundedRectangle(cornerRadius: 16, style: .continuous),
-                fallbackFill: OffRecordColor.surfaceMint
-            )
-        }
-    }
-
-    private func shareFridayCard() {
-        Task { @MainActor in
-            let profile = FridayProfileGenerator.generate()
-            if let image = PersonalityCardRenderer.renderCard(profile: profile, format: .story) {
-                fridayShareImage = image
-                showFridayShareSheet = true
-            }
         }
     }
 
@@ -535,19 +495,19 @@ struct FridayView: View {
         VStack(spacing: 16) {
             // Emotional Baseline
             VStack(alignment: .leading, spacing: 12) {
-                sectionHeader("Emotional Baseline", icon: "heart.circle.fill")
+                sectionHeader(String(localized: "Your Usual Mood"), icon: "heart.circle.fill")
 
                 HStack(spacing: 20) {
-                    emotionMeter(label: "Valence", value: (assistant.emotionalSignature.baselineValence + 1) / 2, color: assistant.emotionalSignature.baselineValence > 0 ? OffRecordColor.brandMint : OffRecordColor.brandPeach)
-                    emotionMeter(label: "Arousal", value: assistant.emotionalSignature.baselineArousal, color: OffRecordColor.brandSky)
-                    emotionMeter(label: "Range", value: assistant.emotionalSignature.emotionalRange, color: OffRecordColor.brandAqua)
+                    emotionMeter(label: String(localized: "Mood", comment: "Meter label: the user's usual mood"), value: (assistant.emotionalSignature.baselineValence + 1) / 2, color: assistant.emotionalSignature.baselineValence > 0 ? OffRecordColor.brandMint : OffRecordColor.brandPeach)
+                    emotionMeter(label: String(localized: "Energy", comment: "Meter label: the user's usual energy"), value: assistant.emotionalSignature.baselineArousal, color: OffRecordColor.brandSky)
+                    emotionMeter(label: String(localized: "Range", comment: "Meter label: how widely the user's mood varies"), value: assistant.emotionalSignature.emotionalRange, color: OffRecordColor.brandAqua)
                 }
 
                 if assistant.emotionalSignature.sentimentTrend != 0 {
                     HStack {
                         Image(systemName: assistant.emotionalSignature.sentimentTrend > 0 ? "arrow.up.right" : "arrow.down.right")
                             .foregroundColor(sentimentTextColor(assistant.emotionalSignature.sentimentTrend))
-                        Text("Emotional trajectory is \(assistant.emotionalSignature.sentimentTrend > 0 ? "improving" : "declining")")
+                        Text(assistant.emotionalSignature.sentimentTrend > 0 ? "Your mood has been improving lately." : "Your mood has been dipping lately.")
                             .font(OffRecordTypography.metadata)
                             .foregroundColor(OffRecordColor.textSecondary)
                     }
@@ -558,13 +518,13 @@ struct FridayView: View {
 
             // Time-Based Mood
             VStack(alignment: .leading, spacing: 12) {
-                sectionHeader("Mood Rhythms", icon: "clock.fill")
+                sectionHeader(String(localized: "When You Feel Best"), icon: "clock.fill")
 
                 HStack(spacing: 0) {
-                    moodTimeBlock(label: "Morning", sentiment: assistant.emotionalSignature.morningMood, icon: "sunrise.fill")
-                    moodTimeBlock(label: "Evening", sentiment: assistant.emotionalSignature.eveningMood, icon: "sunset.fill")
-                    moodTimeBlock(label: "Weekday", sentiment: assistant.emotionalSignature.weekdayMood, icon: "briefcase.fill")
-                    moodTimeBlock(label: "Weekend", sentiment: assistant.emotionalSignature.weekendMood, icon: "figure.walk")
+                    moodTimeBlock(label: String(localized: "Morning"), sentiment: assistant.emotionalSignature.morningMood, icon: "sunrise.fill")
+                    moodTimeBlock(label: String(localized: "Evening"), sentiment: assistant.emotionalSignature.eveningMood, icon: "sunset.fill")
+                    moodTimeBlock(label: String(localized: "Weekday"), sentiment: assistant.emotionalSignature.weekdayMood, icon: "briefcase.fill")
+                    moodTimeBlock(label: String(localized: "Weekend"), sentiment: assistant.emotionalSignature.weekendMood, icon: "figure.walk")
                 }
             }
             .padding()
@@ -573,7 +533,7 @@ struct FridayView: View {
             // Mood Frequency
             if !assistant.emotionalSignature.emotionFrequency.isEmpty {
                 VStack(alignment: .leading, spacing: 12) {
-                    sectionHeader("Emotion Frequency", icon: "chart.bar.fill")
+                    sectionHeader(String(localized: "Most Common Moods"), icon: "chart.bar.fill")
 
                     let sorted = assistant.emotionalSignature.emotionFrequency.sorted { $0.value > $1.value }
                     let maxVal = sorted.first?.value ?? 1
@@ -585,7 +545,7 @@ struct FridayView: View {
                                 size: 18,
                                 opacity: 0.86
                             )
-                            Text(mood.capitalized)
+                            Text(Mood(rawValue: mood)?.displayName ?? mood.capitalized)
                                 .font(OffRecordTypography.metadata)
                                 .frame(width: 60, alignment: .leading)
                             GeometryReader { geo in
@@ -598,6 +558,9 @@ struct FridayView: View {
                                 .font(OffRecordTypography.metadata)
                                 .foregroundColor(OffRecordColor.textSecondary)
                         }
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(Mood(rawValue: mood)?.displayName ?? mood.capitalized)
+                        .accessibilityValue(String(AttributedString(localized: "^[\(Int(count)) entry](inflect: true)").characters))
                     }
                 }
                 .padding()
@@ -607,15 +570,15 @@ struct FridayView: View {
             // Positive & Negative Triggers
             if !assistant.emotionalSignature.positiveTriggersTopics.isEmpty || !assistant.emotionalSignature.negativeTriggersTopics.isEmpty {
                 VStack(alignment: .leading, spacing: 12) {
-                    sectionHeader("Emotional Triggers", icon: "bolt.heart.fill")
+                    sectionHeader(String(localized: "What Affects Your Mood"), icon: "bolt.heart.fill")
 
                     if !assistant.emotionalSignature.positiveTriggersTopics.isEmpty {
-                        Text("Lifts your mood")
+                        Text("Lifts Your Mood")
                             .font(OffRecordTypography.labelSmall)
                             .foregroundColor(OffRecordColor.textSage)
 
                         FlowLayout(spacing: 6) {
-                            ForEach(Array(assistant.emotionalSignature.positiveTriggersTopics.sorted { $0.value > $1.value }.prefix(8)), id: \.key) { topic, _ in
+                            ForEach(Array(visibleTriggers(assistant.emotionalSignature.positiveTriggersTopics).prefix(8)), id: \.key) { topic, _ in
                                 Text(topic.capitalized)
                                     .font(OffRecordTypography.metadata)
                                     .foregroundColor(OffRecordColor.textSage)
@@ -628,13 +591,13 @@ struct FridayView: View {
                     }
 
                     if !assistant.emotionalSignature.negativeTriggersTopics.isEmpty {
-                        Text("Weighs on you")
+                        Text("Weighs on You")
                             .font(OffRecordTypography.labelSmall)
                             .foregroundColor(OffRecordColor.textPeach)
                             .padding(.top, 4)
 
                         FlowLayout(spacing: 6) {
-                            ForEach(Array(assistant.emotionalSignature.negativeTriggersTopics.sorted { $0.value > $1.value }.prefix(8)), id: \.key) { topic, _ in
+                            ForEach(Array(visibleTriggers(assistant.emotionalSignature.negativeTriggersTopics).prefix(8)), id: \.key) { topic, _ in
                                 Text(topic.capitalized)
                                     .font(OffRecordTypography.metadata)
                                     .foregroundColor(OffRecordColor.textPeach)
@@ -656,27 +619,46 @@ struct FridayView: View {
 
     private var worldSection: some View {
         VStack(spacing: 16) {
+            if !assistant.knowledgeGraph.fridayVisibleNodes(limit: 1, preferences: memoryPreferences).isEmpty {
+                VStack(alignment: .leading, spacing: OffRecordSpacing.xs) {
+                    Text("What I Remember")
+                        .font(OffRecordTypography.titleSmall)
+                        .foregroundStyle(OffRecordColor.textHeading)
+                        .accessibilityAddTraits(.isHeader)
+                    Text("Rename anything, or ask me to forget it.")
+                        .font(OffRecordTypography.bodySmall)
+                        .foregroundStyle(OffRecordColor.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+            }
+
             // People
-            knowledgeSection(title: "People In Your Life", icon: "person.2.fill", type: .person)
+            knowledgeSection(title: String(localized: "People"), icon: "person.2.fill", type: .person)
 
             // Places
-            knowledgeSection(title: "Places That Matter", icon: "mappin.circle.fill", type: .place)
+            knowledgeSection(title: String(localized: "Places"), icon: "mappin.circle.fill", type: .place)
 
             // Topics
-            knowledgeSection(title: "Themes & Topics", icon: "tag.fill", type: .topic)
+            knowledgeSection(title: String(localized: "Topics"), icon: "tag.fill", type: .topic)
 
             // Goals
-            knowledgeSection(title: "Your Goals", icon: "star.fill", type: .goal)
+            knowledgeSection(title: String(localized: "Goals"), icon: "star.fill", type: .goal)
 
             // Fears
-            knowledgeSection(title: "What Concerns You", icon: "exclamationmark.triangle.fill", type: .fear)
+            knowledgeSection(title: String(localized: "Worries"), icon: "cloud.rain.fill", type: .fear)
 
-            if assistant.knowledgeGraph.nodes.isEmpty {
+            if !memoryPreferences.forgottenIDs.isEmpty {
+                forgottenFooter
+            }
+
+            if assistant.knowledgeGraph.fridayVisibleNodes(limit: 1, preferences: memoryPreferences).isEmpty {
                 VStack(spacing: 12) {
                     Image(systemName: "globe")
-                        .font(.system(size: 40))
+                        .font(OffRecordTypography.displayXL)
                         .foregroundColor(OffRecordColor.textLavender)
-                    Text("Your world map will build as you journal")
+                        .accessibilityHidden(true)
+                    Text("People and places you mention will show up here.")
                         .font(OffRecordTypography.bodySmall)
                         .foregroundColor(OffRecordColor.textSecondary)
                 }
@@ -684,96 +666,6 @@ struct FridayView: View {
                 .padding(40)
                 .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceWarm)
             }
-        }
-    }
-
-    // MARK: - Patterns Section
-
-    private var patternsSection: some View {
-        VStack(spacing: 16) {
-            // Activity Heatmap
-            VStack(alignment: .leading, spacing: 12) {
-                sectionHeader("When You Write", icon: "clock.fill")
-
-                // Hourly distribution
-                let maxHourly = Double(assistant.behavioralPatterns.hourlyActivity.values.max() ?? 1)
-
-                HStack(alignment: .bottom, spacing: 2) {
-                    ForEach(0..<24, id: \.self) { hour in
-                        let count = Double(assistant.behavioralPatterns.hourlyActivity[hour] ?? 0)
-                        VStack(spacing: 2) {
-                            RoundedRectangle(cornerRadius: 2)
-                                .fill(OffRecordColor.brandAqua.opacity(count / max(1, maxHourly)))
-                                .frame(height: max(4, 60 * (count / max(1, maxHourly))))
-
-                            if hour % 6 == 0 {
-                                Text("\(hour)")
-                                    .font(OffRecordTypography.annotation)
-                                    .foregroundColor(OffRecordColor.textSecondary)
-                            }
-                        }
-                    }
-                }
-                .frame(height: 80)
-
-                if let peak = assistant.behavioralPatterns.peakHour {
-                    Text("Peak writing time: \(formatHour(peak))")
-                        .font(OffRecordTypography.metadata)
-                        .foregroundColor(OffRecordColor.textSecondary)
-                }
-            }
-            .padding()
-            .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceWarm)
-
-            // Day of Week
-            VStack(alignment: .leading, spacing: 12) {
-                sectionHeader("Your Week", icon: "calendar")
-
-                let days = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"]
-                let maxDaily = Double(assistant.behavioralPatterns.dayOfWeekActivity.values.max() ?? 1)
-
-                HStack(spacing: 8) {
-                    ForEach(1...7, id: \.self) { day in
-                        let count = Double(assistant.behavioralPatterns.dayOfWeekActivity[day] ?? 0)
-                        VStack(spacing: 4) {
-                            RoundedRectangle(cornerRadius: 4)
-                                .fill(OffRecordColor.brandSky.opacity(count / max(1, maxDaily) * 0.8 + 0.1))
-                                .frame(height: max(8, 50 * (count / max(1, maxDaily))))
-
-                            Text(days[day - 1])
-                                .font(OffRecordTypography.annotation)
-                                .foregroundColor(OffRecordColor.textSecondary)
-                        }
-                    }
-                }
-                .frame(height: 70)
-            }
-            .padding()
-            .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceBlue)
-
-            // Writing Stats
-            VStack(alignment: .leading, spacing: 12) {
-                sectionHeader("Writing Stats", icon: "doc.text.fill")
-
-                HStack(spacing: 20) {
-                    statItem(value: "\(assistant.behavioralPatterns.totalEntries)", label: "Entries")
-                    statItem(value: formatNumber(assistant.behavioralPatterns.totalWords), label: "Words")
-                    statItem(value: "\(Int(assistant.communicationStyle.averageSentenceLength))", label: "Avg Sentence")
-                    statItem(value: String(format: "%.0f%%", assistant.communicationStyle.vocabularyRichness * 100), label: "Vocab Richness")
-                }
-            }
-            .padding()
-            .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceWarm)
-
-            // Preferences
-            VStack(alignment: .leading, spacing: 12) {
-                sectionHeader("Your Preferences", icon: "slider.horizontal.3")
-
-                traitBar(label: "Input Mode", value: assistant.behavioralPatterns.prefersVoice, lowLabel: "Text", highLabel: "Voice")
-                traitBar(label: "Entry Length", value: 1 - assistant.behavioralPatterns.prefersShortEntries, lowLabel: "Brief", highLabel: "Detailed")
-            }
-            .padding()
-            .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceWarm)
         }
     }
 
@@ -844,8 +736,8 @@ struct FridayView: View {
             }
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(label): \(Int(value * 100)) percent, between \(lowLabel) and \(highLabel)")
-        .accessibilityValue("\(Int(value * 100)) percent")
+        .accessibilityLabel(label)
+        .accessibilityValue("\(Int(value * 100)) percent, \(lowLabel) to \(highLabel)")
     }
 
     private func emotionMeter(label: String, value: Double, color: Color) -> some View {
@@ -860,7 +752,7 @@ struct FridayView: View {
                     .stroke(color, style: StrokeStyle(lineWidth: lineWidth, lineCap: .round))
                     .rotationEffect(.degrees(-90))
 
-                Text(String(format: "%.0f%%", value * 100))
+                Text(value, format: .percent.precision(.fractionLength(0)))
                     .font(OffRecordTypography.numberSmall)
                     .foregroundColor(OffRecordColor.textPrimary)
             }
@@ -871,7 +763,8 @@ struct FridayView: View {
                 .foregroundColor(OffRecordColor.textSecondary)
         }
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(label): \(Int(value * 100)) percent")
+        .accessibilityLabel(label)
+        .accessibilityValue("\(Int(value * 100)) percent")
     }
 
     private func moodTimeBlock(label: String, sentiment: Double, icon: String) -> some View {
@@ -889,39 +782,22 @@ struct FridayView: View {
                 .foregroundColor(OffRecordColor.textSecondary)
         }
         .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(label)
+        .accessibilityValue(sentimentLabel(sentiment))
     }
 
     private func knowledgeSection(title: String, icon: String, type: PersonalKnowledgeGraph.KnowledgeNode.NodeType) -> some View {
-        let nodes = assistant.knowledgeGraph.topNodes(ofType: type, limit: 8)
+        let nodes = assistant.knowledgeGraph.fridayVisibleNodes(ofType: type, limit: 8, preferences: memoryPreferences)
         return Group {
             if !nodes.isEmpty {
-                VStack(alignment: .leading, spacing: 12) {
+                VStack(alignment: .leading, spacing: OffRecordSpacing.sm) {
                     sectionHeader(title, icon: icon)
+                        .padding(.bottom, OffRecordSpacing.xs)
 
                     ForEach(nodes, id: \.id) { node in
-                        HStack {
-                            Circle()
-                                .fill(sentimentColor(node.sentimentAssociation))
-                                .frame(width: 8, height: 8)
-
-                            Text(node.label)
-                                .font(OffRecordTypography.bodySmall)
-                                .foregroundColor(OffRecordColor.textPrimary)
-
-                            Spacer()
-
-                            Text("\(node.mentions)x")
-                                .font(OffRecordTypography.metadata)
-                                .foregroundColor(OffRecordColor.textSecondary)
-
-                            // Importance indicator
-                            HStack(spacing: 1) {
-                                ForEach(0..<5, id: \.self) { i in
-                                    Circle()
-                                        .fill(Double(i) / 5.0 < node.importance ? OffRecordColor.brandLavenderDark : OffRecordColor.textTertiary.opacity(0.2))
-                                        .frame(width: 4, height: 4)
-                                }
-                            }
+                        FridayMemoryRow(node: node) {
+                            selectedMemoryNode = assistant.knowledgeGraph.nodes[node.id]
                         }
                     }
                 }
@@ -931,39 +807,53 @@ struct FridayView: View {
         }
     }
 
-    private func statItem(value: String, label: String) -> some View {
-        VStack(spacing: 4) {
-            Text(value)
-                .font(OffRecordTypography.titleSmall)
-                .foregroundColor(OffRecordColor.textLavender)
-            Text(label)
-                .font(OffRecordTypography.annotation)
-                .foregroundColor(OffRecordColor.textSecondary)
+    private var forgottenFooter: some View {
+        HStack(spacing: OffRecordSpacing.md) {
+            Image(systemName: "eye.slash")
+                .foregroundStyle(OffRecordColor.textSecondary)
+                .accessibilityHidden(true)
+            Text("^[\(memoryPreferences.forgottenIDs.count) hidden item](inflect: true)")
+                .font(OffRecordTypography.metadata)
+                .foregroundStyle(OffRecordColor.textSecondary)
+            Spacer(minLength: OffRecordSpacing.sm)
+            Button("Restore") {
+                withOffRecordAnimation {
+                    memoryPreferences.restoreAll()
+                }
+            }
+            .font(OffRecordTypography.labelSmall)
+            .foregroundStyle(OffRecordColor.textLavender)
+            .frame(minHeight: OffRecordLayout.minimumTapTarget)
+            .accessibilityHint("Shows hidden items again.")
+            .accessibilityIdentifier("friday.memory.restore")
         }
-        .frame(maxWidth: .infinity)
+        .padding(.horizontal, OffRecordSpacing.lg)
+        .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceWarm)
+    }
+
+    /// People and themes for the Overview card, honoring Forget and Rename.
+    private var worldSnapshot: String {
+        let people = assistant.knowledgeGraph.fridayVisibleNodes(ofType: .person, limit: 3, preferences: memoryPreferences)
+        let topics = assistant.knowledgeGraph.fridayVisibleNodes(ofType: .topic, limit: 3, preferences: memoryPreferences)
+        var items: [String] = []
+        if !people.isEmpty {
+            items.append(String(localized: "People: \(people.map(\.label).joined(separator: ", ")).", comment: "Followed by a comma-separated list of names"))
+        }
+        if !topics.isEmpty {
+            items.append(String(localized: "Topics: \(topics.map(\.label).joined(separator: ", ")).", comment: "Followed by a comma-separated list of topics"))
+        }
+        return items.joined(separator: " ")
+    }
+
+    private func visibleTriggers(_ triggers: [String: Double]) -> [(key: String, value: Double)] {
+        triggers
+            .filter { !memoryPreferences.isForgottenLabel($0.key) }
+            .sorted { $0.value > $1.value }
     }
 
     private var emptyStateCard: some View {
         EmptyStateView.fridayGettingToKnow
             .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceSage)
-    }
-
-    private var privacyBadge: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "lock.shield.fill")
-                .foregroundColor(OffRecordReadableTintStyle.privacy.foreground)
-            Text("Friday analysis runs on-device. No non-Apple AI services.")
-                .font(OffRecordTypography.metadata)
-                .foregroundColor(OffRecordReadableTintStyle.privacy.foreground)
-        }
-        .padding()
-        .frame(maxWidth: .infinity)
-        .offRecordGlassControl(
-            tint: OffRecordReadableTintStyle.privacy.tint,
-            in: RoundedRectangle(cornerRadius: 12, style: .continuous),
-            fallbackFill: OffRecordReadableTintStyle.privacy.fill,
-            border: OffRecordReadableTintStyle.privacy.border
-        )
     }
 
     // MARK: - Helpers
@@ -985,11 +875,11 @@ struct FridayView: View {
     }
 
     private func sentimentLabel(_ sentiment: Double) -> String {
-        if sentiment > 0.3 { return "Great" }
-        if sentiment > 0.1 { return "Good" }
-        if sentiment > -0.1 { return "Neutral" }
-        if sentiment > -0.3 { return "Low" }
-        return "Tough"
+        if sentiment > 0.3 { return String(localized: "Great", comment: "How the user usually feels at this time") }
+        if sentiment > 0.1 { return String(localized: "Good", comment: "How the user usually feels at this time") }
+        if sentiment > -0.1 { return String(localized: "Neutral", comment: "How the user usually feels at this time") }
+        if sentiment > -0.3 { return String(localized: "Low", comment: "How the user usually feels at this time") }
+        return String(localized: "Tough", comment: "How the user usually feels at this time")
     }
 
     private func moodColor(_ mood: String) -> Color {
@@ -1004,20 +894,6 @@ struct FridayView: View {
         case "angry": return OffRecordColor.brandCoral
         default: return OffRecordColor.textTertiary
         }
-    }
-
-    private func formatHour(_ hour: Int) -> String {
-        if hour == 0 { return "12am" }
-        if hour < 12 { return "\(hour)am" }
-        if hour == 12 { return "12pm" }
-        return "\(hour - 12)pm"
-    }
-
-    private func formatNumber(_ n: Int) -> String {
-        if n >= 1000 {
-            return String(format: "%.1fk", Double(n) / 1000)
-        }
-        return "\(n)"
     }
 
     private func startPromptNote(from insight: ReflectionInsight) {
@@ -1068,7 +944,7 @@ struct FridayView: View {
                 return entry
             } catch {
                 viewContext.rollback()
-                promptNoteError = "Could not create today's note. Please try again."
+                promptNoteError = String(localized: "Try again.")
                 return nil
             }
         }
@@ -1076,6 +952,27 @@ struct FridayView: View {
 
     private func entryHasNoContent(_ entry: DiaryEntry) -> Bool {
         !entry.isStartedEntry
+    }
+}
+
+// MARK: - Breathing orb
+
+/// Slow, continuous "breathing" for Friday's aura. Off under Reduce Motion.
+private struct FridayBreathingModifier: ViewModifier {
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
+    func body(content: Content) -> some View {
+        if reduceMotion {
+            content
+        } else {
+            content.phaseAnimator([false, true]) { view, isExhaling in
+                view
+                    .scaleEffect(isExhaling ? 1.04 : 0.97)
+                    .opacity(isExhaling ? 1 : 0.82)
+            } animation: { _ in
+                .easeInOut(duration: 2.6)
+            }
+        }
     }
 }
 

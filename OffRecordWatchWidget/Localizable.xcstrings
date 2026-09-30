@@ -1,0 +1,11 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%lld waiting on watch" : {},
+    "All synced" : {},
+    "Capture" : {},
+    "Opens OffRecord for a quick capture." : {},
+    "Quick Capture" : {}
+  },
+  "version" : "1.0"
+}

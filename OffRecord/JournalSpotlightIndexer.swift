@@ -22,27 +22,27 @@ struct JournalSpotlightMetadata: Equatable, Sendable {
     }
 
     var title: String {
-        "Journal Entry - \(Self.shortDateFormatter.string(from: date))"
+        String(localized: "Journal Entry, \(Self.shortDateFormatter.string(from: date))")
     }
 
     var subtitle: String {
         var parts: [String] = []
         if let moodDisplayName {
-            parts.append("\(moodDisplayName) mood")
+            parts.append(String(localized: "\(moodDisplayName) mood", comment: "Entry subtitle part, e.g. Happy mood"))
         }
         if wordCount > 0 {
-            parts.append("\(wordCount) \(wordCount == 1 ? "word" : "words")")
+            parts.append(String(AttributedString(localized: "^[\(wordCount) word](inflect: true)").characters))
         }
         if hasAudio {
-            parts.append("voice note")
+            parts.append(String(localized: "recording", comment: "Entry subtitle part: the entry has a voice recording"))
         }
         if hasPhotos {
-            parts.append("photos")
+            parts.append(String(localized: "photos", comment: "Entry subtitle part: the entry has photos"))
         }
         if isStarred {
-            parts.append("starred")
+            parts.append(String(localized: "starred", comment: "Entry subtitle part: the entry is starred"))
         }
-        return parts.isEmpty ? "Private journal entry" : parts.joined(separator: ", ")
+        return parts.isEmpty ? String(localized: "Journal entry") : parts.formatted(.list(type: .and, width: .narrow))
     }
 
     var keywords: [String] {

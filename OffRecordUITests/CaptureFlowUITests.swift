@@ -46,27 +46,51 @@ final class CaptureFlowUITests: XCTestCase {
         XCTAssertTrue(recordButton.waitForExistence(timeout: 8))
 
         recordButton.tap()
-        let recordingMeter = app.descendants(matching: .any)["daypartHero.recordingMeter"].firstMatch
-        XCTAssertTrue(recordingMeter.waitForExistence(timeout: 8))
+        let panel = app.descendants(matching: .any)["capture.panel"].firstMatch
+        XCTAssertTrue(panel.waitForExistence(timeout: 8))
 
-        recordButton.tap()
-        XCTAssertTrue(waitForElementToDisappear(recordingMeter, timeout: 5))
+        let save = app.buttons["capture.save"].firstMatch
+        XCTAssertTrue(save.waitForExistence(timeout: 4))
+        save.tap()
+        XCTAssertTrue(waitForElementToDisappear(panel, timeout: 5))
         XCTAssertTrue(recordButton.waitForExistence(timeout: 4))
-        XCTAssertEqual(recordButton.label, "Start recording")
+        XCTAssertEqual(recordButton.label, "Record")
     }
 
-    func testRecordingWithoutAppleSpeechConsentShowsDisclosureAfterLocalSave() throws {
+    func testRecordingWithoutSpeechConsentShowsDisclosureAfterLocalSave() throws {
         let app = launchCaptureApp(extraArguments: ["-CaptureSpeechConsentUITest"])
         let recordButton = app.descendants(matching: .any)["todayDock.record"].firstMatch
         XCTAssertTrue(recordButton.waitForExistence(timeout: 8))
 
         recordButton.tap()
-        XCTAssertTrue(app.descendants(matching: .any)["daypartHero.recordingMeter"].firstMatch.waitForExistence(timeout: 8))
-        recordButton.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["capture.panel"].firstMatch.waitForExistence(timeout: 8))
+        app.buttons["capture.save"].firstMatch.tap()
 
-        XCTAssertTrue(app.alerts["Apple Speech Transcription"].waitForExistence(timeout: 8))
-        XCTAssertTrue(app.alerts.staticTexts.containingLabel("voice audio may be sent to Apple").firstMatch.exists)
-        XCTAssertTrue(app.alerts.buttons["Continue"].exists)
+        XCTAssertTrue(app.alerts["Transcribe Recordings?"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.alerts.buttons["Transcribe"].exists)
+        XCTAssertTrue(app.alerts.buttons["Not Now"].exists)
+        app.alerts.buttons["Not Now"].tap()
+
+        // The recording is still saved even without transcription.
+        XCTAssertTrue(app.descendants(matching: .any)["capture.saved"].firstMatch.waitForExistence(timeout: 4))
+    }
+
+    func testSavedCaptureOffersQuickMoodAndUndo() throws {
+        let app = launchCaptureApp(extraArguments: ["-CaptureSpeechConsentUITest"])
+        app.descendants(matching: .any)["todayDock.record"].firstMatch.tap()
+        XCTAssertTrue(app.buttons["capture.save"].firstMatch.waitForExistence(timeout: 8))
+        app.buttons["capture.save"].firstMatch.tap()
+        if app.alerts["Transcribe Recordings?"].waitForExistence(timeout: 4) {
+            app.alerts.buttons["Not Now"].tap()
+        }
+
+        let calm = app.buttons["capture.mood.calm"].firstMatch
+        XCTAssertTrue(calm.waitForExistence(timeout: 4))
+        calm.tap()
+        XCTAssertTrue(calm.isSelected)
+
+        app.buttons["Undo"].firstMatch.tap()
+        XCTAssertTrue(waitForElementToDisappear(app.descendants(matching: .any)["capture.saved"].firstMatch, timeout: 4))
     }
 
     private func launchCaptureApp(extraArguments: [String] = []) -> XCUIApplication {

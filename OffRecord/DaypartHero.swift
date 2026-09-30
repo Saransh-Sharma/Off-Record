@@ -16,6 +16,8 @@ enum DayPart: String, CaseIterable, Codable, Identifiable {
     var id: String { rawValue }
 
     static func current(for date: Date = .now, calendar: Calendar = .current) -> DayPart {
+        // App Store screenshots show a 9:41 status bar, so keep the hero and greeting in the morning.
+        if ProcessInfo.processInfo.arguments.contains("-ScreenshotMode") { return .morning }
         let hour = calendar.component(.hour, from: date)
         switch hour {
         case 5..<12: return .morning
@@ -34,14 +36,6 @@ enum DayPart: String, CaseIterable, Codable, Identifiable {
         }
     }
 
-    var accessibilityPromptLabel: String {
-        switch self {
-        case .morning: return String(localized: "Morning reflection prompt")
-        case .afternoon: return String(localized: "Afternoon reflection prompt")
-        case .evening: return String(localized: "Evening reflection prompt")
-        case .night: return String(localized: "Night reflection prompt")
-        }
-    }
 
     var symbolName: String {
         switch self {
@@ -65,7 +59,6 @@ struct HeroPromptVariant: Identifiable, Equatable, Codable {
     let title: String
     let prompt: String
     let supportingLine: String?
-    let primaryCTA: String
 }
 
 struct DaypartHeroAsset: Identifiable, Equatable, Codable {
@@ -193,45 +186,45 @@ enum DaypartHeroLibrary {
     ].compactMap(DaypartHeroAsset.init(imageName:))
 
     static let prompts: [HeroPromptVariant] = [
-        .init(id: "morning_empty_begin_softly", dayPart: .morning, useCase: .noEntryYet, title: "Begin softly", prompt: "What would make today feel worth remembering?", supportingLine: "Start with one intention.", primaryCTA: "Start morning entry"),
-        .init(id: "morning_empty_quiet_start", dayPart: .morning, useCase: .noEntryYet, title: "Quiet start", prompt: "What do you want more of today?", supportingLine: "Energy, focus, calm, courage - name it simply.", primaryCTA: "Set today's tone"),
-        .init(id: "morning_empty_check_in", dayPart: .morning, useCase: .noEntryYet, title: "Morning check-in", prompt: "How are you arriving into today?", supportingLine: "Tired, steady, hopeful, scattered - all of it counts.", primaryCTA: "Check in"),
-        .init(id: "morning_empty_protect_energy", dayPart: .morning, useCase: .noEntryYet, title: "Protect your energy", prompt: "What do you want to protect your energy for today?", supportingLine: "A quiet nudge before the day fills up.", primaryCTA: "Record intention"),
-        .init(id: "morning_empty_clear_start", dayPart: .morning, useCase: .noEntryYet, title: "A clear start", prompt: "What matters most this morning?", supportingLine: "Name the thing you do not want to lose sight of.", primaryCTA: "Write the focus"),
-        .init(id: "morning_empty_where_you_are", dayPart: .morning, useCase: .noEntryYet, title: "Start where you are", prompt: "What do you need from yourself today?", supportingLine: "Meet the day honestly.", primaryCTA: "Begin entry"),
-        .init(id: "morning_full_keep_thread", dayPart: .morning, useCase: .hasEntryAlready, title: "Keep the thread", prompt: "What still feels most true from this morning?", supportingLine: nil, primaryCTA: "Add note"),
-        .init(id: "morning_full_recenter", dayPart: .morning, useCase: .hasEntryAlready, title: "Recenter", prompt: "What do you want to return to today?", supportingLine: nil, primaryCTA: "Add reflection"),
-        .init(id: "morning_full_hold_onto_this", dayPart: .morning, useCase: .hasEntryAlready, title: "Hold onto this", prompt: "What part of your morning do you want to carry forward?", supportingLine: nil, primaryCTA: "Save thought"),
+        .init(id: "morning_empty_begin_softly", dayPart: .morning, useCase: .noEntryYet, title: String(localized: "Intention", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "What would make today a good day?"), supportingLine: nil),
+        .init(id: "morning_empty_quiet_start", dayPart: .morning, useCase: .noEntryYet, title: String(localized: "Focus", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "What do you want more of today?"), supportingLine: nil),
+        .init(id: "morning_empty_check_in", dayPart: .morning, useCase: .noEntryYet, title: String(localized: "Check-in", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "How are you starting the day?"), supportingLine: nil),
+        .init(id: "morning_empty_protect_energy", dayPart: .morning, useCase: .noEntryYet, title: String(localized: "Energy", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "What’s worth your energy today?"), supportingLine: nil),
+        .init(id: "morning_empty_clear_start", dayPart: .morning, useCase: .noEntryYet, title: String(localized: "Priority", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "What matters most this morning?"), supportingLine: nil),
+        .init(id: "morning_empty_where_you_are", dayPart: .morning, useCase: .noEntryYet, title: String(localized: "Needs", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "What do you need today?"), supportingLine: nil),
+        .init(id: "morning_full_keep_thread", dayPart: .morning, useCase: .hasEntryAlready, title: String(localized: "Follow-up", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "What’s still on your mind from this morning?"), supportingLine: nil),
+        .init(id: "morning_full_recenter", dayPart: .morning, useCase: .hasEntryAlready, title: String(localized: "Focus", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "What do you want to come back to today?"), supportingLine: nil),
+        .init(id: "morning_full_hold_onto_this", dayPart: .morning, useCase: .hasEntryAlready, title: String(localized: "Highlight", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "What from this morning do you want to keep?"), supportingLine: nil),
 
-        .init(id: "afternoon_empty_midday_reset", dayPart: .afternoon, useCase: .noEntryYet, title: "Midday reset", prompt: "What can you let go of before the day continues?", supportingLine: "Pause. Name it. Move forward lighter.", primaryCTA: "Record a reset"),
-        .init(id: "afternoon_empty_center", dayPart: .afternoon, useCase: .noEntryYet, title: "Come back to center", prompt: "What would help you feel grounded again?", supportingLine: "A small pause can change the rest of the day.", primaryCTA: "Check in now"),
-        .init(id: "afternoon_empty_energy_check", dayPart: .afternoon, useCase: .noEntryYet, title: "Energy check", prompt: "What do you need for the next few hours?", supportingLine: "Less pressure, more honesty.", primaryCTA: "Add midday note"),
-        .init(id: "afternoon_empty_recalibrate", dayPart: .afternoon, useCase: .noEntryYet, title: "Recalibrate", prompt: "What has changed since this morning?", supportingLine: "Let the day update the story.", primaryCTA: "Reflect now"),
-        .init(id: "afternoon_empty_small_win", dayPart: .afternoon, useCase: .noEntryYet, title: "Small win so far", prompt: "What is one thing that has gone better than expected today?", supportingLine: "Do not miss the good in the middle of the day.", primaryCTA: "Capture it"),
-        .init(id: "afternoon_empty_lighten_load", dayPart: .afternoon, useCase: .noEntryYet, title: "Lighten the load", prompt: "What feels heavier than it needs to right now?", supportingLine: "Write it down and make space around it.", primaryCTA: "Offload thought"),
-        .init(id: "afternoon_full_follow_up", dayPart: .afternoon, useCase: .hasEntryAlready, title: "Midday follow-up", prompt: "What feels different now?", supportingLine: nil, primaryCTA: "Add update"),
-        .init(id: "afternoon_full_readjust", dayPart: .afternoon, useCase: .hasEntryAlready, title: "Re-adjust", prompt: "What needs to change for the rest of the day?", supportingLine: nil, primaryCTA: "Add reset"),
-        .init(id: "afternoon_full_friction", dayPart: .afternoon, useCase: .hasEntryAlready, title: "Name the friction", prompt: "What is draining your energy right now?", supportingLine: nil, primaryCTA: "Add note"),
+        .init(id: "afternoon_empty_midday_reset", dayPart: .afternoon, useCase: .noEntryYet, title: String(localized: "Reset", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "What can you let go of before tonight?"), supportingLine: nil),
+        .init(id: "afternoon_empty_center", dayPart: .afternoon, useCase: .noEntryYet, title: String(localized: "Check-in", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "What would help you feel steady right now?"), supportingLine: nil),
+        .init(id: "afternoon_empty_energy_check", dayPart: .afternoon, useCase: .noEntryYet, title: String(localized: "Energy", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "What do you need for the next few hours?"), supportingLine: nil),
+        .init(id: "afternoon_empty_recalibrate", dayPart: .afternoon, useCase: .noEntryYet, title: String(localized: "Update", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "What’s changed since this morning?"), supportingLine: nil),
+        .init(id: "afternoon_empty_small_win", dayPart: .afternoon, useCase: .noEntryYet, title: String(localized: "Small Win", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "What’s gone better than expected today?"), supportingLine: nil),
+        .init(id: "afternoon_empty_lighten_load", dayPart: .afternoon, useCase: .noEntryYet, title: String(localized: "Load", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "What feels heavier than it should?"), supportingLine: nil),
+        .init(id: "afternoon_full_follow_up", dayPart: .afternoon, useCase: .hasEntryAlready, title: String(localized: "Follow-up", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "What feels different now?"), supportingLine: nil),
+        .init(id: "afternoon_full_readjust", dayPart: .afternoon, useCase: .hasEntryAlready, title: String(localized: "Adjust", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "What needs to change for the rest of today?"), supportingLine: nil),
+        .init(id: "afternoon_full_friction", dayPart: .afternoon, useCase: .hasEntryAlready, title: String(localized: "Friction", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "What’s draining you right now?"), supportingLine: nil),
 
-        .init(id: "evening_empty_todays_moment", dayPart: .evening, useCase: .noEntryYet, title: "Today's moment", prompt: "What small win from today do you want to remember?", supportingLine: "Capture it before it fades.", primaryCTA: "Save today's moment"),
-        .init(id: "evening_empty_stayed_with_you", dayPart: .evening, useCase: .noEntryYet, title: "What stayed with you", prompt: "What moment from today still feels alive?", supportingLine: "Start with the part that lingers.", primaryCTA: "Reflect now"),
-        .init(id: "evening_empty_one_good_thing", dayPart: .evening, useCase: .noEntryYet, title: "One good thing", prompt: "What are you glad happened today?", supportingLine: "Even small things count.", primaryCTA: "Record gratitude"),
-        .init(id: "evening_empty_meaningful_moment", dayPart: .evening, useCase: .noEntryYet, title: "Meaningful moment", prompt: "When did you feel most like yourself today?", supportingLine: "That moment is worth keeping.", primaryCTA: "Write it down"),
-        .init(id: "evening_empty_before_slips", dayPart: .evening, useCase: .noEntryYet, title: "Before the day slips away", prompt: "What would you regret not writing down today?", supportingLine: "One line can be enough.", primaryCTA: "Start entry"),
-        .init(id: "evening_empty_gentle_review", dayPart: .evening, useCase: .noEntryYet, title: "Gentle review", prompt: "What did you handle better than before?", supportingLine: "Notice your own progress.", primaryCTA: "Add reflection"),
-        .init(id: "evening_full_one_more_layer", dayPart: .evening, useCase: .hasEntryAlready, title: "One more layer", prompt: "Is there a small win you want to add?", supportingLine: nil, primaryCTA: "Add note"),
-        .init(id: "evening_full_lingers", dayPart: .evening, useCase: .hasEntryAlready, title: "What lingers", prompt: "What stayed with you after writing?", supportingLine: nil, primaryCTA: "Continue entry"),
-        .init(id: "evening_full_round_out", dayPart: .evening, useCase: .hasEntryAlready, title: "Round out the day", prompt: "What else deserves to be remembered?", supportingLine: nil, primaryCTA: "Add reflection"),
+        .init(id: "evening_empty_todays_moment", dayPart: .evening, useCase: .noEntryYet, title: String(localized: "Highlight", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "What do you want to remember about today?"), supportingLine: nil),
+        .init(id: "evening_empty_stayed_with_you", dayPart: .evening, useCase: .noEntryYet, title: String(localized: "Stuck With You", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "What moment from today stuck with you?"), supportingLine: nil),
+        .init(id: "evening_empty_one_good_thing", dayPart: .evening, useCase: .noEntryYet, title: String(localized: "Good Thing", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "What are you glad happened today?"), supportingLine: nil),
+        .init(id: "evening_empty_meaningful_moment", dayPart: .evening, useCase: .noEntryYet, title: String(localized: "Yourself", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "When did you feel most like yourself today?"), supportingLine: nil),
+        .init(id: "evening_empty_before_slips", dayPart: .evening, useCase: .noEntryYet, title: String(localized: "Don’t Lose It", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "What would you regret not writing down?"), supportingLine: nil),
+        .init(id: "evening_empty_gentle_review", dayPart: .evening, useCase: .noEntryYet, title: String(localized: "Progress", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "What did you handle better than before?"), supportingLine: nil),
+        .init(id: "evening_full_one_more_layer", dayPart: .evening, useCase: .hasEntryAlready, title: String(localized: "One More Thing", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "Anything else worth adding?"), supportingLine: nil),
+        .init(id: "evening_full_lingers", dayPart: .evening, useCase: .hasEntryAlready, title: String(localized: "Afterthought", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "What stayed with you after writing?"), supportingLine: nil),
+        .init(id: "evening_full_round_out", dayPart: .evening, useCase: .hasEntryAlready, title: String(localized: "Remember", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "What else from today should you remember?"), supportingLine: nil),
 
-        .init(id: "night_empty_close_loop", dayPart: .night, useCase: .noEntryYet, title: "Close the loop", prompt: "What are you ready to leave behind tonight?", supportingLine: "Write it down. Let the day end.", primaryCTA: "Wind down with Friday"),
-        .init(id: "night_empty_softer_ending", dayPart: .night, useCase: .noEntryYet, title: "Softer ending", prompt: "What thought deserves a gentler ending?", supportingLine: "You do not need to carry everything into sleep.", primaryCTA: "Add a night note"),
-        .init(id: "night_empty_let_it_rest", dayPart: .night, useCase: .noEntryYet, title: "Let it rest", prompt: "What can you stop holding for today?", supportingLine: "The page can hold it for you.", primaryCTA: "Offload now"),
-        .init(id: "night_empty_release_note", dayPart: .night, useCase: .noEntryYet, title: "Release note", prompt: "What feels unfinished, but okay to pause?", supportingLine: "Not everything needs closing tonight.", primaryCTA: "Write and release"),
-        .init(id: "night_empty_kind", dayPart: .night, useCase: .noEntryYet, title: "Be kind to yourself", prompt: "What do you need more of tonight?", supportingLine: "Gentleness counts too.", primaryCTA: "Check in"),
-        .init(id: "night_empty_before_sleep", dayPart: .night, useCase: .noEntryYet, title: "Before sleep", prompt: "What do you want Friday to remember from today?", supportingLine: "Let the day settle into one clear note.", primaryCTA: "Capture the day"),
-        .init(id: "night_full_close_gently", dayPart: .night, useCase: .hasEntryAlready, title: "Close gently", prompt: "Is there one last thought you want to leave on the page?", supportingLine: nil, primaryCTA: "Add note"),
-        .init(id: "night_full_let_today_end", dayPart: .night, useCase: .hasEntryAlready, title: "Let today end", prompt: "What are you ready to stop replaying tonight?", supportingLine: nil, primaryCTA: "Add reflection"),
-        .init(id: "night_full_set_it_down", dayPart: .night, useCase: .hasEntryAlready, title: "Set it down", prompt: "What can you leave here instead of taking to sleep?", supportingLine: nil, primaryCTA: "Write once more")
+        .init(id: "night_empty_close_loop", dayPart: .night, useCase: .noEntryYet, title: String(localized: "Let Go", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "What are you ready to leave behind tonight?"), supportingLine: nil),
+        .init(id: "night_empty_softer_ending", dayPart: .night, useCase: .noEntryYet, title: String(localized: "Tomorrow", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "What can wait until tomorrow?"), supportingLine: nil),
+        .init(id: "night_empty_let_it_rest", dayPart: .night, useCase: .noEntryYet, title: String(localized: "Set It Down", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "What can you stop thinking about tonight?"), supportingLine: nil),
+        .init(id: "night_empty_release_note", dayPart: .night, useCase: .noEntryYet, title: String(localized: "Loose Ends", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "What’s unfinished but okay to pause?"), supportingLine: nil),
+        .init(id: "night_empty_kind", dayPart: .night, useCase: .noEntryYet, title: String(localized: "Tonight", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "What do you need more of tonight?"), supportingLine: nil),
+        .init(id: "night_empty_before_sleep", dayPart: .night, useCase: .noEntryYet, title: String(localized: "Remember", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "What do you want to remember from today?"), supportingLine: nil),
+        .init(id: "night_full_close_gently", dayPart: .night, useCase: .hasEntryAlready, title: String(localized: "Last Thought", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "One last thought before bed?"), supportingLine: nil),
+        .init(id: "night_full_let_today_end", dayPart: .night, useCase: .hasEntryAlready, title: String(localized: "Replay", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "What are you ready to stop replaying?"), supportingLine: nil),
+        .init(id: "night_full_set_it_down", dayPart: .night, useCase: .hasEntryAlready, title: String(localized: "Set It Down", comment: "Short label above a writing prompt on the Today screen"), prompt: String(localized: "What can you leave here tonight?"), supportingLine: nil)
     ]
 
     static func prompts(dayPart: DayPart, useCase: HeroUseCase) -> [HeroPromptVariant] {

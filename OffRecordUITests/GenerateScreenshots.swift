@@ -3,174 +3,178 @@
 //  OffRecordUITests
 //
 //  Automated App Store screenshot generation.
-//  Seeds realistic data via -ScreenshotMode launch argument,
-//  then navigates each screen and captures screenshots.
+//  Seeds realistic data via -ScreenshotMode launch argument (plus the photos and voice
+//  clip in AppStore/seed-media), then navigates each screen and captures screenshots.
 //
-//  Usage:
+//  Usage (see AppStore/capture-screenshots.sh for the full device × appearance run):
 //  xcodebuild test -scheme OffRecord \
-//    -destination 'platform=iOS Simulator,name=iPhone 16 Pro,OS=18.3.1' \
+//    -destination 'platform=iOS Simulator,name=OffRecord Shots 17 Pro Max' \
 //    -only-testing:OffRecordUITests/ScreenshotTests \
 //    -resultBundlePath ./screenshots.xcresult
 //
 
 import XCTest
 
-class ScreenshotTests: XCTestCase {
+@MainActor
+final class ScreenshotTests: XCTestCase {
 
-    let app = XCUIApplication()
+    private static let todayEntryID = "11111111-1111-1111-1111-111111111111"
+    private static let weeklyReflectionID = "22222222-2222-2222-2222-222222222222"
+
+    /// AppStore/seed-media in this checkout; the simulator app reads it straight from disk.
+    private static let seedMediaPath = URL(fileURLWithPath: #filePath)
+        .deletingLastPathComponent()
+        .deletingLastPathComponent()
+        .appendingPathComponent("AppStore/seed-media", isDirectory: true)
+        .path
+
+    private var app: XCUIApplication!
 
     override func setUpWithError() throws {
         continueAfterFailure = false
-        app.launchArguments += ["-UITesting", "-ScreenshotMode"]
-        app.launchArguments += ["-hasCompletedOnboarding", "YES"]
-        app.launchArguments += ["-AppleLanguages", "(en)"]
-        app.launchArguments += ["-AppleLocale", "en_US"]
+    }
+
+    private func launch(route: String? = nil) {
+        app = XCUIApplication()
+        app.launchArguments = [
+            "-UITesting",
+            "-ScreenshotMode",
+            "-SemanticMemoryUseFallbackEmbeddings",
+            "-hasCompletedOnboarding", "YES",
+            "-AppleLanguages", "(en)",
+            "-AppleLocale", "en_US"
+        ]
+        if let route {
+            app.launchArguments += ["-OpenRoute", route]
+        }
+        app.launchEnvironment["OFFRECORD_SCREENSHOT_MEDIA"] = Self.seedMediaPath
         app.launch()
     }
 
-    // MARK: - Navigation Helper
+    // MARK: - Screenshots
 
-    /// Navigate to a tab by name. Handles the custom floating iPhone tab bar plus iPad system tab/sidebar layouts.
-    /// Uses .firstMatch to handle iPadOS where tab buttons appear as nested duplicates.
-    private func navigateToTab(_ name: String) {
-        let identifiedButton = app.buttons["tab.\(name.lowercased())"].firstMatch
-        if identifiedButton.waitForExistence(timeout: 3) {
-            identifiedButton.tap()
-            return
-        }
-
-        // iPhone: custom floating tab bar exposes each tab as an accessibility button.
-        let customButton = app.buttons[name].firstMatch
-        if customButton.waitForExistence(timeout: 3) {
-            customButton.tap()
-            return
-        }
-
-        // iPad/system fallback: native tab bars expose tab items here.
-        let tabButton = app.tabBars.buttons[name]
-        if tabButton.waitForExistence(timeout: 3) {
-            tabButton.tap()
-            return
-        }
-
-        // Fallback: look for a static text and tap it
-        let text = app.staticTexts[name].firstMatch
-        if text.waitForExistence(timeout: 3) {
-            text.tap()
-            return
-        }
-
-        XCTFail("Could not find tab: \(name)")
+    func test01_Today() throws {
+        launch()
+        tapOffRecordTab("today", in: app)
+        XCTAssertTrue(app.otherElements["homeHero.fullBleed"].waitForExistence(timeout: 10))
+        takeScreenshot(named: "01_Today")
     }
 
-    // MARK: - Screenshot 1: Today View
-
-    func test01_TodayView() throws {
-        navigateToTab("Today")
-        XCTAssertTrue(app.otherElements["homeHero.fullBleed"].waitForExistence(timeout: 8))
-        takeScreenshot(named: "01_TodayView")
+    func test02_Recording() throws {
+        launch()
+        tapOffRecordTab("today", in: app)
+        let record = app.buttons["todayDock.record"].firstMatch
+        XCTAssertTrue(record.waitForExistence(timeout: 10))
+        record.tap()
+        XCTAssertTrue(app.descendants(matching: .any)["capture.panel"].firstMatch.waitForExistence(timeout: 8))
+        takeScreenshot(named: "02_Recording")
     }
 
-    // MARK: - Screenshot 2: Timeline
-
-    func test02_Timeline() throws {
-        navigateToTab("Timeline")
-        XCTAssertTrue(app.searchFields["timeline.searchField"].firstMatch.waitForExistence(timeout: 8))
-        takeScreenshot(named: "02_Timeline")
+    func test03_Timeline() throws {
+        launch()
+        tapOffRecordTab("timeline", in: app)
+        XCTAssertTrue(app.searchFields["timeline.searchField"].firstMatch.waitForExistence(timeout: 10))
+        takeScreenshot(named: "03_Timeline")
     }
 
-    // MARK: - Screenshot 3: Insights
-
-    func test03_Insights() throws {
-        navigateToTab("Insights")
-        XCTAssertTrue(app.navigationBars["Insights"].waitForExistence(timeout: 8))
-
-        // Dismiss the milestone overlay if it appears
-        let keepGoingButton = app.buttons["Keep Going"]
-        if keepGoingButton.waitForExistence(timeout: 3) {
-            keepGoingButton.tap()
-            XCTAssertFalse(keepGoingButton.waitForExistence(timeout: 3))
-        }
-
-        takeScreenshot(named: "03_Insights")
+    func test04_Search() throws {
+        launch(route: "offrecord://timeline?query=Sarah")
+        XCTAssertTrue(app.searchFields["timeline.searchField"].firstMatch.waitForExistence(timeout: 10))
+        dismissKeyboardIfNeeded(in: app)
+        takeScreenshot(named: "04_Search")
     }
 
-    // MARK: - Screenshot 4: Friday Overview
-
-    func test04_Friday() throws {
-        navigateToTab("Friday")
-        XCTAssertTrue(app.buttons["friday.talk"].firstMatch.waitForExistence(timeout: 8))
-        takeScreenshot(named: "04_Friday")
+    func test05_EntryDetail() throws {
+        launch(route: "offrecord://entry/\(Self.todayEntryID)")
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS[c] %@", "maples are just starting")).firstMatch.waitForExistence(timeout: 10))
+        takeScreenshot(named: "05_EntryDetail")
     }
 
-    // MARK: - Screenshot 5: Friday Emotions
-
-    func test05_FridayEmotions() throws {
-        navigateToTab("Friday")
-        XCTAssertTrue(app.buttons["friday.talk"].firstMatch.waitForExistence(timeout: 8))
-
-        let emotionsButton = app.buttons["Emotions"]
-        if emotionsButton.waitForExistence(timeout: 3) {
-            emotionsButton.tap()
-            XCTAssertTrue(app.staticTexts["Emotional Signature"].firstMatch.waitForExistence(timeout: 6))
-        }
-        takeScreenshot(named: "05_FridayEmotions")
+    func test05b_EntryPhotos() throws {
+        launch(route: "offrecord://entry/\(Self.todayEntryID)")
+        XCTAssertTrue(app.staticTexts.containing(NSPredicate(format: "label CONTAINS[c] %@", "maples are just starting")).firstMatch.waitForExistence(timeout: 10))
+        app.swipeUp(velocity: .slow)
+        takeScreenshot(named: "05b_EntryPhotos")
     }
 
-    // MARK: - Screenshot 6: Friday My World
-
-    func test06_FridayWorld() throws {
-        navigateToTab("Friday")
-        XCTAssertTrue(app.buttons["friday.talk"].firstMatch.waitForExistence(timeout: 8))
-
-        // "My World" is the 4th button in a horizontal ScrollView — swipe left to reveal it
-        let emotionsButton = app.buttons["Emotions"]
-        if emotionsButton.waitForExistence(timeout: 3) {
-            emotionsButton.swipeLeft()
-        }
-
-        let worldButton = app.buttons["My World"]
-        if worldButton.waitForExistence(timeout: 3) {
-            worldButton.tap()
-            XCTAssertTrue(app.staticTexts["My World"].firstMatch.waitForExistence(timeout: 6))
-        }
-        takeScreenshot(named: "06_FridayWorld")
+    func test06_Insights() throws {
+        launch()
+        tapOffRecordTab("insights", in: app)
+        XCTAssertTrue(app.navigationBars["Insights"].waitForExistence(timeout: 10))
+        takeScreenshot(named: "06_Insights")
     }
 
-    // MARK: - Screenshot 7: Entry Detail
-
-    func test07_EntryDetail() throws {
-        navigateToTab("Timeline")
-        XCTAssertTrue(app.searchFields["timeline.searchField"].firstMatch.waitForExistence(timeout: 8))
-
-        // Tap the first NavigationLink row containing entry text
-        let firstLink = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "cherry blossoms")).firstMatch
-        if firstLink.waitForExistence(timeout: 3) {
-            firstLink.tap()
-        } else {
-            // Fallback: tap first cell-like element in the list
-            let staticTexts = app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] %@", "cherry blossoms"))
-            if staticTexts.firstMatch.waitForExistence(timeout: 3) {
-                staticTexts.firstMatch.tap()
-            }
-        }
-        XCTAssertTrue(app.staticTexts["entryDetail.mainText"].firstMatch.waitForExistence(timeout: 8))
-        takeScreenshot(named: "07_EntryDetail")
+    func test07_WeeklyReflection() throws {
+        launch(route: "offrecord://weekly-reflection/\(Self.weeklyReflectionID)")
+        XCTAssertTrue(app.descendants(matching: .any)["weeklyReflection.report.cover"].firstMatch.waitForExistence(timeout: 10))
+        takeScreenshot(named: "07_WeeklyReflection")
     }
 
-    // MARK: - Screenshot 8: Settings
+    func test08_Friday() throws {
+        launch()
+        tapOffRecordTab("friday", in: app)
+        XCTAssertTrue(app.buttons["friday.talk"].firstMatch.waitForExistence(timeout: 10))
+        takeScreenshot(named: "08_Friday")
+    }
 
-    func test08_Settings() throws {
-        navigateToTab("Settings")
-        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 8))
-        takeScreenshot(named: "08_Settings")
+    func test09_FridayChat() throws {
+        // Asked at launch, as Ask Friday does, while semantic memory is still reading the
+        // freshly seeded journal. Friday should wait and answer from it.
+        let question = "What helps me when work gets stressful?"
+        let encoded = question.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? question
+        launch(route: "offrecord://friday?question=\(encoded)")
+
+        let answer = app.descendants(matching: .any)
+            .matching(NSPredicate(format: "identifier BEGINSWITH %@", "friday.answerMessage."))
+            .firstMatch
+        XCTAssertTrue(answer.waitForExistence(timeout: 40), "Friday chat isn't showing an answer")
+        let stillReading = app.staticTexts.containing(NSPredicate(format: "label CONTAINS[c] %@", "still reading")).firstMatch
+        XCTAssertFalse(stillReading.exists, "Friday answered before she finished reading")
+        XCTAssertTrue(app.descendants(matching: .any)["friday.evidenceRail"].firstMatch.waitForExistence(timeout: 8), "Friday's answer has no sources")
+        dismissKeyboardIfNeeded(in: app)
+        takeScreenshot(named: "09_FridayChat")
+    }
+
+    func test10_FridayEmotions() throws {
+        launch()
+        tapOffRecordTab("friday", in: app)
+        XCTAssertTrue(app.buttons["friday.talk"].firstMatch.waitForExistence(timeout: 10))
+        openFridaySection("Emotions")
+        XCTAssertTrue(app.staticTexts["Your Usual Mood"].firstMatch.waitForExistence(timeout: 6))
+        takeScreenshot(named: "10_FridayEmotions")
+    }
+
+    func test11_FridayWorld() throws {
+        launch()
+        tapOffRecordTab("friday", in: app)
+        XCTAssertTrue(app.buttons["friday.talk"].firstMatch.waitForExistence(timeout: 10))
+        openFridaySection("My World")
+        takeScreenshot(named: "11_FridayWorld")
+    }
+
+    func test12_Settings() throws {
+        launch()
+        tapOffRecordTab("settings", in: app)
+        XCTAssertTrue(app.navigationBars["Settings"].waitForExistence(timeout: 10))
+        takeScreenshot(named: "12_Settings")
     }
 
     // MARK: - Helpers
 
+    /// Friday's section picker scrolls horizontally on iPhone, so later sections may start off-screen.
+    private func openFridaySection(_ title: String) {
+        let section = app.buttons["\(title) section"].firstMatch
+        XCTAssertTrue(section.waitForExistence(timeout: 5))
+        if !section.isHittable {
+            app.buttons["Emotions section"].firstMatch.swipeLeft()
+        }
+        section.tap()
+    }
+
     private func takeScreenshot(named name: String) {
-        let screenshot = app.screenshot()
-        let attachment = XCTAttachment(screenshot: screenshot)
+        // Let entrance animations and image decoding settle.
+        Thread.sleep(forTimeInterval: 1.5)
+        let attachment = XCTAttachment(screenshot: app.screenshot())
         attachment.name = name
         attachment.lifetime = .keepAlways
         add(attachment)

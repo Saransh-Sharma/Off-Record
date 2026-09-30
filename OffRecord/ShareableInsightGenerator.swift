@@ -2,14 +2,15 @@
 //  ShareableInsightGenerator.swift
 //  OffRecord
 //
-//  Generates provocative, shareable weekly insight cards from journal data.
-//  Designed to create a viral loop — insights that feel deeply personal
-//  but reveal nothing private.
+//  Generates shareable weekly insight cards from journal data. Cards should
+//  feel personal but reveal nothing private: names of people are hidden from
+//  shared images unless the person explicitly opts in.
 //
-//  All analysis is performed on-device using existing data from
-//  FridayAssistantEngine, LocalAIEngine, and raw diary entries.
+//  Built from existing data in FridayAssistantEngine, LocalAIEngine, and
+//  raw diary entries.
 //
 
+import CoreData
 import Foundation
 import NaturalLanguage
 
@@ -17,11 +18,17 @@ import NaturalLanguage
 
 struct ShareableInsight: Identifiable {
     let id = UUID()
-    let headline: String      // The provocative main line
-    let subtext: String        // Supporting detail
+    let headline: String      // The main line
+    let subtext: String        // Supporting detail; empty when the headline stands alone
     let category: Category
     let dataPoint: String?     // Optional stat to display
     let generatedAt: Date
+    /// Plain-language note on how the insight was derived.
+    var rationale: String = ""
+    /// `DiaryEntry.insightEvidenceKey` values of the entries behind the insight.
+    var supportingEntryIDs: [String] = []
+    /// Names of real people the insight mentions. Hidden in shared images by default.
+    var personNames: [String] = []
 
     enum Category: String {
         case emotion = "emotion"
@@ -55,10 +62,85 @@ struct ShareableInsight: Identifiable {
     }
 }
 
+// MARK: - Privacy
+
+enum ShareableInsightPrivacy {
+    static let placeholder = String(localized: "someone", comment: "Replaces a person's name in a shared insight image")
+
+    /// Personal names that NaturalLanguage finds in `texts`.
+    static func detectedNames(in texts: [String]) -> [String] {
+        let tagger = NLTagger(tagSchemes: [.nameType])
+        var names: [String] = []
+        for text in texts where !text.isEmpty {
+            tagger.string = text
+            let options: NLTagger.Options = [.omitWhitespace, .omitPunctuation, .joinNames]
+            tagger.enumerateTags(in: text.startIndex..<text.endIndex, unit: .word, scheme: .nameType, options: options) { tag, range in
+                if tag == .personalName {
+                    let name = String(text[range])
+                    if name.count > 1, !names.contains(name) { names.append(name) }
+                }
+                return true
+            }
+        }
+        return names
+    }
+
+    /// Whether `word` reads as a person's name when placed in a neutral sentence.
+    static func isLikelyPersonName(_ word: String) -> Bool {
+        let candidate = word.prefix(1).uppercased() + word.dropFirst()
+        return !detectedNames(in: ["Yesterday I talked with \(candidate) about it."]).isEmpty
+    }
+
+    /// Replaces each name (whole word, any case) with a neutral placeholder.
+    static func redact(_ text: String, names: [String]) -> String {
+        var result = text
+        for name in names.sorted(by: { $0.count > $1.count }) {
+            let pattern = "\\b" + NSRegularExpression.escapedPattern(for: name) + "\\b"
+            guard let regex = try? NSRegularExpression(pattern: pattern, options: [.caseInsensitive]) else { continue }
+            let range = NSRange(result.startIndex..., in: result)
+            result = regex.stringByReplacingMatches(in: result, range: range, withTemplate: placeholder)
+        }
+        if result.hasPrefix(placeholder) {
+            result = placeholder.prefix(1).uppercased() + result.dropFirst()
+        }
+        return result
+    }
+}
+
+extension ShareableInsight {
+    /// Every name that should be hidden before sharing: tagged people plus any
+    /// names NaturalLanguage spots in the visible copy.
+    var namesToProtect: [String] {
+        var names = personNames
+        for name in ShareableInsightPrivacy.detectedNames(in: [headline, subtext, dataPoint ?? ""]) where !names.contains(name) {
+            names.append(name)
+        }
+        return names
+    }
+
+    /// The copy to put in a shared image.
+    func sharingVersion(includeNames: Bool) -> ShareableInsight {
+        let names = namesToProtect
+        guard !includeNames, !names.isEmpty else { return self }
+        return ShareableInsight(
+            headline: ShareableInsightPrivacy.redact(headline, names: names),
+            subtext: ShareableInsightPrivacy.redact(subtext, names: names),
+            category: category,
+            dataPoint: dataPoint.map { ShareableInsightPrivacy.redact($0, names: names) },
+            generatedAt: generatedAt,
+            rationale: rationale,
+            supportingEntryIDs: supportingEntryIDs,
+            personNames: []
+        )
+    }
+}
+
 // MARK: - Generator
 
 @MainActor
 struct ShareableInsightGenerator {
+
+    private static let maximumEvidenceCount = 12
 
     // MARK: - Main Entry Point
 
@@ -73,18 +155,17 @@ struct ShareableInsightGenerator {
 
         guard weekEntries.count >= 3 else { return [] }
 
-        let assistant = FridayAssistantEngine.shared
         let profile = LocalAIEngine.shared.userProfile
 
         var insights: [ShareableInsight] = []
 
-        // Try each generator — collect all, then pick the best 3
+        // Try each generator, collect all, then pick the best 3
         var candidates: [ShareableInsight] = []
 
-        if let insight = topEmotionInsight(weekEntries: weekEntries, profile: profile) {
+        if let insight = topEmotionInsight(weekEntries: weekEntries) {
             candidates.append(insight)
         }
-        if let insight = personSentimentInsight(weekEntries: weekEntries, assistant: assistant) {
+        if let insight = personSentimentInsight(weekEntries: weekEntries) {
             candidates.append(insight)
         }
         if let insight = shouldVsWantInsight(weekEntries: weekEntries) {
@@ -108,13 +189,13 @@ struct ShareableInsightGenerator {
         if let insight = timeOfDayMoodInsight(weekEntries: weekEntries) {
             candidates.append(insight)
         }
-        if let insight = vocabularyInsight(weekEntries: weekEntries, assistant: assistant) {
+        if let insight = vocabularyInsight(weekEntries: weekEntries) {
             candidates.append(insight)
         }
         if let insight = questionVsStatementInsight(weekEntries: weekEntries) {
             candidates.append(insight)
         }
-        if let insight = topConcernInsight(weekEntries: weekEntries, assistant: assistant) {
+        if let insight = topConcernInsight(weekEntries: weekEntries) {
             candidates.append(insight)
         }
 
@@ -141,56 +222,77 @@ struct ShareableInsightGenerator {
         return insights
     }
 
+    // MARK: - Helpers
+
+    private static func mood(of entry: DiaryEntry) -> Mood? {
+        guard let moodString = entry.value(forKey: "mood") as? String,
+              let mood = Mood(rawValue: moodString),
+              mood != .none else { return nil }
+        return mood
+    }
+
+    private static func evidence(_ entries: [DiaryEntry]) -> [String] {
+        var seen = Set<String>()
+        var keys: [String] = []
+        let sorted = entries.sorted { ($0.date ?? .distantPast) > ($1.date ?? .distantPast) }
+        for entry in sorted where seen.insert(entry.insightEvidenceKey).inserted {
+            keys.append(entry.insightEvidenceKey)
+            if keys.count == maximumEvidenceCount { break }
+        }
+        return keys
+    }
+
+    private static func sentiment(of text: String) -> Double? {
+        let tagger = NLTagger(tagSchemes: [.sentimentScore])
+        tagger.string = text
+        let (tag, _) = tagger.tag(at: text.startIndex, unit: .paragraph, scheme: .sentimentScore)
+        return tag.flatMap { Double($0.rawValue) }
+    }
+
     // MARK: - Insight Generators
 
-    /// "Your top emotion this week: guilt. Last week: excitement."
-    private static func topEmotionInsight(weekEntries: [DiaryEntry], profile: UserProfile) -> ShareableInsight? {
-        let moods = weekEntries.compactMap { entry -> Mood? in
-            guard let moodString = entry.value(forKey: "mood") as? String,
-                  let mood = Mood(rawValue: moodString),
-                  mood != .none else { return nil }
-            return mood
-        }
-        guard moods.count >= 3 else { return nil }
+    /// "Your dominant mood this week: Calm."
+    private static func topEmotionInsight(weekEntries: [DiaryEntry]) -> ShareableInsight? {
+        let tagged = weekEntries.compactMap { entry in mood(of: entry).map { (entry, $0) } }
+        guard tagged.count >= 3 else { return nil }
 
-        let moodCounts = Dictionary(grouping: moods, by: { $0 }).mapValues { $0.count }
+        let moodCounts = Dictionary(grouping: tagged.map(\.1), by: { $0 }).mapValues { $0.count }
         guard let topMood = moodCounts.max(by: { $0.value < $1.value }) else { return nil }
 
-        let percentage = Int(Double(topMood.value) / Double(moods.count) * 100)
+        let percentage = Int(Double(topMood.value) / Double(tagged.count) * 100)
 
         return ShareableInsight(
-            headline: "Your dominant mood this week:\n\(topMood.key.displayName).",
-            subtext: "\(percentage)% of your entries. The rest? Scattered.",
+            headline: String(localized: "Your most common mood this week:\n\(topMood.key.displayName)."),
+            subtext: String(localized: "\(percentage)% of your moods."),
             category: .emotion,
-            dataPoint: "\(topMood.key.displayName) \(percentage)%",
-            generatedAt: Date()
+            dataPoint: String(localized: "\(topMood.key.displayName) \(percentage)%", comment: "Share card stat: a mood and its share of the week"),
+            generatedAt: Date(),
+            rationale: String(localized: "Based on \(tagged.count) moods from the last 7 days."),
+            supportingEntryIDs: evidence(tagged.filter { $0.1 == topMood.key }.map(\.0))
         )
     }
 
-    /// "You mentioned Sarah 8 times. Your mood drops every time."
-    private static func personSentimentInsight(weekEntries: [DiaryEntry], assistant: FridayAssistantEngine) -> ShareableInsight? {
-        let tagger = NLTagger(tagSchemes: [.nameType, .sentimentScore])
-        var personSentiments: [String: (count: Int, totalSentiment: Double)] = [:]
+    /// "You mentioned Sarah 8 times this week."
+    private static func personSentimentInsight(weekEntries: [DiaryEntry]) -> ShareableInsight? {
+        let tagger = NLTagger(tagSchemes: [.nameType])
+        var personSentiments: [String: (count: Int, totalSentiment: Double, entries: [DiaryEntry])] = [:]
 
         for entry in weekEntries {
             guard let text = entry.text, !text.isEmpty else { continue }
             tagger.string = text
             let options: NLTagger.Options = [.omitWhitespace, .omitPunctuation, .joinNames]
+            let entrySentiment = sentiment(of: text) ?? 0
 
-            // Get overall sentiment
-            let sentimentTagger = NLTagger(tagSchemes: [.sentimentScore])
-            sentimentTagger.string = text
-            let (sentTag, _) = sentimentTagger.tag(at: text.startIndex, unit: .paragraph, scheme: .sentimentScore)
-            let sentiment = Double(sentTag?.rawValue ?? "0") ?? 0.0
-
-            // Find people mentioned
             tagger.enumerateTags(in: text.startIndex..<text.endIndex, unit: .word, scheme: .nameType, options: options) { tag, range in
                 if tag == .personalName {
                     let name = String(text[range])
                     if name.count > 1 {
-                        var existing = personSentiments[name] ?? (count: 0, totalSentiment: 0)
+                        var existing = personSentiments[name] ?? (count: 0, totalSentiment: 0, entries: [])
                         existing.count += 1
-                        existing.totalSentiment += sentiment
+                        existing.totalSentiment += entrySentiment
+                        if !existing.entries.contains(where: { $0.objectID == entry.objectID }) {
+                            existing.entries.append(entry)
+                        }
                         personSentiments[name] = existing
                     }
                 }
@@ -205,74 +307,87 @@ struct ShareableInsightGenerator {
         else { return nil }
 
         let avgSentiment = topPerson.value.totalSentiment / Double(topPerson.value.count)
-        let moodWord = avgSentiment < -0.1 ? "drops" : avgSentiment > 0.1 ? "lifts" : "stays flat"
+        let toneLine: String
+        if avgSentiment < -0.1 {
+            toneLine = String(localized: "Those entries tend to read a little heavier.")
+        } else if avgSentiment > 0.1 {
+            toneLine = String(localized: "Those entries tend to read a little lighter.")
+        } else {
+            toneLine = String(localized: "Those entries read about the same as the rest.")
+        }
 
         return ShareableInsight(
-            headline: "You mentioned \(topPerson.key) \(topPerson.value.count) times this week.",
-            subtext: "Your mood \(moodWord) when you do.",
+            headline: String(localized: "You mentioned \(topPerson.key) \(topPerson.value.count) times this week."),
+            subtext: toneLine,
             category: .people,
-            dataPoint: "\(topPerson.value.count)x",
-            generatedAt: Date()
+            dataPoint: String(localized: "\(topPerson.value.count)x", comment: "Share card stat: how many times a person was mentioned, e.g. 8x"),
+            generatedAt: Date(),
+            rationale: String(localized: "Based on the tone of entries that mention this person."),
+            supportingEntryIDs: evidence(topPerson.value.entries),
+            personNames: [topPerson.key]
         )
     }
 
-    /// "You used 'should' 12 times. 'Want' only twice."
+    /// "You said 'should' 12 times. 'Want' only twice."
     private static func shouldVsWantInsight(weekEntries: [DiaryEntry]) -> ShareableInsight? {
-        let allText = weekEntries.compactMap { $0.text }.joined(separator: " ").lowercased()
-
         let obligationWords = ["should", "must", "have to", "need to", "ought to"]
         let desireWords = ["want", "wish", "hope", "dream", "love to", "excited to"]
 
         var obligationCount = 0
         var desireCount = 0
+        var matchingEntries: [DiaryEntry] = []
 
-        for word in obligationWords {
-            obligationCount += allText.components(separatedBy: word).count - 1
-        }
-        for word in desireWords {
-            desireCount += allText.components(separatedBy: word).count - 1
+        for entry in weekEntries {
+            let text = (entry.text ?? "").lowercased()
+            let obligations = obligationWords.reduce(0) { $0 + text.components(separatedBy: $1).count - 1 }
+            let desires = desireWords.reduce(0) { $0 + text.components(separatedBy: $1).count - 1 }
+            obligationCount += obligations
+            desireCount += desires
+            if obligations + desires > 0 { matchingEntries.append(entry) }
         }
 
         guard obligationCount >= 3 || desireCount >= 3 else { return nil }
+        let rationale = String(localized: "Based on words like \u{201C}should\u{201D} and \u{201C}want\u{201D} in this week’s entries.")
 
         if obligationCount > desireCount * 2 && obligationCount >= 5 {
             return ShareableInsight(
-                headline: "You said \"should\" \(obligationCount) times this week.\n\"Want\"? Only \(desireCount).",
-                subtext: "You're living by obligation, not desire.",
+                headline: String(localized: "You said \u{201C}should\u{201D} \(obligationCount) times this week.\n\u{201C}Want\u{201D}? \(desireCount)."),
+                subtext: String(localized: "More obligations than wants."),
                 category: .language,
-                dataPoint: "should: \(obligationCount) vs want: \(desireCount)",
-                generatedAt: Date()
+                dataPoint: String(localized: "should: \(obligationCount) vs want: \(desireCount)", comment: "Share card stat comparing counts of the words should and want"),
+                generatedAt: Date(),
+                rationale: rationale,
+                supportingEntryIDs: evidence(matchingEntries)
             )
         } else if desireCount > obligationCount * 2 && desireCount >= 5 {
             return ShareableInsight(
-                headline: "You said \"want\" \(desireCount) times this week.\n\"Should\"? Only \(obligationCount).",
-                subtext: "You know what you want. That's rare.",
+                headline: String(localized: "You said \u{201C}want\u{201D} \(desireCount) times this week.\n\u{201C}Should\u{201D}? \(obligationCount)."),
+                subtext: String(localized: "More wants than obligations."),
                 category: .language,
-                dataPoint: "want: \(desireCount) vs should: \(obligationCount)",
-                generatedAt: Date()
+                dataPoint: String(localized: "want: \(desireCount) vs should: \(obligationCount)", comment: "Share card stat comparing counts of the words want and should"),
+                generatedAt: Date(),
+                rationale: rationale,
+                supportingEntryIDs: evidence(matchingEntries)
             )
         }
 
         return nil
     }
 
-    /// "You're most anxious on Sundays. Most calm on Wednesdays."
+    /// "Most anxious on Sundays. Most calm on Wednesdays."
     private static func dayOfWeekMoodInsight(weekEntries: [DiaryEntry]) -> ShareableInsight? {
         let calendar = Calendar.current
-        var dayMoods: [Int: [Mood]] = [:]
+        var dayMoods: [Int: [(entry: DiaryEntry, mood: Mood)]] = [:]
 
         for entry in weekEntries {
-            guard let date = entry.date,
-                  let moodString = entry.value(forKey: "mood") as? String,
-                  let mood = Mood(rawValue: moodString),
-                  mood != .none else { continue }
+            guard let date = entry.date, let mood = mood(of: entry) else { continue }
             let weekday = calendar.component(.weekday, from: date)
-            dayMoods[weekday, default: []].append(mood)
+            dayMoods[weekday, default: []].append((entry, mood))
         }
 
         guard dayMoods.count >= 3 else { return nil }
 
-        let dayNames = ["", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"]
+        let dayNames = calendar.weekdaySymbols
         let negativeMoods: Set<Mood> = [.anxious, .sad, .angry, .tired]
         let positiveMoods: Set<Mood> = [.happy, .excited, .grateful, .calm]
 
@@ -280,8 +395,8 @@ struct ShareableInsightGenerator {
         var bestDay: (day: Int, ratio: Double) = (1, 0)
         var worstDay: (day: Int, ratio: Double) = (1, 1)
 
-        for (day, moods) in dayMoods where moods.count >= 1 {
-            let positiveRatio = Double(moods.filter { positiveMoods.contains($0) }.count) / Double(moods.count)
+        for (day, items) in dayMoods where !items.isEmpty {
+            let positiveRatio = Double(items.filter { positiveMoods.contains($0.mood) }.count) / Double(items.count)
             if positiveRatio > bestDay.ratio { bestDay = (day, positiveRatio) }
             if positiveRatio < worstDay.ratio { worstDay = (day, positiveRatio) }
         }
@@ -289,30 +404,34 @@ struct ShareableInsightGenerator {
         guard bestDay.day != worstDay.day else { return nil }
 
         let worstMood = dayMoods[worstDay.day]?
+            .map(\.mood)
             .filter { negativeMoods.contains($0) }
             .reduce(into: [:]) { counts, mood in counts[mood, default: 0] += 1 }
             .max(by: { $0.value < $1.value })?.key
 
         let bestMood = dayMoods[bestDay.day]?
+            .map(\.mood)
             .filter { positiveMoods.contains($0) }
             .reduce(into: [:]) { counts, mood in counts[mood, default: 0] += 1 }
             .max(by: { $0.value < $1.value })?.key
 
-        let worstLabel = worstMood?.displayName.lowercased() ?? "low"
-        let bestLabel = bestMood?.displayName.lowercased() ?? "good"
+        let worstLabel = worstMood?.displayName.lowercased() ?? String(localized: "low", comment: "Fallback mood word, as in \"Most low on Sunday\"")
+        let bestLabel = bestMood?.displayName.lowercased() ?? String(localized: "good", comment: "Fallback mood word, as in \"Most good on Friday\"")
+        let supporting = (dayMoods[worstDay.day] ?? []) + (dayMoods[bestDay.day] ?? [])
 
         return ShareableInsight(
-            headline: "Most \(worstLabel) on \(dayNames[worstDay.day])s.\nMost \(bestLabel) on \(dayNames[bestDay.day])s.",
-            subtext: "Your week has a pattern. Do you see it?",
+            headline: String(localized: "Most \(worstLabel) on \(dayNames[worstDay.day - 1]).\nMost \(bestLabel) on \(dayNames[bestDay.day - 1])."),
+            subtext: "",
             category: .time,
             dataPoint: nil,
-            generatedAt: Date()
+            generatedAt: Date(),
+            rationale: String(localized: "Based on your moods by day over the last 7 days."),
+            supportingEntryIDs: evidence(supporting.map(\.entry))
         )
     }
 
-    /// "You haven't mentioned [topic] in 2 weeks. You used to talk about it constantly."
+    /// "You haven't mentioned [topic] this week."
     private static func topicAvoidanceInsight(weekEntries: [DiaryEntry], profile: UserProfile) -> ShareableInsight? {
-        // Get this week's topics
         let weekText = weekEntries.compactMap { $0.text }.joined(separator: " ").lowercased()
 
         // Find top historical topics that are absent this week
@@ -324,11 +443,13 @@ struct ShareableInsightGenerator {
             let lowered = topic.lowercased()
             if !weekText.contains(lowered) {
                 return ShareableInsight(
-                    headline: "You haven't mentioned \"\(topic)\" this week.",
-                    subtext: "You used to bring it up all the time. What changed?",
+                    headline: String(localized: "\u{201C}\(topic)\u{201D} didn’t come up this week."),
+                    subtext: String(localized: "It used to come up often."),
                     category: .pattern,
-                    dataPoint: "\(count) total mentions before",
-                    generatedAt: Date()
+                    dataPoint: String(localized: "\(count) mentions before"),
+                    generatedAt: Date(),
+                    rationale: String(localized: "Based on topics from your earlier entries."),
+                    personNames: ShareableInsightPrivacy.isLikelyPersonName(topic) ? [topic] : []
                 )
             }
         }
@@ -336,17 +457,16 @@ struct ShareableInsightGenerator {
         return nil
     }
 
-    /// "Your entries are 3x longer when you're anxious."
+    /// "You write 3x more when you're anxious."
     private static func entryLengthEmotionInsight(weekEntries: [DiaryEntry]) -> ShareableInsight? {
         var moodWordCounts: [Mood: [Int]] = [:]
+        var moodEntries: [Mood: [DiaryEntry]] = [:]
 
         for entry in weekEntries {
-            guard let text = entry.text,
-                  let moodString = entry.value(forKey: "mood") as? String,
-                  let mood = Mood(rawValue: moodString),
-                  mood != .none else { continue }
+            guard let text = entry.text, let mood = mood(of: entry) else { continue }
             let wordCount = text.split { $0.isWhitespace }.count
             moodWordCounts[mood, default: []].append(wordCount)
+            moodEntries[mood, default: []].append(entry)
         }
 
         guard moodWordCounts.count >= 2 else { return nil }
@@ -363,14 +483,17 @@ struct ShareableInsightGenerator {
         let ratio = longest.value / shortest.value
         guard ratio >= 1.5 else { return nil }
 
-        let ratioText = ratio >= 2.5 ? "\(Int(ratio))x" : String(format: "%.1fx", ratio)
+        let multiplier = ratio >= 2.5 ? Int(ratio).formatted() : ratio.formatted(.number.precision(.fractionLength(1)))
+        let ratioText = String(localized: "\(multiplier)x", comment: "Multiplier, e.g. \"3x\" or \"1.8x\"")
 
         return ShareableInsight(
-            headline: "You write \(ratioText) more when you're \(longest.key.displayName.lowercased()).",
-            subtext: "When you're \(shortest.key.displayName.lowercased())? Barely anything.",
+            headline: String(localized: "You write \(ratioText) more when you’re \(longest.key.displayName.lowercased())."),
+            subtext: String(localized: "Your \(shortest.key.displayName.lowercased()) entries tend to be shorter."),
             category: .pattern,
-            dataPoint: "\(Int(longest.value)) vs \(Int(shortest.value)) words",
-            generatedAt: Date()
+            dataPoint: String(localized: "\(Int(longest.value)) vs \(Int(shortest.value)) words", comment: "Share card stat: average words per entry for two moods"),
+            generatedAt: Date(),
+            rationale: String(localized: "Based on average entry length for each mood this week."),
+            supportingEntryIDs: evidence((moodEntries[longest.key] ?? []) + (moodEntries[shortest.key] ?? []))
         )
     }
 
@@ -393,150 +516,149 @@ struct ShareableInsightGenerator {
 
         if percentage >= 60 {
             return ShareableInsight(
-                headline: "\(percentage)% of your sentences start with \"I\".",
-                subtext: "Your journal is about you. But is it about what you do, or what you feel?",
+                headline: String(localized: "\(percentage)% of your sentences start with \u{201C}I.\u{201D}"),
+                subtext: String(localized: "Your journal is about you. That’s the point."),
                 category: .language,
-                dataPoint: "\(percentage)%",
-                generatedAt: Date()
+                dataPoint: String(localized: "\(percentage)%", comment: "Share card stat: a percentage"),
+                generatedAt: Date(),
+                rationale: String(localized: "Based on \(sentences.count) sentences written this week."),
+                supportingEntryIDs: evidence(weekEntries.filter { !($0.text ?? "").isEmpty })
             )
         }
 
         return nil
     }
 
-    /// "Your mood improved every day this week." or "Your mood has been declining since Tuesday."
+    /// "Your mood climbed all week."
     private static func moodTrajectoryInsight(weekEntries: [DiaryEntry]) -> ShareableInsight? {
         let sorted = weekEntries
             .filter { $0.date != nil }
             .sorted { ($0.date ?? Date()) < ($1.date ?? Date()) }
 
-        let sentimentTagger = NLTagger(tagSchemes: [.sentimentScore])
-        var sentiments: [Double] = []
-
+        var scored: [(entry: DiaryEntry, score: Double)] = []
         for entry in sorted {
-            guard let text = entry.text, !text.isEmpty else { continue }
-            sentimentTagger.string = text
-            let (tag, _) = sentimentTagger.tag(at: text.startIndex, unit: .paragraph, scheme: .sentimentScore)
-            if let score = Double(tag?.rawValue ?? "") {
-                sentiments.append(score)
-            }
+            guard let text = entry.text, !text.isEmpty, let score = sentiment(of: text) else { continue }
+            scored.append((entry, score))
         }
 
-        guard sentiments.count >= 4 else { return nil }
+        guard scored.count >= 4 else { return nil }
 
         // Check for consistent trend
-        let firstHalf = sentiments.prefix(sentiments.count / 2)
-        let secondHalf = sentiments.suffix(sentiments.count / 2)
+        let firstHalf = scored.prefix(scored.count / 2).map(\.score)
+        let secondHalf = scored.suffix(scored.count / 2).map(\.score)
         let firstAvg = firstHalf.reduce(0, +) / Double(firstHalf.count)
         let secondAvg = secondHalf.reduce(0, +) / Double(secondHalf.count)
         let diff = secondAvg - firstAvg
+        let rationale = String(localized: "Based on how the tone of \(scored.count) entries changed this week.")
 
         if diff > 0.2 {
             return ShareableInsight(
-                headline: "Your mood climbed all week.",
-                subtext: "Whatever you're doing, it's working.",
+                headline: String(localized: "Your entries brightened as the week went on."),
+                subtext: String(localized: "Something’s working."),
                 category: .growth,
                 dataPoint: nil,
-                generatedAt: Date()
+                generatedAt: Date(),
+                rationale: rationale,
+                supportingEntryIDs: evidence(scored.map(\.entry))
             )
         } else if diff < -0.2 {
             return ShareableInsight(
-                headline: "Your mood has been sliding this week.",
-                subtext: "Small dips are normal. But are you paying attention?",
+                headline: String(localized: "Your entries got a little heavier as the week went on."),
+                subtext: String(localized: "Weeks have dips."),
                 category: .emotion,
                 dataPoint: nil,
-                generatedAt: Date()
+                generatedAt: Date(),
+                rationale: rationale,
+                supportingEntryIDs: evidence(scored.map(\.entry))
             )
         }
 
         return nil
     }
 
-    /// "You're happiest when you journal at 7am. Darkest entries? 11pm."
+    /// "Brightest entries around 7am. Heavier ones around 11pm."
     private static func timeOfDayMoodInsight(weekEntries: [DiaryEntry]) -> ShareableInsight? {
         let calendar = Calendar.current
-        let sentimentTagger = NLTagger(tagSchemes: [.sentimentScore])
-        var hourSentiments: [Int: [Double]] = [:]
+        var hourSentiments: [Int: [(entry: DiaryEntry, score: Double)]] = [:]
 
         for entry in weekEntries {
-            guard let date = entry.date, let text = entry.text, !text.isEmpty else { continue }
+            guard let date = entry.date, let text = entry.text, !text.isEmpty, let score = sentiment(of: text) else { continue }
             let hour = calendar.component(.hour, from: date)
-            sentimentTagger.string = text
-            let (tag, _) = sentimentTagger.tag(at: text.startIndex, unit: .paragraph, scheme: .sentimentScore)
-            if let score = Double(tag?.rawValue ?? "") {
-                hourSentiments[hour, default: []].append(score)
-            }
+            hourSentiments[hour, default: []].append((entry, score))
         }
 
         guard hourSentiments.count >= 2 else { return nil }
 
-        let averages = hourSentiments.mapValues { $0.reduce(0, +) / Double($0.count) }
+        let averages = hourSentiments.mapValues { items in items.reduce(0) { $0 + $1.score } / Double(items.count) }
         guard let bestHour = averages.max(by: { $0.value < $1.value }),
               let worstHour = averages.min(by: { $0.value < $1.value }),
               bestHour.key != worstHour.key,
               bestHour.value - worstHour.value > 0.2 else { return nil }
 
+        // A fixed day with no DST change, so every hour exists.
+        let referenceDay = calendar.startOfDay(for: Date(timeIntervalSinceReferenceDate: 0))
         let formatHour = { (h: Int) -> String in
-            if h == 0 { return "midnight" }
-            if h == 12 { return "noon" }
-            return h < 12 ? "\(h)am" : "\(h - 12)pm"
+            calendar.date(bySettingHour: h, minute: 0, second: 0, of: referenceDay)?
+                .formatted(.dateTime.hour()) ?? "\(h)"
         }
+        let supporting = (hourSentiments[bestHour.key] ?? []) + (hourSentiments[worstHour.key] ?? [])
 
         return ShareableInsight(
-            headline: "Happiest entries at \(formatHour(bestHour.key)).\nDarkest at \(formatHour(worstHour.key)).",
-            subtext: "Time of day changes how you think.",
+            headline: String(localized: "Brightest entries around \(formatHour(bestHour.key)).\nHeavier ones around \(formatHour(worstHour.key))."),
+            subtext: String(localized: "Time of day shows in your writing."),
             category: .time,
             dataPoint: nil,
-            generatedAt: Date()
+            generatedAt: Date(),
+            rationale: String(localized: "Based on the tone of this week’s entries, by hour."),
+            supportingEntryIDs: evidence(supporting.map(\.entry))
         )
     }
 
-    /// "You used 347 unique words this week. That's more expressive than 80% of your weeks."
-    private static func vocabularyInsight(weekEntries: [DiaryEntry], assistant: FridayAssistantEngine) -> ShareableInsight? {
+    /// "347 unique words this week."
+    private static func vocabularyInsight(weekEntries: [DiaryEntry]) -> ShareableInsight? {
         let allText = weekEntries.compactMap { $0.text }.joined(separator: " ")
         let words = allText.lowercased().split { $0.isWhitespace || $0.isPunctuation }
         let uniqueWords = Set(words)
 
         guard words.count >= 50 else { return nil }
 
-        let richness = Double(uniqueWords.count) / Double(words.count)
-        let percentage = Int(richness * 100)
-
         if uniqueWords.count > 200 {
             return ShareableInsight(
-                headline: "\(uniqueWords.count) unique words this week.",
-                subtext: "Vocabulary richness: \(percentage)%. You have a lot on your mind.",
+                headline: String(localized: "\(uniqueWords.count) unique words this week."),
+                subtext: String(localized: "You had a lot to say."),
                 category: .language,
-                dataPoint: "\(uniqueWords.count) words",
-                generatedAt: Date()
+                dataPoint: String(localized: "\(uniqueWords.count) words", comment: "Share card stat: number of distinct words"),
+                generatedAt: Date(),
+                rationale: String(localized: "Based on distinct words in \(weekEntries.count) entries from the last 7 days."),
+                supportingEntryIDs: evidence(weekEntries.filter { !($0.text ?? "").isEmpty })
             )
         }
 
         return nil
     }
 
-    /// "You asked 14 questions this week. Answered zero."
+    /// "You asked 14 questions this week."
     private static func questionVsStatementInsight(weekEntries: [DiaryEntry]) -> ShareableInsight? {
-        let allText = weekEntries.compactMap { $0.text }.joined(separator: " ")
-        let questionCount = allText.components(separatedBy: "?").count - 1
-        let exclamationCount = allText.components(separatedBy: "!").count - 1
+        let questionEntries = weekEntries.filter { ($0.text ?? "").contains("?") }
+        let questionCount = questionEntries.reduce(0) { $0 + ($1.text ?? "").components(separatedBy: "?").count - 1 }
 
         guard questionCount >= 5 else { return nil }
 
         return ShareableInsight(
-            headline: "You asked \(questionCount) questions this week.",
-            subtext: "Your journal can't answer them. But maybe you already know.",
+            headline: String(localized: "You asked \(questionCount) questions this week."),
+            subtext: String(localized: "You’re working things out on the page."),
             category: .pattern,
-            dataPoint: "\(questionCount) questions",
-            generatedAt: Date()
+            dataPoint: String(localized: "\(questionCount) questions", comment: "Share card stat: number of questions asked"),
+            generatedAt: Date(),
+            rationale: String(localized: "Based on question marks in this week’s entries."),
+            supportingEntryIDs: evidence(questionEntries)
         )
     }
 
-    /// "Your #1 concern this week: work. It showed up in every single entry."
-    private static func topConcernInsight(weekEntries: [DiaryEntry], assistant: FridayAssistantEngine) -> ShareableInsight? {
+    /// "Your #1 topic this week: work."
+    private static func topConcernInsight(weekEntries: [DiaryEntry]) -> ShareableInsight? {
         let tagger = NLTagger(tagSchemes: [.lexicalClass])
-        var topicCounts: [String: Int] = [:]
-        let entriesWithTopic: [String: Int] = [:]
+        var topicEntries: [String: [DiaryEntry]] = [:]
 
         for entry in weekEntries {
             guard let text = entry.text, !text.isEmpty else { continue }
@@ -555,25 +677,32 @@ struct ShareableInsightGenerator {
             }
 
             for topic in entryTopics {
-                topicCounts[topic, default: 0] += 1
+                topicEntries[topic, default: []].append(entry)
             }
         }
 
         // Find a topic that appears in most entries
         let threshold = max(3, weekEntries.count / 2)
-        guard let topTopic = topicCounts.filter({ $0.value >= threshold }).max(by: { $0.value < $1.value }) else {
+        guard let topTopic = topicEntries.filter({ $0.value.count >= threshold }).max(by: { $0.value.count < $1.value.count }) else {
             return nil
         }
 
-        let ratio = Double(topTopic.value) / Double(weekEntries.count)
-        let ratioText = ratio >= 0.9 ? "every single entry" : "\(topTopic.value) of \(weekEntries.count) entries"
+        let count = topTopic.value.count
+        let ratio = Double(count) / Double(weekEntries.count)
+        let ratioText = ratio >= 0.9
+            ? String(localized: "almost every entry")
+            : String(localized: "\(count) of \(weekEntries.count) entries")
+        let topic = topTopic.key.capitalized
 
         return ShareableInsight(
-            headline: "Your #1 topic this week:\n\"\(topTopic.key.capitalized)\"",
-            subtext: "It showed up in \(ratioText).",
+            headline: String(localized: "Your #1 topic this week:\n\u{201C}\(topic)\u{201D}"),
+            subtext: String(localized: "It showed up in \(ratioText)."),
             category: .pattern,
-            dataPoint: "\(topTopic.value)/\(weekEntries.count) entries",
-            generatedAt: Date()
+            dataPoint: String(localized: "\(count)/\(weekEntries.count) entries", comment: "Share card stat: entries mentioning the topic out of all entries"),
+            generatedAt: Date(),
+            rationale: String(localized: "Based on the word that appeared in the most entries."),
+            supportingEntryIDs: evidence(topTopic.value),
+            personNames: ShareableInsightPrivacy.isLikelyPersonName(topic) ? [topic] : []
         )
     }
 }

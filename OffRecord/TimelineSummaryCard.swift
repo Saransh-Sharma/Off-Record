@@ -3,10 +3,13 @@
 //  OffRecord
 //
 
+import Charts
 import SwiftUI
 
 struct MonthSummaryCard: View {
+    let title: String
     let entries: [DiaryEntry]
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     private var totalEntries: Int { entries.count }
 
@@ -19,55 +22,51 @@ struct MonthSummaryCard: View {
     }
 
     var body: some View {
-        GeometryReader { proxy in
-            let statsWidth = min(max(proxy.size.width * 0.42, 168), 250)
-
-            HStack(spacing: 18) {
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("This month")
-                        .font(OffRecordTypography.bodyMedium)
-                        .foregroundStyle(OffRecordColor.textBrand.opacity(0.86))
-                        .lineLimit(1)
-
-                    HStack(spacing: 18) {
-                        summaryStat(value: "\(totalEntries)", label: "Entries")
-                            .frame(width: 56, alignment: .leading)
-
-                        Rectangle()
-                            .fill(OffRecordColor.borderWarm.opacity(0.9))
-                            .frame(width: 1, height: 56)
-
-                        summaryStat(value: totalWords.formatted(), label: "Words")
-                            .frame(minWidth: 78, alignment: .leading)
-                    }
-                }
-                .frame(width: statsWidth, alignment: .leading)
+        // AnyLayout keeps the same stats as the arrangement changes, so they scale with
+        // Dynamic Type; large sizes put the chart under the numbers.
+        let layout = dynamicTypeSize >= .xxLarge
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: OffRecordSpacing.lg))
+            : AnyLayout(HStackLayout(alignment: .center, spacing: OffRecordSpacing.lg))
+        layout {
+            stats
                 .layoutPriority(1)
-
-                MonthlyWordsChart(values: chartValues)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: TimelineDesign.summaryChartHeight)
-                    .padding(.top, 8)
-            }
-            .padding(.horizontal, 22)
-            .padding(.vertical, 20)
-            .frame(width: proxy.size.width, height: proxy.size.height, alignment: .center)
+            MonthlyWordsChart(values: chartValues)
+                .frame(minWidth: 110, maxWidth: .infinity)
+                .frame(height: TimelineDesign.summaryChartHeight)
         }
-        .frame(height: TimelineDesign.summaryCardHeight)
-        .offRecordContentCard(cornerRadius: 28, fill: OffRecordColor.surfacePrimary, useGlass: true)
+        .padding(.horizontal, OffRecordSpacing.xl)
+        .padding(.vertical, OffRecordSpacing.xl)
+        .offRecordContentCard(cornerRadius: OffRecordRadius.xl, fill: OffRecordColor.surfacePrimary)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(String(AttributedString(localized: "\(title): ^[\(totalEntries) entry](inflect: true), ^[\(totalWords) word](inflect: true)").characters))
+    }
+
+    private var stats: some View {
+        VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
+            Text(title)
+                .font(OffRecordTypography.bodyMedium)
+                .foregroundStyle(OffRecordColor.textBrand.opacity(0.86))
+            HStack(spacing: OffRecordSpacing.lg) {
+                summaryStat(value: "\(totalEntries)", label: totalEntries == 1 ? String(localized: "Entry", comment: "Label under the number of entries this month (singular).") : String(localized: "Entries", comment: "Label under the number of entries this month (plural)."))
+                Rectangle()
+                    .fill(OffRecordColor.borderWarm.opacity(0.9))
+                    .frame(width: 1, height: 44)
+                summaryStat(value: totalWords.formatted(), label: String(localized: "Words", comment: "Label under the number of words written this month."))
+            }
+        }
     }
 
     private func summaryStat(value: String, label: String) -> some View {
-        VStack(alignment: .leading, spacing: 5) {
+        VStack(alignment: .leading, spacing: OffRecordSpacing.xs) {
             Text(value)
                 .font(OffRecordTypography.numberMedium)
                 .foregroundStyle(OffRecordColor.textBrand)
-                .minimumScaleFactor(0.66)
-                .lineLimit(1)
+                .contentTransition(.numericText())
+                .fixedSize(horizontal: false, vertical: true)
             Text(label)
                 .font(OffRecordTypography.metadata)
                 .foregroundStyle(OffRecordColor.textSecondary)
-                .lineLimit(1)
+                .fixedSize(horizontal: false, vertical: true)
         }
     }
 }
@@ -119,79 +118,48 @@ private enum MonthlyWordsChartSeries {
     }
 }
 
+/// Soft words-per-day trend for the month.
 struct MonthlyWordsChart: View {
     let values: [Int]
 
+    private var points: [(index: Int, value: Int)] {
+        let values = values.isEmpty ? [0, 0] : values
+        return values.enumerated().map { ($0.offset, $0.element) }
+    }
+
     var body: some View {
-        Canvas { context, size in
-            let normalizedValues = values.isEmpty ? [0, 0] : values
-            let maxValue = max(normalizedValues.max() ?? 1, 1)
-            let points = normalizedValues.enumerated().map { index, value in
-                let progress = normalizedValues.count <= 1 ? 0 : Double(index) / Double(normalizedValues.count - 1)
-                let x = size.width * progress
-                let usableHeight = size.height - 10
-                let y = size.height - CGFloat(value) / CGFloat(maxValue) * usableHeight - 5
-                return CGPoint(x: x, y: y)
-            }
-
-            for y in [0.18, 0.5, 0.82].map({ size.height * $0 }) {
-                var gridPath = Path()
-                gridPath.move(to: CGPoint(x: 0, y: y))
-                gridPath.addLine(to: CGPoint(x: size.width, y: y))
-                context.stroke(
-                    gridPath,
-                    with: .color(OffRecordColor.borderWarm.opacity(0.48)),
-                    style: StrokeStyle(lineWidth: 1, dash: [4, 5])
-                )
-            }
-
-            guard points.count >= 2 else { return }
-
-            let guideIndices = Set([points.count / 3, max(0, (points.count * 2) / 3)].filter { points.indices.contains($0) })
-            for index in guideIndices {
-                let point = points[index]
-                var guidePath = Path()
-                guidePath.move(to: CGPoint(x: point.x, y: point.y))
-                guidePath.addLine(to: CGPoint(x: point.x, y: size.height))
-                context.stroke(
-                    guidePath,
-                    with: .color(OffRecordColor.brandLavenderDark.opacity(0.18)),
-                    style: StrokeStyle(lineWidth: 1, dash: [2, 3])
-                )
-            }
-
-            var areaPath = Path()
-            areaPath.move(to: CGPoint(x: points[0].x, y: size.height))
-            points.forEach { areaPath.addLine(to: $0) }
-            areaPath.addLine(to: CGPoint(x: points[points.count - 1].x, y: size.height))
-            areaPath.closeSubpath()
-            context.fill(
-                areaPath,
-                with: .linearGradient(
-                    Gradient(colors: [
-                        OffRecordColor.brandLavender.opacity(0.34),
-                        OffRecordColor.brandLavender.opacity(0.05)
-                    ]),
-                    startPoint: CGPoint(x: size.width / 2, y: 0),
-                    endPoint: CGPoint(x: size.width / 2, y: size.height)
+        Chart(points, id: \.index) { point in
+            AreaMark(
+                x: .value("Day", point.index),
+                y: .value("Words", point.value)
+            )
+            .interpolationMethod(.catmullRom)
+            .foregroundStyle(
+                LinearGradient(
+                    colors: [OffRecordColor.brandLavender.opacity(0.34), OffRecordColor.brandLavender.opacity(0.04)],
+                    startPoint: .top,
+                    endPoint: .bottom
                 )
             )
-
-            var linePath = Path()
-            linePath.move(to: points[0])
-            points.dropFirst().forEach { linePath.addLine(to: $0) }
-            context.stroke(
-                linePath,
-                with: .color(OffRecordColor.brandLavenderDark.opacity(0.78)),
-                style: StrokeStyle(lineWidth: 2.2, lineCap: .round, lineJoin: .round)
+            LineMark(
+                x: .value("Day", point.index),
+                y: .value("Words", point.value)
             )
-
-            for index in points.indices where normalizedValues[index] > 0 {
-                let point = points[index]
-                let rect = CGRect(x: point.x - 4.5, y: point.y - 4.5, width: 9, height: 9)
-                context.fill(Path(ellipseIn: rect), with: .color(OffRecordColor.brandPeach.opacity(0.82)))
-                context.stroke(Path(ellipseIn: rect), with: .color(OffRecordColor.brandLavenderDark.opacity(0.72)), lineWidth: 1)
+            .interpolationMethod(.catmullRom)
+            .foregroundStyle(OffRecordColor.textLavender.opacity(0.85))
+            .lineStyle(StrokeStyle(lineWidth: 2.2, lineCap: .round, lineJoin: .round))
+            if point.value > 0 {
+                PointMark(
+                    x: .value("Day", point.index),
+                    y: .value("Words", point.value)
+                )
+                .symbolSize(28)
+                .foregroundStyle(OffRecordColor.brandPeach)
             }
         }
+        .chartXAxis(.hidden)
+        .chartYAxis(.hidden)
+        .chartLegend(.hidden)
+        .accessibilityHidden(true)
     }
 }

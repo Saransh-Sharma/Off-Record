@@ -10,15 +10,14 @@ import SwiftUI
 struct StreakSummaryView: View {
     let currentStreak: Int
     let dayLabel: String
-    let statusMessage: String
+    var statusMessage: String?
     let accentColor: Color
-    let numberSize: CGFloat
 
     var body: some View {
         VStack(alignment: .leading, spacing: OffRecordSpacing.xs) {
             HStack(alignment: .firstTextBaseline, spacing: OffRecordSpacing.xs) {
                 Text("\(currentStreak)")
-                    .font(.system(size: numberSize, weight: .bold, design: .rounded))
+                    .font(OffRecordTypography.numberLarge)
                     .foregroundStyle(accentColor)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
@@ -30,10 +29,12 @@ struct StreakSummaryView: View {
                     .minimumScaleFactor(0.85)
             }
 
-            Text(statusMessage)
-                .font(OffRecordTypography.bodySmall)
-                .foregroundStyle(OffRecordColor.textSecondary)
-                .fixedSize(horizontal: false, vertical: true)
+            if let statusMessage {
+                Text(statusMessage)
+                    .font(OffRecordTypography.bodySmall)
+                    .foregroundStyle(OffRecordColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }
@@ -43,9 +44,8 @@ struct StreakSummaryView: View {
     StreakSummaryView(
         currentStreak: 7,
         dayLabel: "days",
-        statusMessage: "Your writing rhythm is intact.",
-        accentColor: OffRecordColor.textPeach,
-        numberSize: 52
+        statusMessage: nil,
+        accentColor: OffRecordColor.textPeach
     )
     .padding()
 }

@@ -70,11 +70,11 @@ struct WatchRecentCapturesView: View {
             }
             .accessibilityHidden(true)
 
-            Text("Nothing held")
+            Text("All Synced")
                 .font(.headline.bold())
                 .foregroundStyle(WatchPalette.text)
 
-            Text("Quick captures will appear here until they're on your iPhone.")
+            Text("Captures wait here until they reach your iPhone.")
                 .font(.caption)
                 .foregroundStyle(WatchPalette.secondary)
                 .multilineTextAlignment(.center)
@@ -90,7 +90,7 @@ struct WatchRecentCapturesView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel("Nothing held. Quick captures will appear here until they are on your iPhone.")
+        .accessibilityLabel("All synced. Captures wait here until they reach your iPhone.")
     }
 }
 
@@ -139,11 +139,11 @@ struct WatchRecentCaptureRow: View {
     private var title: String {
         switch item.envelope.kind {
         case .mood:
-            return "Mood: \(preview)"
+            return String(localized: "Mood: \(preview)")
         case .speak:
-            return "Dictated note"
+            return String(localized: "Dictation")
         case .audio:
-            return "Voice moment"
+            return String(localized: "Recording")
         }
     }
 
@@ -158,13 +158,13 @@ struct WatchRecentCaptureRow: View {
     private var statusText: String {
         switch item.syncState {
         case .saved, .queued:
-            return "On Watch"
+            return String(localized: "On Watch")
         case .sending:
-            return "Syncing"
+            return String(localized: "Sending")
         case .synced:
-            return "Synced"
+            return String(localized: "On iPhone")
         case .failed:
-            return "Try again"
+            return String(localized: "Retrying")
         }
     }
 

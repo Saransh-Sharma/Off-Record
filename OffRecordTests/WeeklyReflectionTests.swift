@@ -114,8 +114,8 @@ struct WeeklyReflectionTests {
         let trigger = request.trigger as? UNCalendarNotificationTrigger
 
         #expect(request.identifier == WeeklyReflectionNotificationScheduler.identifier)
-        #expect(request.content.title == "Your weekly reflection is ready")
-        #expect(request.content.body == "A private look back at your week.")
+        #expect(request.content.title == "Weekly Reflection")
+        #expect(request.content.body == "Your week is ready to look back on.")
         #expect(!request.content.body.lowercased().contains("anxious"))
         #expect(request.content.userInfo["offrecordRouteURL"] as? String == "offrecord://weekly-reflection/current")
         #expect(trigger?.repeats == true)

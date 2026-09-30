@@ -1,0 +1,84 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%@ journaled" : {},
+    "%@ · mostly %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · mostly %2$@"
+          }
+        }
+      }
+    },
+    "%lld" : {
+      "shouldTranslate" : false
+    },
+    "%lld of the last 7 days journaled" : {},
+    "%lld-day streak" : {},
+    "Add More" : {},
+    "Angry" : {},
+    "Anxious" : {},
+    "Calm" : {},
+    "Done today" : {},
+    "Excited" : {},
+    "Grateful" : {},
+    "Happy" : {},
+    "Journaled today" : {},
+    "Journaled today, %lld-day streak" : {},
+    "Journaled · %@" : {},
+    "Journaled · %lld-day streak" : {},
+    "Log %@" : {},
+    "Log Mood" : {},
+    "Mood" : {},
+    "No mood" : {},
+    "Not yet today" : {},
+    "Nothing yet today" : {},
+    "OffRecord" : {},
+    "Opening OffRecord." : {},
+    "Pause" : {},
+    "Pause or Resume Recording" : {},
+    "Paused" : {},
+    "Paused at %@" : {},
+    "Pauses or resumes the recording." : {},
+    "Quick Record" : {},
+    "Record" : {},
+    "Record Entry" : {},
+    "Record today’s entry" : {},
+    "Recording" : {},
+    "Resume" : {},
+    "Sad" : {},
+    "See how many days in a row you’ve journaled." : {},
+    "See if you’ve journaled today and start a recording." : {},
+    "See or set today’s mood." : {},
+    "See your year, colored by mood." : {},
+    "Sets today’s mood." : {},
+    "Start a recording in one tap." : {},
+    "Starts a recording in OffRecord." : {},
+    "Stop Recording" : {},
+    "Stop and save" : {},
+    "Stops and saves the recording." : {},
+    "Streak" : {},
+    "Tired" : {},
+    "Today" : {},
+    "What’s on your mind?" : {},
+    "Year in Pixels" : {},
+    "^[%lld day](inflect: true)" : {},
+    "^[%lld day](inflect: true) journaled in %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "^[%1$lld day](inflect: true) journaled in %2$@"
+          }
+        }
+      }
+    },
+    "^[%lld word](inflect: true)" : {},
+    "day" : {},
+    "day streak" : {},
+    "days" : {}
+  },
+  "version" : "1.0"
+}

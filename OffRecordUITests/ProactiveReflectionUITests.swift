@@ -47,7 +47,10 @@ final class ProactiveReflectionUITests: XCTestCase {
         reflect.tap()
         XCTAssertTrue(app.staticTexts["Writing prompt"].waitForExistence(timeout: 4))
 
-        app.navigationBars.buttons.firstMatch.tap()
+        // Entry detail hides the navigation bar and shows its own Back button.
+        let back = app.buttons["entryDetail.backButton"].firstMatch
+        XCTAssertTrue(back.waitForExistence(timeout: 4))
+        back.tap()
         tapTab("friday", in: app)
 
         let evidencePredicate = NSPredicate(format: "identifier BEGINSWITH %@", "proactiveReflection.openEvidence.")
@@ -79,7 +82,7 @@ final class ProactiveReflectionUITests: XCTestCase {
         XCTAssertTrue(askField.waitForExistence(timeout: 6))
         let value = askField.value as? String ?? ""
         XCTAssertFalse(value.isEmpty)
-        XCTAssertNotEqual(value, "Ask Friday about your journal...")
+        XCTAssertNotEqual(value, "Ask me about your journal")
     }
 
     func testTodayShowsContextAwareReflectionPrompt() throws {
@@ -132,12 +135,12 @@ final class ProactiveReflectionUITests: XCTestCase {
             "-ProactiveReflectionUITest"
         ] + extraArguments
         app.launch()
-        XCTAssertTrue(app.buttons["tab.today"].firstMatch.waitForExistence(timeout: 10))
+        XCTAssertTrue(offRecordTabButton("today", in: app).firstMatch.waitForExistence(timeout: 10))
         return app
     }
 
     private func tapTab(_ id: String, in app: XCUIApplication) {
-        let tab = app.buttons["tab.\(id)"].firstMatch
+        let tab = offRecordTabButton(id, in: app).firstMatch
         XCTAssertTrue(tab.waitForExistence(timeout: 8))
         tab.tap()
     }

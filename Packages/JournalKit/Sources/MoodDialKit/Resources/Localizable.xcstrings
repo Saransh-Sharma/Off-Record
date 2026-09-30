@@ -1,0 +1,30 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Angry" : {},
+    "Anxious" : {},
+    "Calm" : {},
+    "Cancel" : {},
+    "Closes without changing the mood." : {},
+    "Done" : {},
+    "Excited" : {},
+    "Grateful" : {},
+    "Happy" : {},
+    "I feel angry." : {},
+    "I feel anxious." : {},
+    "I feel calm." : {},
+    "I feel excited." : {},
+    "I feel grateful." : {},
+    "I feel happy." : {},
+    "I feel neutral." : {},
+    "I feel sad." : {},
+    "I feel tired." : {},
+    "Mood Dial" : {},
+    "No mood" : {},
+    "Sad" : {},
+    "Saves the selected mood." : {},
+    "Swipe up or down to change the mood." : {},
+    "Tired" : {}
+  },
+  "version" : "1.0"
+}

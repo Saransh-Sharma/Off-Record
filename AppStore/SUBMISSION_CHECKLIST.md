@@ -5,7 +5,7 @@
 ### Code & Build
 - [ ] All source files compile without errors
 - [ ] No warnings in Release build
-- [ ] Minimum deployment target set (iOS 17.0+)
+- [ ] Minimum deployment target set (iOS/iPadOS 26.0+)
 - [ ] watchOS deployment target set (watchOS 26.0+)
 - [ ] watchOS 26.2 platform/runtime installed before embedded watch build verification
 - [ ] Bundle identifier: `com.singularity.offrecord`

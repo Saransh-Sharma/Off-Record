@@ -23,7 +23,7 @@ final class OffRecordUITestsLaunchTests: XCTestCase {
         app.launchArguments = ["-UITesting", "-HeroNudgeUITest", "-HeroNudgeEmptyToday"]
         app.launch()
 
-        XCTAssertTrue(app.buttons["tab.today"].firstMatch.waitForExistence(timeout: 10))
+        XCTAssertTrue(offRecordTabButton("today", in: app).firstMatch.waitForExistence(timeout: 10))
         XCTAssertTrue(app.otherElements["homeHero.fullBleed"].waitForExistence(timeout: 8))
 
         let attachment = XCTAttachment(screenshot: app.screenshot())

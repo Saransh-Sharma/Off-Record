@@ -1,7 +1,7 @@
 import SwiftUI
 
 struct TodayHeroEntryPreviewCard: View {
-    let entry: DiaryEntry
+    @ObservedObject var entry: DiaryEntry
     let isNight: Bool
 
     var body: some View {
@@ -18,7 +18,8 @@ struct TodayHeroEntryPreviewCard: View {
                 )
 
                 VStack(alignment: .leading, spacing: 5) {
-                    Text("Today's entry")
+                    Text("Today", comment: "Heading of the card that previews today’s entry")
+                        .accessibilityAddTraits(.isHeader)
                         .font(OffRecordTypography.labelLarge)
                         .foregroundStyle(primaryText)
 
@@ -28,26 +29,28 @@ struct TodayHeroEntryPreviewCard: View {
 
                     Text(previewText)
                         .font(OffRecordTypography.bodyMedium)
-                        .foregroundStyle(primaryText.opacity(isNight ? 0.94 : 0.88))
+                        .foregroundStyle(primaryText)
                         .lineLimit(2)
+                        .accessibilityIdentifier("todayEntry.preview")
                         .fixedSize(horizontal: false, vertical: true)
                 }
 
                 Spacer(minLength: 8)
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 17, weight: .semibold))
+                    .font(OffRecordTypography.labelLarge)
                     .foregroundStyle(secondaryText)
+                    .accessibilityHidden(true)
             }
-            .padding(.horizontal, 16)
-            .padding(.vertical, 15)
-            .frame(maxWidth: .infinity, minHeight: 98, alignment: .leading)
-            .offRecordContentCard(cornerRadius: 24, fill: cardFill, useGlass: true)
-            .contentShape(RoundedRectangle(cornerRadius: 24))
+            .padding(.horizontal, OffRecordSpacing.lg)
+            .padding(.vertical, OffRecordSpacing.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: cardFill)
+            .contentShape(RoundedRectangle(cornerRadius: OffRecordRadius.lg))
         }
         .buttonStyle(.plain)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Today's entry")
+        .accessibilityLabel("Today’s entry")
         .accessibilityIdentifier("homeHero.todayEntryPreview")
     }
 
@@ -57,12 +60,12 @@ struct TodayHeroEntryPreviewCard: View {
             return text
         }
         if entry.hasStartedEntryAudio {
-            return "Recording saved. Tap to add text or play your recording."
+            return String(localized: "Recording saved.")
         }
         if entry.photos?.count ?? 0 > 0 {
-            return "Photos added. Tap to add text or more photos."
+            return String(localized: "Photos added.")
         }
-        return "Draft note. Tap to start writing."
+        return String(localized: "Draft", comment: "Stands in for today’s entry preview when the entry is still empty")
     }
 
     private var metadataText: String {
@@ -70,7 +73,8 @@ struct TodayHeroEntryPreviewCard: View {
         let time = updatedAt.formatted(date: .omitted, time: .shortened)
         let text = entry.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         let words = text.isEmpty ? 0 : text.split { $0.isWhitespace || $0.isNewline }.count
-        return "\(time) - \(words) \(words == 1 ? "word" : "words")"
+        let wordCount = String(AttributedString(localized: "^[\(words) word](inflect: true)").characters)
+        return String(localized: "Updated \(time) · \(wordCount)", comment: "Today’s entry preview metadata: last edit time, then word count")
     }
 
     private var primaryText: Color {
@@ -78,11 +82,12 @@ struct TodayHeroEntryPreviewCard: View {
     }
 
     private var secondaryText: Color {
-        isNight ? OffRecordColor.backgroundSecondary : OffRecordColor.textSecondary
+        isNight ? Color(hex: 0xD9CFDD) : OffRecordColor.textSecondary
     }
 
+    /// Opaque enough that small metadata stays readable over any part of the illustration.
     private var cardFill: Color {
-        isNight ? OffRecordColor.darkSurface.opacity(0.56) : OffRecordColor.surfacePrimary.opacity(0.78)
+        isNight ? OffRecordColor.darkSurface.opacity(0.86) : OffRecordColor.surfacePrimary
     }
 
     private var cardBorder: Color {

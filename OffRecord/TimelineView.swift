@@ -39,7 +39,6 @@ struct TimelineView: View {
     @State private var startDate: Date? = nil
     @State private var endDate: Date? = nil
     @State private var isListening: Bool = false
-    @State private var isEditingTimeline: Bool = false
     @State private var searchSuggestions: [FridayAssistantEngine.SearchSuggestion] = []
     @State private var semanticResults: [UUID: EvidenceReference] = [:]
     @State private var semanticSearchQuery: String = ""
@@ -60,6 +59,11 @@ struct TimelineView: View {
     @State private var selectedEntry: DiaryEntry?
     @State private var currentSearchActivity: NSUserActivity?
     @State private var showSpeechConsentPrompt = false
+    @State private var lens: TimelineLens = .list
+    @State private var navigatedEntry: DiaryEntry?
+    @State private var pendingDeletion: PendingTimelineDeletion?
+    @State private var bestMatchIDs: [UUID] = []
+    @Namespace private var entryTransition
 
     #if os(iOS)
     @StateObject private var voiceSearch = VoiceSearchManager()
@@ -84,7 +88,8 @@ struct TimelineView: View {
             semanticSearchQuery,
             isSemanticSearching.description,
             semanticSearchAvailable.description,
-            effectiveSemanticResults.keys.map(\.uuidString).sorted().joined(separator: ",")
+            effectiveSemanticResults.keys.map(\.uuidString).sorted().joined(separator: ","),
+            pendingDeletion?.objectID.uriRepresentation().absoluteString ?? ""
         ].joined(separator: "|")
     }
 
@@ -110,11 +115,15 @@ struct TimelineView: View {
             }
         }
         .background {
-            OffRecordColor.appBackgroundGradient
+            OffRecordAppBackground()
                 .ignoresSafeArea()
         }
         .navigationTitle("Timeline")
         .navigationBarTitleDisplayMode(.large)
+        .navigationDestination(item: $navigatedEntry) { entry in
+            EntryDetailView(entry: entry)
+                .navigationTransition(.zoom(sourceID: entry.objectID, in: entryTransition))
+        }
         .navigationDestination(isPresented: Binding(
             get: { routedEntry != nil },
             set: { isPresented in
@@ -128,6 +137,19 @@ struct TimelineView: View {
                 EntryDetailView(entry: routedEntry)
             }
         }
+        .overlay(alignment: .bottom) {
+            if let pendingDeletion {
+                TimelineUndoToast(
+                    message: String(localized: "Entry deleted"),
+                    onUndo: undoPendingDeletion
+                )
+                .padding(.horizontal, OffRecordSpacing.screenX)
+                .padding(.bottom, OffRecordSpacing.md)
+                .transition(.move(edge: .bottom).combined(with: .opacity))
+                .id(pendingDeletion.id)
+            }
+        }
+        .offRecordAnimation(OffRecordMotion.snappy, value: pendingDeletion?.id)
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 starredToolbarButton
@@ -149,6 +171,13 @@ struct TimelineView: View {
         .onChange(of: voiceSearch.transcribedText) { _, newValue in
             if !newValue.isEmpty {
                 searchText = newValue
+            }
+        }
+        .onChange(of: voiceSearch.isListening) { _, listening in
+            isListening = listening
+        }
+        .onChange(of: voiceSearch.errorMessage) { _, error in
+            if error != nil {
                 isListening = false
             }
         }
@@ -178,6 +207,7 @@ struct TimelineView: View {
         .onDisappear {
             currentSearchActivity?.resignCurrent()
             currentSearchActivity = nil
+            commitPendingDeletion()
         }
         .onChange(of: scenePhase) { _, newPhase in
             switch newPhase {
@@ -199,18 +229,16 @@ struct TimelineView: View {
             }
             refreshTimelineCache()
         }
-        .overlay(alignment: .topLeading) {
-            timelineKeyboardShortcuts
-        }
+        .background(timelineKeyboardShortcuts)
     }
 
     private var timelineKeyboardShortcuts: some View {
-        Button("Search timeline") {
+        Button("Search") {
             isSearchFocused = true
         }
         .keyboardShortcut("f", modifiers: .command)
-        .frame(width: 1, height: 1)
-        .opacity(0.01)
+        .frame(width: 0, height: 0)
+        .opacity(0)
         .accessibilityHidden(true)
     }
 
@@ -219,12 +247,15 @@ struct TimelineView: View {
         selectedEntryID: UUID?,
         onSelect: ((DiaryEntry) -> Void)?
     ) -> some View {
-        ZStack(alignment: .topTrailing) {
-            ScrollView {
+        List {
+            Group {
                 VStack(alignment: .leading, spacing: TimelineDesign.contentSpacing) {
                     VStack(alignment: .leading, spacing: TimelineDesign.headerSearchSpacing) {
                         timelineHeader
                         searchArea
+                    }
+                    .overlay(alignment: .topTrailing) {
+                        timelinePlanterArtwork
                     }
 
                     if showFilters {
@@ -243,24 +274,198 @@ struct TimelineView: View {
                     voiceSearchErrorBanner
                     #endif
 
-                    if !filteredEntriesCache.isEmpty {
-                        MonthSummaryCard(entries: summaryEntriesCache)
+                    if !entries.isEmpty {
+                        lensPicker
                     }
 
-                    timelineContent(selectedEntryID: selectedEntryID, onSelect: onSelect)
+                    if lens == .list, !filteredEntriesCache.isEmpty, !isSearching {
+                        MonthSummaryCard(
+                            title: summaryTitle,
+                            entries: summaryEntriesCache
+                        )
+                    }
                 }
-                .frame(maxWidth: maxWidth)
-                .padding(.horizontal, OffRecordSpacing.screenX)
-                .padding(.top, 8)
-                .padding(.bottom, 28)
-                .frame(maxWidth: .infinity)
+                .timelineRowLayout(maxWidth: maxWidth, bottom: TimelineDesign.contentSpacing)
+
+                switch lens {
+                case .list:
+                    listContent(maxWidth: maxWidth, selectedEntryID: selectedEntryID, onSelect: onSelect)
+                case .calendar:
+                    TimelineCalendarView(entries: visibleEntries) { entry in
+                        open(entry, onSelect: onSelect)
+                    }
+                    .timelineRowLayout(maxWidth: maxWidth, bottom: OffRecordSpacing.section)
+                case .media:
+                    TimelineMediaGrid(entries: visibleEntries) { entry in
+                        open(entry, onSelect: onSelect)
+                    }
+                    .timelineRowLayout(maxWidth: maxWidth, bottom: OffRecordSpacing.section)
+                }
             }
-            .refreshable {
-                HapticManager.shared.pullToRefresh()
-                try? await Task.sleep(nanoseconds: 300_000_000)
+        }
+        .listStyle(.plain)
+        .scrollContentBackground(.hidden)
+        .environment(\.defaultMinListRowHeight, 0)
+        .offRecordAnimation(OffRecordMotion.gentle, value: lens)
+    }
+
+    private var lensPicker: some View {
+        Picker(selection: $lens) {
+            ForEach(TimelineLens.allCases) { lens in
+                Label(lens.displayName, systemImage: lens.systemImage).tag(lens)
+            }
+        } label: {
+            Text("View", comment: "Accessibility label for the picker that switches the timeline between list, calendar, and photos.")
+        }
+        .pickerStyle(.segmented)
+        .accessibilityIdentifier("timeline.lensPicker")
+    }
+
+    private var isSearching: Bool {
+        !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+    }
+
+    /// Entries not waiting on an undoable delete.
+    private var visibleEntries: [DiaryEntry] {
+        entries.startedEntries.filter { $0.objectID != pendingDeletion?.objectID }
+    }
+
+    private var summaryTitle: String {
+        guard let date = summaryEntriesCache.first?.date else { return String(localized: "This Month") }
+        if Calendar.current.isDate(date, equalTo: Date(), toGranularity: .month) {
+            return String(localized: "This Month")
+        }
+        return date.formatted(.dateTime.month(.wide).year())
+    }
+
+    @ViewBuilder
+    private func listContent(
+        maxWidth: CGFloat,
+        selectedEntryID: UUID?,
+        onSelect: ((DiaryEntry) -> Void)?
+    ) -> some View {
+        if entries.isEmpty {
+            TimelineFirstEntryState()
+                .timelineRowLayout(maxWidth: maxWidth, bottom: OffRecordSpacing.section)
+        } else if filteredEntriesCache.isEmpty {
+            emptySearchState
+                .timelineRowLayout(maxWidth: maxWidth, bottom: OffRecordSpacing.section)
+        } else {
+            let bestMatches = bestMatchEntries
+            if !bestMatches.isEmpty {
+                Section {
+                    ForEach(Array(bestMatches.enumerated()), id: \.element.objectID) { index, entry in
+                        entryRow(entry, index: index, isLast: index == bestMatches.count - 1, maxWidth: maxWidth, selectedEntryID: selectedEntryID, onSelect: onSelect, transitionSuffix: "best")
+                    }
+                } header: {
+                    TimelineSectionHeader(title: String(localized: "Top Results"), count: nil, systemImage: "sparkle.magnifyingglass")
+                        .timelineHeaderLayout(maxWidth: maxWidth)
+                }
             }
 
-            timelinePlanterArtwork
+            ForEach(sectionKeysCache, id: \.self) { key in
+                if let sectionEntries = groupedEntriesCache[key] {
+                    Section {
+                        ForEach(Array(sectionEntries.enumerated()), id: \.element.objectID) { index, entry in
+                            entryRow(entry, index: index, isLast: index == sectionEntries.count - 1, maxWidth: maxWidth, selectedEntryID: selectedEntryID, onSelect: onSelect, transitionSuffix: nil)
+                        }
+                    } header: {
+                        TimelineSectionHeader(
+                            title: sectionTitle(for: key),
+                            count: sectionEntries.count,
+                            systemImage: nil
+                        )
+                        .timelineHeaderLayout(maxWidth: maxWidth)
+                    }
+                }
+            }
+
+            Color.clear
+                .frame(height: OffRecordSpacing.section)
+                .listRowSeparator(.hidden)
+                .listRowBackground(Color.clear)
+        }
+    }
+
+    private var bestMatchEntries: [DiaryEntry] {
+        guard isSearching, !bestMatchIDs.isEmpty else { return [] }
+        let byID = Dictionary(filteredEntriesCache.compactMap { entry in entry.id.map { ($0, entry) } }, uniquingKeysWith: { first, _ in first })
+        return bestMatchIDs.compactMap { byID[$0] }
+    }
+
+    @ViewBuilder
+    private func entryRow(
+        _ entry: DiaryEntry,
+        index: Int,
+        isLast: Bool,
+        maxWidth: CGFloat,
+        selectedEntryID: UUID?,
+        onSelect: ((DiaryEntry) -> Void)?,
+        transitionSuffix: String?
+    ) -> some View {
+        TimelineDayRow(
+            entry: entry,
+            index: index,
+            isLast: isLast,
+            metrics: entryMetricsCache[entry.objectID],
+            searchText: searchText,
+            evidence: entry.id.flatMap { effectiveSemanticResults[$0] },
+            isSelected: entry.id == selectedEntryID,
+            onSelect: { open(entry, onSelect: onSelect) }
+        )
+        .matchedTransitionSource(id: transitionSuffix == nil ? AnyHashable(entry.objectID) : AnyHashable("\(transitionSuffix!)-\(entry.objectID)"), in: entryTransition)
+        .timelineRowLayout(maxWidth: maxWidth, bottom: TimelineDesign.monthRowSpacing)
+        .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+            Button(role: .destructive) {
+                requestDelete(entry)
+            } label: {
+                Label(String(localized: "Delete", comment: "Action that deletes an entry."), systemImage: "trash")
+            }
+            .tint(.red)
+        }
+        .swipeActions(edge: .leading, allowsFullSwipe: true) {
+            Button {
+                toggleStar(entry)
+            } label: {
+                Label(entry.isStarred ? "Unstar" : "Star", systemImage: entry.isStarred ? "star.slash" : "star.fill")
+            }
+            .tint(OffRecordColor.textYellow)
+        }
+        .contextMenu {
+            Button {
+                open(entry, onSelect: onSelect)
+            } label: {
+                Label("Open", systemImage: "book.pages")
+            }
+            Button {
+                toggleStar(entry)
+            } label: {
+                Label(entry.isStarred ? "Unstar" : "Star", systemImage: entry.isStarred ? "star.slash" : "star")
+            }
+            if let text = entry.text?.trimmingCharacters(in: .whitespacesAndNewlines), !text.isEmpty {
+                Button {
+                    UIPasteboard.general.string = TimelineEntryPreviewSanitizer.sanitize(text)
+                } label: {
+                    Label("Copy Text", systemImage: "doc.on.doc")
+                }
+            }
+            Divider()
+            Button(role: .destructive) {
+                requestDelete(entry)
+            } label: {
+                Label(String(localized: "Delete", comment: "Action that deletes an entry."), systemImage: "trash")
+            }
+        } preview: {
+            TimelineEntryContextPreview(entry: entry)
+        }
+    }
+
+    private func open(_ entry: DiaryEntry, onSelect: ((DiaryEntry) -> Void)?) {
+        commitPendingDeletion()
+        if let onSelect {
+            onSelect(entry)
+        } else {
+            navigatedEntry = entry
         }
     }
 
@@ -275,7 +480,7 @@ struct TimelineView: View {
                 }
             )
             .frame(width: metrics.timelineListWidth)
-            .background(OffRecordColor.appBackgroundGradient)
+            .background(OffRecordAppBackground())
 
             Divider()
                 .overlay(OffRecordColor.borderSoft)
@@ -302,15 +507,9 @@ struct TimelineView: View {
                 iconSize: 24
             )
 
-            Text("Select an entry")
+            Text("No Entry Selected")
                 .font(OffRecordTypography.titleMedium)
                 .foregroundStyle(OffRecordColor.textHeading)
-
-            Text("Your timeline stays open while you read, edit, or review a day.")
-                .font(OffRecordTypography.bodySmall)
-                .foregroundStyle(OffRecordColor.textSecondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 320)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(OffRecordColor.backgroundPrimary.opacity(0.82))
@@ -334,6 +533,7 @@ struct TimelineView: View {
                 .resizable()
                 .scaledToFit()
                 .frame(width: TimelineDesign.planterWidth)
+                .fixedSize()
                 .rotationEffect(.degrees(planterShakeAngle), anchor: .top)
         }
         .buttonStyle(.plain)
@@ -342,8 +542,7 @@ struct TimelineView: View {
             x: -16,
             y: dynamicTypeSize.isAccessibilitySize ? 28 : -66
         )
-        .accessibilityLabel("Planter")
-        .accessibilityHint("Plays a subtle shake")
+        .accessibilityHidden(true)
         .task(id: planterShakeTrigger) {
             await runPlanterShake()
         }
@@ -384,8 +583,10 @@ struct TimelineView: View {
         } label: {
             Image(systemName: showStarredOnly ? "star.fill" : "star")
                 .foregroundStyle(showStarredOnly ? OffRecordColor.textYellow : OffRecordColor.textBrand)
+                .contentTransition(.symbolEffect(.replace))
         }
-        .accessibilityLabel("Show starred only")
+        .accessibilityLabel(Text("Starred", comment: "Accessibility label for the toolbar button that shows only starred entries."))
+        .accessibilityAddTraits(showStarredOnly ? .isSelected : [])
     }
 
     private var toolbarActions: some View {
@@ -394,31 +595,26 @@ struct TimelineView: View {
             Button {
                 toggleVoiceSearch()
             } label: {
-                Image(systemName: isListening ? "mic.fill" : "mic")
-                    .foregroundStyle(isListening ? OffRecordColor.textCoral : OffRecordColor.textBrand)
+                Image(systemName: isListening || voiceSearch.isPreparingModel ? "mic.fill" : "mic")
+                    .foregroundStyle(isListening || voiceSearch.isPreparingModel ? OffRecordColor.textCoral : OffRecordColor.textBrand)
+                    .symbolEffect(.pulse, isActive: isListening)
+                    .contentTransition(.symbolEffect(.replace))
             }
-            .accessibilityLabel("Voice search")
+            .accessibilityLabel("Voice Search")
             #endif
 
             Button {
-                withAnimation(.easeInOut(duration: 0.2)) {
+                withOffRecordAnimation(OffRecordMotion.snappy) {
                     showFilters.toggle()
                 }
                 HapticManager.shared.buttonTap()
             } label: {
                 Image(systemName: hasActiveFilters ? "line.3.horizontal.decrease.circle.fill" : "line.3.horizontal.decrease.circle")
-                    .foregroundStyle(OffRecordColor.brandLavenderDark)
+                    .foregroundStyle(OffRecordColor.textLavender)
+                    .contentTransition(.symbolEffect(.replace))
             }
             .accessibilityLabel("Filters")
-
-            Button(isEditingTimeline ? "Done" : "Edit") {
-                withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) {
-                    isEditingTimeline.toggle()
-                }
-                HapticManager.shared.buttonTap()
-            }
-            .foregroundStyle(OffRecordColor.brandLavenderDark)
-            .accessibilityLabel(isEditingTimeline ? "Done editing" : "Edit timeline")
+            .accessibilityValue(hasActiveFilters ? "On" : "")
         }
     }
 
@@ -476,7 +672,7 @@ struct TimelineView: View {
             HStack(spacing: 10) {
                 ProgressView(value: semanticMemory.progress)
                     .frame(width: 44)
-                Text("Building semantic memory")
+                Text("Updating Search")
                     .font(OffRecordTypography.labelSmall)
                     .foregroundColor(OffRecordColor.textSecondary)
                 Spacer()
@@ -503,11 +699,30 @@ struct TimelineView: View {
     #if os(iOS)
     @ViewBuilder
     private var voiceSearchErrorBanner: some View {
-        if let error = voiceSearch.errorMessage {
+        if voiceSearch.isPreparingModel {
+            HStack(spacing: 10) {
+                if let progress = voiceSearch.modelDownloadProgress {
+                    ProgressView(value: progress)
+                        .frame(width: 52)
+                } else {
+                    ProgressView()
+                }
+                Text("Preparing voice search…")
+                    .font(OffRecordTypography.labelSmall)
+                    .foregroundStyle(OffRecordColor.textSecondary)
+                Spacer()
+            }
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(
+                OffRecordColor.surfaceWarm,
+                in: RoundedRectangle(cornerRadius: OffRecordRadius.lg, style: .continuous)
+            )
+        } else if let error = voiceSearch.errorMessage {
             HStack(spacing: 10) {
                 Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundStyle(OffRecordColor.brandCoral)
-                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(OffRecordColor.textCoral)
+                    .font(OffRecordTypography.labelMedium)
                 Text(error)
                     .font(OffRecordTypography.labelSmall)
                     .foregroundStyle(OffRecordColor.textSecondary)
@@ -516,10 +731,12 @@ struct TimelineView: View {
                     voiceSearch.errorMessage = nil
                 } label: {
                     Image(systemName: "xmark")
-                        .font(.system(size: 11, weight: .bold))
+                        .font(OffRecordTypography.annotation.weight(.bold))
                         .foregroundStyle(OffRecordColor.textTertiary)
+                        .frame(width: OffRecordLayout.minimumTapTarget, height: OffRecordLayout.minimumTapTarget)
                 }
-                .accessibilityLabel("Dismiss voice search error")
+                .buttonStyle(.plain)
+                .accessibilityLabel("Dismiss")
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 10)
@@ -534,59 +751,19 @@ struct TimelineView: View {
     }
     #endif
 
-    // MARK: - Quick Filter Chips
-
-    private var quickFilterChips: some View {
-        let topPeople = assistant.knowledgeGraph.topNodes(ofType: .person, limit: 3)
-        let topTopics = assistant.knowledgeGraph.topNodes(ofType: .topic, limit: 3)
-        let chips = topPeople + topTopics
-
-        return Group {
-            if !chips.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(chips, id: \.id) { node in
-                            Button {
-                                searchText = node.label
-                                HapticManager.shared.selectionChanged()
-                            } label: {
-                                HStack(spacing: 4) {
-                                    Image(systemName: node.type == .person ? "person.fill" : "tag.fill")
-                                        .font(OffRecordTypography.annotation)
-                                    Text(node.label)
-                                        .font(OffRecordTypography.metadata)
-                                }
-                                .padding(.horizontal, 10)
-                                .padding(.vertical, 6)
-                                .foregroundColor(OffRecordReadableTintStyle.privacy.foreground)
-                                .offRecordGlassControl(
-                                    tint: OffRecordReadableTintStyle.privacy.tint,
-                                    in: Capsule(),
-                                    fallbackFill: OffRecordReadableTintStyle.privacy.fill,
-                                    border: OffRecordReadableTintStyle.privacy.border
-                                )
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     // MARK: - Filter Bar
 
     private var filterBar: some View {
         VStack(spacing: 12) {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 8) {
-                    Text("Mood:")
+                    Text("Mood", comment: "Label before the row of mood filters.")
                         .font(OffRecordTypography.metadata)
                         .foregroundColor(OffRecordColor.textSecondary)
 
                     ForEach(Mood.allCases.filter { $0 != .none }, id: \.self) { mood in
                         Button {
-                            withAnimation {
+                            withOffRecordAnimation(OffRecordMotion.snappy) {
                                 selectedMoodFilter = selectedMoodFilter == mood ? nil : mood
                             }
                             HapticManager.shared.selectionChanged()
@@ -597,7 +774,7 @@ struct TimelineView: View {
                                     size: 14,
                                     opacity: selectedMoodFilter == mood ? 0.92 : 0.72
                                 )
-                                Text(mood.rawValue)
+                                Text(mood.displayName)
                             }
                             .font(OffRecordTypography.metadata)
                             .padding(.horizontal, 10)
@@ -616,14 +793,14 @@ struct TimelineView: View {
             }
 
             HStack(spacing: 12) {
-                DateRangeButton(title: "From", date: $startDate)
-                DateRangeButton(title: "To", date: $endDate)
+                DateRangeButton(title: String(localized: "From", comment: "Button that sets the start date of the date filter."), date: $startDate)
+                DateRangeButton(title: String(localized: "To", comment: "Button that sets the end date of the date filter."), date: $endDate)
 
                 Spacer()
 
                 if startDate != nil || endDate != nil {
                     Button("Clear Dates") {
-                        withAnimation {
+                        withOffRecordAnimation(OffRecordMotion.snappy) {
                             startDate = nil
                             endDate = nil
                         }
@@ -648,25 +825,25 @@ struct TimelineView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
                 if showStarredOnly {
-                    FilterChip(label: "Starred", icon: "star.fill", style: .highlight) {
+                    FilterChip(label: String(localized: "Starred", comment: "Active filter chip: showing only starred entries."), icon: "star.fill", style: .highlight) {
                         showStarredOnly = false
                     }
                 }
 
                 if let mood = selectedMoodFilter {
-                    FilterChip(label: mood.rawValue, mood: mood, style: mood.readableStyle) {
+                    FilterChip(label: mood.displayName, mood: mood, style: mood.readableStyle) {
                         selectedMoodFilter = nil
                     }
                 }
 
                 if let start = startDate {
-                    FilterChip(label: "From \(formatShortDate(start))", icon: "calendar", style: .export) {
+                    FilterChip(label: String(localized: "From \(formatShortDate(start))", comment: "Active filter chip. The argument is the start date."), icon: "calendar", style: .export) {
                         startDate = nil
                     }
                 }
 
                 if let end = endDate {
-                    FilterChip(label: "To \(formatShortDate(end))", icon: "calendar", style: .export) {
+                    FilterChip(label: String(localized: "To \(formatShortDate(end))", comment: "Active filter chip. The argument is the end date."), icon: "calendar", style: .export) {
                         endDate = nil
                     }
                 }
@@ -683,43 +860,15 @@ struct TimelineView: View {
         }
     }
 
-    // MARK: - Timeline Content
-
-    @ViewBuilder
-    private func timelineContent(
-        selectedEntryID: UUID?,
-        onSelect: ((DiaryEntry) -> Void)?
-    ) -> some View {
-        if filteredEntriesCache.isEmpty {
-            emptySearchState
-        } else {
-            LazyVStack(alignment: .leading, spacing: 22) {
-                ForEach(sectionKeysCache, id: \.self) { key in
-                    if let sectionEntries = groupedEntriesCache[key] {
-                        TimelineMonthSection(
-                            title: sectionTitle(for: key),
-                            entries: sectionEntries,
-                            metrics: entryMetricsCache,
-                            searchText: searchText,
-                            semanticResults: effectiveSemanticResults,
-                            isEditing: isEditingTimeline,
-                            selectedEntryID: selectedEntryID,
-                            onDelete: delete(entry:),
-                            onSelect: onSelect
-                        )
-                    }
-                }
-            }
-        }
-    }
-
     private var emptySearchState: some View {
         VStack(spacing: 16) {
             Image(systemName: semanticMemory.isBuilding ? "brain.head.profile" : "magnifyingglass")
-                .font(.system(size: 40))
+                .font(OffRecordTypography.titleLarge)
                 .foregroundColor(OffRecordColor.textSecondary)
+                .symbolEffect(.pulse, isActive: semanticMemory.isBuilding)
+                .accessibilityHidden(true)
 
-            Text(semanticMemory.isBuilding ? "Building semantic memory" : "No entries found")
+            Text(semanticMemory.isBuilding ? "Updating Search" : "No Results")
                 .font(OffRecordTypography.sectionTitle)
                 .foregroundColor(OffRecordColor.textHeading)
                 .accessibilityIdentifier(semanticMemory.isBuilding ? "semanticMemory.buildingTitle" : "timeline.emptyTitle")
@@ -727,7 +876,7 @@ struct TimelineView: View {
             if semanticMemory.isBuilding {
                 ProgressView(value: semanticMemory.progress)
                     .frame(maxWidth: 220)
-                Text("Friday is indexing your journal locally. Search results will improve as this finishes.")
+                Text("Results will improve when it’s done.")
                     .font(OffRecordTypography.metadata)
                     .foregroundColor(OffRecordColor.textSecondary)
                     .multilineTextAlignment(.center)
@@ -747,20 +896,20 @@ struct TimelineView: View {
                     clearAllFilters()
                 }
                 .font(OffRecordTypography.bodySmall)
-                .foregroundColor(OffRecordColor.brandPlum)
+                .foregroundColor(OffRecordColor.textBrand)
             }
         }
         .frame(maxWidth: .infinity)
-        .padding(.vertical, 60)
-        .padding(.horizontal, 18)
-        .background(OffRecordColor.surfacePrimary.opacity(0.72), in: RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .padding(.vertical, OffRecordSpacing.section)
+        .padding(.horizontal, OffRecordSpacing.xl)
+        .background(OffRecordColor.surfacePrimary.opacity(0.72), in: RoundedRectangle(cornerRadius: OffRecordRadius.lg, style: .continuous))
     }
 
     // MARK: - Voice Search
 
     private func toggleVoiceSearch() {
         #if os(iOS)
-        if isListening {
+        if isListening || voiceSearch.isPreparingModel {
             voiceSearch.stopListening()
             isListening = false
         } else {
@@ -777,7 +926,6 @@ struct TimelineView: View {
         #if os(iOS)
         voiceSearch.startListening()
         guard voiceSearch.errorMessage == nil else { return }
-        isListening = true
         HapticManager.shared.recordingStarted()
         #endif
     }
@@ -792,6 +940,7 @@ struct TimelineView: View {
         } else {
             searchSuggestions = []
             semanticResults = [:]
+            bestMatchIDs = []
             semanticSearchQuery = ""
             semanticSearchAvailable = false
             semanticSearchTask?.cancel()
@@ -825,7 +974,7 @@ struct TimelineView: View {
         guard trimmed.count >= 2,
               let activity = JournalSpotlightIndexer.shared.predictionActivity(
                 type: "com.singularity.offrecord.searchTimeline",
-                title: "Search OffRecord Timeline",
+                title: String(localized: "Search OffRecord Timeline"),
                 route: .timeline(query: trimmed)
               ) else {
             return
@@ -854,7 +1003,7 @@ struct TimelineView: View {
             await MainActor.run {
                 isSemanticSearching = true
                 semanticSearchQuery = query
-                semanticSearchMessage = "Searching semantic memory..."
+                semanticSearchMessage = String(localized: "Searching…")
             }
             let searchResult = await semanticMemory.search(query: query, entries: entrySnapshot, limit: 48)
             guard !Task.isCancelled else { return }
@@ -872,6 +1021,11 @@ struct TimelineView: View {
                         }
                     }
                     semanticResults = bestByEntry
+                    bestMatchIDs = bestByEntry.values
+                        .filter { $0.score >= 0.35 }
+                        .sorted { $0.score > $1.score }
+                        .prefix(3)
+                        .map(\.entryID)
                     semanticSearchAvailable = !bestByEntry.isEmpty
                     semanticSearchMessage = nil
                     isSemanticSearching = false
@@ -895,7 +1049,7 @@ struct TimelineView: View {
     }
 
     private func clearAllFilters() {
-        withAnimation {
+        withOffRecordAnimation(OffRecordMotion.snappy) {
             showStarredOnly = false
             selectedMoodFilter = nil
             startDate = nil
@@ -905,7 +1059,7 @@ struct TimelineView: View {
             semanticSearchQuery = ""
             semanticSearchAvailable = false
             semanticSearchMessage = nil
-            isEditingTimeline = false
+            bestMatchIDs = []
         }
         HapticManager.shared.buttonTap()
     }
@@ -926,8 +1080,9 @@ struct TimelineView: View {
     @MainActor
     private func refreshTimelineCache() {
         let token = PerformanceSignposts.begin("TimelineFilterAndGroup")
+        let pendingID = pendingDeletion?.objectID
         let filteredEntries = entries.startedEntries.filter { entry in
-            guard !entry.isDeleted else { return false }
+            guard !entry.isDeleted, entry.objectID != pendingID else { return false }
             guard let entryDate = entry.date else { return false }
 
             if showStarredOnly && !entry.isStarred { return false }
@@ -1022,42 +1177,67 @@ struct TimelineView: View {
         comps.month = key.month
         let calendar = Calendar.current
         if let date = calendar.date(from: comps) {
-            return Self.sectionTitleFormatter.string(from: date)
+            return date.formatted(.dateTime.month(.wide).year())
         }
-        return "Unknown"
+        return String(localized: "Unknown", comment: "Section title when an entry’s month can’t be determined.")
     }
 
-    private func delete(entry: DiaryEntry) {
-        let deletedID = entry.id
-        let shouldClearSelectedEntry = deletedID != nil && selectedEntry?.id == deletedID
-        let shouldClearRoutedEntry = deletedID != nil && routedEntry?.id == deletedID
-        withAnimation(.easeInOut(duration: 0.2)) {
-            viewContext.delete(entry)
+    private func requestDelete(_ entry: DiaryEntry) {
+        // Only one deletion waits for undo at a time; an earlier one is committed now.
+        commitPendingDeletion()
+        withOffRecordAnimation(OffRecordMotion.snappy) {
+            pendingDeletion = PendingTimelineDeletion(objectID: entry.objectID, entryID: entry.id)
         }
+        if selectedEntry?.objectID == entry.objectID {
+            selectedEntry = nil
+        }
+        HapticManager.shared.entryDeleted()
+        let deletionID = pendingDeletion?.id
+        Task {
+            try? await Task.sleep(for: .seconds(UIAccessibility.isVoiceOverRunning ? 12 : 6))
+            guard pendingDeletion?.id == deletionID else { return }
+            commitPendingDeletion()
+        }
+    }
+
+    private func undoPendingDeletion() {
+        withOffRecordAnimation(OffRecordMotion.snappy) {
+            pendingDeletion = nil
+        }
+        HapticManager.shared.selectionChanged()
+    }
+
+    private func commitPendingDeletion() {
+        guard let deletion = pendingDeletion else { return }
+        pendingDeletion = nil
+        guard let entry = try? viewContext.existingObject(with: deletion.objectID) as? DiaryEntry else { return }
+        let plan = JournalBlockTimelineStore.prepareDeleteWholeDay(entry, in: viewContext)
         do {
             try viewContext.save()
-            if let deletedID {
+            plan.fileURLsToRemoveAfterSave.forEach { try? FileManager.default.removeItem(at: $0) }
+            if let deletedID = deletion.entryID {
                 SemanticMemoryIndexController.shared.deleteEntry(id: deletedID)
                 JournalSpotlightIndexer.shared.delete(entryID: deletedID)
-                if shouldClearSelectedEntry {
-                    selectedEntry = nil
-                }
-                if shouldClearRoutedEntry {
+                if routedEntry?.id == deletedID {
                     routedEntry = nil
                     navigationRouter.clearEntryRouteIfNeeded(deletedID)
                 }
             }
-            HapticManager.shared.entryDeleted()
         } catch {
             viewContext.rollback()
         }
     }
 
-    private static let sectionTitleFormatter: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "LLLL yyyy"
-        return formatter
-    }()
+    private func toggleStar(_ entry: DiaryEntry) {
+        entry.isStarred.toggle()
+        do {
+            try viewContext.save()
+            JournalSpotlightIndexer.shared.upsert(entry: entry)
+            HapticManager.shared.entryStarred()
+        } catch {
+            viewContext.rollback()
+        }
+    }
 }
 
 // MARK: - Filter Chip
@@ -1094,7 +1274,7 @@ struct FilterChip: View {
             Text(label)
                 .font(OffRecordTypography.metadata)
             Button {
-                withAnimation {
+                withOffRecordAnimation(OffRecordMotion.snappy) {
                     onRemove()
                 }
                 HapticManager.shared.buttonTap()
@@ -1102,6 +1282,7 @@ struct FilterChip: View {
                 Image(systemName: "xmark.circle.fill")
                     .font(OffRecordTypography.metadata)
             }
+            .accessibilityLabel("Remove \(label)")
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
@@ -1185,5 +1366,157 @@ struct DateRangeButton: View {
         let formatter = DateFormatter()
         formatter.dateStyle = .short
         return formatter.string(from: date)
+    }
+}
+
+// MARK: - Supporting views
+
+struct PendingTimelineDeletion: Equatable {
+    let id = UUID()
+    let objectID: NSManagedObjectID
+    let entryID: UUID?
+}
+
+struct TimelineUndoToast: View {
+    let message: String
+    let onUndo: () -> Void
+
+    var body: some View {
+        HStack(spacing: OffRecordSpacing.md) {
+            Image(systemName: "trash")
+                .foregroundStyle(OffRecordColor.textCoral)
+                .accessibilityHidden(true)
+            Text(message)
+                .font(OffRecordTypography.labelMedium)
+                .foregroundStyle(OffRecordColor.textPrimary)
+                .lineLimit(2)
+            Spacer(minLength: 0)
+            Button("Undo", action: onUndo)
+                .font(OffRecordTypography.labelLarge)
+                .foregroundStyle(OffRecordColor.textLavender)
+                .frame(minHeight: OffRecordLayout.minimumTapTarget)
+                .accessibilityIdentifier("timeline.undoDelete")
+        }
+        .padding(.horizontal, OffRecordSpacing.lg)
+        .padding(.vertical, OffRecordSpacing.xs)
+        .frame(maxWidth: 520)
+        .offRecordGlassBar(cornerRadius: OffRecordRadius.xl, fallbackFill: OffRecordColor.surfacePrimary)
+        .accessibilityElement(children: .contain)
+        .onAppear {
+            UIAccessibility.post(notification: .announcement, argument: String(localized: "\(message). Undo available.", comment: "VoiceOver announcement. The argument is what was just done, like “Entry deleted”."))
+        }
+    }
+}
+
+struct TimelineSectionHeader: View {
+    let title: String
+    let count: Int?
+    let systemImage: String?
+
+    var body: some View {
+        HStack(spacing: OffRecordSpacing.md) {
+            if let systemImage {
+                Image(systemName: systemImage)
+                    .font(OffRecordTypography.titleSmall)
+                    .foregroundStyle(OffRecordColor.textLavender)
+                    .accessibilityHidden(true)
+            } else {
+                CalendarSectionIcon()
+            }
+            Text(title)
+                .font(OffRecordTypography.titleMedium)
+                .foregroundStyle(OffRecordColor.textBrand)
+                .accessibilityAddTraits(.isHeader)
+            Spacer(minLength: 0)
+            if let count {
+                Text("^[\(count) entry](inflect: true)")
+                    .font(OffRecordTypography.labelMedium)
+                    .foregroundStyle(OffRecordColor.textSecondary)
+            }
+        }
+        .padding(.vertical, OffRecordSpacing.sm)
+    }
+}
+
+/// Invitation shown before any entry exists — distinct from "no search results".
+private struct TimelineFirstEntryState: View {
+    @ObservedObject private var capture = CaptureController.shared
+
+    var body: some View {
+        VStack(spacing: OffRecordSpacing.lg) {
+            FridayMascotView(pose: .wave, size: 88)
+                .accessibilityHidden(true)
+            VStack(spacing: OffRecordSpacing.sm) {
+                Text("No Entries Yet")
+                    .font(OffRecordTypography.titleSmall)
+                    .foregroundStyle(OffRecordColor.textHeading)
+                    .multilineTextAlignment(.center)
+                    .accessibilityIdentifier("timeline.emptyTitle")
+                Text("Your entries will show up here.")
+                    .font(OffRecordTypography.bodySmall)
+                    .foregroundStyle(OffRecordColor.textSecondary)
+                    .multilineTextAlignment(.center)
+            }
+            Button {
+                capture.startRecording()
+            } label: {
+                Label(String(localized: "Record", comment: "Button that starts a voice recording."), systemImage: "mic.fill")
+                    .offRecordPillButton()
+            }
+            .buttonStyle(.plain)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, OffRecordSpacing.section)
+        .padding(.horizontal, OffRecordSpacing.xl)
+        .offRecordCard(fill: OffRecordColor.surfacePrimary.opacity(0.85))
+    }
+}
+
+/// Larger read-only preview shown when long-pressing an entry.
+private struct TimelineEntryContextPreview: View {
+    let entry: DiaryEntry
+
+    var body: some View {
+        let mood = Mood(rawValue: entry.mood ?? "") ?? .none
+        VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
+            HStack(spacing: OffRecordSpacing.sm) {
+                if mood != .none {
+                    mood.miniImage
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 28, height: 28)
+                }
+                Text((entry.date ?? Date()).formatted(date: .complete, time: .omitted))
+                    .font(OffRecordTypography.labelMedium)
+                    .foregroundStyle(OffRecordColor.textSecondary)
+            }
+            Text(TimelineEntryPreviewSanitizer.sanitize(entry.text ?? "").isEmpty
+                 ? String(localized: "No text")
+                 : TimelineEntryPreviewSanitizer.sanitize(entry.text ?? ""))
+                .font(OffRecordTypography.journalBody)
+                .foregroundStyle(OffRecordColor.textPrimary)
+                .lineLimit(12)
+        }
+        .padding(OffRecordSpacing.xl)
+        .frame(width: 340, alignment: .leading)
+        .background(OffRecordColor.surfacePrimary)
+    }
+}
+
+private extension View {
+    func timelineRowLayout(maxWidth: CGFloat, bottom: CGFloat) -> some View {
+        frame(maxWidth: maxWidth)
+            .frame(maxWidth: .infinity)
+            .listRowInsets(EdgeInsets(top: 0, leading: OffRecordSpacing.screenX, bottom: bottom, trailing: OffRecordSpacing.screenX))
+            .listRowSeparator(.hidden)
+            .listRowBackground(Color.clear)
+    }
+
+    func timelineHeaderLayout(maxWidth: CGFloat) -> some View {
+        frame(maxWidth: maxWidth)
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, OffRecordSpacing.screenX)
+            .listRowInsets(EdgeInsets())
+            .background(OffRecordAppBackground().opacity(0.96))
     }
 }

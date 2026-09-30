@@ -380,6 +380,10 @@ Recommended gradients:
 - Friday glow: radial `#FFE6EA → #F4EEFF → transparent`
 - AI insight card: `#F4EEFF → #FFF8F0`
 
+### Dark Mode
+
+Every surface, text, and border token has a dark variant, and the "System" appearance follows the device setting. Dark mode keeps the same warmth: deep plum-charcoal backgrounds instead of pure black, softened pastel surfaces, and lighter `text*` accents so tinted labels stay readable. Never hard-code a light color in a view; use the semantic tokens so both appearances work.
+
 ### Color Accessibility
 
 Pastel backgrounds should not carry low-contrast pastel text. Use `text-primary`, `text-heading`, or `text-brand` on pastel surfaces. White text is only allowed on dark plum, dark lavender, or dark sage buttons.
@@ -405,15 +409,98 @@ Use Apple-native typography for app screens. The design should feel native to iO
 
 ### Voice
 
-Microcopy should be emotionally safe and direct. It should avoid therapy-speak, exaggerated positivity, and judgment.
+Copy should be short, specific, and calm. It should read like a well-made Apple app, not a wellness brochure. The complete standard is below; `scripts/copy-lint.sh` enforces the mechanical parts.
+
+#### Principles
+
+1. **Say it once.** A fact appears in one place, where it matters, and nowhere else. Privacy is the main example.
+2. **Lead with the fact.** Numbers and names beat adjectives: “You mentioned Maya in 4 entries,” not “Maya seems to be an important thread.”
+3. **One idea per string.** No second clause that reassures, explains, or cheers.
+4. **Plain words.** Say what something does, never how it is built. No “index,” “embedding,” “baseline,” or “semantic.”
+5. **Calm, not cheerful.** No exclamation marks, no emoji in system text, no guilt, no validation formulas.
+
+#### Friday’s voice
+
+- Friday speaks on AI and Friday surfaces: the Friday tab and chat, “From Friday” cards on Today, AI rows on Insights, Weekly Reflection, the entry’s From Friday section and Go Deeper, AI-gated empty states, and smart-prompt notifications (title “Friday”).
+- App chrome stays neutral: buttons, Settings, alerts, errors, widgets, Apple Watch, Siri, and permission strings. Settings never says “I.”
+- Friday talks to **you** and says **I** only about her own actions or limits (“I need 3 more entries,” “I’m not sure yet”).
+- Never write “Friday noticed.” No card starts with “I noticed.” At most one “I” per card.
+- Thin evidence is said once, with a number: “I’m not sure yet. Only 2 entries mention this.”
+- “Not enough data” always gives the real threshold from code.
+- Heavy content gets one plain line and no advice: “That sounds heavy. Talking to someone you trust could help.”
+- Explanations start with “Based on…” and stay at 12 words or fewer.
+
+#### Glossary
+
+| Use | Don’t use |
+|---|---|
+| **entry** (one day’s page) | note (as the unit), moment, diary, journal memory, data point |
+| **text**, **recording**, **photo**, **mood** (parts of an entry) | block, voice note, voice moment, audio note, voice thought, check-in |
+| **Record** (iPhone capture verb) | Speak (on iPhone), Record privately, Add a thought |
+| **Speak** (dictation on Apple Watch only) | |
+| **Transcribing…**, **transcript** | Transcribing on this device… |
+| **Friday** (she) | assistant, AI assistant, companion |
+| **Weekly Reflection** | Your Week in Review, Your Week, Decoded, weekly recap, report |
+| **insight** | observation, evidence-backed observation |
+| **search index** (Settings only) | Semantic Memory, embeddings, chunks, lexical fallback |
+| **streak**, **days in a row** | rhythm |
+| **Lock** | Privacy Lock |
+| **OffRecord** (in the app) | OffRecord AI Journal (App Store and marketing only), AI Voice Diary |
+| **iPhone** / **iPad** (via `DeviceNoun`) | this device, your device, locally |
+
+#### Length
+
+| Surface | Budget |
+|---|---|
+| Tab or navigation title | 1–2 words |
+| Button or menu item | 1–3 words, verb first |
+| Section or card header | 1–3 words |
+| Subtitle | Omit by default; otherwise 1 sentence, ≤12 words |
+| Empty state | Title ≤4 words, 1 sentence ≤12 words, at most 1 button |
+| Alert | Title ≤6 words; message ≤20 words or none |
+| Error | 1 sentence saying what to do next, ≤15 words |
+| Toast | ≤3 words (“Entry deleted”) |
+| Notification | Title ≤25 characters or none; body ≤60 characters |
+| Prompt | One question, ≤10 words |
+| Friday card | Title ≤7 words; body ≤20 words; explanation ≤12 words |
+| Accessibility label | 1–3 words, no control type. Hints are 3rd-person verb phrases with a period, only when the action isn’t obvious |
+| Widget gallery description | Starts with a verb, ≤10 words |
+| Permission string | 1 sentence, ≤15 words, says what it enables |
+
+#### Capitalization and punctuation
+
+- **Title Case:** tabs, navigation titles, buttons, menu items, toggles and row labels, section and card headers, alert titles, empty-state titles, widget names, intent titles, notification titles.
+- **Sentence case:** body text, subtitles, footers, placeholders, prompts, Friday’s speech, insight titles, onboarding page headlines, accessibility hints, notification bodies.
+- Use `…` (one character) only for progress text and commands that open more input. Placeholders get no ellipsis.
+- No em dashes in UI strings; split the sentence. Use an en dash for ranges (`Sep 22–28`).
+- `·` is the only separator. Use curly apostrophes and quotes (’ “ ”).
+- Digits for numbers, contractions, and the serial comma. Never “please,” “Oops,” or “!”.
+
+#### Banned
+
+- **Words:** gentle, gently, softly, space to, safe space, journey, unlock, effortless, seamless, thread (as a metaphor), carry forward, Let’s, Here’s, It looks like, valid, brave, self-care, actually, simply, just (as filler), worth naming, worth noticing, Friday noticed.
+- **Patterns:** stacked rhetorical questions, groups of three, a second reassuring clause, and quotation marks around generated sentences.
+
+#### Where privacy is stated
+
+1. The onboarding privacy page.
+2. The privacy sheet on Today.
+3. The Privacy card in Settings.
+4. Permission strings.
+5. Moments where data would leave the app: share cards, export, the Apple Health toggle, the iCloud toggle, transcription consent, and the Spotlight toggle.
+6. One small “On-device” label in the Friday chat header.
+
+Everywhere else, leave it out.
+
+#### Examples
 
 Good:
 
 - “What do you want to remember?”
-- “Write or record”
-- “Your journal stays on this device.”
-- “Ask Friday what she noticed.”
-- “Starting to see patterns.”
+- “Record” / “Write”
+- “Nothing leaves your iPhone unless you export it or turn on iCloud.”
+- “I’m starting to see patterns.”
+- “Entry deleted”
 
 Avoid:
 
@@ -421,6 +508,8 @@ Avoid:
 - “Optimize your mental health.”
 - “AI-powered transformation.”
 - “We know how you feel.”
+- “Begin softly.” / “Hold it gently.”
+- “Everything stays on this device.” (on a screen that isn’t about privacy)
 
 ## Layout
 
@@ -471,7 +560,7 @@ Use an 8pt rhythm with a few softer in-between values:
 
 #### Today
 
-Today should feel like the user’s daily ritual. Use a warm hero card for the current moment, then nudges, then a voice/write capture panel. The record action should be visually important but not aggressive.
+Today should feel like the user’s daily ritual. Use a compact hero with Speak, Write, and "another prompt", then at most one contextual card (for example On This Day or the weekly reflection), then nudges that each offer Speak and Write. The streak appears as a gentle strip, never as loss framing. Recording itself lives in the shared Record bar, so Today doesn't need its own capture panel.
 
 Core elements to preserve:
 
@@ -484,7 +573,7 @@ Core elements to preserve:
 
 #### Timeline
 
-Timeline should feel like a visual memory archive, not a plain settings-like list. Use a centered readable archive column on the warm app background gradient, with compact search, monthly context, date grouping, quiet metadata, mood artwork, and soft dividers that imply passage of time.
+Timeline should feel like a visual memory archive, not a plain settings-like list. It offers three views: List, Calendar (month grid and year-in-pixels coloured by mood), and Photos (photo grid). Use a centered readable archive column on the warm app background gradient, with compact search, monthly context, date grouping, quiet metadata, mood artwork, and soft dividers that imply passage of time.
 
 Core elements to preserve:
 
@@ -492,7 +581,8 @@ Core elements to preserve:
 - Monthly summary card with entry count, word count, and a soft lavender-peach trend chart.
 - Month sections with a calendar icon, section entry count, date spine, circular pastel day badges, and differentiated entry cards.
 - Entry previews with mood icon, word count, photo/star metadata, highlighted matching text, semantic evidence labels, and large mood artwork.
-- Edit mode with a visible destructive delete affordance only when editing.
+- Swipe to star or delete, context menus with previews, and a 6-second Undo after any delete.
+- A first-entry empty state that differs from "no search results", and a "Top Results" section for search by meaning.
 - Small decorative Timeline planter illustration in the top-right. It may shake on tap and use haptics, but it must respect Reduce Motion and must never carry essential information.
 
 #### Insights
@@ -506,7 +596,9 @@ Core elements to preserve:
 - Weekly goal
 - Mood trend
 - Writing stats
-- Weekly reflection
+- Weekly reflection, as one card: this week's report on top, earlier weeks as rows
+- A "Why?" button on every AI insight that shows how it was worked out and the supporting entries
+- Streak milestones celebrated with confetti, or a static badge under Reduce Motion
 
 #### Friday
 
@@ -520,10 +612,12 @@ Core elements to preserve:
 - Overview, Personality, Emotions, My World tabs
 - Insight cards
 - On-device privacy note
+- Chat kept between visits on this device only, with numbered citations, an evidence-strength label, and 2–3 local follow-up suggestions
+- "What Friday remembers", where each item can be forgotten or renamed
 
 #### Settings
 
-Settings should feel trustworthy and readable. Keep privacy and export sections highly legible. Do not over-decorate sensitive controls like Face ID, export, or iCloud Sync.
+Settings should feel trustworthy and readable. Open with a "Privacy at a glance" card that shows the live state of the lock, local AI, iCloud, Apple Health, and Spotlight, and jumps to each control. Settings are searchable. Keep privacy and export sections highly legible. Do not over-decorate sensitive controls like Face ID, export, or iCloud Sync.
 
 Core elements to preserve:
 
@@ -535,6 +629,7 @@ Core elements to preserve:
 - Reminder settings
 - Storage
 - Optional iCloud Sync
+- Optional Apple Health State of Mind (moods only, write-only)
 
 ## Elevation & Depth
 
@@ -556,6 +651,23 @@ Shadow rules:
 - Use Liquid Glass only for compact controls such as chips, filters, segmented tabs, and small bars; pair it with semantic readable tint styles and 1px soft borders.
 - Cards may use a 1px soft border plus subtle shadow.
 - Floating tab bar should feel elevated but not oversized.
+
+## Motion
+
+Motion should feel calm and physical, never showy. Always use the tokens in `OffRecordMotion` through `withOffRecordAnimation` or `.offRecordAnimation(_:value:)`; they swap in a short fade when Reduce Motion is on.
+
+- **snappy** (0.28s): toggles, chips, selection, small state changes.
+- **gentle** (0.4s smooth): the default for layout and content changes.
+- **bouncy** (spring): saves, celebrations, mascot reactions.
+- **hero** (spring): large container morphs such as the capture sheet.
+- **fade** (0.2s): dissolves, and the Reduce Motion substitute for every other curve.
+
+Rules:
+
+- Never write a raw `withAnimation(.easeInOut(...))` in a view.
+- Repeating or decorative motion (breathing auras, floating symbols, glow pulses) must stop under Reduce Motion.
+- Use SF Symbol effects (`.contentTransition(.symbolEffect(.replace))`, `.symbolEffect(.bounce)`) for icon state changes instead of cross-fading views.
+- Pair meaningful moments with haptics through `.sensoryFeedback`, not on every tap.
 
 ## Shapes
 
@@ -673,36 +785,25 @@ Chip rules:
 
 ### Bottom Navigation
 
-The bottom navigation should feel native, floating, and friendly.
-
-Tabs:
-
-- Today
-- Timeline
-- Insights
-- Friday
-- Settings
+Use the native iOS 26 Liquid Glass tab bar with five tabs: Today, Timeline, Insights, Friday, Settings. Don't build a custom tab bar.
 
 Rules:
 
-- Use a soft white floating pill.
-- Selected tab gets a rounded pill background.
-- Use semantic active colors per tab.
-- Inactive icons use softened black, not gray-blue.
-- Labels must remain readable.
-- Avoid oversized icons that compete with content.
+- The Record bar sits above the tab bar as its bottom accessory, so recording is one tap away on every tab.
+- Hide the tab bar for focused tasks (an open entry, Friday chat) and bring it back on return.
+- Labels must remain readable at every Dynamic Type size.
 
-### Voice Capture Panel
+### Voice Capture
 
-The capture panel is the emotional and functional center of Today.
+The Record bar opens the capture sheet, the emotional and functional center of the app.
 
 Rules:
 
-- Use a warm blush-to-lavender gradient.
-- Show three clear actions: write, record, photo.
+- The bar shows "Record a moment" with "Private · on this device", plus photo and write shortcuts.
+- The sheet shows a live waveform, the elapsed time, an optional live transcript, Pause/Resume, Discard (which asks first), and a date picker for recording into another day.
+- After saving, a card offers a quick mood pick, Undo, and Open entry.
+- While recording, the Lock Screen and Dynamic Island show a Live Activity with a timer and Pause/Stop, never the prompt or transcript.
 - The microphone can be visually dominant, but not alarm-like.
-- Always include privacy reassurance: “Private • On your device” or similar.
-- Keep the panel low enough for thumb reach.
 
 ### Insight Charts
 
@@ -710,6 +811,8 @@ Charts should be soft and readable.
 
 Rules:
 
+- Build charts with Swift Charts: smoothed lines with a soft gradient fill, rounded bars, and mood icons on axes where they help.
+- Every chart has a one-sentence plain-language summary and an `accessibilityChartDescriptor`.
 - Use aqua/green for progress and trend lines.
 - Use muted gridlines or no gridlines.
 - Use emoji/mood dots only when they simplify understanding.
@@ -739,6 +842,7 @@ Rules:
 - Use sage for enabled privacy or sync states.
 - Use clear helper text under sensitive options.
 - Do not hide privacy details in tiny text.
+- Say each privacy fact once, in the card it belongs to; the glance card summarises and links rather than repeating.
 - Export actions should use sky/document metaphors.
 
 ## Do's and Don'ts
@@ -757,6 +861,9 @@ Rules:
 - Use AI language carefully: supportive, local, private, non-judgmental.
 - Design charts for understanding, not decoration.
 - Make the UI feel native to iOS.
+- Use typography tokens (Dynamic Type) everywhere; never `.font(.system(size:))` outside export and share-card rendering.
+- Keep every tappable control at least 44pt, and give icon-only buttons an accessibility label that matches their visible meaning.
+- Hide journal content in the app switcher when the privacy lock is on.
 
 ### Don't
 

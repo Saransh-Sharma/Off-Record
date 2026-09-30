@@ -2,174 +2,154 @@
 //  VoiceSearchManager.swift
 //  OffRecord
 //
-//  Handles voice-to-text for search functionality.
-//  Uses Apple's Speech framework for voice search.
+//  Live search dictation through TranscriptionKit's SpeechAnalyzer session.
 //
 
 #if os(iOS)
-import Foundation
-import Speech
 import AVFoundation
+import Foundation
+import TranscriptionKit
 
-/// Manages voice search using Apple's Speech framework.
-/// Requires explicit consent because online recognition may be processed by Apple Speech.
+@MainActor
 final class VoiceSearchManager: ObservableObject {
-    
-    // MARK: - Published Properties
-    
-    @Published var transcribedText: String = ""
-    @Published var isListening: Bool = false
+    @Published var transcribedText = ""
+    @Published var isListening = false
+    @Published var isPreparingModel = false
+    @Published var modelDownloadProgress: Double?
     @Published var errorMessage: String?
-    
-    // MARK: - Private Properties
-    
-    private var audioEngine: AVAudioEngine?
-    private var recognitionRequest: SFSpeechAudioBufferRecognitionRequest?
-    private var recognitionTask: SFSpeechRecognitionTask?
-    private let speechRecognizer = SFSpeechRecognizer(locale: Locale.current)
-    
-    // MARK: - Initialization
-    
-    init() {}
+
+    private var session: LiveTranscriptionSession?
+    private var preparationTask: Task<Void, Never>?
+    private var eventsTask: Task<Void, Never>?
+    private var autoStopTask: Task<Void, Never>?
 
     deinit {
-        stopListening()
+        preparationTask?.cancel()
+        eventsTask?.cancel()
+        autoStopTask?.cancel()
+        if let session {
+            Task { await session.cancel() }
+        }
     }
-    
-    // MARK: - Public Methods
-    
-    /// Start listening for voice input
+
     func startListening() {
         guard SpeechTranscriptionConsent.hasGrantedAppleSpeechProcessing else {
-            errorMessage = SpeechTranscriber.TranscriptionError.appleSpeechConsentRequired.errorDescription
+            errorMessage = VoiceSearchError.transcriptionConsentRequired.errorDescription
             return
         }
 
-        // Reset state
+        stopListening()
         transcribedText = ""
         errorMessage = nil
-        
-        // Check authorization
-        SFSpeechRecognizer.requestAuthorization { [weak self] status in
-            DispatchQueue.main.async {
-                switch status {
-                case .authorized:
-                    self?.beginRecording()
-                case .denied, .restricted:
-                    self?.errorMessage = "Speech recognition not authorized"
-                case .notDetermined:
-                    self?.errorMessage = "Speech recognition not available"
-                @unknown default:
-                    self?.errorMessage = "Unknown authorization status"
+        isPreparingModel = true
+        modelDownloadProgress = nil
+
+        preparationTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                guard await AVAudioApplication.requestRecordPermission() else {
+                    throw VoiceSearchError.microphonePermissionDenied
+                }
+                try self.configureAudioSession()
+
+                let prepared = try await LiveTranscriptionSession.prepare(
+                    preferredLocale: .current,
+                    modelProgress: { progress in
+                        Task { @MainActor [weak self] in
+                            self?.modelDownloadProgress = progress
+                        }
+                    }
+                )
+                try Task.checkCancellation()
+                self.session = prepared
+                self.consumeEvents(from: prepared)
+                try await prepared.start()
+                self.isPreparingModel = false
+                self.modelDownloadProgress = nil
+                self.isListening = true
+                self.scheduleAutoStop()
+            } catch is CancellationError {
+                self.isPreparingModel = false
+            } catch {
+                self.isPreparingModel = false
+                self.modelDownloadProgress = nil
+                self.isListening = false
+                self.errorMessage = error.localizedDescription
+                if let session = self.session {
+                    self.session = nil
+                    await session.cancel()
                 }
             }
         }
     }
-    
-    /// Stop listening and finalize transcription
+
     func stopListening() {
-        audioEngine?.stop()
-        audioEngine?.inputNode.removeTap(onBus: 0)
-        recognitionRequest?.endAudio()
-        recognitionTask?.cancel()
-        
-        audioEngine = nil
-        recognitionRequest = nil
-        recognitionTask = nil
-        isListening = false
+        preparationTask?.cancel()
+        preparationTask = nil
+        autoStopTask?.cancel()
+        autoStopTask = nil
+        isPreparingModel = false
+        modelDownloadProgress = nil
+
+        guard let activeSession = session else {
+            isListening = false
+            return
+        }
+        session = nil
+        Task { [weak self] in
+            do {
+                try await activeSession.stop()
+            } catch {
+                self?.errorMessage = error.localizedDescription
+            }
+            self?.isListening = false
+            self?.eventsTask = nil
+        }
     }
-    
-    // MARK: - Private Methods
-    
-    private func beginRecording() {
-        // Cancel any existing task
-        recognitionTask?.cancel()
-        recognitionTask = nil
-        
-        // Configure audio session
+
+    private func consumeEvents(from session: LiveTranscriptionSession) {
+        eventsTask?.cancel()
+        eventsTask = Task { [weak self] in
+            for await event in session.events {
+                guard !Task.isCancelled else { return }
+                switch event {
+                case .transcript(let text):
+                    self?.transcribedText = text
+                case .failure(let message):
+                    self?.errorMessage = message
+                    self?.stopListening()
+                }
+            }
+        }
+    }
+
+    private func configureAudioSession() throws {
         let audioSession = AVAudioSession.sharedInstance()
-        do {
-            try audioSession.setCategory(.record, mode: .measurement, options: .duckOthers)
-            try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
-        } catch {
-            errorMessage = "Failed to configure audio session"
-            return
+        try audioSession.setCategory(.record, mode: .measurement, options: .duckOthers)
+        try audioSession.setActive(true, options: .notifyOthersOnDeactivation)
+    }
+
+    private func scheduleAutoStop() {
+        autoStopTask?.cancel()
+        autoStopTask = Task { [weak self] in
+            try? await Task.sleep(for: .seconds(5))
+            guard !Task.isCancelled, self?.isListening == true else { return }
+            self?.stopListening()
+            HapticManager.shared.recordingStopped()
         }
-        
-        // Create audio engine
-        audioEngine = AVAudioEngine()
-        guard let audioEngine = audioEngine else {
-            errorMessage = "Failed to create audio engine"
-            return
-        }
-        
-        // Create recognition request
-        recognitionRequest = SFSpeechAudioBufferRecognitionRequest()
-        guard let recognitionRequest = recognitionRequest else {
-            errorMessage = "Failed to create recognition request"
-            return
-        }
-        
-        // Configure for real-time results
-        recognitionRequest.shouldReportPartialResults = true
-        
-        // Use on-device recognition when available; this avoids server processing.
-        if speechRecognizer?.supportsOnDeviceRecognition == true {
-            recognitionRequest.requiresOnDeviceRecognition = true
-        }
-        
-        // Start recognition task
-        guard let speechRecognizer = speechRecognizer else {
-            errorMessage = "Speech recognizer not available"
-            return
-        }
-        
-        recognitionTask = speechRecognizer.recognitionTask(with: recognitionRequest) { [weak self] result, error in
-            DispatchQueue.main.async {
-                if let result = result {
-                    self?.transcribedText = result.bestTranscription.formattedString
-                    
-                    // Auto-stop after final result or pause
-                    if result.isFinal {
-                        self?.stopListening()
-                    }
-                }
-                
-                if let error = error {
-                    // Ignore cancellation errors
-                    let nsError = error as NSError
-                    if nsError.domain != "kAFAssistantErrorDomain" || nsError.code != 216 {
-                        self?.errorMessage = "Recognition error: \(error.localizedDescription)"
-                    }
-                    self?.stopListening()
-                }
-            }
-        }
-        
-        // Configure audio input
-        let inputNode = audioEngine.inputNode
-        let recordingFormat = inputNode.outputFormat(forBus: 0)
-        
-        inputNode.installTap(onBus: 0, bufferSize: 1024, format: recordingFormat) { [weak self] buffer, _ in
-            self?.recognitionRequest?.append(buffer)
-        }
-        
-        // Start audio engine
-        audioEngine.prepare()
-        do {
-            try audioEngine.start()
-            isListening = true
-            
-            // Auto-stop after 5 seconds of listening
-            DispatchQueue.main.asyncAfter(deadline: .now() + 5) { [weak self] in
-                if self?.isListening == true {
-                    self?.stopListening()
-                    HapticManager.shared.recordingStopped()
-                }
-            }
-        } catch {
-            errorMessage = "Failed to start audio engine"
-            stopListening()
+    }
+}
+
+private enum VoiceSearchError: LocalizedError {
+    case microphonePermissionDenied
+    case transcriptionConsentRequired
+
+    var errorDescription: String? {
+        switch self {
+        case .microphonePermissionDenied:
+            return String(localized: "Turn on microphone access in Settings to search by voice.")
+        case .transcriptionConsentRequired:
+            return String(localized: "Turn on transcription in Settings to search by voice.")
         }
     }
 }

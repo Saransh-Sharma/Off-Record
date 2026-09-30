@@ -2,12 +2,12 @@
 //  StatsView.swift
 //  OffRecord
 //
-//  Writing streaks and mood trends
+//  Insights: writing rhythm, mood charts, explainable AI insights, and the
+//  single Weekly Reflection surface for this tab.
 //
 
 import SwiftUI
 import CoreData
-import Charts
 
 struct StatsView: View {
     @Environment(\.managedObjectContext) private var viewContext
@@ -15,9 +15,9 @@ struct StatsView: View {
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @ObservedObject private var goalManager = GoalManager.shared
-    @ObservedObject private var proactiveReflection = ProactiveReflectionController.shared
     @ObservedObject private var weeklyReflection = WeeklyReflectionController.shared
     @ObservedObject private var navigationRouter = OffRecordNavigationRouter.shared
+    private let proactiveReflection = ProactiveReflectionController.shared
 
     @FetchRequest(
         sortDescriptors: [NSSortDescriptor(keyPath: \DiaryEntry.date, ascending: false)],
@@ -28,8 +28,12 @@ struct StatsView: View {
     @State private var showMilestone: Int? = nil
     @State private var showDeepDive: Bool = false
     @State private var stats: JournalStatsSnapshot = .empty
+    @State private var charts: InsightChartsSnapshot = .empty
     @State private var startedEntriesForCards: [DiaryEntry] = []
     @State private var selectedWeeklyReflection: WeeklyReflectionReport?
+    @State private var evidenceContext: InsightEvidenceContext?
+    @State private var shareInsights: [ShareableInsight] = []
+    @ScaledMetric(relativeTo: .title2) private var goalRingSize: CGFloat = 104
 
     private var isIPad: Bool { horizontalSizeClass == .regular }
     private var startedEntries: [DiaryEntry] { entries.startedEntries }
@@ -55,17 +59,25 @@ struct StatsView: View {
             ScrollView {
                 statsContent(metrics: metrics)
                     .padding(.horizontal, metrics.pageHorizontalPadding)
-                    .padding(.vertical, 16)
+                    .padding(.vertical, OffRecordSpacing.lg)
                     .frame(maxWidth: metrics.pageMaxWidth ?? .infinity)
                     .frame(maxWidth: .infinity)
             }
         }
-        .background(OffRecordColor.appBackgroundGradient)
+        .background(OffRecordAppBackground())
         .navigationTitle("Insights")
         .overlay {
             if let milestone = showMilestone {
-                milestoneOverlay(days: milestone)
+                MilestoneCelebrationView(days: milestone) {
+                    withOffRecordAnimation(OffRecordMotion.fade) {
+                        showMilestone = nil
+                    }
+                }
+                .transition(reduceMotion ? .opacity : .scale(scale: 0.94).combined(with: .opacity))
             }
+        }
+        .sheet(item: $evidenceContext) { context in
+            InsightEvidenceSheet(context: context)
         }
         .task(id: "\(entriesSignature)-\(goalManager.weeklyTarget)-\(goalManager.isEnabled)") {
             await refreshStats()
@@ -81,13 +93,19 @@ struct StatsView: View {
             openPendingWeeklyReflectionRouteIfNeeded()
         }
         .onChange(of: navigationRouter.routedWeeklyReflectionID) { _, id in
-            guard let id else { return }
-            selectedWeeklyReflection = weeklyReflection.report(id: id)
-            navigationRouter.routedWeeklyReflectionID = nil
+            guard id != nil else { return }
+            openPendingWeeklyReflectionRouteIfNeeded()
         }
     }
 
+    /// Routes can arrive before this view exists (a cold launch from a notification or link),
+    /// so both the change handlers and `onAppear` consume them.
     private func openPendingWeeklyReflectionRouteIfNeeded() {
+        if let id = navigationRouter.routedWeeklyReflectionID {
+            selectedWeeklyReflection = weeklyReflection.report(id: id)
+            navigationRouter.routedWeeklyReflectionID = nil
+            return
+        }
         guard navigationRouter.shouldOpenCurrentWeeklyReflection else { return }
         selectedWeeklyReflection = weeklyReflection.openCurrentReport(entries: weeklyReflectionRouteEntries)
         navigationRouter.shouldOpenCurrentWeeklyReflection = false
@@ -95,7 +113,7 @@ struct StatsView: View {
 
     @ViewBuilder
     private func statsContent(metrics: OffRecordAdaptiveMetrics) -> some View {
-        VStack(spacing: 20) {
+        VStack(spacing: OffRecordSpacing.xl) {
             if stats.isEmpty && startedEntriesForCards.isEmpty {
                 emptyStateCard
             } else {
@@ -104,24 +122,10 @@ struct StatsView: View {
                         columns: metrics.insightsColumns(dynamicTypeSize: dynamicTypeSize),
                         spacing: OffRecordSpacing.lg
                     ) {
-                        streakCard
-                        if goalManager.isEnabled {
-                            goalProgressCard
-                        }
-                        weekActivityCard
-                        WeeklyInsightsSection(entries: startedEntriesForCards)
-                        ProactiveWeeklyReflectionCard(entries: startedEntriesForCards)
-                        WeeklyReflectionHistorySection(entries: weeklyReflectionRouteEntries)
+                        primaryCards
                     }
                 } else {
-                    streakCard
-                    if goalManager.isEnabled {
-                        goalProgressCard
-                    }
-                    weekActivityCard
-                    WeeklyInsightsSection(entries: startedEntriesForCards)
-                    ProactiveWeeklyReflectionCard(entries: startedEntriesForCards)
-                    WeeklyReflectionHistorySection(entries: weeklyReflectionRouteEntries)
+                    primaryCards
                 }
 
                 deepDiveSection
@@ -129,20 +133,34 @@ struct StatsView: View {
         }
     }
 
+    @ViewBuilder
+    private var primaryCards: some View {
+        streakCard
+        if goalManager.isEnabled {
+            goalProgressCard
+        }
+        WeekActivityChartCard(days: charts.week)
+        MoodTrendChartCard(points: charts.moodTrend)
+        aiInsightsCard
+        WeeklyReflectionHistorySection(entries: weeklyReflectionRouteEntries)
+        WeeklyInsightsSection(entries: startedEntriesForCards, insights: shareInsights)
+    }
+
     private var deepDiveSection: some View {
         DisclosureGroup(isExpanded: $showDeepDive) {
-            VStack(spacing: 20) {
-                aiInsightsCard
-                moodTrendsCard
+            VStack(spacing: OffRecordSpacing.xl) {
+                MoodTimeHeatmapCard(snapshot: charts)
                 statsSummaryCard
-                weeklySummaryCard
             }
+            .padding(.top, OffRecordSpacing.md)
         } label: {
-            Label("Deep Dive", systemImage: "chart.bar.doc.horizontal")
+            Label("More", systemImage: "chart.bar.doc.horizontal")
                 .font(OffRecordTypography.sectionTitle)
-                .foregroundColor(OffRecordColor.textHeading)
+                .foregroundStyle(OffRecordColor.textHeading)
+                .frame(minHeight: OffRecordLayout.minimumTapTarget)
         }
         .tint(OffRecordColor.textSecondary)
+        .accessibilityIdentifier("insights.deepDive")
     }
 
     // MARK: - Empty State
@@ -165,135 +183,18 @@ struct StatsView: View {
         )
     }
 
-    // MARK: - Week Activity Card
-
-    private var weekActivityCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("This Week")
-                .font(OffRecordTypography.sectionTitle)
-                .foregroundColor(OffRecordColor.textHeading)
-
-            HStack(spacing: 8) {
-                ForEach(stats.last7Days) { day in
-                    VStack(spacing: 6) {
-                        Circle()
-                            .fill(day.hasEntry ? OffRecordColor.surfaceMint : OffRecordColor.textTertiary.opacity(0.16))
-                            .frame(width: isIPad ? 44 : 32, height: isIPad ? 44 : 32)
-                            .overlay {
-                                if day.hasEntry {
-                                    Image(systemName: "checkmark")
-                                        .font(OffRecordTypography.labelSmall)
-                                        .foregroundColor(OffRecordColor.textAqua)
-                                }
-                            }
-                        Text(day.label)
-                            .font(OffRecordTypography.metadata)
-                            .foregroundColor(OffRecordColor.textSecondary)
-                    }
-                }
-            }
-            .frame(maxWidth: .infinity)
-        }
-        .padding()
-        .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceMint)
-    }
-
-    // MARK: - Mood Trends Card
-
-    private var moodTrendsCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Mood Trends")
-                .font(OffRecordTypography.sectionTitle)
-                .foregroundColor(OffRecordColor.textHeading)
-
-            if stats.moodCounts.isEmpty {
-                Text("Record entries with moods to see trends")
-                    .font(OffRecordTypography.bodySmall)
-                    .foregroundColor(OffRecordColor.textSecondary)
-                    .frame(maxWidth: .infinity, alignment: .center)
-                    .padding(.vertical, 20)
-            } else {
-                // Mood distribution
-                HStack(spacing: 12) {
-                    ForEach(stats.moodCounts.prefix(4)) { item in
-                        VStack(spacing: 6) {
-                            MiniMoodIcon(
-                                mood: item.mood,
-                                size: 24,
-                                opacity: 0.88
-                            )
-                            Text("\(item.count)")
-                                .font(OffRecordTypography.labelMedium)
-                                .foregroundColor(OffRecordColor.textPrimary)
-                            Text(item.mood.displayName)
-                                .font(OffRecordTypography.metadata)
-                                .foregroundColor(OffRecordColor.textSecondary)
-                        }
-                        .frame(maxWidth: .infinity)
-                    }
-                }
-
-                // Mood chart (last 14 days)
-                if #available(iOS 16.0, *) {
-                    moodChart
-                        .frame(height: 120)
-                        .padding(.top, 8)
-                }
-            }
-        }
-        .padding()
-        .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceMint)
-    }
-
-    @available(iOS 16.0, *)
-    private var moodChart: some View {
-        Chart {
-            ForEach(stats.moodChartData) { item in
-                if let mood = item.mood {
-                    PointMark(
-                        x: .value("Date", item.date, unit: .day),
-                        y: .value("Mood", mood.moodValue)
-                    )
-                    .foregroundStyle(mood.color)
-                    .symbolSize(100)
-                }
-            }
-        }
-        .chartYScale(domain: 1...5)
-        .chartYAxis {
-            AxisMarks(values: [1, 3, 5]) { value in
-                AxisValueLabel {
-                    if let v = value.as(Int.self) {
-                        MiniMoodIcon(
-                            mood: chartAxisMood(for: v),
-                            size: 14,
-                            opacity: 0.78,
-                            accessibilityLabel: "\(chartAxisMood(for: v).displayName) mood"
-                        )
-                    }
-                }
-            }
-        }
-        .chartXAxis {
-            AxisMarks(values: .stride(by: .day, count: 3)) { value in
-                AxisValueLabel(format: .dateTime.day())
-            }
-        }
-    }
-
     // MARK: - Stats Summary Card
 
     private var statsSummaryCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("Writing Stats")
-                .font(OffRecordTypography.sectionTitle)
-                .foregroundColor(OffRecordColor.textHeading)
+        let columnCount = dynamicTypeSize.isAccessibilitySize ? 1 : (isIPad ? 4 : 2)
+        return VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
+            InsightCardHeader(title: String(localized: "Writing", comment: "Insights card title for word and entry counts"), systemImage: "text.word.spacing", tint: OffRecordColor.textSky)
 
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: isIPad ? 4 : 2), spacing: 16) {
-                StatItem(title: "Total Words", value: "\(stats.totalWords)", icon: "text.word.spacing", color: OffRecordColor.textSky)
-                StatItem(title: "Avg Words/Entry", value: "\(stats.avgWordsPerEntry)", icon: "chart.bar.fill", color: OffRecordColor.textMint)
-                StatItem(title: "Starred", value: "\(stats.starredCount)", icon: "star.fill", color: OffRecordColor.textYellow)
-                StatItem(title: "With Audio", value: "\(stats.audioCount)", icon: "waveform", color: OffRecordColor.textAqua)
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: OffRecordSpacing.md), count: columnCount), spacing: OffRecordSpacing.md) {
+                StatItem(title: String(localized: "Words", comment: "Stat label: total words written"), value: "\(stats.totalWords)", icon: "text.word.spacing", color: OffRecordColor.textSky)
+                StatItem(title: String(localized: "Words per Entry"), value: "\(stats.avgWordsPerEntry)", icon: "chart.bar.fill", color: OffRecordColor.textMint)
+                StatItem(title: String(localized: "Starred", comment: "Stat label: number of starred entries"), value: "\(stats.starredCount)", icon: "star.fill", color: OffRecordColor.textYellow)
+                StatItem(title: String(localized: "With Recordings"), value: "\(stats.audioCount)", icon: "waveform", color: OffRecordColor.textAqua)
             }
         }
         .padding()
@@ -302,187 +203,131 @@ struct StatsView: View {
 
     // MARK: - AI Insights Card
 
+    @ViewBuilder
     private var aiInsightsCard: some View {
-        Group {
-            if !stats.insights.isEmpty {
-                VStack(alignment: .leading, spacing: 12) {
-                    HStack {
-                        Image(systemName: "sparkles")
-                            .foregroundColor(OffRecordColor.textLavender)
-                        Text("AI Insights")
-                            .font(OffRecordTypography.sectionTitle)
-                            .foregroundColor(OffRecordColor.textHeading)
-                    }
+        if !stats.insights.isEmpty {
+            VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
+                InsightCardHeader(title: String(localized: "From Friday"), systemImage: "sparkles", tint: OffRecordColor.textLavender)
 
-                    ForEach(stats.insights.prefix(3)) { insight in
-                        HStack(alignment: .top, spacing: 12) {
-                            Image(systemName: insight.icon)
-                                .font(OffRecordTypography.titleSmall)
-                                .foregroundColor(colorFromName(insight.colorName))
-                                .frame(width: 30)
-
-                            VStack(alignment: .leading, spacing: 4) {
-                                Text(insight.title)
-                                    .font(OffRecordTypography.labelMedium)
-                                    .foregroundColor(OffRecordColor.textPrimary)
-                                Text(insight.description)
-                                    .font(OffRecordTypography.metadata)
-                                    .foregroundColor(OffRecordColor.textSecondary)
-                            }
-                        }
-                        .padding(.vertical, 4)
+                ForEach(Array(stats.insights.prefix(4).enumerated()), id: \.element.id) { index, insight in
+                    if index > 0 {
+                        Divider().overlay(OffRecordColor.hairline)
                     }
+                    insightRow(insight)
                 }
-                .padding()
-                .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceLavender)
             }
+            .padding()
+            .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceLavender)
+            .accessibilityElement(children: .contain)
+            .accessibilityIdentifier("insights.aiInsights")
         }
     }
 
-    // MARK: - Weekly Summary Card
+    private func insightRow(_ insight: JournalInsightSummary) -> some View {
+        HStack(alignment: .top, spacing: OffRecordSpacing.md) {
+            OffRecordIconBubble(systemImage: insight.icon, tint: insightTint(insight.colorName), size: 36, iconSize: 15)
 
-    private var weeklySummaryCard: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Image(systemName: "calendar")
-                    .foregroundColor(OffRecordColor.textSky)
-                Text("Weekly reflection")
-                    .font(OffRecordTypography.sectionTitle)
-                    .foregroundColor(OffRecordColor.textHeading)
+            VStack(alignment: .leading, spacing: OffRecordSpacing.xs) {
+                Text(insight.title)
+                    .font(OffRecordTypography.labelMedium)
+                    .foregroundStyle(OffRecordColor.textPrimary)
+                Text(insight.description)
+                    .font(OffRecordTypography.metadata)
+                    .foregroundStyle(OffRecordColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if !insight.supportingEntryIDs.isEmpty {
+                    InsightWhyButton {
+                        evidenceContext = InsightEvidenceContext(
+                            id: insight.id,
+                            title: insight.title,
+                            summary: insight.description,
+                            rationale: insight.rationale,
+                            entries: startedEntriesForCards.resolvingInsightEvidence(insight.supportingEntryIDs)
+                        )
+                    }
+                    .accessibilityIdentifier("insights.why.\(insight.id)")
+                }
             }
-
-            Text(stats.weeklySummary)
-                .font(OffRecordTypography.bodySmall)
-                .foregroundColor(OffRecordColor.textSecondary)
+            Spacer(minLength: 0)
         }
-        .padding()
-        .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceWarm)
+        .padding(.vertical, OffRecordSpacing.xs)
     }
 
     // MARK: - Goal Progress Card
 
     private var goalProgressCard: some View {
-        VStack(spacing: 16) {
+        let percent = Int((stats.goal.progress * 100).rounded())
+        let reached = stats.goal.progress >= 1.0
+        return VStack(alignment: .leading, spacing: OffRecordSpacing.lg) {
             HStack {
-                Image(systemName: "target")
-                    .font(OffRecordTypography.titleMedium)
-                    .foregroundColor(OffRecordColor.textAqua)
-                Text("Weekly Goal")
-                    .font(OffRecordTypography.sectionTitle)
-                    .foregroundColor(OffRecordColor.textHeading)
-                Spacer()
+                InsightCardHeader(title: String(localized: "Weekly Goal"), systemImage: "target", tint: OffRecordColor.textAqua)
                 Text("\(stats.goal.count)/\(stats.goal.weeklyTarget)")
-                    .font(OffRecordTypography.labelMedium)
-                    .foregroundColor(OffRecordColor.textAqua)
+                    .font(OffRecordTypography.numberSmall)
+                    .foregroundStyle(OffRecordColor.textAqua)
+                    .accessibilityHidden(true)
             }
 
-            ZStack {
-                Circle()
-                    .stroke(OffRecordColor.borderSoft, lineWidth: 8)
-                Circle()
-                    .trim(from: 0, to: stats.goal.progress)
-                    .stroke(OffRecordColor.brandAqua, style: StrokeStyle(lineWidth: 8, lineCap: .round))
-                    .rotationEffect(.degrees(-90))
-                    .animation(reduceMotion ? .none : .spring(response: 0.6), value: stats.goal.progress)
+            HStack(spacing: OffRecordSpacing.xl) {
+                ZStack {
+                    Circle()
+                        .stroke(OffRecordColor.borderSoft, lineWidth: 9)
+                    Circle()
+                        .trim(from: 0, to: stats.goal.progress)
+                        .stroke(OffRecordColor.brandAqua, style: StrokeStyle(lineWidth: 9, lineCap: .round))
+                        .rotationEffect(.degrees(-90))
+                        .offRecordAnimation(OffRecordMotion.gentle, value: stats.goal.progress)
 
-                VStack(spacing: 2) {
-                    Text("\(Int(stats.goal.progress * 100))%")
-                        .font(OffRecordTypography.titleMedium)
-                        .foregroundColor(OffRecordColor.textAqua)
-                    Text("\(stats.goal.daysRemaining) days left")
-                        .font(OffRecordTypography.metadata)
-                        .foregroundColor(OffRecordColor.textOnTinted)
+                    Text("\(percent)%")
+                        .font(OffRecordTypography.numberSmall)
+                        .foregroundStyle(OffRecordColor.textAqua)
+                        .minimumScaleFactor(0.7)
+                        .lineLimit(1)
+                        .padding(OffRecordSpacing.md)
                 }
-            }
-            .frame(width: 100, height: 100)
-            .accessibilityElement(children: .combine)
-            .accessibilityLabel("Weekly goal progress: \(Int(stats.goal.progress * 100)) percent, \(stats.goal.count) of \(stats.goal.weeklyTarget) entries, \(stats.goal.daysRemaining) days remaining")
+                .frame(width: goalRingSize, height: goalRingSize)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Weekly Goal")
+                .accessibilityValue(goalAccessibilityValue(percent: percent, reached: reached))
+                .accessibilityIdentifier("insights.goal.ring")
 
-            if stats.goal.progress >= 1.0 {
-                Text("Goal reached! Great work this week.")
-                    .font(OffRecordTypography.metadata)
-                    .foregroundColor(OffRecordColor.textSage)
+                VStack(alignment: .leading, spacing: OffRecordSpacing.xs) {
+                    Text(reached ? String(localized: "Goal Reached") : String(localized: "\(stats.goal.count) of \(stats.goal.weeklyTarget) days"))
+                        .font(OffRecordTypography.labelMedium)
+                        .foregroundStyle(reached ? OffRecordColor.textSage : OffRecordColor.textPrimary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    if !reached {
+                        Text("\(max(0, stats.goal.weeklyTarget - stats.goal.count)) to go")
+                            .font(OffRecordTypography.metadata)
+                            .foregroundStyle(OffRecordColor.textSecondary)
+                            .fixedSize(horizontal: false, vertical: true)
+                    }
+                }
+                .accessibilityHidden(true)
+                Spacer(minLength: 0)
             }
         }
         .padding()
         .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceMint)
     }
 
-    // MARK: - Milestone Overlay
-
-    private func milestoneOverlay(days: Int) -> some View {
-        ZStack {
-            OffRecordColor.textBrand.opacity(0.42)
-                .ignoresSafeArea()
-                .onTapGesture {
-                    withAnimation {
-                        showMilestone = nil
-                    }
-                }
-
-            VStack(spacing: 20) {
-                Image(systemName: "trophy.fill")
-                    .font(.system(size: 60))
-                    .foregroundColor(OffRecordColor.textYellow)
-
-                Text("Milestone!")
-                    .font(OffRecordTypography.screenTitle)
-                    .foregroundColor(OffRecordColor.textHeading)
-
-                Text("\(days)-Day Streak")
-                    .font(OffRecordTypography.titleMedium)
-                    .foregroundColor(OffRecordColor.textPeach)
-
-                Text("You've journaled for \(days) days in a row. That's real momentum.")
-                    .font(OffRecordTypography.bodySmall)
-                    .foregroundColor(OffRecordColor.textSecondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal)
-
-                Button {
-                    withAnimation {
-                        showMilestone = nil
-                    }
-                } label: {
-                    Text("Continue")
-                        .offRecordPillButton()
-                }
-                .accessibilityLabel("Dismiss milestone celebration")
-            }
-            .padding(32)
-            .offRecordGlassBar(cornerRadius: 24, fallbackFill: OffRecordColor.surfaceWarm)
-            .shadow(radius: 20)
-            .padding(40)
-            .transition(.scale.combined(with: .opacity))
-            .accessibilityAction(.escape) {
-                withAnimation { showMilestone = nil }
-            }
-        }
+    private func goalAccessibilityValue(percent: Int, reached: Bool) -> String {
+        let count = stats.goal.count
+        let target = stats.goal.weeklyTarget
+        if reached { return String(localized: "\(percent) percent, \(count) of \(target) days, goal reached") }
+        let remaining = max(0, target - count)
+        return String(localized: "\(percent) percent, \(count) of \(target) days, \(remaining) to go")
     }
 
-    private func colorFromName(_ name: String) -> Color {
+    private func insightTint(_ name: String) -> Color {
         switch name {
-        case "orange": return OffRecordColor.brandPeach
-        case "green": return OffRecordColor.brandMint
-        case "blue": return OffRecordColor.brandSky
-        case "yellow": return OffRecordColor.brandYellow
-        case "pink": return OffRecordColor.brandBlush
-        case "purple": return OffRecordColor.brandLavenderDark
-        case "indigo": return OffRecordColor.brandLavender
+        case "orange": return OffRecordColor.textPeach
+        case "green": return OffRecordColor.textMint
+        case "blue": return OffRecordColor.textSky
+        case "yellow": return OffRecordColor.textYellow
+        case "pink": return OffRecordColor.textBlush
+        case "purple", "indigo": return OffRecordColor.textLavender
         default: return OffRecordColor.textSecondary
-        }
-    }
-
-    private func chartAxisMood(for value: Int) -> Mood {
-        switch value {
-        case 1:
-            return .sad
-        case 3:
-            return .none
-        case 5:
-            return .happy
-        default:
-            return .none
         }
     }
 
@@ -491,9 +336,10 @@ struct StatsView: View {
         let token = PerformanceSignposts.begin("StatsViewRefresh")
         let currentEntries = startedEntries
         let snapshots = currentEntries.journalSnapshots
+        let now = Date()
         let nextStats = await JournalAnalyticsWorker.shared.makeStats(
             from: snapshots,
-            now: Date(),
+            now: now,
             weeklyTarget: goalManager.weeklyTarget,
             goalEnabled: goalManager.isEnabled
         )
@@ -505,16 +351,14 @@ struct StatsView: View {
 
         startedEntriesForCards = currentEntries
         stats = nextStats
+        charts = InsightChartsSnapshot.make(from: snapshots, now: now)
+        shareInsights = ShareableInsightGenerator.generateWeeklyInsights(from: currentEntries)
         proactiveReflection.refreshIfNeeded(entries: currentEntries)
         weeklyReflection.refreshIfNeeded(entries: currentEntries)
         if let milestone = goalManager.checkMilestone(currentStreak: nextStats.currentStreak) {
-            HapticManager.shared.streakMilestone()
-            if reduceMotion {
+            // MilestoneCelebrationView plays the success haptic itself.
+            withOffRecordAnimation(OffRecordMotion.bouncy) {
                 showMilestone = milestone
-            } else {
-                withAnimation(.spring(response: 0.5)) {
-                    showMilestone = milestone
-                }
             }
         }
         PerformanceSignposts.end(token)
@@ -530,38 +374,24 @@ struct StatItem: View {
     let color: Color
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Image(systemName: icon)
-                    .foregroundColor(color)
-                Spacer()
-            }
+        VStack(alignment: .leading, spacing: OffRecordSpacing.sm) {
+            Image(systemName: icon)
+                .foregroundStyle(color)
+                .accessibilityHidden(true)
             Text(value)
                 .font(OffRecordTypography.numberSmall)
-                .foregroundColor(OffRecordColor.textPrimary)
+                .foregroundStyle(OffRecordColor.textPrimary)
             Text(title)
                 .font(OffRecordTypography.metadata)
-                .foregroundColor(OffRecordColor.textSecondary)
+                .foregroundStyle(OffRecordColor.textSecondary)
+                .fixedSize(horizontal: false, vertical: true)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding()
         .offRecordContentCard(cornerRadius: OffRecordRadius.md, fill: OffRecordColor.surfacePrimary)
-        .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(title): \(value)")
-    }
-}
-
-// MARK: - Mood Extension for Chart
-
-extension Mood {
-    var moodValue: Int {
-        switch self {
-        case .happy, .excited, .grateful: return 5
-        case .calm: return 4
-        case .tired: return 3
-        case .anxious: return 2
-        case .sad, .angry: return 1
-        case .none: return 3
-        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(title)
+        .accessibilityValue(value)
     }
 }
 

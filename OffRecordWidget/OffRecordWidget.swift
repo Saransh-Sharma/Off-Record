@@ -2,754 +2,115 @@
 //  OffRecordWidget.swift
 //  OffRecordWidget
 //
-//  Voice diary widgets for quick access, streak tracking, and mood display.
+//  Home Screen and Lock Screen widgets, the Record control, and the capture
+//  Live Activity. Widgets read the metadata-only snapshot the app writes to
+//  the App Group (see OffRecordSystemShared/WidgetSnapshot.swift); they never
+//  open the journal store and never show journal text.
 //
 
-import WidgetKit
+import AppIntents
 import SwiftUI
-import CoreData
+import WidgetKit
 import os.log
 
-private let logger = Logger(subsystem: "com.singularity.offrecord.widget", category: "OffRecordWidget")
+let widgetLogger = Logger(subsystem: "com.singularity.offrecord.widget", category: "OffRecordWidget")
 
-// MARK: - Shared Data Fetcher
+enum OffRecordWidgetRoute {
+    static let today = URL(string: "offrecord://today")
+    static let record = URL(string: "offrecord://record")
+    static let timeline = URL(string: "offrecord://timeline")
+    static let insights = URL(string: "offrecord://weekly-reflection/current")
+}
 
-struct WidgetDataFetcher {
-    static let shared = WidgetDataFetcher()
-    let persistenceController = WidgetPersistenceController.shared
+// MARK: - Timeline
 
-    private func isStartedEntry(_ entry: NSManagedObject) -> Bool {
-        let text = ((entry.value(forKey: "text") as? String) ?? "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        let wordCount = text.split { $0.isWhitespace || $0.isNewline }.count
-        if wordCount > 0 { return true }
+struct WidgetDay: Hashable {
+    let date: Date
+    let hasEntry: Bool
+    let mood: Mood?
+}
 
-        let audioFileName = ((entry.value(forKey: "audioFileName") as? String) ?? "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        let duration = entry.value(forKey: "duration") as? Double ?? 0
-        if !audioFileName.isEmpty || duration > 0 { return true }
+struct JournalWidgetEntry: TimelineEntry {
+    let date: Date
+    let snapshot: WidgetSnapshot
 
-        let mood = ((entry.value(forKey: "mood") as? String) ?? "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        if !mood.isEmpty { return true }
+    var hasEntryToday: Bool { snapshot.hasEntry(on: date) }
+    var streak: Int { snapshot.streak(asOf: date) }
+    var totalEntries: Int { snapshot.totalEntries }
+    var todayWordCount: Int { snapshot.todayWordCount(asOf: date) }
+    var todayHasVoice: Bool { snapshot.todayHasVoice(asOf: date) }
 
-        if let photos = entry.value(forKey: "photos") as? NSSet, photos.count > 0 {
-            return true
-        }
-
-        let photoFileNames = ((entry.value(forKey: "photoFileNames") as? String) ?? "")
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-        return !photoFileNames.isEmpty
+    var todayMood: Mood? {
+        guard let raw = snapshot.mood(on: date), let mood = Mood(rawValue: raw), mood != .none else { return nil }
+        return mood
     }
 
-    private func startedEntries(from entries: [NSManagedObject]) -> [NSManagedObject] {
-        entries.filter(isStartedEntry)
-    }
-    
-    /// Fetch today's entry
-    func fetchTodayEntry() -> (text: String?, mood: String?, hasEntry: Bool) {
-        let context = persistenceController.container.viewContext
-        let request: NSFetchRequest<NSManagedObject> = NSFetchRequest(entityName: "DiaryEntry")
-        
+    /// The last seven days, oldest first, with whether each had an entry.
+    var lastSevenDays: [WidgetDay] {
         let calendar = Calendar.current
-        let startOfDay = calendar.startOfDay(for: Date())
-        let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
-        
-        request.predicate = NSPredicate(format: "date >= %@ AND date < %@", startOfDay as NSDate, endOfDay as NSDate)
-        request.sortDescriptors = [NSSortDescriptor(key: "updatedAt", ascending: false)]
-        
-        do {
-            let results = try context.fetch(request)
-            if let entry = startedEntries(from: results).first {
-                let text = entry.value(forKey: "text") as? String
-                let moodString = entry.value(forKey: "mood") as? String
-                return (text, moodString, true)
-            }
-        } catch {
-            logger.error("Widget fetch error: \(error.localizedDescription)")
-        }
-        
-        return (nil, nil, false)
-    }
-    
-    /// Calculate current streak
-    func calculateStreak() -> Int {
-        let context = persistenceController.container.viewContext
-        let request: NSFetchRequest<NSManagedObject> = NSFetchRequest(entityName: "DiaryEntry")
-        request.sortDescriptors = [NSSortDescriptor(key: "date", ascending: false)]
-        
-        do {
-            let entries = startedEntries(from: try context.fetch(request))
-            let calendar = Calendar.current
-            var streak = 0
-            var checkDate = calendar.startOfDay(for: Date())
-            
-            // Check if today has an entry
-            let todayHasEntry = entries.contains { entry in
-                guard let entryDate = entry.value(forKey: "date") as? Date else { return false }
-                return calendar.isDate(entryDate, inSameDayAs: checkDate)
-            }
-            
-            if !todayHasEntry {
-                // Start checking from yesterday
-                checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate) ?? checkDate
-            }
-            
-            // Count consecutive days
-            while true {
-                let hasEntry = entries.contains { entry in
-                    guard let entryDate = entry.value(forKey: "date") as? Date else { return false }
-                    return calendar.isDate(entryDate, inSameDayAs: checkDate)
-                }
-                
-                if hasEntry {
-                    streak += 1
-                    checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate) ?? checkDate
-                } else {
-                    break
-                }
-            }
-            
-            return streak
-        } catch {
-            return 0
+        let today = calendar.startOfDay(for: date)
+        return (0..<7).reversed().compactMap { offset in
+            guard let day = calendar.date(byAdding: .day, value: -offset, to: today) else { return nil }
+            let mood = snapshot.mood(on: day).flatMap(Mood.init(rawValue:))
+            return WidgetDay(date: day, hasEntry: snapshot.hasEntry(on: day), mood: mood == Mood.none ? nil : mood)
         }
     }
-    
-    /// Get mood distribution for the week
-    func getWeekMoods() -> [String: Int] {
-        let context = persistenceController.container.viewContext
-        let request: NSFetchRequest<NSManagedObject> = NSFetchRequest(entityName: "DiaryEntry")
-        
+
+    static let sample = JournalWidgetEntry(date: Date(), snapshot: .sample)
+}
+
+struct JournalSnapshotProvider: TimelineProvider {
+    func placeholder(in context: Context) -> JournalWidgetEntry {
+        .sample
+    }
+
+    func getSnapshot(in context: Context, completion: @escaping (JournalWidgetEntry) -> Void) {
+        if context.isPreview {
+            completion(WidgetSnapshotStore.load().map { JournalWidgetEntry(date: Date(), snapshot: $0) } ?? .sample)
+        } else {
+            completion(JournalWidgetEntry(date: Date(), snapshot: WidgetSnapshotStore.load() ?? .empty))
+        }
+    }
+
+    func getTimeline(in context: Context, completion: @escaping (Timeline<JournalWidgetEntry>) -> Void) {
+        let snapshot = WidgetSnapshotStore.load() ?? .empty
+        let calendar = Calendar.current
+        let now = Date()
+        var entries = [JournalWidgetEntry(date: now, snapshot: snapshot)]
+        // Streaks and "today" flip at midnight; render that change without waiting for the app.
+        let tomorrow = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: now))
+        if let tomorrow {
+            entries.append(JournalWidgetEntry(date: tomorrow, snapshot: snapshot))
+        }
+        let refresh = tomorrow.flatMap { calendar.date(byAdding: .day, value: 1, to: $0) } ?? now.addingTimeInterval(6 * 3600)
+        completion(Timeline(entries: entries, policy: .after(refresh)))
+    }
+}
+
+extension WidgetSnapshot {
+    /// Deterministic sample data for placeholders, previews, and the widget gallery.
+    static let sample: WidgetSnapshot = {
         let calendar = Calendar.current
         let today = calendar.startOfDay(for: Date())
-        let weekAgo = calendar.date(byAdding: .day, value: -7, to: today)!
-        
-        request.predicate = NSPredicate(format: "date >= %@", weekAgo as NSDate)
-        
-        do {
-            let entries = startedEntries(from: try context.fetch(request))
-            var moodCounts: [String: Int] = [:]
-            
-            for entry in entries {
-                if let mood = entry.value(forKey: "mood") as? String, !mood.isEmpty {
-                    moodCounts[mood, default: 0] += 1
-                }
-            }
-            
-            return moodCounts
-        } catch {
-            return [:]
+        let moods = ["calm", "happy", "grateful", "", "tired", "calm", "excited", "anxious", "happy", "sad", "calm", "grateful"]
+        var days: [String: String] = [:]
+        for offset in 0..<260 {
+            // Skip a few days so the sample shows gaps.
+            if offset > 11 && (offset % 7 == 3 || offset % 11 == 5) { continue }
+            guard let day = calendar.date(byAdding: .day, value: -offset, to: today) else { continue }
+            days[WidgetDayKey.key(for: day, calendar: calendar)] = moods[(offset * 7 + offset / 5) % moods.count]
         }
-    }
-    
-    /// Get total entry count
-    func getTotalEntries() -> Int {
-        let context = persistenceController.container.viewContext
-        let request: NSFetchRequest<NSManagedObject> = NSFetchRequest(entityName: "DiaryEntry")
-        
-        do {
-            return startedEntries(from: try context.fetch(request)).count
-        } catch {
-            return 0
-        }
-    }
+        return WidgetSnapshot(
+            days: days,
+            totalEntries: days.count,
+            todayKey: WidgetDayKey.key(for: today, calendar: calendar),
+            todayWordCount: 142,
+            todayHasVoice: true
+        )
+    }()
 }
 
-// MARK: - Main Widget Provider
-
-struct Provider: TimelineProvider {
-    func placeholder(in context: Context) -> DiaryWidgetEntry {
-        DiaryWidgetEntry(date: Date(), text: "Your thoughts from today...", mood: nil, hasEntry: true, streak: 5, totalEntries: 42)
-    }
-
-    func getSnapshot(in context: Context, completion: @escaping (DiaryWidgetEntry) -> Void) {
-        let data = WidgetDataFetcher.shared.fetchTodayEntry()
-        let streak = WidgetDataFetcher.shared.calculateStreak()
-        let total = WidgetDataFetcher.shared.getTotalEntries()
-        let entry = DiaryWidgetEntry(date: Date(), text: data.text, mood: data.mood, hasEntry: data.hasEntry, streak: streak, totalEntries: total)
-        completion(entry)
-    }
-
-    func getTimeline(in context: Context, completion: @escaping (Timeline<DiaryWidgetEntry>) -> Void) {
-        let data = WidgetDataFetcher.shared.fetchTodayEntry()
-        let streak = WidgetDataFetcher.shared.calculateStreak()
-        let total = WidgetDataFetcher.shared.getTotalEntries()
-        let entry = DiaryWidgetEntry(date: Date(), text: data.text, mood: data.mood, hasEntry: data.hasEntry, streak: streak, totalEntries: total)
-
-        // Refresh at midnight or in 30 minutes
-        let midnight = Calendar.current.startOfDay(for: Date()).addingTimeInterval(86400)
-        let thirtyMinutes = Date().addingTimeInterval(1800)
-        let nextUpdate = min(midnight, thirtyMinutes)
-
-        let timeline = Timeline(entries: [entry], policy: .after(nextUpdate))
-        completion(timeline)
-    }
-}
-
-// MARK: - Streak Widget Provider
-
-struct StreakProvider: TimelineProvider {
-    func placeholder(in context: Context) -> StreakWidgetEntry {
-        StreakWidgetEntry(date: Date(), streak: 7, hasEntryToday: true, totalEntries: 42)
-    }
-
-    func getSnapshot(in context: Context, completion: @escaping (StreakWidgetEntry) -> Void) {
-        let streak = WidgetDataFetcher.shared.calculateStreak()
-        let today = WidgetDataFetcher.shared.fetchTodayEntry()
-        let total = WidgetDataFetcher.shared.getTotalEntries()
-        completion(StreakWidgetEntry(date: Date(), streak: streak, hasEntryToday: today.hasEntry, totalEntries: total))
-    }
-
-    func getTimeline(in context: Context, completion: @escaping (Timeline<StreakWidgetEntry>) -> Void) {
-        let streak = WidgetDataFetcher.shared.calculateStreak()
-        let today = WidgetDataFetcher.shared.fetchTodayEntry()
-        let total = WidgetDataFetcher.shared.getTotalEntries()
-        let entry = StreakWidgetEntry(date: Date(), streak: streak, hasEntryToday: today.hasEntry, totalEntries: total)
-
-        let midnight = Calendar.current.startOfDay(for: Date()).addingTimeInterval(86400)
-        let timeline = Timeline(entries: [entry], policy: .after(midnight))
-        completion(timeline)
-    }
-}
-
-// MARK: - Mood Widget Provider
-
-struct MoodProvider: TimelineProvider {
-    func placeholder(in context: Context) -> MoodWidgetEntry {
-        MoodWidgetEntry(date: Date(), todayMood: "happy", weekMoods: ["happy": 3, "calm": 2, "grateful": 1])
-    }
-
-    func getSnapshot(in context: Context, completion: @escaping (MoodWidgetEntry) -> Void) {
-        let today = WidgetDataFetcher.shared.fetchTodayEntry()
-        let weekMoods = WidgetDataFetcher.shared.getWeekMoods()
-        completion(MoodWidgetEntry(date: Date(), todayMood: today.mood, weekMoods: weekMoods))
-    }
-
-    func getTimeline(in context: Context, completion: @escaping (Timeline<MoodWidgetEntry>) -> Void) {
-        let today = WidgetDataFetcher.shared.fetchTodayEntry()
-        let weekMoods = WidgetDataFetcher.shared.getWeekMoods()
-        let entry = MoodWidgetEntry(date: Date(), todayMood: today.mood, weekMoods: weekMoods)
-
-        let thirtyMinutes = Date().addingTimeInterval(1800)
-        let timeline = Timeline(entries: [entry], policy: .after(thirtyMinutes))
-        completion(timeline)
-    }
-}
-
-// MARK: - Widget Entries
-
-struct DiaryWidgetEntry: TimelineEntry {
-    let date: Date
-    let text: String?
-    let mood: String?
-    let hasEntry: Bool
-    let streak: Int
-    let totalEntries: Int
-}
-
-struct StreakWidgetEntry: TimelineEntry {
-    let date: Date
-    let streak: Int
-    let hasEntryToday: Bool
-    let totalEntries: Int
-}
-
-struct MoodWidgetEntry: TimelineEntry {
-    let date: Date
-    let todayMood: String?
-    let weekMoods: [String: Int]
-}
-
-// For backward compatibility
-typealias DiaryEntryWidget = DiaryWidgetEntry
-
-// MARK: - Widget Views
-
-struct OffRecordWidgetEntryView: View {
-    var entry: Provider.Entry
-    @Environment(\.widgetFamily) var family
-
-    var body: some View {
-        switch family {
-        case .systemSmall:
-            SmallWidgetView(entry: entry)
-        case .systemMedium:
-            MediumWidgetView(entry: entry)
-        case .accessoryCircular:
-            AccessoryCircularView(entry: entry)
-        case .accessoryRectangular:
-            AccessoryRectangularView(entry: entry)
-        default:
-            SmallWidgetView(entry: entry)
-        }
-    }
-}
-
-struct SmallWidgetView: View {
-    let entry: DiaryEntryWidget
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            HStack {
-                Image(systemName: "mic.fill")
-                    .font(OffRecordWidgetTypography.metadata)
-                    .foregroundColor(OffRecordColor.textBrand)
-                Text(formattedDate)
-                    .font(OffRecordWidgetTypography.metadata)
-                    .foregroundColor(OffRecordColor.textSecondary)
-                Spacer()
-                if let moodString = entry.mood, let mood = Mood(rawValue: moodString), mood != .none {
-                    Image(systemName: mood.icon)
-                        .font(OffRecordWidgetTypography.metadata)
-                        .foregroundColor(mood.color)
-                }
-            }
-
-            if entry.hasEntry, let text = entry.text, !text.isEmpty {
-                Text(text)
-                    .font(OffRecordWidgetTypography.metadata)
-                    .lineLimit(4)
-                    .foregroundColor(OffRecordColor.textPrimary)
-            } else {
-                VStack(spacing: 4) {
-                    Image(systemName: "plus.circle.fill")
-                        .font(OffRecordWidgetTypography.titleMedium)
-                        .foregroundColor(OffRecordColor.textBrand)
-                    Text("Tap to record")
-                        .font(OffRecordWidgetTypography.metadata)
-                        .foregroundColor(OffRecordColor.textSecondary)
-                }
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-
-            Spacer()
-        }
-        .padding()
-        .offRecordWidgetBackground()
-    }
-
-    private var formattedDate: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEE, MMM d"
-        return formatter.string(from: entry.date)
-    }
-}
-
-struct MediumWidgetView: View {
-    let entry: DiaryEntryWidget
-
-    var body: some View {
-        HStack(spacing: 12) {
-            // Left side - Entry preview
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text("Today")
-                        .font(OffRecordWidgetTypography.cardTitle)
-                        .foregroundColor(OffRecordColor.textPrimary)
-                    Spacer()
-                    if let moodString = entry.mood, let mood = Mood(rawValue: moodString), mood != .none {
-                        HStack(spacing: 4) {
-                            Image(systemName: mood.icon)
-                            Text(mood.displayName)
-                        }
-                        .font(OffRecordWidgetTypography.metadata)
-                        .foregroundColor(mood.readableColor)
-                    }
-                }
-
-                if entry.hasEntry, let text = entry.text, !text.isEmpty {
-                    Text(text)
-                        .font(OffRecordWidgetTypography.bodySmall)
-                        .lineLimit(3)
-                        .foregroundColor(OffRecordColor.textPrimary)
-                } else {
-                    Text("No entry yet")
-                        .font(OffRecordWidgetTypography.bodySmall)
-                        .foregroundColor(OffRecordColor.textSecondary)
-                        .italic()
-                }
-
-                Spacer()
-
-                Text(formattedDate)
-                    .font(OffRecordWidgetTypography.metadata)
-                    .foregroundColor(OffRecordColor.textSecondary)
-            }
-
-            Divider()
-
-            // Right side - Quick action
-            VStack(spacing: 8) {
-                Image(systemName: "mic.fill")
-                    .font(OffRecordWidgetTypography.titleLarge)
-                    .foregroundColor(OffRecordColor.textBrand)
-                Text("Record")
-                    .font(OffRecordWidgetTypography.metadata)
-                    .foregroundColor(OffRecordColor.textSecondary)
-            }
-            .frame(width: 60)
-        }
-        .padding()
-        .offRecordWidgetBackground()
-    }
-
-    private var formattedDate: String {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE, MMMM d"
-        return formatter.string(from: entry.date)
-    }
-}
-
-struct AccessoryCircularView: View {
-    let entry: DiaryEntryWidget
-
-    var body: some View {
-        ZStack {
-            AccessoryWidgetBackground()
-            Image(systemName: entry.hasEntry ? "checkmark.circle.fill" : "mic.fill")
-                .font(OffRecordWidgetTypography.titleMedium)
-        }
-    }
-}
-
-struct AccessoryRectangularView: View {
-    let entry: DiaryEntryWidget
-
-    var body: some View {
-        HStack {
-            Image(systemName: "mic.fill")
-                .font(OffRecordWidgetTypography.bodySmall)
-            VStack(alignment: .leading) {
-                Text("OffRecord AI Journal")
-                    .font(OffRecordWidgetTypography.cardTitle)
-                if entry.hasEntry {
-                    Text("Entry recorded")
-                        .font(OffRecordWidgetTypography.metadata)
-                } else {
-                    Text("Tap to record")
-                        .font(OffRecordWidgetTypography.metadata)
-                }
-            }
-        }
-    }
-}
-
-// MARK: - Streak Widget Views
-
-struct StreakWidgetView: View {
-    let entry: StreakWidgetEntry
-    @Environment(\.widgetFamily) var family
-    
-    var body: some View {
-        switch family {
-        case .systemSmall:
-            SmallStreakView(entry: entry)
-        case .accessoryCircular:
-            CircularStreakView(entry: entry)
-        default:
-            SmallStreakView(entry: entry)
-        }
-    }
-}
-
-struct SmallStreakView: View {
-    let entry: StreakWidgetEntry
-    
-    var body: some View {
-        VStack(spacing: 8) {
-            // Streak flame
-            ZStack {
-                Circle()
-                    .fill(streakColor.opacity(0.2))
-                    .frame(width: 60, height: 60)
-                
-                Image(systemName: "flame.fill")
-                    .font(.system(size: 28))
-                    .foregroundColor(streakColor)
-            }
-            
-            // Streak count
-            Text("\(entry.streak)")
-                .font(OffRecordWidgetTypography.numberLarge)
-                .foregroundColor(OffRecordColor.textPrimary)
-            
-            Text(entry.streak == 1 ? "day streak" : "day streak")
-                .font(OffRecordWidgetTypography.metadata)
-                .foregroundColor(OffRecordColor.textSecondary)
-            
-            // Today status
-            HStack(spacing: 4) {
-                Image(systemName: entry.hasEntryToday ? "checkmark.circle.fill" : "circle")
-                    .font(OffRecordWidgetTypography.metadata)
-                    .foregroundColor(entry.hasEntryToday ? OffRecordColor.brandSageDark : OffRecordColor.textSecondary)
-                Text(entry.hasEntryToday ? "Done today" : "Record today")
-                    .font(OffRecordWidgetTypography.metadata)
-                    .foregroundColor(entry.hasEntryToday ? OffRecordColor.brandSageDark : OffRecordColor.textSecondary)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .offRecordWidgetBackground()
-    }
-    
-    private var streakColor: Color {
-        if entry.streak >= 30 { return OffRecordColor.brandPeach }
-        if entry.streak >= 7 { return OffRecordColor.brandYellow }
-        return OffRecordColor.brandCoral
-    }
-}
-
-struct CircularStreakView: View {
-    let entry: StreakWidgetEntry
-    
-    var body: some View {
-        ZStack {
-            AccessoryWidgetBackground()
-            VStack(spacing: 0) {
-                Image(systemName: "flame.fill")
-                    .font(OffRecordWidgetTypography.metadata)
-                Text("\(entry.streak)")
-                    .font(OffRecordWidgetTypography.numberMedium)
-            }
-        }
-    }
-}
-
-// MARK: - Mood Widget Views
-
-struct MoodWidgetView: View {
-    let entry: MoodWidgetEntry
-    @Environment(\.widgetFamily) var family
-    
-    var body: some View {
-        switch family {
-        case .systemSmall:
-            SmallMoodView(entry: entry)
-        case .systemMedium:
-            MediumMoodView(entry: entry)
-        default:
-            SmallMoodView(entry: entry)
-        }
-    }
-}
-
-struct SmallMoodView: View {
-    let entry: MoodWidgetEntry
-    
-    var body: some View {
-        VStack(spacing: 12) {
-            Text("Today's Mood")
-                .font(OffRecordWidgetTypography.metadata)
-                .foregroundColor(OffRecordColor.textSecondary)
-            
-            if let moodString = entry.todayMood, let mood = Mood(rawValue: moodString), mood != .none {
-                VStack(spacing: 8) {
-                    ZStack {
-                        Circle()
-                            .fill(mood.color.opacity(0.2))
-                            .frame(width: 50, height: 50)
-                        Image(systemName: mood.icon)
-                            .font(OffRecordWidgetTypography.titleMedium)
-                            .foregroundColor(mood.color)
-                    }
-                    Text(mood.displayName)
-                        .font(OffRecordWidgetTypography.label)
-                        .foregroundColor(mood.readableColor)
-                }
-            } else {
-                VStack(spacing: 8) {
-                    Image(systemName: "face.dashed")
-                        .font(OffRecordWidgetTypography.titleLarge)
-                        .foregroundColor(OffRecordColor.textSecondary)
-                    Text("No mood set")
-                        .font(OffRecordWidgetTypography.metadata)
-                        .foregroundColor(OffRecordColor.textSecondary)
-                }
-            }
-            
-            Spacer()
-        }
-        .padding()
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .offRecordWidgetBackground()
-    }
-}
-
-struct MediumMoodView: View {
-    let entry: MoodWidgetEntry
-    
-    var body: some View {
-        HStack(spacing: 16) {
-            // Today's mood
-            VStack(spacing: 8) {
-                Text("Today")
-                    .font(OffRecordWidgetTypography.metadata)
-                    .foregroundColor(OffRecordColor.textSecondary)
-                
-                if let moodString = entry.todayMood, let mood = Mood(rawValue: moodString), mood != .none {
-                    ZStack {
-                        Circle()
-                            .fill(mood.color.opacity(0.2))
-                            .frame(width: 44, height: 44)
-                        Image(systemName: mood.icon)
-                            .font(OffRecordWidgetTypography.bodySmall)
-                            .foregroundColor(mood.color)
-                    }
-                    Text(mood.displayName)
-                        .font(OffRecordWidgetTypography.label)
-                        .foregroundColor(mood.readableColor)
-                } else {
-                    Image(systemName: "face.dashed")
-                        .font(OffRecordWidgetTypography.titleLarge)
-                        .foregroundColor(OffRecordColor.textSecondary)
-                    Text("Not set")
-                        .font(OffRecordWidgetTypography.metadata)
-                        .foregroundColor(OffRecordColor.textSecondary)
-                }
-            }
-            .frame(width: 80)
-            
-            Divider()
-            
-            // Week mood summary
-            VStack(alignment: .leading, spacing: 8) {
-                Text("This Week")
-                    .font(OffRecordWidgetTypography.metadata)
-                    .foregroundColor(OffRecordColor.textSecondary)
-                
-                if entry.weekMoods.isEmpty {
-                    Text("No moods recorded")
-                        .font(OffRecordWidgetTypography.metadata)
-                        .foregroundColor(OffRecordColor.textSecondary)
-                        .italic()
-                } else {
-                    // Top moods
-                    let sortedMoods = entry.weekMoods.sorted { $0.value > $1.value }.prefix(3)
-                    ForEach(Array(sortedMoods), id: \.key) { moodString, count in
-                        if let mood = Mood(rawValue: moodString), mood != .none {
-                            HStack(spacing: 6) {
-                                Image(systemName: mood.icon)
-                                    .font(OffRecordWidgetTypography.metadata)
-                                    .foregroundColor(mood.color)
-                                Text(mood.displayName)
-                                    .font(OffRecordWidgetTypography.metadata)
-                                    .foregroundColor(OffRecordColor.textPrimary)
-                                Spacer()
-                                Text("\(count)")
-                                    .font(OffRecordWidgetTypography.label)
-                                    .foregroundColor(OffRecordColor.textSecondary)
-                            }
-                        }
-                    }
-                }
-                
-                Spacer()
-            }
-        }
-        .padding()
-        .offRecordWidgetBackground()
-    }
-}
-
-// MARK: - Quick Record Widget Views
-
-struct QuickRecordWidgetView: View {
-    var body: some View {
-        VStack(spacing: 12) {
-            ZStack {
-                Circle()
-                    .fill(OffRecordColor.backgroundLavenderTint)
-                    .frame(width: 60, height: 60)
-                
-                Image(systemName: "mic.fill")
-                    .font(OffRecordWidgetTypography.titleLarge)
-                    .foregroundColor(OffRecordColor.textBrand)
-            }
-            
-            Text("Tap to Record")
-                .font(OffRecordWidgetTypography.label)
-                .foregroundColor(OffRecordColor.textPrimary)
-            
-            Text("Open OffRecord AI Journal")
-                .font(OffRecordWidgetTypography.metadata)
-                .foregroundColor(OffRecordColor.textSecondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .offRecordWidgetBackground()
-    }
-}
-
-// MARK: - Widget Configurations
-
-struct OffRecordWidget: Widget {
-    let kind: String = "OffRecordWidget"
-
-    var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: Provider()) { entry in
-            OffRecordWidgetEntryView(entry: entry)
-                .widgetURL(URL(string: entry.hasEntry ? "offrecord://today" : "offrecord://record"))
-        }
-        .configurationDisplayName("Diary Entry")
-        .description("View today's diary entry and quick access to record.")
-        .supportedFamilies([.systemSmall, .systemMedium, .accessoryCircular, .accessoryRectangular])
-    }
-}
-
-struct StreakWidget: Widget {
-    let kind: String = "StreakWidget"
-    
-    var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: StreakProvider()) { entry in
-            StreakWidgetView(entry: entry)
-                .widgetURL(URL(string: entry.hasEntryToday ? "offrecord://timeline" : "offrecord://record"))
-        }
-        .configurationDisplayName("Streak Counter")
-        .description("Track your journaling streak.")
-        .supportedFamilies([.systemSmall, .accessoryCircular])
-    }
-}
-
-struct MoodWidget: Widget {
-    let kind: String = "MoodWidget"
-    
-    var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: MoodProvider()) { entry in
-            MoodWidgetView(entry: entry)
-                .widgetURL(URL(string: "offrecord://today"))
-        }
-        .configurationDisplayName("Mood Tracker")
-        .description("See your mood at a glance.")
-        .supportedFamilies([.systemSmall, .systemMedium])
-    }
-}
-
-struct QuickRecordWidget: Widget {
-    let kind: String = "QuickRecordWidget"
-    
-    var body: some WidgetConfiguration {
-        StaticConfiguration(kind: kind, provider: Provider()) { _ in
-            QuickRecordWidgetView()
-                .widgetURL(URL(string: "offrecord://record"))
-        }
-        .configurationDisplayName("Quick Record")
-        .description("Tap to open OffRecord AI Journal and start recording.")
-        .supportedFamilies([.systemSmall])
-    }
-}
-
-// MARK: - Widget Bundle
-
-@main
-struct OffRecordWidgetBundle: WidgetBundle {
-    var body: some Widget {
-        OffRecordWidget()
-        StreakWidget()
-        MoodWidget()
-        QuickRecordWidget()
-    }
-}
-
-// MARK: - Mood enum (duplicated for widget target)
+// MARK: - Mood (mirrors MoodDialKit.Mood raw values)
 
 enum Mood: String, CaseIterable {
     case none = ""
@@ -762,17 +123,19 @@ enum Mood: String, CaseIterable {
     case sad = "sad"
     case angry = "angry"
 
+    static var selectable: [Mood] { allCases.filter { $0 != .none } }
+
     var displayName: String {
         switch self {
-        case .none: return "No mood"
-        case .happy: return "Happy"
-        case .calm: return "Calm"
-        case .grateful: return "Grateful"
-        case .excited: return "Excited"
-        case .tired: return "Tired"
-        case .anxious: return "Anxious"
-        case .sad: return "Sad"
-        case .angry: return "Angry"
+        case .none: return String(localized: "No mood")
+        case .happy: return String(localized: "Happy")
+        case .calm: return String(localized: "Calm")
+        case .grateful: return String(localized: "Grateful")
+        case .excited: return String(localized: "Excited")
+        case .tired: return String(localized: "Tired")
+        case .anxious: return String(localized: "Anxious")
+        case .sad: return String(localized: "Sad")
+        case .angry: return String(localized: "Angry")
         }
     }
 
@@ -817,71 +180,477 @@ enum Mood: String, CaseIterable {
         case .angry: return OffRecordColor.textCoral
         }
     }
+
+    var intentValue: JournalMoodIntentValue? {
+        JournalMoodIntentValue(rawValue: rawValue)
+    }
 }
 
-// MARK: - Widget Persistence Controller
+// MARK: - Shared pieces
 
-struct WidgetPersistenceController {
-    static let shared = WidgetPersistenceController()
-    static let appGroupIdentifier = "group.com.singularity.offrecord"
+/// Formats today's metadata ("142 words · recording") without any journal text.
+func todayMetadataLine(for entry: JournalWidgetEntry) -> String? {
+    var parts: [String] = []
+    if entry.todayWordCount > 0 {
+        parts.append(String(AttributedString(localized: "^[\(entry.todayWordCount) word](inflect: true)").characters))
+    }
+    if entry.todayHasVoice {
+        parts.append("recording")
+    }
+    return parts.isEmpty ? nil : parts.joined(separator: " · ")
+}
 
-    let container: NSPersistentContainer
+struct RecordIntentButton<Label: View>: View {
+    @ViewBuilder var label: () -> Label
 
-    init() {
-        container = NSPersistentContainer(name: "OffRecord")
-
-        // Use App Group for shared data
-        if let appGroupURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: WidgetPersistenceController.appGroupIdentifier) {
-            let storeURL = appGroupURL.appendingPathComponent("OffRecord.sqlite")
-            let description = NSPersistentStoreDescription(url: storeURL)
-            container.persistentStoreDescriptions = [description]
+    var body: some View {
+        Button(intent: RecordJournalIntent()) {
+            label()
         }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Record")
+    }
+}
 
-        container.loadPersistentStores { _, error in
-            if let error = error {
-                logger.error("Widget Core Data error: \(error.localizedDescription)")
+struct RecordGlyph: View {
+    var diameter: CGFloat
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(OffRecordColor.recordFill)
+            Image(systemName: "mic.fill")
+                .font(.system(size: diameter * 0.4, weight: .semibold))
+                .foregroundStyle(OffRecordColor.textOnAccent)
+        }
+        .frame(width: diameter, height: diameter)
+        .widgetAccentable()
+    }
+}
+
+struct StreakBadge: View {
+    let streak: Int
+
+    var body: some View {
+        HStack(spacing: 3) {
+            Image(systemName: "flame.fill")
+                .foregroundStyle(streak > 0 ? OffRecordColor.textWarm : OffRecordColor.textSecondary)
+                .widgetAccentable()
+            Text("^[\(streak) day](inflect: true)")
+                .foregroundStyle(OffRecordColor.textSecondary)
+        }
+        .font(OffRecordWidgetTypography.micro)
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(streak)-day streak")
+    }
+}
+
+// MARK: - Today widget
+
+struct TodayWidgetView: View {
+    let entry: JournalWidgetEntry
+    @Environment(\.widgetFamily) private var family
+
+    var body: some View {
+        switch family {
+        case .systemMedium:
+            TodayMediumView(entry: entry)
+        case .accessoryCircular:
+            TodayCircularView(entry: entry)
+        case .accessoryRectangular:
+            TodayRectangularView(entry: entry)
+        case .accessoryInline:
+            TodayInlineView(entry: entry)
+        default:
+            TodaySmallView(entry: entry)
+        }
+    }
+}
+
+struct TodaySmallView: View {
+    let entry: JournalWidgetEntry
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(alignment: .firstTextBaseline) {
+                Text("Today")
+                    .font(OffRecordWidgetTypography.eyebrow)
+                    .foregroundStyle(OffRecordColor.textSecondary)
+                Spacer(minLength: 4)
+                Text(entry.date, format: .dateTime.weekday(.abbreviated).day())
+                    .font(OffRecordWidgetTypography.micro)
+                    .foregroundStyle(OffRecordColor.textSecondary)
+            }
+
+            Spacer(minLength: 0)
+
+            if entry.hasEntryToday {
+                statusIcon
+                Text(entry.todayMood?.displayName ?? "Journaled")
+                    .font(OffRecordWidgetTypography.titleSmall)
+                    .foregroundStyle(OffRecordColor.textHeading)
+                    .lineLimit(1)
+                    .minimumScaleFactor(0.8)
+                if let line = todayMetadataLine(for: entry) {
+                    Text(line)
+                        .font(OffRecordWidgetTypography.metadata)
+                        .foregroundStyle(OffRecordColor.textSecondary)
+                        .lineLimit(1)
+                }
+            } else {
+                RecordIntentButton {
+                    HStack(spacing: 8) {
+                        RecordGlyph(diameter: 40)
+                        Text("Record")
+                            .font(OffRecordWidgetTypography.cardTitle)
+                            .foregroundStyle(OffRecordColor.textHeading)
+                    }
+                }
+                Text("Nothing yet today")
+                    .font(OffRecordWidgetTypography.metadata)
+                    .foregroundStyle(OffRecordColor.textSecondary)
+                    .lineLimit(2)
+            }
+
+            Spacer(minLength: 0)
+            StreakBadge(streak: entry.streak)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+    }
+
+    private var statusIcon: some View {
+        let mood = entry.todayMood
+        return ZStack {
+            Circle().fill((mood?.color ?? OffRecordColor.brandSage).opacity(0.28))
+            Image(systemName: mood?.icon ?? "checkmark")
+                .font(.system(size: 17, weight: .semibold))
+                .foregroundStyle(mood?.readableColor ?? OffRecordColor.textSage)
+        }
+        .frame(width: 36, height: 36)
+        .widgetAccentable()
+        .accessibilityHidden(true)
+    }
+}
+
+struct TodayMediumView: View {
+    let entry: JournalWidgetEntry
+
+    var body: some View {
+        HStack(spacing: 14) {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(entry.date, format: .dateTime.weekday(.wide).month(.abbreviated).day())
+                    .font(OffRecordWidgetTypography.eyebrow)
+                    .foregroundStyle(OffRecordColor.textSecondary)
+                    .lineLimit(1)
+
+                Text(headline)
+                    .font(OffRecordWidgetTypography.titleSmall)
+                    .foregroundStyle(OffRecordColor.textHeading)
+                    .lineLimit(2)
+                    .minimumScaleFactor(0.85)
+
+                if let mood = entry.todayMood {
+                    Label(mood.displayName, systemImage: mood.icon)
+                        .font(OffRecordWidgetTypography.label)
+                        .foregroundStyle(mood.readableColor)
+                        .widgetAccentable()
+                } else if let line = todayMetadataLine(for: entry) {
+                    Text(line)
+                        .font(OffRecordWidgetTypography.metadata)
+                        .foregroundStyle(OffRecordColor.textSecondary)
+                }
+
+                Spacer(minLength: 0)
+
+                HStack(spacing: 10) {
+                    StreakBadge(streak: entry.streak)
+                    WeekDots(days: entry.lastSevenDays)
+                }
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+
+            RecordIntentButton {
+                VStack(spacing: 6) {
+                    RecordGlyph(diameter: 56)
+                    Text(entry.hasEntryToday ? "Add More" : "Record")
+                        .font(OffRecordWidgetTypography.label)
+                        .foregroundStyle(OffRecordColor.textHeading)
+                }
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+    }
+
+    private var headline: String {
+        if entry.hasEntryToday {
+            if let line = todayMetadataLine(for: entry), entry.todayMood != nil {
+                return String(localized: "Journaled · \(line)")
+            }
+            return String(localized: "Journaled today")
+        }
+        return String(localized: "What’s on your mind?")
+    }
+}
+
+struct WeekDots: View {
+    let days: [WidgetDay]
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(days, id: \.self) { day in
+                Circle()
+                    .fill(day.mood?.color ?? (day.hasEntry ? OffRecordColor.pixelNeutral : OffRecordColor.pixelEmpty))
+                    .frame(width: 8, height: 8)
+            }
+        }
+        .accessibilityElement()
+        .accessibilityLabel("\(days.filter(\.hasEntry).count) of the last 7 days journaled")
+    }
+}
+
+struct TodayCircularView: View {
+    let entry: JournalWidgetEntry
+
+    var body: some View {
+        ZStack {
+            AccessoryWidgetBackground()
+            VStack(spacing: 1) {
+                Image(systemName: entry.hasEntryToday ? "checkmark" : "mic.fill")
+                    .font(.system(size: 16, weight: .semibold))
+                    .widgetAccentable()
+                Text("\(entry.streak)")
+                    .font(OffRecordWidgetTypography.micro.monospacedDigit())
+            }
+        }
+        .accessibilityLabel(entry.hasEntryToday ? "Journaled today, \(entry.streak)-day streak" : "Record today’s entry")
+    }
+}
+
+struct TodayRectangularView: View {
+    let entry: JournalWidgetEntry
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Label("OffRecord", systemImage: "mic.fill")
+                .font(OffRecordWidgetTypography.label)
+                .widgetAccentable()
+            Text(entry.hasEntryToday ? "Journaled today" : "Not yet today")
+                .font(OffRecordWidgetTypography.cardTitle)
+                .lineLimit(1)
+            Text("\(entry.streak)-day streak")
+                .font(OffRecordWidgetTypography.metadata)
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+struct TodayInlineView: View {
+    let entry: JournalWidgetEntry
+
+    var body: some View {
+        if entry.hasEntryToday {
+            Label("Journaled · \(entry.streak)-day streak", systemImage: "checkmark.circle")
+        } else {
+            Label("Record today’s entry", systemImage: "mic")
+        }
+    }
+}
+
+struct OffRecordWidget: Widget {
+    let kind: String = "OffRecordWidget"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: JournalSnapshotProvider()) { entry in
+            TodayWidgetView(entry: entry)
+                .offRecordWidgetBackground()
+                .widgetURL(entry.hasEntryToday ? OffRecordWidgetRoute.today : OffRecordWidgetRoute.record)
+        }
+        .configurationDisplayName("Today")
+        .description("See if you’ve journaled today and start a recording.")
+        .supportedFamilies([.systemSmall, .systemMedium, .accessoryCircular, .accessoryRectangular, .accessoryInline])
+    }
+}
+
+// MARK: - Streak widget
+
+struct StreakWidgetView: View {
+    let entry: JournalWidgetEntry
+    @Environment(\.widgetFamily) private var family
+
+    var body: some View {
+        switch family {
+        case .accessoryCircular:
+            ZStack {
+                AccessoryWidgetBackground()
+                VStack(spacing: 0) {
+                    Image(systemName: "flame.fill")
+                        .font(.system(size: 13, weight: .semibold))
+                        .widgetAccentable()
+                    Text("\(entry.streak)")
+                        .font(OffRecordWidgetTypography.numberSmall)
+                        .minimumScaleFactor(0.6)
+                }
+            }
+            .accessibilityLabel("\(entry.streak)-day streak")
+        case .accessoryInline:
+            Label("\(entry.streak)-day streak", systemImage: "flame")
+        default:
+            SmallStreakView(entry: entry)
+        }
+    }
+}
+
+struct SmallStreakView: View {
+    let entry: JournalWidgetEntry
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack {
+                ZStack {
+                    Circle().fill(streakColor.opacity(0.28))
+                    Image(systemName: "flame.fill")
+                        .font(.system(size: 18, weight: .semibold))
+                        .foregroundStyle(OffRecordColor.textWarm)
+                }
+                .frame(width: 36, height: 36)
+                .widgetAccentable()
+                Spacer()
+            }
+
+            Spacer(minLength: 0)
+
+            Text("\(entry.streak)")
+                .font(OffRecordWidgetTypography.numberLarge)
+                .foregroundStyle(OffRecordColor.textHeading)
+                .contentTransition(.numericText())
+            Text("day streak")
+                .font(OffRecordWidgetTypography.metadata)
+                .foregroundStyle(OffRecordColor.textSecondary)
+
+            Spacer(minLength: 0)
+
+            WeekDots(days: entry.lastSevenDays)
+            Text(entry.hasEntryToday ? "Done today" : "Not yet today")
+                .font(OffRecordWidgetTypography.micro)
+                .foregroundStyle(entry.hasEntryToday ? OffRecordColor.textSage : OffRecordColor.textSecondary)
+                .lineLimit(1)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
+    }
+
+    private var streakColor: Color {
+        if entry.streak >= 30 { return OffRecordColor.brandPeach }
+        if entry.streak >= 7 { return OffRecordColor.brandYellow }
+        return OffRecordColor.brandCoral
+    }
+}
+
+struct StreakWidget: Widget {
+    let kind: String = "StreakWidget"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: JournalSnapshotProvider()) { entry in
+            StreakWidgetView(entry: entry)
+                .offRecordWidgetBackground()
+                .widgetURL(entry.hasEntryToday ? OffRecordWidgetRoute.timeline : OffRecordWidgetRoute.record)
+        }
+        .configurationDisplayName("Streak")
+        .description("See how many days in a row you’ve journaled.")
+        .supportedFamilies([.systemSmall, .accessoryCircular, .accessoryInline])
+    }
+}
+
+// MARK: - Quick Record widget
+
+struct QuickRecordWidgetView: View {
+    @Environment(\.widgetFamily) private var family
+
+    var body: some View {
+        switch family {
+        case .accessoryCircular:
+            ZStack {
+                AccessoryWidgetBackground()
+                Image(systemName: "mic.fill")
+                    .font(.system(size: 20, weight: .semibold))
+                    .widgetAccentable()
+            }
+            .accessibilityLabel("Record")
+        default:
+            RecordIntentButton {
+                VStack(alignment: .leading, spacing: 6) {
+                    RecordGlyph(diameter: 54)
+                    Spacer(minLength: 0)
+                    Text("Record")
+                        .font(OffRecordWidgetTypography.titleSmall)
+                        .foregroundStyle(OffRecordColor.textHeading)
+                }
+                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
             }
         }
     }
 }
 
+struct QuickRecordWidget: Widget {
+    let kind: String = "QuickRecordWidget"
+
+    var body: some WidgetConfiguration {
+        StaticConfiguration(kind: kind, provider: JournalSnapshotProvider()) { _ in
+            QuickRecordWidgetView()
+                .offRecordWidgetBackground()
+                .widgetURL(OffRecordWidgetRoute.record)
+        }
+        .configurationDisplayName("Quick Record")
+        .description("Start a recording in one tap.")
+        .supportedFamilies([.systemSmall, .accessoryCircular])
+    }
+}
+
+// MARK: - Widget Bundle
+
+@main
+struct OffRecordWidgetBundle: WidgetBundle {
+    var body: some Widget {
+        OffRecordWidget()
+        StreakWidget()
+        MoodWidget()
+        QuickRecordWidget()
+        YearInPixelsWidget()
+        RecordEntryControl()
+        CaptureLiveActivityWidget()
+    }
+}
+
 // MARK: - Previews
 
-#Preview("Diary Entry - Small", as: .systemSmall) {
+#Preview("Today - Small", as: .systemSmall) {
     OffRecordWidget()
 } timeline: {
-    DiaryWidgetEntry(date: Date(), text: "Had a great day today. Went for a walk in the park.", mood: "happy", hasEntry: true, streak: 5, totalEntries: 42)
-    DiaryWidgetEntry(date: Date(), text: nil, mood: nil, hasEntry: false, streak: 0, totalEntries: 0)
+    JournalWidgetEntry.sample
+    JournalWidgetEntry(date: Date(), snapshot: .empty)
 }
 
-#Preview("Diary Entry - Medium", as: .systemMedium) {
+#Preview("Today - Medium", as: .systemMedium) {
     OffRecordWidget()
 } timeline: {
-    DiaryWidgetEntry(date: Date(), text: "Had a great day today. Went for a walk in the park and enjoyed the sunshine.", mood: "happy", hasEntry: true, streak: 5, totalEntries: 42)
+    JournalWidgetEntry.sample
+    JournalWidgetEntry(date: Date(), snapshot: .empty)
 }
 
-#Preview("Streak Counter", as: .systemSmall) {
+#Preview("Today - Rectangular", as: .accessoryRectangular) {
+    OffRecordWidget()
+} timeline: {
+    JournalWidgetEntry.sample
+}
+
+#Preview("Streak", as: .systemSmall) {
     StreakWidget()
 } timeline: {
-    StreakWidgetEntry(date: Date(), streak: 7, hasEntryToday: true, totalEntries: 42)
-    StreakWidgetEntry(date: Date(), streak: 30, hasEntryToday: false, totalEntries: 100)
-}
-
-#Preview("Mood Tracker - Small", as: .systemSmall) {
-    MoodWidget()
-} timeline: {
-    MoodWidgetEntry(date: Date(), todayMood: "happy", weekMoods: ["happy": 3, "calm": 2])
-    MoodWidgetEntry(date: Date(), todayMood: nil, weekMoods: [:])
-}
-
-#Preview("Mood Tracker - Medium", as: .systemMedium) {
-    MoodWidget()
-} timeline: {
-    MoodWidgetEntry(date: Date(), todayMood: "calm", weekMoods: ["happy": 3, "calm": 2, "grateful": 1])
+    JournalWidgetEntry.sample
 }
 
 #Preview("Quick Record", as: .systemSmall) {
     QuickRecordWidget()
 } timeline: {
-    DiaryWidgetEntry(date: Date(), text: nil, mood: nil, hasEntry: false, streak: 0, totalEntries: 0)
+    JournalWidgetEntry.sample
 }

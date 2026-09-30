@@ -1,0 +1,13 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "No speech was recognized." : {},
+    "The speech model couldn’t be downloaded. Try again later." : {},
+    "This device doesn’t support transcription." : {},
+    "This recording couldn’t be transcribed." : {},
+    "Transcription doesn’t support your language yet." : {},
+    "Transcription is turned off." : {},
+    "Transcription needs iOS 26 or later." : {}
+  },
+  "version" : "1.0"
+}

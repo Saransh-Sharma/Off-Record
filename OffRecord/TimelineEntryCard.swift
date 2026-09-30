@@ -10,8 +10,6 @@ struct TimelineEntryCard: View {
     let metrics: TimelineEntryPresentation?
     let searchText: String
     let evidence: EvidenceReference?
-    let isEditing: Bool
-    let onDelete: () -> Void
 
     private var mood: Mood {
         guard let moodString = entry.value(forKey: "mood") as? String,
@@ -34,7 +32,7 @@ struct TimelineEntryCard: View {
     }
 
     private var accessiblePreviewText: String {
-        previewText.isEmpty ? "Tap to add text" : previewText
+        previewText.isEmpty ? String(localized: "No text") : previewText
     }
 
     var body: some View {
@@ -45,13 +43,12 @@ struct TimelineEntryCard: View {
                         mood: mood,
                         size: 18,
                         opacity: mood == .none ? 0.5 : 0.82,
-                        accessibilityLabel: "\(mood.displayName) mood"
+                        accessibilityLabel: mood == .none ? mood.displayName : String(localized: "\(mood.displayName) mood", comment: "VoiceOver label for an entry’s mood icon. The argument is the mood name.")
                     )
 
-                    Text("\(wordCount) words")
+                    Text("^[\(wordCount) word](inflect: true)")
                         .font(OffRecordTypography.metadata)
                         .foregroundStyle(OffRecordColor.textBrand.opacity(0.76))
-                        .lineLimit(1)
 
                     if hasPhotos {
                         Image(systemName: "photo")
@@ -82,46 +79,34 @@ struct TimelineEntryCard: View {
             if let evidence {
                 VStack(alignment: .trailing, spacing: 4) {
                     Image(systemName: evidence.matchReason == .exact ? "text.magnifyingglass" : "brain.head.profile")
-                        .foregroundStyle(OffRecordColor.brandLavenderDark)
-                    Text(evidence.matchReason.rawValue)
+                        .foregroundStyle(OffRecordColor.textLavender)
+                    Text(evidence.matchReason.displayName)
                         .font(OffRecordTypography.labelSmall)
                         .foregroundStyle(OffRecordColor.textLavender)
                         .multilineTextAlignment(.trailing)
                 }
-                .frame(maxWidth: 74)
+                // The preview text has layout priority; without a minimum width this label
+                // gets squeezed until it wraps one letter per line.
+                .frame(minWidth: 64, maxWidth: 74)
                 .accessibilityIdentifier("timeline.evidenceReason.\(evidence.matchReason.rawValue)")
             }
 
             moodArt
-
-            if isEditing {
-                Button(role: .destructive) {
-                    onDelete()
-                } label: {
-                    Image(systemName: "trash.fill")
-                        .font(.system(size: 15, weight: .bold))
-                        .foregroundStyle(OffRecordColor.textInverse)
-                        .frame(width: 36, height: 36)
-                        .background(Circle().fill(OffRecordColor.textCoral))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Delete entry")
-            }
         }
-        .padding(.leading, 16)
-        .padding(.trailing, 10)
-        .padding(.vertical, 14)
+        .padding(.leading, OffRecordSpacing.lg)
+        .padding(.trailing, OffRecordSpacing.sm)
+        .padding(.vertical, OffRecordSpacing.md)
         .frame(maxWidth: .infinity, minHeight: TimelineDesign.entryRowMinHeight, alignment: .leading)
-        .offRecordContentCard(cornerRadius: 20, fill: OffRecordColor.surfacePrimary, useGlass: true)
-        .contentShape(RoundedRectangle(cornerRadius: 20))
-        .offRecordPointerLift(enabled: !isEditing)
+        .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfacePrimary, useGlass: true)
+        .contentShape(RoundedRectangle(cornerRadius: OffRecordRadius.lg))
+        .offRecordPointerLift()
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("timeline.entryRow")
     }
 
     @ViewBuilder
     private var moodArt: some View {
-        Image(mood.largeMoodAssetName)
+        mood.largeImage
             .resizable()
             .scaledToFit()
             .frame(width: TimelineDesign.moodArtSize, height: TimelineDesign.moodArtSize)
@@ -132,7 +117,7 @@ struct TimelineEntryCard: View {
     @ViewBuilder
     private func highlightedText(_ text: String) -> some View {
         if text.isEmpty {
-            Text("Tap to add text")
+            Text("No text")
                 .foregroundStyle(OffRecordColor.textSecondary)
                 .italic()
         } else if searchText.isEmpty {

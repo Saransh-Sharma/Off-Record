@@ -7,9 +7,9 @@
 
 OffRecord AI Journal is a **free voice journal app** for iPhone, iPad, and Apple Watch that turns quick thoughts into a searchable, AI-powered diary. The iPhone app remains the canonical journal; the Apple Watch companion is a fast capture and outbox surface for Mood, Speak, Record, and Recent. Journal text and semantic memory are stored locally and are not sent to developer servers. No accounts, no cloud servers, no data collection. It is the **private journal app** built for people who value both convenience and privacy.
 
-Speak naturally, and OffRecord AI Journal transcribes with Apple Speech after asking your permission; if you opt in, audio transcription may be processed by Apple services. Over time, **Friday** learns your personality, emotional patterns, and the people and topics in your life locally on your device. Semantic Memory helps you find entries by meaning, Evidence-Based Friday answers with citations from your own journal when there is enough support, and Weekly Reflection gives you a private look back at what shaped your week. Think of it as an **AI diary app** with a private assistant that actually understands you, without sending your journal to developer servers or non-Apple AI services.
+Speak naturally, and OffRecord AI Journal transcribes entirely on-device with Apple's iOS 26 SpeechAnalyzer stack after asking your permission. SpeechTranscriber provides the primary accuracy path, while DictationTranscriber expands locale coverage without using a speech server. Over time, **Friday** learns your personality, emotional patterns, and the people and topics in your life locally on your device. Semantic Memory helps you find entries by meaning, Evidence-Based Friday answers with citations from your own journal when there is enough support, and Weekly Reflection gives you a private look back at what shaped your week.
 
-**Your journal text and semantic memory stay on your device and are not sent to developer servers; opted-in audio transcription may be handled by Apple Speech services. Apple Watch captures are stored locally first and sync to the iPhone through Apple WatchConnectivity.**
+**Your journal text, audio, transcripts, and semantic memory stay on your device and are not sent to developer or speech-recognition servers. Apple Watch captures are stored locally first and transfer to the iPhone through Apple WatchConnectivity for on-device analysis.**
 
 [Download OffRecord AI Journal Free](https://apps.apple.com/app/id6766499684) | [Visit Website](https://saransh-sharma.github.io/Off-Record/) | [See Features](https://saransh-sharma.github.io/Off-Record/features.html) | [Privacy](https://saransh-sharma.github.io/Off-Record/privacy.html) | [Support](https://saransh-sharma.github.io/Off-Record/support.html)
 
@@ -36,7 +36,7 @@ Speak naturally, and OffRecord AI Journal transcribes with Apple Speech after as
 ## Features
 
 ### Voice Journaling That Works Offline
-Record your thoughts and OffRecord AI Journal transcribes them using Apple Speech after asking your permission. When your device is online, Apple Speech may process audio and return a transcript saved in your journal. This is **voice journaling** the way it should work — fast, private, and transparent.
+Record your thoughts and OffRecord AI Journal transcribes them on-device using Apple SpeechAnalyzer after asking your permission. iOS may download a language model from Apple before first use. Unsupported languages keep the original recording and never fall back to server transcription.
 
 ### Apple Watch Quick Capture
 OffRecord includes a watchOS 26+ companion for fast capture when your phone is not in your hand. The watch app is intentionally not a full journal browser. It is a private capture surface with:
@@ -118,7 +118,7 @@ OffRecord AI Journal carries Apple's **"Data Not Collected"** privacy nutrition 
 | **System search** | Private metadata only | Often content snippets or cloud-backed indexes |
 | **Apple Watch** | Capture/outbox only, privacy-safe complications | Often browsing or cloud-dependent |
 
-Friday insights, Weekly Reflection, sentiment analysis, semantic search, and the knowledge graph run on your iPhone or iPad using Apple's local frameworks. Voice transcription uses Apple Speech after permission; when online, Apple may process audio and return the transcript. Apple Watch Quick Capture uses Apple WatchConnectivity to transfer metadata and audio files to the paired iPhone; the watch complication, Smart Stack widget, and Recent outbox do not expose raw journal text when previews are disabled. Semantic Memory stores a rebuildable local index on your device; it is not sent to developer servers or third-party APIs. Weekly Reflection reports are stored locally in AI state and regenerated locally from available entries. System discoverability uses private metadata only, so iOS can help you return to entries without exposing journal text outside the locked app.
+Friday insights, Weekly Reflection, sentiment analysis, semantic search, and the knowledge graph run on your iPhone or iPad using Apple's local frameworks. Voice transcription runs on-device through SpeechAnalyzer after permission; SpeechTranscriber is preferred and DictationTranscriber expands locale coverage. Apple Watch Quick Capture uses Apple WatchConnectivity to transfer metadata and audio files to the paired iPhone for on-device analysis. Semantic Memory stores a rebuildable local index on your device; it is not sent to developer servers or third-party APIs.
 
 Watch speech and recording surfaces use explicit truth states:
 
@@ -155,7 +155,7 @@ OffRecord AI Journal is a **free journal app** with local Friday insights, Seman
 - **AI/ML:** Apple NaturalLanguage, NLEmbedding sentence vectors, Apple Speech, on-device NLP via Neural Engine
 - **System Integration:** App Intents, App Shortcuts, Core Spotlight, NSUserActivity, WidgetKit, UserNotifications, WatchConnectivity, custom `offrecord://` and `offrecordwatch://` deep links
 - **Watch Shared Types:** `WatchCaptureEnvelope`, `WatchCaptureKind`, `WatchSyncState`, `WatchAudioManifest`, `WatchCaptureSourceSurface`
-- **Minimum:** iOS 17.0+ for the iPhone/iPad app; watchOS 26.0+ for the Apple Watch companion
+- **Minimum:** iOS/iPadOS 26.0+ for the iPhone/iPad app; watchOS 26.0+ for the Apple Watch companion
 - **Devices:** iPhone and iPad as the canonical journal; Apple Watch as a capture/outbox companion
 
 ---
@@ -229,7 +229,7 @@ OffRecord supports private deep links for Today, recording, Timeline search, ent
 No. Zero data collection. No analytics SDKs, no crash reporting services, no telemetry of any kind. Check Apple's privacy label for confirmation.
 
 ### What devices are supported?
-OffRecord AI Journal runs on any iPhone or iPad with iOS 17 or later. Apple Watch Quick Capture requires watchOS 26 or later and a paired iPhone running OffRecord.
+OffRecord AI Journal runs on iPhone and iPad with iOS/iPadOS 26 or later. Apple Watch Quick Capture requires watchOS 26 or later and a paired iPhone running OffRecord.
 
 ### How do I build the Apple Watch targets?
 Install the watchOS 26.2 platform/runtime in Xcode Settings > Components before building or testing the embedded watch app locally. Without that runtime, Xcode can still parse the project and typecheck source, but full `OffRecord` / `OffRecordWatch` builds that embed or thin watch content will fail.

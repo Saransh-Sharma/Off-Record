@@ -1,0 +1,9 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "%lld entries relate to this." : {},
+    "1 entry relates to this." : {},
+    "Based on only a few entries." : {}
+  },
+  "version" : "1.0"
+}

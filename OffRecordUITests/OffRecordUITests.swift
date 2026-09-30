@@ -28,7 +28,7 @@ final class OffRecordUITests: XCTestCase {
         app.launchArguments = ["-UITesting", "-HeroNudgeUITest", "-HeroNudgeEmptyToday"]
         app.launch()
 
-        XCTAssertTrue(app.buttons["tab.today"].firstMatch.waitForExistence(timeout: 10))
+        XCTAssertTrue(offRecordTabButton("today", in: app).firstMatch.waitForExistence(timeout: 10))
         XCTAssertTrue(app.otherElements["homeHero.fullBleed"].waitForExistence(timeout: 8))
         XCTAssertTrue(app.descendants(matching: .any)["todayDock.record"].firstMatch.exists)
     }
@@ -90,7 +90,7 @@ final class OffRecordUITests: XCTestCase {
 
         let saveButton = onboardingPrimaryCTA(in: app)
         XCTAssertTrue(saveButton.waitForExistence(timeout: 4))
-        XCTAssertEqual(saveButton.label, "Save entry")
+        XCTAssertEqual(saveButton.label, "Save")
         XCTAssertFalse(saveButton.isEnabled)
 
         entryField.typeText("Today I need to say this honestly.")
@@ -108,80 +108,88 @@ final class OffRecordUITests: XCTestCase {
     func testOnboardingFirstEntryVoiceStateHasNoTypeInsteadButton() throws {
         let app = launchOnboardingApp(arguments: ["-OnboardingFirstEntryVoiceUITest"])
 
-        XCTAssertTrue(app.staticTexts["Start with one honest thought"].waitForExistence(timeout: 8))
-        XCTAssertTrue(app.staticTexts["Record privately"].waitForExistence(timeout: 4))
-        XCTAssertTrue(app.buttons["Skip first entry"].firstMatch.exists)
+        XCTAssertTrue(app.staticTexts["Say one thing about today"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.staticTexts["Record"].waitForExistence(timeout: 4))
+        XCTAssertTrue(app.buttons["Skip"].firstMatch.exists)
         XCTAssertFalse(app.buttons["Type instead"].exists)
         XCTAssertFalse(app.descendants(matching: .any)["onboarding.firstEntry.textField"].exists)
     }
 
     @MainActor
-    func testOnboardingCompletesThroughEightStepSkipPath() throws {
+    func testOnboardingCompletesThroughSixStepSkipPath() throws {
         let app = launchOnboardingApp()
 
-        XCTAssertTrue(app.staticTexts["Your private voice journal"].waitForExistence(timeout: 8))
-        XCTAssertTrue(onboardingPrimaryCTA(in: app).waitForExistence(timeout: 4))
-        XCTAssertTrue(onboardingPrimaryCTA(in: app).isHittable)
+        XCTAssertTrue(onboardingPage("Your private voice journal", isShownIn: app))
         attachScreenshot(named: "OnboardingWelcome", app: app)
-        onboardingPrimaryCTA(in: app).tap()
+        advanceOnboarding(tapping: onboardingPrimaryCTA(in: app), to: "What brings you here?", in: app)
 
-        XCTAssertTrue(app.staticTexts["What brings you here?"].waitForExistence(timeout: 4))
-        XCTAssertTrue(onboardingPrimaryCTA(in: app).waitForExistence(timeout: 4))
+        let clearMyHead = app.buttons["Clear my head"].firstMatch
+        XCTAssertTrue(waitForButton(clearMyHead, toBeEnabled: true))
         XCTAssertFalse(onboardingPrimaryCTA(in: app).isEnabled)
-        app.buttons["Clear my head"].firstMatch.tap()
-        XCTAssertTrue(waitForButton(onboardingPrimaryCTA(in: app), toBeEnabled: true))
-        onboardingPrimaryCTA(in: app).tap()
+        clearMyHead.tap()
+        advanceOnboarding(tapping: onboardingPrimaryCTA(in: app), to: "Stays on your iPhone", in: app)
+        advanceOnboarding(tapping: onboardingPrimaryCTA(in: app), to: "Lock your journal", in: app)
+        advanceOnboarding(tapping: app.buttons["Not Now"].firstMatch, to: "Say one thing about today", in: app)
 
-        XCTAssertTrue(app.staticTexts["Private by design"].waitForExistence(timeout: 4))
-        XCTAssertTrue(onboardingPrimaryCTA(in: app).isHittable)
-        onboardingPrimaryCTA(in: app).tap()
-
-        XCTAssertTrue(app.staticTexts["Lock your journal"].waitForExistence(timeout: 4))
-        app.buttons["Not now"].firstMatch.tap()
-
-        XCTAssertTrue(app.staticTexts["Tune Friday"].waitForExistence(timeout: 4))
-        XCTAssertTrue(onboardingPrimaryCTA(in: app).isHittable)
-        onboardingPrimaryCTA(in: app).tap()
-
-        XCTAssertTrue(app.staticTexts["Start with one honest thought"].waitForExistence(timeout: 4))
         XCTAssertFalse(app.buttons["Type instead"].exists)
-        XCTAssertTrue(app.buttons["Skip first entry"].firstMatch.exists)
-        app.buttons["Skip first entry"].firstMatch.tap()
+        advanceOnboarding(tapping: app.buttons["Skip"].firstMatch, to: "Make it a habit", in: app)
 
-        XCTAssertTrue(app.staticTexts["Your first snapshot is ready"].waitForExistence(timeout: 4))
-        attachScreenshot(named: "OnboardingSnapshot", app: app)
-        XCTAssertTrue(onboardingPrimaryCTA(in: app).isHittable)
-        onboardingPrimaryCTA(in: app).tap()
-
-        XCTAssertTrue(app.staticTexts["Make reflection easy to repeat"].waitForExistence(timeout: 4))
+        let startJournaling = onboardingPrimaryCTA(in: app)
+        XCTAssertTrue(wait(for: startJournaling, matching: NSPredicate(format: "label == %@", "Start Journaling"), timeout: 4))
         attachScreenshot(named: "OnboardingHabit", app: app)
-        XCTAssertEqual(onboardingPrimaryCTA(in: app).label, "Start journaling")
-        onboardingPrimaryCTA(in: app).tap()
+        for _ in 0..<2 where !app.tabBars.firstMatch.exists {
+            if startJournaling.exists, waitForButton(startJournaling, toBeEnabled: true, timeout: 6) {
+                startJournaling.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).tap()
+            }
+            _ = app.tabBars.firstMatch.waitForExistence(timeout: 8)
+        }
+        if !app.tabBars.firstMatch.exists {
+            print("Onboarding hierarchy at failure:\n" + app.debugDescription)
+        }
+        XCTAssertTrue(app.tabBars.firstMatch.exists)
+    }
 
-        XCTAssertTrue(app.tabBars.firstMatch.waitForExistence(timeout: 8) || app.buttons["Today"].firstMatch.waitForExistence(timeout: 8))
+    /// Every onboarding page is built up front and parked off-screen, so a title merely
+    /// existing proves nothing; the current page's title is the one that's hittable.
+    private func onboardingPage(_ title: String, isShownIn app: XCUIApplication, timeout: TimeInterval = 4) -> Bool {
+        wait(for: app.staticTexts[title].firstMatch, matching: NSPredicate(format: "isHittable == true"), timeout: timeout)
+    }
+
+    private func advanceOnboarding(
+        tapping control: XCUIElement,
+        to title: String,
+        in app: XCUIApplication,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) {
+        for _ in 0..<2 {
+            XCTAssertTrue(waitForButton(control, toBeEnabled: true, timeout: 6), "\(control) never became enabled", file: file, line: line)
+            control.tap()
+            if onboardingPage(title, isShownIn: app) { return }
+        }
+        print("Onboarding hierarchy at failure:\n" + app.debugDescription)
+        XCTFail("Onboarding never showed \"\(title)\"", file: file, line: line)
     }
 
     @MainActor
-    func testTimelineSearchKeyboardKeepsBottomTabsUsable() throws {
+    func testTimelineSearchSubmitRestoresBottomTabs() throws {
         let app = launchSeededApp()
         navigateToTab("Timeline", in: app)
 
         let searchField = app.searchFields["timeline.searchField"].firstMatch
         XCTAssertTrue(searchField.waitForExistence(timeout: 8))
         searchField.tap()
-
         XCTAssertTrue(app.keyboards.firstMatch.waitForExistence(timeout: 4))
+        searchField.typeText("walk\n")
 
-        let insightsTab = app.buttons["tab.insights"].firstMatch
+        // The native tab bar sits behind the keyboard; submitting search brings it back.
+        XCTAssertTrue(waitForElementToDisappear(app.keyboards.firstMatch, timeout: 3))
+        let insightsTab = app.tabBars.buttons["Insights"].firstMatch
         XCTAssertTrue(insightsTab.waitForExistence(timeout: 4))
         XCTAssertTrue(insightsTab.isHittable)
 
         insightsTab.tap()
         XCTAssertTrue(app.navigationBars["Insights"].waitForExistence(timeout: 4))
-
-        let keyboardGone = NSPredicate(format: "exists == false")
-        expectation(for: keyboardGone, evaluatedWith: app.keyboards.firstMatch)
-        waitForExpectations(timeout: 3)
     }
 
     @MainActor
@@ -207,7 +215,6 @@ final class OffRecordUITests: XCTestCase {
         let app = launchHeroNudgeApp(arguments: ["-HeroNudgeEmptyToday"])
 
         XCTAssertTrue(app.otherElements["homeHero.fullBleed"].waitForExistence(timeout: 8))
-        XCTAssertTrue(app.descendants(matching: .any)["daypartHero.imageSurface"].firstMatch.waitForExistence(timeout: 4))
         XCTAssertFalse(app.otherElements["homeHero.todayEntryPreview"].exists)
     }
 
@@ -218,7 +225,6 @@ final class OffRecordUITests: XCTestCase {
         XCTAssertTrue(app.otherElements["homeHero.fullBleed"].waitForExistence(timeout: 8))
         let entryPreview = app.descendants(matching: .any)["homeHero.todayEntryPreview"].firstMatch
         XCTAssertTrue(entryPreview.waitForExistence(timeout: 8))
-        XCTAssertTrue(app.descendants(matching: .any)["daypartHero.imageSurface"].firstMatch.waitForExistence(timeout: 4))
         let nudgeSection = app.descendants(matching: .any)["today.nudgeSection"].firstMatch
         XCTAssertTrue(nudgeSection.waitForExistence(timeout: 4))
         XCTAssertGreaterThanOrEqual(nudgeSection.frame.minY, entryPreview.frame.maxY + 24)
@@ -288,9 +294,9 @@ final class OffRecordUITests: XCTestCase {
         let writeCTA = app.descendants(matching: .any)["todayDock.write"].firstMatch
 
         XCTAssertTrue(primaryCTA.waitForExistence(timeout: 4))
-        XCTAssertEqual(primaryCTA.label, "Start recording")
+        XCTAssertEqual(primaryCTA.label, "Record")
         XCTAssertTrue(writeCTA.exists)
-        XCTAssertEqual(writeCTA.label, "Write note")
+        XCTAssertEqual(writeCTA.label, "Write")
         XCTAssertFalse(app.descendants(matching: .any)["daypartHero.primaryCTA"].firstMatch.exists)
         XCTAssertFalse(app.descendants(matching: .any)["daypartHero.writeCTA"].firstMatch.exists)
     }
@@ -314,7 +320,7 @@ final class OffRecordUITests: XCTestCase {
         primaryCTA.tap()
         app.tap()
 
-        let recordingMeter = app.descendants(matching: .any)["daypartHero.recordingMeter"].firstMatch
+        let recordingMeter = app.descendants(matching: .any)["capture.panel"].firstMatch
         XCTAssertTrue(recordingMeter.waitForExistence(timeout: 8))
     }
 
@@ -336,7 +342,7 @@ final class OffRecordUITests: XCTestCase {
         XCTAssertTrue(recordCTA.waitForExistence(timeout: 4))
         recordCTA.tap()
 
-        let recordingMeter = app.descendants(matching: .any)["daypartHero.recordingMeter"].firstMatch
+        let recordingMeter = app.descendants(matching: .any)["capture.panel"].firstMatch
         XCTAssertTrue(recordingMeter.waitForExistence(timeout: 8))
     }
 
@@ -390,10 +396,9 @@ final class OffRecordUITests: XCTestCase {
         XCTAssertTrue(sentence.waitForExistence(timeout: 4))
         let originalSentence = sentence.label
 
-        let wheel = app.otherElements["moodDial.wheel"].firstMatch
+        let wheel = app.descendants(matching: .any)["moodDial.wheel"].firstMatch
         XCTAssertTrue(wheel.waitForExistence(timeout: 4))
-        wheel.coordinate(withNormalizedOffset: CGVector(dx: 0.84, dy: 0.78))
-            .press(forDuration: 0.1, thenDragTo: wheel.coordinate(withNormalizedOffset: CGVector(dx: 0.16, dy: 0.78)))
+        turnMoodDial(wheel, in: app)
 
         let sentenceChanged = NSPredicate(format: "label != %@", originalSentence)
         expectation(for: sentenceChanged, evaluatedWith: sentence)
@@ -415,10 +420,9 @@ final class OffRecordUITests: XCTestCase {
         let originalMoodLabel = moodButton.label
         moodButton.tap()
 
-        let wheel = app.otherElements["moodDial.wheel"].firstMatch
+        let wheel = app.descendants(matching: .any)["moodDial.wheel"].firstMatch
         XCTAssertTrue(wheel.waitForExistence(timeout: 4))
-        wheel.coordinate(withNormalizedOffset: CGVector(dx: 0.84, dy: 0.78))
-            .press(forDuration: 0.1, thenDragTo: wheel.coordinate(withNormalizedOffset: CGVector(dx: 0.16, dy: 0.78)))
+        turnMoodDial(wheel, in: app)
 
         let doneButton = app.buttons["moodDial.done"].firstMatch
         XCTAssertTrue(doneButton.waitForExistence(timeout: 4))
@@ -426,6 +430,21 @@ final class OffRecordUITests: XCTestCase {
 
         XCTAssertTrue(moodButton.waitForExistence(timeout: 4))
         XCTAssertNotEqual(moodButton.label, originalMoodLabel)
+    }
+
+    /// Drags the dial one way, and back the other way if the mood sits at that end of the dial.
+    private func turnMoodDial(_ wheel: XCUIElement, in app: XCUIApplication) {
+        let sentence = app.staticTexts["moodDial.sentence"].firstMatch
+        let before = sentence.exists ? sentence.label : ""
+        // The wheel's frame is a large circle that runs off-screen, so aim at the visible
+        // arc using screen coordinates instead of offsets within the wheel.
+        let right = app.coordinate(withNormalizedOffset: CGVector(dx: 0.84, dy: 0.8))
+        let left = app.coordinate(withNormalizedOffset: CGVector(dx: 0.16, dy: 0.8))
+        right.press(forDuration: 0.1, thenDragTo: left)
+        let changed = NSPredicate(format: "label != %@", before)
+        if sentence.exists, !wait(for: sentence, matching: changed, timeout: 2) {
+            left.press(forDuration: 0.1, thenDragTo: right)
+        }
     }
 
     private func launchOnboardingApp() -> XCUIApplication {
@@ -485,38 +504,21 @@ final class OffRecordUITests: XCTestCase {
     }
 
     private func openSeededCherryBlossomEntry(in app: XCUIApplication) {
-        let firstEntry = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "cherry blossoms")).firstMatch
+        let firstEntry = app.buttons.matching(NSPredicate(format: "label CONTAINS[c] %@", "maples are just starting")).firstMatch
         if firstEntry.waitForExistence(timeout: 5) {
             firstEntry.tap()
             return
         }
 
-        let fallbackEntry = app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] %@", "cherry blossoms")).firstMatch
+        let fallbackEntry = app.staticTexts.matching(NSPredicate(format: "label CONTAINS[c] %@", "maples are just starting")).firstMatch
         XCTAssertTrue(fallbackEntry.waitForExistence(timeout: 5))
         fallbackEntry.tap()
     }
 
     private func navigateToTab(_ name: String, in app: XCUIApplication) {
-        let identifier = "tab.\(name.lowercased())"
-        let identifiedButton = app.buttons[identifier].firstMatch
-        if identifiedButton.waitForExistence(timeout: 4) {
-            identifiedButton.tap()
-            return
+        MainActor.assumeIsolated {
+            tapOffRecordTab(name.lowercased(), in: app)
         }
-
-        let customButton = app.buttons[name].firstMatch
-        if customButton.waitForExistence(timeout: 4) {
-            customButton.tap()
-            return
-        }
-
-        let tabButton = app.tabBars.buttons[name]
-        if tabButton.waitForExistence(timeout: 4) {
-            tabButton.tap()
-            return
-        }
-
-        XCTFail("Could not find tab: \(name)")
     }
 
     private func scrollUntilExists(_ element: XCUIElement, in app: XCUIApplication, maxSwipes: Int = 8) {

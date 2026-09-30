@@ -81,7 +81,7 @@ This roadmap outlines the planned evolution of OffRecord AI Journal. Contributio
 - "How would I react?" — Friday predicts your response to situations based on past patterns and personality
 - Friday replies in your voice using Apple Personal Voice API (AVSpeechSynthesizer)
 - Autobiographical memory consolidation: monthly distillation of journal entries into semantic self-knowledge ("I tend to...", "I always...")
-- SpeechAnalyzer replaces SFSpeechRecognizer
+- ~~Move every transcription path to SpeechAnalyzer~~ ✅ Shipped: SpeechTranscriber for primary accuracy, DictationTranscriber for additional locale coverage, and no server-recognition fallback
 - Zero network calls for journal text, embeddings, Friday prompts, or retrieved evidence
 
 ### v2.5 — LoRA Fine-Tuning

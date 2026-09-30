@@ -108,31 +108,31 @@ enum UserIntent: String, CaseIterable {
     
     var description: String {
         switch self {
-        case .journaling: return "Recording daily thoughts"
-        case .venting: return "Expressing frustration or stress"
-        case .reflection: return "Deep thinking about life"
-        case .planning: return "Setting goals or making plans"
-        case .gratitude: return "Appreciating good things"
-        case .problemSolving: return "Working through a challenge"
-        case .celebration: return "Sharing good news"
-        case .processing: return "Making sense of emotions"
-        case .seeking: return "Looking for guidance"
-        case .unknown: return "General expression"
+        case .journaling: return String(localized: "Daily log")
+        case .venting: return String(localized: "Venting")
+        case .reflection: return String(localized: "Thinking it through")
+        case .planning: return String(localized: "Planning")
+        case .gratitude: return String(localized: "Gratitude")
+        case .problemSolving: return String(localized: "Working through something")
+        case .celebration: return String(localized: "Good news")
+        case .processing: return String(localized: "Processing feelings")
+        case .seeking: return String(localized: "Looking for advice")
+        case .unknown: return String(localized: "General", comment: "What an entry is about, when no clear theme stands out.")
         }
     }
     
     var suggestedFollowUp: String {
         switch self {
-        case .journaling: return "How did that make you feel?"
-        case .venting: return "What would help you feel better right now?"
-        case .reflection: return "What insight stands out to you?"
-        case .planning: return "What's the first small step you could take?"
-        case .gratitude: return "How can you carry this feeling forward?"
-        case .problemSolving: return "What resources do you have to help?"
-        case .celebration: return "Who would you like to share this with?"
-        case .processing: return "What does this experience teach you?"
-        case .seeking: return "What does your intuition say?"
-        case .unknown: return "Tell me more about what's on your mind."
+        case .journaling: return String(localized: "How did that feel?")
+        case .venting: return String(localized: "What would help right now?")
+        case .reflection: return String(localized: "What stands out to you?")
+        case .planning: return String(localized: "What’s a first small step?")
+        case .gratitude: return String(localized: "How can you keep this feeling?")
+        case .problemSolving: return String(localized: "Who could help?")
+        case .celebration: return String(localized: "Who would you tell?")
+        case .processing: return String(localized: "What did this teach you?")
+        case .seeking: return String(localized: "What does your gut say?")
+        case .unknown: return String(localized: "What else is on your mind?")
         }
     }
 }
@@ -166,15 +166,15 @@ enum DetectedEmotion: String, CaseIterable {
     
     var supportiveMessage: String {
         switch self {
-        case .joy: return "It's wonderful to see you feeling good!"
-        case .sadness: return "It's okay to feel this way. Your feelings are valid."
-        case .anger: return "I hear your frustration. Taking a moment to breathe can help."
-        case .fear: return "Acknowledging fear is brave. What small step feels manageable?"
-        case .surprise: return "Life certainly keeps us on our toes!"
-        case .disgust: return "Sometimes we need to process difficult feelings."
-        case .anticipation: return "The future holds possibilities. What excites you most?"
-        case .trust: return "Building connections is meaningful work."
-        case .neutral: return "Sometimes a calm mind is exactly what we need."
+        case .joy: return String(localized: "Sounds like a good day.")
+        case .sadness: return String(localized: "That sounds hard.")
+        case .anger: return String(localized: "That sounds frustrating.")
+        case .fear: return String(localized: "That sounds scary.")
+        case .surprise: return String(localized: "That was unexpected.")
+        case .disgust: return String(localized: "That’s a lot to work through.")
+        case .anticipation: return String(localized: "Sounds like you’re looking ahead.")
+        case .trust: return String(localized: "Sounds like you have people to lean on.")
+        case .neutral: return String(localized: "Sounds like a calm day.")
         }
     }
 }
@@ -471,7 +471,7 @@ final class LocalAIEngine: ObservableObject {
         // Personalize based on user history
         if userProfile.totalEntries > 10 {
             if let frequentTopic = topics.first(where: { userProfile.commonTopics[$0, default: 0] > 3 }) {
-                response += " I notice '\(frequentTopic)' comes up often for you."
+                response += " " + String(localized: "\(frequentTopic) comes up a lot for you.")
             }
         }
         
@@ -515,71 +515,6 @@ final class LocalAIEngine: ObservableObject {
         
         // Save profile
         userProfile.save()
-    }
-    
-    // MARK: - Proactive Insights
-    
-    /// Generates proactive suggestions based on learned patterns
-    func getProactiveInsights() -> [String] {
-        var insights: [String] = []
-        
-        // Best writing time suggestion
-        if let bestHour = userProfile.writingTimes.max(by: { $0.value < $1.value })?.key {
-            let timeString = bestHour < 12 ? "\(bestHour)am" : "\(bestHour - 12)pm"
-            insights.append("You often journal around \(timeString). That seems to be your best reflection time.")
-        }
-        
-        // Mood trend insight
-        if userProfile.averageSentiment > 0.2 {
-            insights.append("Your overall sentiment has been positive. Keep nurturing what's working!")
-        } else if userProfile.averageSentiment < -0.2 {
-            insights.append("It seems like you've been going through some challenges. Remember, journaling itself is an act of self-care.")
-        }
-        
-        // Important people insight
-        if let topPerson = userProfile.importantPeople.max(by: { $0.value < $1.value })?.key {
-            insights.append("\(topPerson) appears frequently in your entries. They seem important to you.")
-        }
-        
-        // Recurring theme insight
-        if let topTopic = userProfile.commonTopics.max(by: { $0.value < $1.value }),
-           topTopic.value > 5 {
-            insights.append("'\(topTopic.key)' is a recurring theme in your journal. It might be worth exploring deeper.")
-        }
-        
-        return insights
-    }
-    
-    /// Suggests a journaling prompt based on user patterns
-    func suggestPrompt() -> String {
-        let prompts: [String] = [
-            "What's one thing you're grateful for today?",
-            "How are you really feeling right now?",
-            "What's been on your mind lately?",
-            "Describe a moment from today that stood out.",
-            "What would make tomorrow a good day?",
-            "What's something you've been avoiding thinking about?",
-            "Who made a positive impact on you recently?",
-            "What's a small win you can celebrate?",
-            "What would you tell your past self from a week ago?",
-            "What's something you want to remember about this time in your life?"
-        ]
-        
-        // Personalize based on recent patterns
-        if userProfile.averageSentiment < -0.1 {
-            return "What's one small thing that brought you comfort today?"
-        }
-        
-        if let lastEmotion = Array(userProfile.emotionalPatterns.values).last?.last?.dominantEmotion {
-            if lastEmotion == DetectedEmotion.sadness.rawValue {
-                return "What support do you need right now?"
-            }
-            if lastEmotion == DetectedEmotion.joy.rawValue {
-                return "What contributed to your good mood? Let's capture it!"
-            }
-        }
-        
-        return prompts.randomElement() ?? prompts[0]
     }
     
     // MARK: - Helpers

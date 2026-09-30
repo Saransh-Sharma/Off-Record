@@ -24,230 +24,9 @@
 import Foundation
 import NaturalLanguage
 import CoreData
+@_exported import KnowledgeGraphKit
 
-// MARK: - Communication Style Model
-
-/// Captures how you express yourself - your linguistic fingerprint
-struct CommunicationStyle: Codable {
-    // Vocabulary metrics
-    var uniqueWordCount: Int = 0
-    var averageSentenceLength: Double = 0
-    var vocabularyRichness: Double = 0  // Type-Token Ratio
-    var totalWordsAnalyzed: Int = 0
-    var totalSentencesAnalyzed: Int = 0
-
-    // Expression patterns
-    var usesExclamations: Double = 0     // 0-1 how often
-    var usesQuestions: Double = 0         // 0-1 how often
-    var usesEllipsis: Double = 0         // 0-1 trailing off...
-    var usesAllCaps: Double = 0          // EMPHASIS
-    var averageMessageLength: Double = 0
-
-    // Formality spectrum (0 = very casual, 1 = very formal)
-    var formalityLevel: Double = 0.5
-
-    // Emotional expressiveness (0 = reserved, 1 = very expressive)
-    var expressiveness: Double = 0.5
-
-    // Directness (0 = indirect/hedging, 1 = very direct)
-    var directness: Double = 0.5
-
-    // Top vocabulary - words you use most (beyond common words)
-    var signatureWords: [String: Int] = [:]
-
-    // Phrases you repeat
-    var signaturePhrases: [String: Int] = [:]
-
-    // How you start messages
-    var commonOpenings: [String: Int] = [:]
-
-    // Update count for running averages
-    var analysisCount: Int = 0
-}
-
-// MARK: - Emotional Signature
-
-/// Your unique emotional fingerprint - how you experience and express feelings
-struct EmotionalSignature: Codable {
-    // Baseline emotional state (where you naturally settle)
-    var baselineValence: Double = 0      // -1 negative to +1 positive
-    var baselineArousal: Double = 0.5    // 0 calm to 1 activated
-    var baselineDominance: Double = 0.5  // 0 submissive to 1 dominant
-
-    // Emotional range (how much you fluctuate)
-    var emotionalRange: Double = 0.5     // 0 = very stable, 1 = highly variable
-
-    // Emotion frequency map (how often each emotion appears)
-    var emotionFrequency: [String: Double] = [:]
-
-    // Emotional resilience (how quickly you bounce back)
-    var resilienceScore: Double = 0.5
-
-    // Time-based patterns
-    var morningMood: Double = 0          // Average morning sentiment
-    var eveningMood: Double = 0          // Average evening sentiment
-    var weekdayMood: Double = 0          // Average weekday sentiment
-    var weekendMood: Double = 0          // Average weekend sentiment
-
-    // Trigger patterns
-    var positiveTriggersTopics: [String: Double] = [:]  // Topics that lift mood
-    var negativeTriggersTopics: [String: Double] = [:]  // Topics that lower mood
-
-    // Emotional trajectory (are things getting better/worse over time?)
-    var sentimentTrend: Double = 0       // -1 declining, 0 stable, +1 improving
-    var recentSentiments: [Double] = []  // Last 30 data points
-
-    var analysisCount: Int = 0
-}
-
-// MARK: - Thought Pattern Model
-
-/// Maps your cognitive tendencies and thinking style
-struct ThoughtPatterns: Codable {
-    // Cognitive style
-    var analyticalScore: Double = 0.5    // How much you analyze vs feel
-    var abstractScore: Double = 0.5      // Abstract vs concrete thinking
-    var futureOriented: Double = 0.5     // Past-focused vs future-focused
-    var selfFocused: Double = 0.5        // Internal vs external focus
-
-    // Rumination patterns (0 = never, 1 = frequently)
-    var ruminationTendency: Double = 0
-    var topicPersistence: [String: Int] = [:]  // How long topics stay active
-
-    // Growth indicators
-    var selfAwarenessLevel: Double = 0.5
-    var growthMindsetScore: Double = 0.5
-    var gratitudeTendency: Double = 0.5
-
-    // Decision making style
-    var decisiveness: Double = 0.5       // Quick decisions vs deliberation
-    var riskTolerance: Double = 0.5      // Risk-averse vs risk-seeking
-
-    // Primary concerns (ranked by frequency)
-    var topConcerns: [String: Double] = [:]
-
-    var analysisCount: Int = 0
-}
-
-// MARK: - Personal Knowledge Graph
-
-/// Your world - people, places, topics, and their connections
-struct PersonalKnowledgeGraph: Codable {
-    var nodes: [String: KnowledgeNode] = [:]
-    var edges: [KnowledgeEdge] = []
-
-    struct KnowledgeNode: Codable, Identifiable {
-        let id: String  // Unique identifier (lowercased name)
-        var label: String  // Display name
-        var type: NodeType
-        var mentions: Int = 0
-        var firstSeen: Date
-        var lastSeen: Date
-        var sentimentAssociation: Double = 0  // How you feel about this
-        var importance: Double = 0  // Calculated importance score
-
-        enum NodeType: String, Codable {
-            case person, place, topic, activity, goal, fear, value, event
-        }
-    }
-
-    struct KnowledgeEdge: Codable {
-        var from: String
-        var to: String
-        var weight: Double = 1.0
-        var relationship: String?  // e.g., "friend", "coworker", "causes", "related to"
-    }
-
-    mutating func addOrUpdate(id: String, label: String, type: KnowledgeNode.NodeType, sentiment: Double = 0) {
-        let key = id.lowercased()
-        if var node = nodes[key] {
-            node.mentions += 1
-            node.lastSeen = Date()
-            node.sentimentAssociation = node.sentimentAssociation * 0.8 + sentiment * 0.2
-            node.importance = calculateImportance(mentions: node.mentions, lastSeen: node.lastSeen, sentiment: node.sentimentAssociation)
-            nodes[key] = node
-        } else {
-            let now = Date()
-            nodes[key] = KnowledgeNode(
-                id: key,
-                label: label,
-                type: type,
-                mentions: 1,
-                firstSeen: now,
-                lastSeen: now,
-                sentimentAssociation: sentiment,
-                importance: 0.1
-            )
-        }
-    }
-
-    mutating func connect(_ from: String, to: String, relationship: String? = nil) {
-        let fromKey = from.lowercased()
-        let toKey = to.lowercased()
-
-        if let idx = edges.firstIndex(where: { $0.from == fromKey && $0.to == toKey }) {
-            edges[idx].weight += 0.1
-        } else {
-            edges.append(KnowledgeEdge(from: fromKey, to: toKey, weight: 1.0, relationship: relationship))
-        }
-    }
-
-    private func calculateImportance(mentions: Int, lastSeen: Date, sentiment: Double) -> Double {
-        let recency = exp(-Calendar.current.dateComponents([.day], from: lastSeen, to: Date()).day.map { Double($0) / 14.0 }! )
-        let frequency = min(1.0, Double(mentions) / 20.0)
-        let emotionalWeight = abs(sentiment) * 0.3
-        return (frequency * 0.4 + recency * 0.4 + emotionalWeight * 0.2)
-    }
-
-    func topNodes(ofType type: KnowledgeNode.NodeType? = nil, limit: Int = 10) -> [KnowledgeNode] {
-        let filtered = type == nil ? Array(nodes.values) : nodes.values.filter { $0.type == type }
-        return filtered.sorted { $0.importance > $1.importance }.prefix(limit).map { $0 }
-    }
-
-    func connections(for nodeId: String) -> [(node: KnowledgeNode, relationship: String?)] {
-        let key = nodeId.lowercased()
-        let connectedIds = edges.filter { $0.from == key || $0.to == key }
-        return connectedIds.compactMap { edge in
-            let otherId = edge.from == key ? edge.to : edge.from
-            guard let node = nodes[otherId] else { return nil }
-            return (node, edge.relationship)
-        }
-    }
-}
-
-// MARK: - Behavioral Patterns
-
-/// When and how you interact with the app
-struct BehavioralPatterns: Codable {
-    // Time patterns
-    var hourlyActivity: [Int: Int] = [:]  // Hour -> entry count
-    var dayOfWeekActivity: [Int: Int] = [:]  // 1=Sun, 7=Sat
-    var peakHour: Int?
-    var peakDay: Int?
-
-    // Session patterns
-    var averageSessionLength: Double = 0  // In words
-    var sessionsPerWeek: Double = 0
-
-    // Consistency
-    var currentStreak: Int = 0
-    var longestStreak: Int = 0
-    var consistencyScore: Double = 0  // 0-1
-
-    // Entry patterns
-    var totalEntries: Int = 0
-    var totalWords: Int = 0
-    var averageWordsPerEntry: Double = 0
-
-    // Interaction preferences
-    var prefersVoice: Double = 0.5  // 0 = text only, 1 = voice only
-    var prefersShortEntries: Double = 0.5  // 0 = long form, 1 = brief
-
-    // Growth tracking
-    var weeklyEntryHistory: [String: Int] = [:]  // "2026-W09" -> count
-
-    var analysisCount: Int = 0
-}
+// Profile and knowledge-graph types now live in KnowledgeGraphKit.
 
 // MARK: - Friday Summary
 
@@ -271,13 +50,24 @@ struct FridaySummary: Codable {
         case established = "established" // 50-100 entries
         case deep = "deep"              // 100+ entries
 
+        /// Shown in the UI. Raw values are persisted in the saved summary, so they stay fixed.
+        var displayName: String {
+            switch self {
+            case .nascent: return String(localized: "New", comment: "How well Friday knows the user: lowest level")
+            case .emerging: return String(localized: "Learning", comment: "How well Friday knows the user: second level")
+            case .developing: return String(localized: "Growing", comment: "How well Friday knows the user: middle level")
+            case .established: return String(localized: "Solid", comment: "How well Friday knows the user: fourth level")
+            case .deep: return String(localized: "Deep", comment: "How well Friday knows the user: highest level")
+            }
+        }
+
         var description: String {
             switch self {
-            case .nascent: return "Just getting to know you"
-            case .emerging: return "Starting to see patterns"
-            case .developing: return "Understanding is growing"
-            case .established: return "Friday knows your patterns well"
-            case .deep: return "Friday has deep context"
+            case .nascent: return String(localized: "I’m just getting to know you.")
+            case .emerging: return String(localized: "I’m starting to see patterns.")
+            case .developing: return String(localized: "I’m getting a clearer picture.")
+            case .established: return String(localized: "I know your patterns well.")
+            case .deep: return String(localized: "I know you well.")
             }
         }
 
@@ -831,30 +621,42 @@ final class FridayAssistantEngine: ObservableObject {
 
         // Personality snapshot
         var traits: [String] = []
-        if communicationStyle.expressiveness > 0.6 { traits.append("expressive") }
-        else if communicationStyle.expressiveness < 0.3 { traits.append("reserved") }
-        if communicationStyle.directness > 0.6 { traits.append("direct") }
-        else if communicationStyle.directness < 0.3 { traits.append("thoughtful") }
-        if communicationStyle.formalityLevel < 0.3 { traits.append("casual") }
-        else if communicationStyle.formalityLevel > 0.7 { traits.append("articulate") }
-        if thoughtPatterns.analyticalScore > 0.6 { traits.append("analytical") }
-        if thoughtPatterns.growthMindsetScore > 0.6 { traits.append("growth-oriented") }
-        if thoughtPatterns.gratitudeTendency > 0.5 { traits.append("grateful") }
+        if communicationStyle.expressiveness > 0.6 { traits.append(String(localized: "expressive", comment: "Personality trait, listed in “You come across as …”")) }
+        else if communicationStyle.expressiveness < 0.3 { traits.append(String(localized: "reserved", comment: "Personality trait, listed in “You come across as …”")) }
+        if communicationStyle.directness > 0.6 { traits.append(String(localized: "direct", comment: "Personality trait, listed in “You come across as …”")) }
+        else if communicationStyle.directness < 0.3 { traits.append(String(localized: "thoughtful", comment: "Personality trait, listed in “You come across as …”")) }
+        if communicationStyle.formalityLevel < 0.3 { traits.append(String(localized: "casual", comment: "Personality trait, listed in “You come across as …”")) }
+        else if communicationStyle.formalityLevel > 0.7 { traits.append(String(localized: "articulate", comment: "Personality trait, listed in “You come across as …”")) }
+        if thoughtPatterns.analyticalScore > 0.6 { traits.append(String(localized: "analytical", comment: "Personality trait, listed in “You come across as …”")) }
+        if thoughtPatterns.growthMindsetScore > 0.6 { traits.append(String(localized: "growth-oriented", comment: "Personality trait, listed in “You come across as …”")) }
+        if thoughtPatterns.gratitudeTendency > 0.5 { traits.append(String(localized: "grateful", comment: "Personality trait, listed in “You come across as …”")) }
 
-        summary.personalitySnapshot = traits.isEmpty ? "Still learning about you..." : "You come across as \(traits.joined(separator: ", "))."
+        summary.personalitySnapshot = traits.isEmpty ? String(localized: "Still learning.") : String(localized: "You come across as \(traits.formatted(.list(type: .and))).")
 
         // Communication snapshot
         if communicationStyle.analysisCount > 3 {
-            let wordStyle = communicationStyle.averageSentenceLength > 15 ? "detailed" : "concise"
-            let toneStyle = communicationStyle.expressiveness > 0.5 ? "emotionally rich" : "measured"
-            summary.communicationSnapshot = "Your writing style is \(wordStyle) and \(toneStyle), with an average of \(Int(communicationStyle.averageSentenceLength)) words per sentence."
+            let wordStyle = communicationStyle.averageSentenceLength > 15
+                ? String(localized: "in detail", comment: "Fills “You write … and …”: how much the user writes")
+                : String(localized: "briefly", comment: "Fills “You write … and …”: how much the user writes")
+            let toneStyle = communicationStyle.expressiveness > 0.5
+                ? String(localized: "with feeling", comment: "Fills “You write … and …”: the user's tone")
+                : String(localized: "evenly", comment: "Fills “You write … and …”: the user's tone")
+            summary.communicationSnapshot = String(localized: "You write \(wordStyle) and \(toneStyle). About \(Int(communicationStyle.averageSentenceLength)) words per sentence.")
         }
 
         // Emotional snapshot
         if emotionalSignature.analysisCount > 3 {
-            let valenceLabel = emotionalSignature.baselineValence > 0.1 ? "generally positive" : (emotionalSignature.baselineValence < -0.1 ? "going through some challenges" : "balanced")
-            let trendLabel = emotionalSignature.sentimentTrend > 0.05 ? "trending upward" : (emotionalSignature.sentimentTrend < -0.05 ? "trending downward" : "staying steady")
-            summary.emotionalSnapshot = "Your emotional baseline is \(valenceLabel) and \(trendLabel)."
+            let valenceLabel = emotionalSignature.baselineValence > 0.1
+                ? String(localized: "mostly positive", comment: "Fills “Your mood is … and …”: overall mood")
+                : (emotionalSignature.baselineValence < -0.1
+                    ? String(localized: "mostly low", comment: "Fills “Your mood is … and …”: overall mood")
+                    : String(localized: "mixed", comment: "Fills “Your mood is … and …”: overall mood"))
+            let trendLabel = emotionalSignature.sentimentTrend > 0.05
+                ? String(localized: "improving", comment: "Fills “Your mood is … and …”: mood trend")
+                : (emotionalSignature.sentimentTrend < -0.05
+                    ? String(localized: "dipping", comment: "Fills “Your mood is … and …”: mood trend")
+                    : String(localized: "holding steady", comment: "Fills “Your mood is … and …”: mood trend"))
+            summary.emotionalSnapshot = String(localized: "Your mood is \(valenceLabel) and \(trendLabel).")
         }
 
         // Life snapshot
@@ -862,17 +664,19 @@ final class FridayAssistantEngine: ObservableObject {
         let topTopics = knowledgeGraph.topNodes(ofType: .topic, limit: 3)
         var lifeItems: [String] = []
         if !topPeople.isEmpty {
-            lifeItems.append("Key people: \(topPeople.map { $0.label }.joined(separator: ", "))")
+            lifeItems.append(String(localized: "People: \(topPeople.map { $0.label }.joined(separator: ", ")).", comment: "Followed by a comma-separated list of names"))
         }
         if !topTopics.isEmpty {
-            lifeItems.append("Main themes: \(topTopics.map { $0.label }.joined(separator: ", "))")
+            lifeItems.append(String(localized: "Topics: \(topTopics.map { $0.label }.joined(separator: ", ")).", comment: "Followed by a comma-separated list of topics"))
         }
-        summary.lifeSnapshot = lifeItems.joined(separator: ". ")
+        summary.lifeSnapshot = lifeItems.joined(separator: " ")
 
         // Growth snapshot
         if behavioralPatterns.totalEntries > 5 {
-            let consistency = behavioralPatterns.consistencyScore > 0.5 ? "consistent" : "occasional"
-            summary.growthSnapshot = "You're a \(consistency) journaler with \(behavioralPatterns.totalEntries) entries. \(summary.maturityLevel.description)."
+            let consistency = behavioralPatterns.consistencyScore > 0.5
+                ? String(localized: "regularly", comment: "Fills “You write …”: how often the user journals")
+                : String(localized: "now and then", comment: "Fills “You write …”: how often the user journals")
+            summary.growthSnapshot = String(AttributedString(localized: "^[\(behavioralPatterns.totalEntries) entry](inflect: true) so far. You write \(consistency).").characters)
         }
 
         summary.lastUpdated = Date()
@@ -1069,6 +873,9 @@ final class FridayAssistantEngine: ObservableObject {
                 knowledgeGraph = payload.knowledgeGraph
                 behavioralPatterns = payload.behavioralPatterns
                 summary = payload.summary
+                // The snapshot sentences are derived copy, so rebuild them from the loaded
+                // models; otherwise a saved summary keeps old wording until the next entry.
+                updateSummary()
                 if state.type == "digital_twin" {
                     save()
                 }

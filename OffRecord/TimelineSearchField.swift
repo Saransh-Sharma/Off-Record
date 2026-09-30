@@ -60,7 +60,7 @@ struct TimelineUIKitSearchField: UIViewRepresentable {
         let searchBar = TimelineCompactSearchBar(frame: .zero)
         searchBar.delegate = context.coordinator
         searchBar.searchBarStyle = .minimal
-        searchBar.placeholder = "Search entries"
+        searchBar.placeholder = String(localized: "Search entries")
         searchBar.setBackgroundImage(UIImage(), for: .any, barMetrics: .default)
         searchBar.backgroundImage = UIImage()
         searchBar.backgroundColor = .clear
@@ -77,7 +77,7 @@ struct TimelineUIKitSearchField: UIViewRepresentable {
         searchField.backgroundColor = .clear
         searchField.clearButtonMode = .whileEditing
         searchField.leftView?.tintColor = UIColor(OffRecordColor.textBrand)
-        searchField.accessibilityLabel = "Search entries"
+        searchField.accessibilityLabel = String(localized: "Search entries")
         searchField.accessibilityIdentifier = "timeline.searchField"
         searchField.accessibilityTraits.insert(.searchField)
 

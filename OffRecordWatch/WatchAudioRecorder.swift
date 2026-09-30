@@ -64,7 +64,7 @@ final class WatchAudioRecorder: NSObject, ObservableObject {
                 guard self.isStarting else { return }
                 guard granted else {
                     self.isStarting = false
-                    self.errorMessage = "Microphone access is off."
+                    self.errorMessage = String(localized: "Turn on microphone access in Settings.")
                     WatchHaptics.warning()
                     return
                 }
@@ -73,7 +73,7 @@ final class WatchAudioRecorder: NSObject, ObservableObject {
                     self.isStarting = false
                 } catch {
                     self.isStarting = false
-                    self.errorMessage = "Could not start recording."
+                    self.errorMessage = String(localized: "Couldn’t start recording.")
                     watchAudioLogger.error("Watch recording start failed: \(error.localizedDescription, privacy: .public)")
                     WatchHaptics.error()
                 }
@@ -193,10 +193,10 @@ final class WatchAudioRecorder: NSObject, ObservableObject {
         case .began:
             if isRecording, !isPaused {
                 pause()
-                errorMessage = "Recording paused."
+                errorMessage = String(localized: "Recording paused.")
             }
         case .ended:
-            errorMessage = "Tap Resume when ready."
+            break
         @unknown default:
             break
         }

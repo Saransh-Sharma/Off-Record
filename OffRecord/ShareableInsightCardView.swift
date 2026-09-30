@@ -2,110 +2,28 @@
 //  ShareableInsightCardView.swift
 //  OffRecord
 //
-//  Renders a clean, shareable insight card designed for social media.
-//  Dark background, bold typography, subtle branding.
-//  Optimized for Instagram Stories, TikTok, and Twitter.
+//  Weekly insight cards, the carousel that shows them on Insights, and the
+//  privacy-first share flow (names hidden unless the person opts in).
 //
 
 import SwiftUI
 
-// MARK: - Shareable Card View
-
-struct ShareableInsightCardView: View {
-    let insight: ShareableInsight
-    let onShare: () -> Void
-
-    var body: some View {
-        VStack(spacing: 0) {
-            cardContent
-                .padding(.bottom, 12)
-
-            // Share button
-            Button(action: onShare) {
-                HStack(spacing: 6) {
-                    Image(systemName: "square.and.arrow.up")
-                        .font(.system(size: 14, weight: .semibold))
-                    Text("Share")
-                        .font(OffRecordTypography.labelLarge)
-                }
-                .foregroundColor(OffRecordColor.textInverse)
-                .padding(.horizontal, 20)
-                .padding(.vertical, 10)
-                .background(Capsule().fill(OffRecordColor.brandPlum.opacity(0.88)))
-            }
+private extension ShareableInsight.Category {
+    /// Readable foreground for small labels and icons.
+    var textTint: Color {
+        switch self {
+        case .emotion: return OffRecordColor.textBlush
+        case .pattern: return OffRecordColor.textLavender
+        case .people: return OffRecordColor.textPeach
+        case .language: return OffRecordColor.textAqua
+        case .growth: return OffRecordColor.textMint
+        case .time: return OffRecordColor.textSky
         }
     }
 
-    private var cardContent: some View {
-        VStack(alignment: .leading, spacing: 20) {
-            // Category badge
-            HStack(spacing: 6) {
-                Image(systemName: insight.category.icon)
-                    .font(.system(size: 11, weight: .semibold))
-                Text("Weekly Insight")
-                    .font(OffRecordTypography.badgeLabel)
-                    .textCase(.uppercase)
-                    .tracking(1.2)
-            }
-            .foregroundColor(categoryColor.opacity(0.9))
-
-            // Headline
-            Text(insight.headline)
-                .font(OffRecordTypography.titleMedium)
-                .foregroundColor(OffRecordColor.textHeading)
-                .lineSpacing(4)
-                .fixedSize(horizontal: false, vertical: true)
-
-            // Subtext
-            Text(insight.subtext)
-                .font(OffRecordTypography.bodyMedium)
-                .foregroundColor(OffRecordColor.textSecondary)
-                .lineSpacing(2)
-
-            // Data point badge (if available)
-            if let dataPoint = insight.dataPoint {
-                HStack(spacing: 6) {
-                    Circle()
-                        .fill(categoryColor)
-                        .frame(width: 6, height: 6)
-                    Text(dataPoint)
-                        .font(OffRecordTypography.metadata.monospaced())
-                        .foregroundColor(OffRecordColor.textSecondary)
-                }
-            }
-
-            Spacer().frame(height: 4)
-
-            // Branding
-            HStack {
-                Spacer()
-                Text("OffRecord AI Journal")
-                    .font(OffRecordTypography.metadata)
-                    .foregroundColor(OffRecordColor.textTertiary)
-            }
-        }
-        .padding(24)
-        .background(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [
-                            OffRecordColor.surfaceWarm,
-                            OffRecordColor.surfaceLavender
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
-                )
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .stroke(categoryColor.opacity(0.15), lineWidth: 1)
-                )
-        )
-    }
-
-    private var categoryColor: Color {
-        switch insight.category {
+    /// Soft accent used for strokes and dots.
+    var accentFill: Color {
+        switch self {
         case .emotion: return OffRecordColor.brandBlush
         case .pattern: return OffRecordColor.brandLavenderDark
         case .people: return OffRecordColor.brandPeach
@@ -113,6 +31,98 @@ struct ShareableInsightCardView: View {
         case .growth: return OffRecordColor.brandMint
         case .time: return OffRecordColor.brandSky
         }
+    }
+}
+
+// MARK: - Card View
+
+struct ShareableInsightCardView: View {
+    let insight: ShareableInsight
+    let onShare: () -> Void
+    var onWhy: (() -> Void)? = nil
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: OffRecordSpacing.lg) {
+            Label("This Week", systemImage: insight.category.icon)
+                .font(OffRecordTypography.badgeLabel)
+                .textCase(.uppercase)
+                .tracking(1.2)
+                .foregroundStyle(insight.category.textTint)
+
+            Text(insight.headline)
+                .font(OffRecordTypography.titleSmall)
+                .foregroundStyle(OffRecordColor.textHeading)
+                .lineSpacing(3)
+                .fixedSize(horizontal: false, vertical: true)
+
+            if !insight.subtext.isEmpty {
+                Text(insight.subtext)
+                    .font(OffRecordTypography.bodyMedium)
+                    .foregroundStyle(OffRecordColor.textSecondary)
+                    .lineSpacing(2)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+
+            if let dataPoint = insight.dataPoint {
+                HStack(spacing: OffRecordSpacing.sm) {
+                    Circle()
+                        .fill(insight.category.accentFill)
+                        .frame(width: 6, height: 6)
+                        .accessibilityHidden(true)
+                    Text(dataPoint)
+                        .font(OffRecordTypography.metadata.monospaced())
+                        .foregroundStyle(OffRecordColor.textSecondary)
+                }
+            }
+
+            Spacer(minLength: 0)
+
+            ViewThatFits(in: .horizontal) {
+                HStack(spacing: OffRecordSpacing.md) {
+                    whyButton
+                    Spacer(minLength: 0)
+                    shareButton
+                }
+                VStack(alignment: .leading, spacing: OffRecordSpacing.sm) {
+                    whyButton
+                    shareButton
+                }
+            }
+        }
+        .padding(OffRecordSpacing.xl)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        .background(
+            RoundedRectangle(cornerRadius: OffRecordRadius.lg, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [OffRecordColor.surfaceWarm, OffRecordColor.surfaceLavender],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+                .overlay(
+                    RoundedRectangle(cornerRadius: OffRecordRadius.lg, style: .continuous)
+                        .stroke(insight.category.accentFill.opacity(0.25), lineWidth: 1)
+                )
+        )
+        .accessibilityElement(children: .contain)
+    }
+
+    @ViewBuilder
+    private var whyButton: some View {
+        if let onWhy {
+            InsightWhyButton(action: onWhy)
+                .accessibilityIdentifier("insights.weekly.why")
+        }
+    }
+
+    private var shareButton: some View {
+        Button(action: onShare) {
+            Label("Share", systemImage: "square.and.arrow.up")
+        }
+        .buttonStyle(OffRecordSoftButtonStyle(tint: OffRecordColor.textOnAccent, fill: OffRecordColor.brandPlum))
+        .accessibilityHint("Shows a preview before sharing.")
+        .accessibilityIdentifier("insights.weekly.share")
     }
 }
 
@@ -124,6 +134,7 @@ struct InsightCardRenderer {
     static func renderCard(insight: ShareableInsight) -> UIImage? {
         let cardView = ShareableCardForExport(insight: insight)
             .frame(width: 380, height: 420)
+            .environment(\.colorScheme, .light)
 
         let renderer = ImageRenderer(content: cardView)
         renderer.scale = 3.0 // High resolution
@@ -131,65 +142,55 @@ struct InsightCardRenderer {
     }
 }
 
-/// Standalone card view for image export (no share button, includes extra branding)
+/// Standalone card view for image export (fixed canvas, no buttons, extra branding).
 private struct ShareableCardForExport: View {
     let insight: ShareableInsight
 
     var body: some View {
         VStack(alignment: .leading, spacing: 20) {
-            // Category badge
-            HStack(spacing: 6) {
-                Image(systemName: insight.category.icon)
-                    .font(.system(size: 12, weight: .semibold))
-                Text("Weekly Insight")
-                    .font(OffRecordExportTypography.label)
-                    .textCase(.uppercase)
-                    .tracking(1.2)
-            }
-            .foregroundColor(categoryColor.opacity(0.9))
+            Label("This Week", systemImage: insight.category.icon)
+                .font(OffRecordExportTypography.label)
+                .textCase(.uppercase)
+                .tracking(1.2)
+                .foregroundStyle(insight.category.textTint)
 
             Spacer()
 
-            // Headline
             Text(insight.headline)
                 .font(OffRecordExportTypography.headline)
-                .foregroundColor(OffRecordColor.textHeading)
+                .foregroundStyle(OffRecordColor.textHeading)
                 .lineSpacing(6)
 
-            // Subtext
-            Text(insight.subtext)
-                .font(OffRecordExportTypography.body)
-                .foregroundColor(OffRecordColor.textSecondary)
-                .lineSpacing(3)
+            if !insight.subtext.isEmpty {
+                Text(insight.subtext)
+                    .font(OffRecordExportTypography.body)
+                    .foregroundStyle(OffRecordColor.textSecondary)
+                    .lineSpacing(3)
+            }
 
-            // Data point
             if let dataPoint = insight.dataPoint {
                 HStack(spacing: 6) {
                     Circle()
-                        .fill(categoryColor)
+                        .fill(insight.category.accentFill)
                         .frame(width: 6, height: 6)
                     Text(dataPoint)
                         .font(OffRecordExportTypography.monospaced)
-                        .foregroundColor(OffRecordColor.textSecondary)
+                        .foregroundStyle(OffRecordColor.textSecondary)
                 }
             }
 
             Spacer()
 
-            // Branding footer
             HStack {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text("OffRecord AI Journal")
+                    Text("OffRecord")
                         .font(OffRecordExportTypography.brand)
-                        .foregroundColor(OffRecordColor.textSecondary)
-                    Text("AI Voice Diary")
+                        .foregroundStyle(OffRecordColor.textSecondary)
+                    Text("Private voice journal")
                         .font(OffRecordExportTypography.micro)
-                        .foregroundColor(OffRecordColor.textTertiary)
+                        .foregroundStyle(OffRecordColor.textTertiary)
                 }
                 Spacer()
-                Text("OffRecord")
-                    .font(OffRecordExportTypography.monospaced)
-                    .foregroundColor(OffRecordColor.textTertiary)
             }
         }
         .padding(32)
@@ -197,29 +198,104 @@ private struct ShareableCardForExport: View {
             RoundedRectangle(cornerRadius: 24, style: .continuous)
                 .fill(
                     LinearGradient(
-                        colors: [
-                            OffRecordColor.surfaceWarm,
-                            OffRecordColor.surfaceLavender
-                        ],
+                        colors: [OffRecordColor.surfaceWarm, OffRecordColor.surfaceLavender],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
                 )
                 .overlay(
                     RoundedRectangle(cornerRadius: 24, style: .continuous)
-                        .stroke(categoryColor.opacity(0.2), lineWidth: 1)
+                        .stroke(insight.category.accentFill.opacity(0.3), lineWidth: 1)
                 )
         )
     }
+}
 
-    private var categoryColor: Color {
-        switch insight.category {
-        case .emotion: return OffRecordColor.brandBlush
-        case .pattern: return OffRecordColor.brandLavenderDark
-        case .people: return OffRecordColor.brandPeach
-        case .language: return OffRecordColor.brandAqua
-        case .growth: return OffRecordColor.brandMint
-        case .time: return OffRecordColor.brandSky
+// MARK: - Share preview
+
+/// Shows exactly what will be shared, with names hidden by default.
+struct ShareInsightPreviewSheet: View {
+    let insight: ShareableInsight
+    @Environment(\.dismiss) private var dismiss
+    @State private var includeNames = false
+    @State private var renderedImage: UIImage?
+
+    private var protectedNames: [String] { insight.namesToProtect }
+    private var shareable: ShareableInsight { insight.sharingVersion(includeNames: includeNames) }
+
+    var body: some View {
+        NavigationStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: OffRecordSpacing.xl) {
+                    preview
+
+                    if !protectedNames.isEmpty {
+                        VStack(alignment: .leading, spacing: OffRecordSpacing.sm) {
+                            Toggle(isOn: $includeNames) {
+                                Label("Show Names", systemImage: "person.crop.circle")
+                                    .font(OffRecordTypography.labelLarge)
+                                    .foregroundStyle(OffRecordColor.textPrimary)
+                            }
+                            .tint(OffRecordColor.brandSageDark)
+                            .accessibilityIdentifier("insights.share.includeNames")
+
+                            Text(includeNames
+                                 ? String(localized: "Names will be visible in the image.")
+                                 : String(localized: "Names are replaced with \u{201C}someone.\u{201D}"))
+                                .font(OffRecordTypography.metadata)
+                                .foregroundStyle(OffRecordColor.textSecondary)
+                                .fixedSize(horizontal: false, vertical: true)
+                        }
+                        .padding(OffRecordSpacing.lg)
+                        .offRecordCard(cornerRadius: OffRecordRadius.md, shadow: false)
+                    }
+
+                    OffRecordPrivacyBadge(title: String(localized: "Only this image is shared."))
+
+                    if let renderedImage {
+                        ShareLink(
+                            item: Image(uiImage: renderedImage),
+                            preview: SharePreview(shareable.headline, image: Image(uiImage: renderedImage))
+                        ) {
+                            Label("Share Image", systemImage: "square.and.arrow.up")
+                                .frame(maxWidth: .infinity)
+                                .offRecordPillButton()
+                        }
+                        .buttonStyle(.plain)
+                        .accessibilityIdentifier("insights.share.confirm")
+                    }
+                }
+                .padding(OffRecordSpacing.screenX)
+                .frame(maxWidth: OffRecordLayout.readableContentWidth)
+                .frame(maxWidth: .infinity)
+            }
+            .background(OffRecordAppBackground().ignoresSafeArea())
+            .navigationTitle("Share Insight")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { dismiss() }
+                }
+            }
+        }
+        .task(id: includeNames) {
+            renderedImage = InsightCardRenderer.renderCard(insight: shareable)
+        }
+    }
+
+    @ViewBuilder
+    private var preview: some View {
+        if let renderedImage {
+            Image(uiImage: renderedImage)
+                .resizable()
+                .scaledToFit()
+                .frame(maxWidth: 340)
+                .frame(maxWidth: .infinity)
+                .offRecordShadow(.card)
+                .accessibilityLabel(String(localized: "Preview: \(shareable.headline) \(shareable.subtext)").trimmingCharacters(in: .whitespaces))
+        } else {
+            ProgressView()
+                .frame(maxWidth: .infinity, minHeight: 200)
         }
     }
 }
@@ -228,67 +304,106 @@ private struct ShareableCardForExport: View {
 
 struct WeeklyInsightsSection: View {
     let entries: [DiaryEntry]
-    @State private var insights: [ShareableInsight] = []
-    @State private var currentIndex = 0
-    @State private var showShareSheet = false
-    @State private var shareImage: UIImage?
+    let insights: [ShareableInsight]
+    @State private var currentID: UUID?
+    @State private var sharingInsight: ShareableInsight?
+    @State private var evidenceContext: InsightEvidenceContext?
+
+    private var currentIndex: Int {
+        insights.firstIndex { $0.id == currentID } ?? 0
+    }
 
     var body: some View {
-        Group {
-            if !insights.isEmpty {
-                insightsContent
-            }
+        if !insights.isEmpty {
+            insightsContent
+                .onAppear { currentID = currentID ?? insights.first?.id }
+                .onChange(of: insights.map(\.id)) { _, ids in currentID = ids.first }
+                .sheet(item: $sharingInsight) { insight in
+                    ShareInsightPreviewSheet(insight: insight)
+                }
+                .sheet(item: $evidenceContext) { context in
+                    InsightEvidenceSheet(context: context)
+                }
         }
-        .onAppear { generateInsights() }
     }
 
     private var insightsContent: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            // Section header
-            HStack {
-                Image(systemName: "sparkles")
-                    .foregroundColor(OffRecordColor.brandLavenderDark)
-                Text("Your Week, Decoded")
-                    .font(OffRecordTypography.sectionTitle)
-                Spacer()
-                if insights.count > 1 {
-                    Text("\(currentIndex + 1)/\(insights.count)")
-                        .font(OffRecordTypography.metadata)
-                        .foregroundColor(OffRecordColor.textSecondary)
-                }
-            }
+        VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
+            InsightCardHeader(title: String(localized: "This Week"), systemImage: "sparkles", tint: OffRecordColor.textLavender)
 
-            // Card carousel
-            TabView(selection: $currentIndex) {
-                ForEach(Array(insights.enumerated()), id: \.element.id) { index, insight in
-                    ShareableInsightCardView(insight: insight) {
-                        shareInsight(insight)
+            ScrollView(.horizontal) {
+                HStack(alignment: .top, spacing: OffRecordSpacing.md) {
+                    ForEach(insights) { insight in
+                        ShareableInsightCardView(
+                            insight: insight,
+                            onShare: { sharingInsight = insight },
+                            onWhy: insight.supportingEntryIDs.isEmpty ? nil : { showEvidence(for: insight) }
+                        )
+                        .containerRelativeFrame(.horizontal)
+                        .frame(maxHeight: .infinity)
+                        .id(insight.id)
                     }
-                    .tag(index)
+                }
+                .fixedSize(horizontal: false, vertical: true)
+                .scrollTargetLayout()
+            }
+            .scrollTargetBehavior(.viewAligned)
+            .scrollPosition(id: $currentID)
+            .scrollIndicators(.hidden)
+            .accessibilityIdentifier("insights.weekly.carousel")
+
+            if insights.count > 1 {
+                InsightPageDots(count: insights.count, selectedIndex: currentIndex) { index in
+                    withOffRecordAnimation(OffRecordMotion.snappy) {
+                        currentID = insights[index].id
+                    }
                 }
             }
-            .tabViewStyle(.page(indexDisplayMode: .never))
-            .frame(height: 280)
         }
-        .padding(.vertical, 8)
-        .sheet(isPresented: $showShareSheet) {
-            if let image = shareImage {
-                ShareSheet(activityItems: [image])
-            }
-        }
+        .padding(.vertical, OffRecordSpacing.sm)
     }
 
-    private func generateInsights() {
-        insights = ShareableInsightGenerator.generateWeeklyInsights(from: entries)
+    private func showEvidence(for insight: ShareableInsight) {
+        evidenceContext = InsightEvidenceContext(
+            id: insight.id.uuidString,
+            title: insight.headline.replacingOccurrences(of: "\n", with: " "),
+            summary: insight.subtext,
+            rationale: insight.rationale,
+            entries: entries.resolvingInsightEvidence(insight.supportingEntryIDs)
+        )
     }
+}
 
-    private func shareInsight(_ insight: ShareableInsight) {
-        Task { @MainActor in
-            if let image = InsightCardRenderer.renderCard(insight: insight) {
-                shareImage = image
-                showShareSheet = true
+/// Page indicator for the insight carousel; adjustable with VoiceOver.
+struct InsightPageDots: View {
+    let count: Int
+    let selectedIndex: Int
+    let onSelect: (Int) -> Void
+
+    var body: some View {
+        HStack(spacing: OffRecordSpacing.sm) {
+            ForEach(0..<count, id: \.self) { index in
+                Capsule()
+                    .fill(index == selectedIndex ? OffRecordColor.brandLavenderDark : OffRecordColor.textTertiary.opacity(0.35))
+                    .frame(width: index == selectedIndex ? 18 : 7, height: 7)
+                    .frame(width: 26, height: OffRecordLayout.minimumTapTarget)
+                    .contentShape(Rectangle())
+                    .onTapGesture { onSelect(index) }
             }
         }
+        .offRecordAnimation(OffRecordMotion.snappy, value: selectedIndex)
+        .frame(maxWidth: .infinity)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel("Insight")
+        .accessibilityValue("\(selectedIndex + 1) of \(count)")
+        .accessibilityAdjustableAction { direction in
+            switch direction {
+            case .increment: onSelect(min(count - 1, selectedIndex + 1))
+            case .decrement: onSelect(max(0, selectedIndex - 1))
+            @unknown default: break
+            }
+        }
+        .accessibilityIdentifier("insights.weekly.pageDots")
     }
 }
 
@@ -299,33 +414,27 @@ struct WeeklyInsightsSection: View {
         VStack(spacing: 20) {
             ShareableInsightCardView(
                 insight: ShareableInsight(
-                    headline: "You said \"should\" 14 times this week.\n\"Want\"? Only 2.",
-                    subtext: "You're living by obligation, not desire.",
+                    headline: "You said \u{201C}should\u{201D} 14 times this week.\n\u{201C}Want\u{201D}? 2.",
+                    subtext: "More obligations than wants.",
                     category: .language,
                     dataPoint: "should: 14 vs want: 2",
                     generatedAt: Date()
-                )
-            ) {}
+                ),
+                onShare: {},
+                onWhy: {}
+            )
 
             ShareableInsightCardView(
                 insight: ShareableInsight(
                     headline: "You mentioned Sarah 8 times this week.",
-                    subtext: "Your mood drops when you do.",
+                    subtext: "Those entries tend to read a little lighter.",
                     category: .people,
                     dataPoint: "8x",
-                    generatedAt: Date()
-                )
-            ) {}
-
-            ShareableInsightCardView(
-                insight: ShareableInsight(
-                    headline: "Most anxious on Sundays.\nMost calm on Wednesdays.",
-                    subtext: "Your week has a pattern. Do you see it?",
-                    category: .time,
-                    dataPoint: nil,
-                    generatedAt: Date()
-                )
-            ) {}
+                    generatedAt: Date(),
+                    personNames: ["Sarah"]
+                ),
+                onShare: {}
+            )
         }
         .padding()
     }

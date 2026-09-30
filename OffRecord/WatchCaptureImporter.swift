@@ -1,4 +1,5 @@
 import CoreData
+import TranscriptionKit
 import Foundation
 import os.log
 
@@ -197,28 +198,49 @@ final class WatchCaptureImporter: NSObject {
         envelope: WatchCaptureEnvelope,
         context: NSManagedObjectContext
     ) {
-        if let entry = try? context.existingObject(with: entryObjectID) as? DiaryEntry {
-            entry.entryTranscriptionStatus = .processing
+        if let attachment = AudioAttachmentStore.audioAttachment(
+            sourceCaptureID: envelope.captureID,
+            in: context
+        ) {
+            AudioAttachmentStore.markTranscriptionProcessing(attachment)
             try? context.save()
         }
 
-        SpeechTranscriber.shared.transcribe(from: audioFileURL) { result in
-            Task { @MainActor in
-                guard let entry = try? context.existingObject(with: entryObjectID) as? DiaryEntry else {
+        Task {
+            let result: Result<FileTranscriptionResult, Error>
+            do {
+                result = .success(try await TranscriptionService.shared.transcribe(from: audioFileURL))
+            } catch {
+                result = .failure(error)
+            }
+            await MainActor.run {
+                guard let entry = try? context.existingObject(with: entryObjectID) as? DiaryEntry,
+                      let attachment = AudioAttachmentStore.audioAttachment(
+                        sourceCaptureID: envelope.captureID,
+                        in: context
+                      ) else {
                     watchCaptureLogger.info("Skipped watch audio transcript because entry was deleted.")
                     return
                 }
                 switch result {
-                case .success(let text):
-                    JournalBlockTimelineStore.appendTextBlock(
+                case .success(let transcription):
+                    let text = transcription.text
+                    guard let transcriptBlock = JournalBlockTimelineStore.upsertTranscriptBlock(
                         text: text,
                         createdAt: envelope.audioManifest?.createdAtUTC ?? envelope.createdAtUTC,
+                        attachment: attachment,
                         to: entry,
                         in: context,
                         sourceCaptureID: envelope.captureID
+                    ) else {
+                        return
+                    }
+                    AudioAttachmentStore.markTranscriptionCompleted(
+                        attachment,
+                        engine: transcription.engine.rawValue,
+                        locale: transcription.locale,
+                        transcriptBlockID: transcriptBlock.blockID
                     )
-                    entry.entryTranscriptionStatus = .completed
-                    entry.updatedAt = Date()
                     do {
                         try context.save()
                         EntryLearningPipeline.upsertSemanticEntry(entry)
@@ -227,8 +249,7 @@ final class WatchCaptureImporter: NSObject {
                         watchCaptureLogger.error("Failed to save watch audio transcript: \(error.localizedDescription, privacy: .public)")
                     }
                 case .failure(let error):
-                    entry.entryTranscriptionStatus = .failed
-                    entry.updatedAt = Date()
+                    AudioAttachmentStore.markTranscriptionFailed(attachment, error: error)
                     try? context.save()
                     watchCaptureLogger.warning("Watch audio transcription failed: \(error.localizedDescription, privacy: .public)")
                 }

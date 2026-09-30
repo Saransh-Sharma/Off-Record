@@ -2,56 +2,59 @@
 //  FridayEvidenceRail.swift
 //  OffRecord
 //
-//  Evidence links under Friday answers.
+//  Numbered evidence under Friday answers. Numbers match the [n] markers in
+//  the answer text; tapping a source zooms into the entry.
 //
 
 import SwiftUI
 
 struct FridayEvidenceRail: View {
-    let evidence: [EvidenceReference]
-    let entryProvider: (UUID) -> DiaryEntry?
+    static let maximumSources = 4
 
-    @State private var selectedEntry: DiaryEntry?
+    let messageID: UUID
+    let evidence: [EvidenceReference]
+    let maxWidth: CGFloat
+    let namespace: Namespace.ID
+    let entryProvider: (UUID) -> DiaryEntry?
+    let onOpen: (FridayEvidenceSelection) -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: OffRecordSpacing.sm) {
-            Text("Evidence from your journal")
+            Text("Sources", comment: "Heading above the journal entries an answer cites")
                 .font(OffRecordTypography.labelSmall)
                 .foregroundStyle(OffRecordColor.textLavender)
+                .accessibilityAddTraits(.isHeader)
                 .accessibilityIdentifier("friday.evidenceHeader")
 
-            ForEach(evidence.prefix(3)) { item in
+            ForEach(Array(evidence.prefix(Self.maximumSources).enumerated()), id: \.element.id) { index, item in
+                let number = index + 1
+                let sourceID = "\(messageID.uuidString)-\(item.id)"
                 if let entry = entryProvider(item.entryID) {
                     Button {
-                        selectedEntry = entry
+                        onOpen(FridayEvidenceSelection(entry: entry, sourceID: sourceID))
                     } label: {
-                        FridayEvidenceChip(evidence: item, chipAccessibilityIdentifier: nil)
+                        FridayEvidenceChip(evidence: item, number: number)
                     }
                     .buttonStyle(.plain)
-                    .accessibilityElement(children: .contain)
+                    .matchedTransitionSource(id: sourceID, in: namespace)
+                    .accessibilityElement(children: .ignore)
+                    .accessibilityLabel(FridayEvidenceChip.accessibilityLabel(for: item, number: number))
+                    .accessibilityValue(item.matchReason.displayName)
+                    .accessibilityHint("Opens the entry.")
+                    .accessibilityAddTraits(.isButton)
                     .accessibilityIdentifier("friday.evidenceChip")
                 } else {
-                    FridayEvidenceChip(evidence: item)
+                    FridayEvidenceChip(evidence: item, number: number)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(FridayEvidenceChip.accessibilityLabel(for: item, number: number))
+                        .accessibilityValue(item.matchReason.displayName)
+                        .accessibilityIdentifier("friday.evidenceChip")
                 }
             }
         }
-        .padding(.top, 2)
-        .frame(maxWidth: 320, alignment: .leading)
+        .padding(.top, OffRecordSpacing.xxs)
+        .frame(maxWidth: maxWidth, alignment: .leading)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("friday.evidenceRail")
-        .navigationDestination(
-            isPresented: Binding(
-                get: { selectedEntry != nil },
-                set: { isPresented in
-                    if !isPresented {
-                        selectedEntry = nil
-                    }
-                }
-            )
-        ) {
-            if let selectedEntry {
-                EntryDetailView(entry: selectedEntry)
-            }
-        }
     }
 }

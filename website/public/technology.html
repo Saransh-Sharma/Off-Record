@@ -12,8 +12,8 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>OffRecord AI Journal Technology — On-Device AI Architecture for Private Voice Journaling</title>
-  <meta name="description" content="A deep technical breakdown of OffRecord AI Journal's on-device AI pipeline. SFSpeechRecognizer, NLTagger, NLEmbedding, Foundation Models, Core Data, CryptoKit — nine Apple frameworks, zero third-party SDKs, all inference on Neural Engine.">
-  <meta name="keywords" content="on-device AI, voice journaling, private AI assistant, Apple Foundation Models, NLTagger, SFSpeechRecognizer, privacy, iOS development">
+  <meta name="description" content="A deep technical breakdown of OffRecord AI Journal's on-device AI pipeline. SpeechAnalyzer, NLTagger, NLEmbedding, Foundation Models, Core Data, CryptoKit — Apple frameworks, zero third-party SDKs, and private local processing.">
+  <meta name="keywords" content="on-device AI, voice journaling, private AI assistant, Apple Foundation Models, SpeechAnalyzer, SpeechTranscriber, NLTagger, privacy, iOS development">
   <meta name="theme-color" content="#f7f7f2">
   <!-- logo inlined via CSS data URL -->
   <meta property="og:type" content="article">
@@ -932,8 +932,8 @@
    <span class="arrow">│</span>
    <span class="arrow">▼</span>
 <span class="label">TRANSCRIPTION</span>
-<span class="node">SFSpeechRecognizer</span>  <span class="arrow">(requiresOnDeviceRecognition = true)</span>
-   <span class="arrow">│</span>  <span class="arrow">iOS 26: SpeechAnalyzer replaces this</span>
+<span class="node">SpeechAnalyzer</span>  <span class="arrow">(SpeechTranscriber → DictationTranscriber)</span>
+   <span class="arrow">│</span>  <span class="arrow">iOS 26 · on-device models</span>
    <span class="arrow">▼</span>
 <span class="label">NLP ANALYSIS</span>
 <span class="node">NLTagger</span> <span class="arrow">─▶</span> sentiment · NER · POS · language ID
@@ -977,9 +977,9 @@
               <div class="st-glyph">Sp</div>
               <span class="st-pill st-pill-shipped">SHIPPED</span>
             </div>
-            <h3>SFSpeechRecognizer</h3>
+            <h3>SpeechAnalyzer</h3>
             <div class="st-fw">Speech.framework</div>
-            <p>The primary transcription engine in v1.0 – 1.x. Converts spoken audio to text entirely on-device.</p>
+            <p>The production transcription stack. SpeechTranscriber handles the primary accuracy path and DictationTranscriber extends locale coverage with the same on-device analyzer.</p>
             <ul>
               <li><code>requiresOnDeviceRecognition = true</code> ensures zero network transmission</li>
               <li>Input: AAC audio at 44.1 kHz via AVAudioEngine</li>
@@ -996,7 +996,7 @@
             </div>
             <h3>SpeechAnalyzer</h3>
             <div class="st-fw">Speech.framework · iOS 26</div>
-            <p>Apple's next-generation speech recognition framework, replacing SFSpeechRecognizer in v2.0.</p>
+            <p>Apple's next-generation speech analysis framework, now used for saved recordings and live voice search.</p>
             <ul>
               <li>Significantly faster recognition, lower latency</li>
               <li>Native long-form audio without session timeouts</li>
@@ -1296,7 +1296,7 @@
               <div class="rd-tag rd-done-txt">Shipped · v1.0</div>
               <h3>Voice journaling + on-device AI</h3>
               <p>Core voice journaling with fully on-device transcription, NLP, encrypted storage, biometric lock, widgets, Siri Shortcuts.</p>
-              <div class="rd-tags"><span>SFSpeechRecognizer</span><span>NLTagger</span><span>Core Data</span><span>CryptoKit</span><span>WidgetKit</span><span>AppIntents</span></div>
+              <div class="rd-tags"><span>SpeechAnalyzer</span><span>SpeechTranscriber</span><span>NLTagger</span><span>Core Data</span><span>CryptoKit</span><span>WidgetKit</span><span>AppIntents</span></div>
             </div>
           </div>
           <div class="rd-item">
@@ -1340,7 +1340,7 @@
             <div class="rd-body">
               <div class="rd-tag rd-next-txt">v2.0 · Conversational Friday (iOS 26)</div>
               <h3>Foundation Models + tool calling + SpeechAnalyzer</h3>
-              <p>On-device 3B Foundation Model. Tool calling lets Friday autonomously query Core Data. <code>@Generable</code> for structured output. <code>streamResponse()</code> for streaming. SpeechAnalyzer replaces SFSpeechRecognizer. Requires iPhone 15 Pro+. Zero network calls.</p>
+              <p>On-device 3B Foundation Model. Tool calling lets Friday autonomously query Core Data. <code>@Generable</code> for structured output. <code>streamResponse()</code> for streaming. Requires iPhone 15 Pro+. Zero network calls.</p>
               <div class="rd-tags"><span>Foundation Models</span><span>LanguageModelSession</span><span>Tool Calling</span><span>@Generable</span><span>streamResponse()</span><span>SpeechAnalyzer</span></div>
             </div>
           </div>

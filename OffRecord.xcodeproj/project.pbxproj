@@ -10,6 +10,17 @@
 		A10000000000000000000007 /* OffRecord/Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000004 /* OffRecord/Assets.xcassets */; };
 		A10000000000000000000008 /* OffRecordWatchWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = A10000000000000000000006 /* OffRecordWatchWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A1000000000000000000001D /* OffRecordWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = A10000000000000000000005 /* OffRecordWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		A20000000000000000000002 /* TranscriptionKit in Frameworks */ = {isa = PBXBuildFile; productRef = A20000000000000000000001 /* TranscriptionKit */; };
+		A20000000000000000000004 /* JournalFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = A20000000000000000000003 /* JournalFoundation */; };
+		A20000000000000000000006 /* MoodDialKit in Frameworks */ = {isa = PBXBuildFile; productRef = A20000000000000000000005 /* MoodDialKit */; };
+		A20000000000000000000008 /* SemanticMemoryKit in Frameworks */ = {isa = PBXBuildFile; productRef = A20000000000000000000007 /* SemanticMemoryKit */; };
+		A2000000000000000000000A /* KnowledgeGraphKit in Frameworks */ = {isa = PBXBuildFile; productRef = A20000000000000000000009 /* KnowledgeGraphKit */; };
+		A2000000000000000000000C /* ReflectionKit in Frameworks */ = {isa = PBXBuildFile; productRef = A2000000000000000000000B /* ReflectionKit */; };
+		A2000000000000000000000E /* AssistantCoreKit in Frameworks */ = {isa = PBXBuildFile; productRef = A2000000000000000000000D /* AssistantCoreKit */; };
+		A20000000000000000000010 /* WatchCaptureKit in Frameworks */ = {isa = PBXBuildFile; productRef = A2000000000000000000000F /* WatchCaptureKit */; };
+		A20000000000000000000012 /* JournalSecurityKit in Frameworks */ = {isa = PBXBuildFile; productRef = A20000000000000000000011 /* JournalSecurityKit */; };
+		A20000000000000000000014 /* WatchCaptureKit in Frameworks */ = {isa = PBXBuildFile; productRef = A20000000000000000000013 /* WatchCaptureKit */; };
+		A30000000000000000000005 /* OffRecordWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A30000000000000000000004 /* OffRecordWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -41,6 +52,13 @@
 			remoteGlobalIDString = CFF97BED2EDE056600ED7317;
 			remoteInfo = OffRecord;
 		};
+		A30000000000000000000007 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CFF97BE62EDE056600ED7317 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A30000000000000000000009;
+			remoteInfo = OffRecordWidgetExtension;
+		};
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXCopyFilesBuildPhase section */
@@ -66,6 +84,17 @@
 			name = "Embed Watch Content";
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A30000000000000000000006 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				A30000000000000000000005 /* OffRecordWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
@@ -75,6 +104,7 @@
 		CFF97BEE2EDE056600ED7317 /* OffRecord.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OffRecord.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CFF97C042EDE056900ED7317 /* OffRecordTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OffRecordTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		CFF97C0E2EDE056900ED7317 /* OffRecordUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OffRecordUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		A30000000000000000000004 /* OffRecordWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = OffRecordWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -98,6 +128,13 @@
 				Info.plist,
 			);
 			target = CFF97BED2EDE056600ED7317 /* OffRecord */;
+		};
+		A30000000000000000000003 /* Exceptions for "OffRecordWidget" folder in "OffRecordWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = A30000000000000000000009 /* OffRecordWidgetExtension */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -141,6 +178,19 @@
 			path = OffRecordUITests;
 			sourceTree = "<group>";
 		};
+		A30000000000000000000001 /* OffRecordWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				A30000000000000000000003 /* Exceptions for "OffRecordWidget" folder in "OffRecordWidgetExtension" target */,
+			);
+			path = OffRecordWidget;
+			sourceTree = "<group>";
+		};
+		A30000000000000000000002 /* OffRecordSystemShared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = OffRecordSystemShared;
+			sourceTree = "<group>";
+		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -148,6 +198,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A20000000000000000000014 /* WatchCaptureKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -162,6 +213,15 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A20000000000000000000002 /* TranscriptionKit in Frameworks */,
+				A20000000000000000000004 /* JournalFoundation in Frameworks */,
+				A20000000000000000000006 /* MoodDialKit in Frameworks */,
+				A20000000000000000000008 /* SemanticMemoryKit in Frameworks */,
+				A2000000000000000000000A /* KnowledgeGraphKit in Frameworks */,
+				A2000000000000000000000C /* ReflectionKit in Frameworks */,
+				A2000000000000000000000E /* AssistantCoreKit in Frameworks */,
+				A20000000000000000000010 /* WatchCaptureKit in Frameworks */,
+				A20000000000000000000012 /* JournalSecurityKit in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -179,6 +239,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A3000000000000000000000B /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -189,6 +256,8 @@
 				A10000000000000000000001 /* OffRecordShared */,
 				A10000000000000000000002 /* OffRecordWatch */,
 				A10000000000000000000003 /* OffRecordWatchWidget */,
+				A30000000000000000000001 /* OffRecordWidget */,
+				A30000000000000000000002 /* OffRecordSystemShared */,
 				A10000000000000000000004 /* OffRecord/Assets.xcassets */,
 				CFF97C072EDE056900ED7317 /* OffRecordTests */,
 				CFF97C112EDE056900ED7317 /* OffRecordUITests */,
@@ -202,6 +271,7 @@
 				CFF97BEE2EDE056600ED7317 /* OffRecord.app */,
 				A10000000000000000000005 /* OffRecordWatch.app */,
 				A10000000000000000000006 /* OffRecordWatchWidget.appex */,
+				A30000000000000000000004 /* OffRecordWidgetExtension.appex */,
 				CFF97C042EDE056900ED7317 /* OffRecordTests.xctest */,
 				CFF97C0E2EDE056900ED7317 /* OffRecordUITests.xctest */,
 			);
@@ -231,6 +301,7 @@
 			);
 			name = OffRecordWatch;
 			packageProductDependencies = (
+				A20000000000000000000013 /* WatchCaptureKit */,
 			);
 			productName = OffRecordWatch;
 			productReference = A10000000000000000000005 /* OffRecordWatch.app */;
@@ -258,6 +329,29 @@
 			productReference = A10000000000000000000006 /* OffRecordWatchWidget.appex */;
 			productType = "com.apple.product-type.app-extension";
 		};
+		A30000000000000000000009 /* OffRecordWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = A3000000000000000000000D /* Build configuration list for PBXNativeTarget "OffRecordWidgetExtension" */;
+			buildPhases = (
+				A3000000000000000000000A /* Sources */,
+				A3000000000000000000000B /* Frameworks */,
+				A3000000000000000000000C /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				A30000000000000000000001 /* OffRecordWidget */,
+				A30000000000000000000002 /* OffRecordSystemShared */,
+			);
+			name = OffRecordWidgetExtension;
+			packageProductDependencies = (
+			);
+			productName = OffRecordWidgetExtension;
+			productReference = A30000000000000000000004 /* OffRecordWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		CFF97BED2EDE056600ED7317 /* OffRecord */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = CFF97C182EDE056900ED7317 /* Build configuration list for PBXNativeTarget "OffRecord" */;
@@ -266,18 +360,30 @@
 				CFF97BEB2EDE056600ED7317 /* Frameworks */,
 				CFF97BEC2EDE056600ED7317 /* Resources */,
 				A1000000000000000000001A /* Embed Watch Content */,
+				A30000000000000000000006 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
 				A1000000000000000000001C /* PBXTargetDependency */,
+				A30000000000000000000008 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				A10000000000000000000001 /* OffRecordShared */,
+				A30000000000000000000002 /* OffRecordSystemShared */,
 				CFF97BF02EDE056600ED7317 /* OffRecord */,
 			);
 			name = OffRecord;
 			packageProductDependencies = (
+				A20000000000000000000001 /* TranscriptionKit */,
+				A20000000000000000000003 /* JournalFoundation */,
+				A20000000000000000000005 /* MoodDialKit */,
+				A20000000000000000000007 /* SemanticMemoryKit */,
+				A20000000000000000000009 /* KnowledgeGraphKit */,
+				A2000000000000000000000B /* ReflectionKit */,
+				A2000000000000000000000D /* AssistantCoreKit */,
+				A2000000000000000000000F /* WatchCaptureKit */,
+				A20000000000000000000011 /* JournalSecurityKit */,
 			);
 			productName = OffRecord;
 			productReference = CFF97BEE2EDE056600ED7317 /* OffRecord.app */;
@@ -345,6 +451,9 @@
 					A10000000000000000000013 = {
 						CreatedOnToolsVersion = 26.3;
 					};
+					A30000000000000000000009 = {
+						CreatedOnToolsVersion = 26.3;
+					};
 					CFF97BED2EDE056600ED7317 = {
 						CreatedOnToolsVersion = 16.2;
 					};
@@ -369,6 +478,9 @@
 			);
 			mainGroup = CFF97BE52EDE056600ED7317;
 			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				A20000000000000000000000 /* XCLocalSwiftPackageReference "Packages/JournalKit" */,
+			);
 			preferredProjectObjectVersion = 77;
 			productRefGroup = CFF97BEF2EDE056600ED7317 /* Products */;
 			projectDirPath = "";
@@ -377,6 +489,7 @@
 				CFF97BED2EDE056600ED7317 /* OffRecord */,
 				A10000000000000000000012 /* OffRecordWatch */,
 				A10000000000000000000013 /* OffRecordWatchWidget */,
+				A30000000000000000000009 /* OffRecordWidgetExtension */,
 				CFF97C032EDE056900ED7317 /* OffRecordTests */,
 				CFF97C0D2EDE056900ED7317 /* OffRecordUITests */,
 			);
@@ -414,6 +527,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		CFF97C0C2EDE056900ED7317 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A3000000000000000000000C /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -458,6 +578,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A3000000000000000000000A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -482,6 +609,12 @@
 			isa = PBXTargetDependency;
 			target = CFF97BED2EDE056600ED7317 /* OffRecord */;
 			targetProxy = CFF97C0F2EDE056900ED7317 /* PBXContainerItemProxy */;
+		};
+		A30000000000000000000008 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = OffRecordWidgetExtension;
+			target = A30000000000000000000009 /* OffRecordWidgetExtension */;
+			targetProxy = A30000000000000000000007 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -508,7 +641,7 @@
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "watchos watchsimulator";
-				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
 				WATCHKIT_COMPANION_APP_BUNDLE_IDENTIFIER = com.singularity.offrecord;
@@ -538,7 +671,7 @@
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "watchos watchsimulator";
-				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
 				VALIDATE_PRODUCT = YES;
@@ -569,7 +702,7 @@
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "watchos watchsimulator";
-				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
 				WATCHOS_DEPLOYMENT_TARGET = 26.0;
@@ -598,11 +731,76 @@
 				SDKROOT = watchos;
 				SKIP_INSTALL = YES;
 				SUPPORTED_PLATFORMS = "watchos watchsimulator";
-				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = 4;
 				VALIDATE_PRODUCT = YES;
 				WATCHOS_DEPLOYMENT_TARGET = 26.0;
+			};
+			name = Release;
+		};
+		A3000000000000000000000E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = OffRecordWidget/OffRecordWidget.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 14;
+				DEVELOPMENT_TEAM = CJ43UNM3AR;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = OffRecordWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = OffRecord;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.4.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.singularity.offrecord.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "OFFRECORD_WIDGET_EXTENSION $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		A3000000000000000000000F /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				APPLICATION_EXTENSION_API_ONLY = YES;
+				CODE_SIGN_ENTITLEMENTS = OffRecordWidget/OffRecordWidget.entitlements;
+				CODE_SIGN_IDENTITY = "Apple Development";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 14;
+				DEVELOPMENT_TEAM = CJ43UNM3AR;
+				ENABLE_PREVIEWS = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = OffRecordWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = OffRecord;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.4.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.singularity.offrecord.widget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "OFFRECORD_WIDGET_EXTENSION $(inherited)";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
 			};
 			name = Release;
 		};
@@ -661,13 +859,13 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				LOCALIZATION_PREFERS_STRING_CATALOGS = NO;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
-				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
 			name = Debug;
@@ -721,12 +919,12 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				LOCALIZATION_PREFERS_STRING_CATALOGS = NO;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = NO;
 				SWIFT_COMPILATION_MODE = wholemodule;
-				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 			};
 			name = Release;
 		};
@@ -750,10 +948,11 @@
 				INFOPLIST_KEY_CFBundleDisplayName = OffRecord;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
-				INFOPLIST_KEY_NSFaceIDUsageDescription = "OffRecord AI Journal uses Face ID to lock and unlock access to your private journal entries.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "OffRecord AI Journal needs microphone access to record your voice journal entries.";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "OffRecord AI Journal lets you attach photos to your journal entries. Photos are stored on your device only.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "OffRecord AI Journal uses speech recognition to transcribe your voice recordings into text.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Lets you lock your journal with Face ID.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Saves the moods you choose to Apple Health. Your journal text is never shared.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Lets you record journal entries by speaking. Recordings stay on your device.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Lets you add photos to your entries.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -768,7 +967,7 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.singularity.offrecord;
@@ -777,7 +976,7 @@
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -803,10 +1002,11 @@
 				INFOPLIST_KEY_CFBundleDisplayName = OffRecord;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
-				INFOPLIST_KEY_NSFaceIDUsageDescription = "OffRecord AI Journal uses Face ID to lock and unlock access to your private journal entries.";
-				INFOPLIST_KEY_NSMicrophoneUsageDescription = "OffRecord AI Journal needs microphone access to record your voice journal entries.";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "OffRecord AI Journal lets you attach photos to your journal entries. Photos are stored on your device only.";
-				INFOPLIST_KEY_NSSpeechRecognitionUsageDescription = "OffRecord AI Journal uses speech recognition to transcribe your voice recordings into text.";
+				INFOPLIST_KEY_NSFaceIDUsageDescription = "Lets you lock your journal with Face ID.";
+				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Saves the moods you choose to Apple Health. Your journal text is never shared.";
+				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Lets you record journal entries by speaking. Recordings stay on your device.";
+				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Lets you add photos to your entries.";
+				INFOPLIST_KEY_NSSupportsLiveActivities = YES;
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
@@ -821,7 +1021,7 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.singularity.offrecord;
@@ -830,7 +1030,7 @@
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
-				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -844,7 +1044,7 @@
 				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_TEAM = CJ43UNM3AR;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.singularity.offrecordTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -864,7 +1064,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 14;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.singularity.offrecordTests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -884,7 +1084,7 @@
 				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_TEAM = CJ43UNM3AR;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.singularity.offrecordUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -904,7 +1104,7 @@
 				CURRENT_PROJECT_VERSION = 14;
 				DEVELOPMENT_TEAM = CJ43UNM3AR;
 				GENERATE_INFOPLIST_FILE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MARKETING_VERSION = 1.4.0;
 				PRODUCT_BUNDLE_IDENTIFIER = com.singularity.offrecordUITests;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -934,6 +1134,15 @@
 			buildConfigurations = (
 				A10000000000000000000018 /* Debug */,
 				A10000000000000000000019 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		A3000000000000000000000D /* Build configuration list for PBXNativeTarget "OffRecordWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				A3000000000000000000000E /* Debug */,
+				A3000000000000000000000F /* Release */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
@@ -975,6 +1184,56 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		A20000000000000000000000 /* XCLocalSwiftPackageReference "Packages/JournalKit" */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = Packages/JournalKit;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		A20000000000000000000001 /* TranscriptionKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = TranscriptionKit;
+		};
+		A20000000000000000000003 /* JournalFoundation */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = JournalFoundation;
+		};
+		A20000000000000000000005 /* MoodDialKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = MoodDialKit;
+		};
+		A20000000000000000000007 /* SemanticMemoryKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = SemanticMemoryKit;
+		};
+		A20000000000000000000009 /* KnowledgeGraphKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = KnowledgeGraphKit;
+		};
+		A2000000000000000000000B /* ReflectionKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = ReflectionKit;
+		};
+		A2000000000000000000000D /* AssistantCoreKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = AssistantCoreKit;
+		};
+		A2000000000000000000000F /* WatchCaptureKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WatchCaptureKit;
+		};
+		A20000000000000000000011 /* JournalSecurityKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = JournalSecurityKit;
+		};
+		A20000000000000000000013 /* WatchCaptureKit */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = WatchCaptureKit;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = CFF97BE62EDE056600ED7317 /* Project object */;
 }

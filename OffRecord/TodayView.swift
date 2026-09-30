@@ -2,77 +2,27 @@
 //  TodayView.swift
 //  OffRecord
 //
-//  Main recording interface for creating voice diary entries.
-//  Handles audio recording, transcription, and entry creation.
+//  The daily ritual: a daypart hero with one prompt and one action, today's
+//  entry, a single contextual card, nudges, and gentle progress. Voice capture
+//  itself lives in the app-wide capture accessory (CaptureController).
 //
 
 import SwiftUI
 import CoreData
-import AVFoundation
-import UIKit
-import PhotosUI
-import os.log
 import AppIntents
-
-private let logger = Logger(subsystem: "com.singularity.offrecord", category: "TodayView")
-
-private enum TodayDateFormatters {
-    static let today: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE, MMMM d"
-        return formatter
-    }()
-
-    static let heroDate: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateFormat = "EEEE,\nMMMM d"
-        return formatter
-    }()
-
-    static let time: DateFormatter = {
-        let formatter = DateFormatter()
-        formatter.dateStyle = .none
-        formatter.timeStyle = .short
-        return formatter
-    }()
-}
-
-private struct PendingTodayTranscription {
-    let entryObjectID: NSManagedObjectID
-    let audioURL: URL
-    let capturedAt: Date
-}
-
-// MARK: - Recording State
-
-/// Represents the current state of the recording process
-enum RecordingState: Equatable {
-    case idle       // Ready to record
-    case starting   // Permission/audio session setup is in progress
-    case recording  // Currently recording audio
-    case processing // Transcribing audio to text
-}
 
 // MARK: - Today View
 
-/// Main view for recording and viewing today's diary entry.
-/// Provides voice recording with real-time audio level visualization.
 struct TodayView: View {
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("authorName") private var authorName: String = ""
     @ObservedObject private var proactiveReflection = ProactiveReflectionController.shared
+    @ObservedObject private var weeklyReflection = WeeklyReflectionController.shared
     @ObservedObject private var navigationRouter = OffRecordNavigationRouter.shared
-    private let compactTabSelection: Binding<OffRecordTab>?
-    private let compactBottomSafeAreaInset: CGFloat
-    private let compactDockOwnership: Binding<Bool>?
+    @ObservedObject private var capture = CaptureController.shared
 
-    @StateObject private var recorder = AudioRecorder()
-    @State private var recordingState: RecordingState = .idle
-    @State private var errorMessage: String?
-    @State private var selectedPrompt: EntryPrompt? = nil
-    @State private var selectedPhotos: [PhotosPickerItem] = []
     @State private var noteEntry: DiaryEntry?
     @State private var isShowingNoteEditor = false
     @State private var shouldDeleteEmptyNoteDraft = false
@@ -80,30 +30,16 @@ struct TodayView: View {
     @State private var noteHeroPromptID: String?
     @State private var selectedHero: SelectedDaypartHero?
     @State private var heroStore = DaypartHeroStore()
-    @State private var activeHeroPromptID: String?
-    @State private var heroRecordingPromptID: String?
     @State private var lastExposedHeroPromptID: String?
     @State private var historicalEntries: [DiaryEntry] = []
-    @State private var showRecordSiriTip = true
     @State private var todayActivity: NSUserActivity?
     @State private var todayStats: JournalStatsSnapshot = .empty
-    @State private var pendingTranscription: PendingTodayTranscription?
-    @State private var showSpeechConsentPrompt = false
     @State private var isShowingPrivacyExplanation = false
-    @State private var captureDate = Date()
+    @State private var showRecordSiriTip = true
 
     @FetchRequest private var todayEntries: FetchedResults<DiaryEntry>
 
-    private var isIPad: Bool { horizontalSizeClass == .regular }
-
-    init(
-        compactTabSelection: Binding<OffRecordTab>? = nil,
-        compactBottomSafeAreaInset: CGFloat = 0,
-        compactDockOwnership: Binding<Bool>? = nil
-    ) {
-        self.compactTabSelection = compactTabSelection
-        self.compactBottomSafeAreaInset = compactBottomSafeAreaInset
-        self.compactDockOwnership = compactDockOwnership
+    init() {
         let calendar = Calendar.current
         let startOfDay = calendar.startOfDay(for: Date())
         let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? startOfDay
@@ -114,16 +50,10 @@ struct TodayView: View {
         )
     }
 
+    // MARK: Derived state
+
     private var latestEntry: DiaryEntry? {
         todayEntries.first(where: \.isStartedEntry)
-    }
-
-    private var latestDraftOrStartedEntry: DiaryEntry? {
-        todayEntries.first
-    }
-
-    private var startedEntries: [DiaryEntry] {
-        historicalEntries
     }
 
     private var todayEntriesSignature: String {
@@ -141,22 +71,16 @@ struct TodayView: View {
         return latestEntry
     }
 
-    private var hasHistoricalEntriesForHero: Bool {
-        if isHeroUITestFirstRun {
-            return false
-        }
-        if isHeroUITestEmptyToday {
-            return true
-        }
-        return !startedEntries.isEmpty
-    }
-
     private var isHeroUITestEmptyToday: Bool {
         ProcessInfo.processInfo.arguments.contains("-HeroNudgeEmptyToday")
     }
 
     private var isHeroUITestFirstRun: Bool {
         ProcessInfo.processInfo.arguments.contains("-HeroNudgeFirstRun")
+    }
+
+    private var isFirstRun: Bool {
+        isHeroUITestFirstRun || (historicalEntries.isEmpty && todayStats.isEmpty && effectiveLatestEntry == nil)
     }
 
     private var currentHero: SelectedDaypartHero? {
@@ -173,9 +97,52 @@ struct TodayView: View {
         )
     }
 
-    private var isHeroRecordingActive: Bool {
-        heroRecordingPromptID != nil && recordingState != .idle
+    private var greeting: String {
+        let baseGreeting: String
+        switch DayPart.current() {
+        case .morning: baseGreeting = String(localized: "Good morning")
+        case .afternoon: baseGreeting = String(localized: "Good afternoon")
+        case .evening: baseGreeting = String(localized: "Good evening")
+        case .night: baseGreeting = String(localized: "Good night")
+        }
+        return Personalization.appendFirstName(to: baseGreeting, name: authorName)
     }
+
+    /// Past entries written on this calendar day in earlier years.
+    private var onThisDayEntries: [DiaryEntry] {
+        let calendar = Calendar.current
+        let today = calendar.dateComponents([.month, .day, .year], from: Date())
+        return historicalEntries.filter { entry in
+            guard let date = entry.date else { return false }
+            let parts = calendar.dateComponents([.month, .day, .year], from: date)
+            return parts.month == today.month && parts.day == today.day && (parts.year ?? 0) < (today.year ?? 0)
+        }
+    }
+
+    private enum ContextualCard {
+        case weeklyReflection
+        case proactivePrompt
+        case onThisDay
+    }
+
+    /// One contextual card at a time, in priority order. A ready weekly report only lasts the
+    /// week, so it wins; a timely reflection prompt fills the slot otherwise.
+    private var contextualCard: ContextualCard? {
+        if weeklyReflection.settings.isEnabled,
+           weeklyReflection.settings.showHomeCard,
+           weeklyReflection.currentReport?.isVisibleOnHome == true {
+            return .weeklyReflection
+        }
+        if effectiveLatestEntry == nil, proactiveReflection.selectedPrompt?.priority == .high {
+            return .proactivePrompt
+        }
+        if !onThisDayEntries.isEmpty {
+            return .onThisDay
+        }
+        return nil
+    }
+
+    // MARK: Body
 
     var body: some View {
         GeometryReader { proxy in
@@ -184,48 +151,50 @@ struct TodayView: View {
                 horizontalSizeClass: horizontalSizeClass
             )
 
-            if metrics.mode.supportsSupplementaryPanels, compactTabSelection == nil {
-                expandedTodayLayout(proxy: proxy, metrics: metrics)
-            } else {
-                phoneFirstTodayLayout(proxy: proxy, metrics: metrics)
+            ScrollView {
+                VStack(spacing: 0) {
+                    heroSection(topInset: proxy.safeAreaInsets.top, metrics: metrics)
+
+                    VStack(spacing: OffRecordSpacing.xxl) {
+                        if isFirstRun {
+                            TodayFirstEntryCard(
+                                onSpeak: { capture.startRecording(prompt: currentHero?.prompt.prompt) },
+                                onWrite: { startTypedNote(promptContext: currentHero?.prompt.prompt, heroPromptID: currentHero?.prompt.id) }
+                            )
+                        }
+
+                        contextualCardView
+
+                        TodayNudgeSection(
+                            prompts: EntryPrompt.defaultPrompts,
+                            onWrite: { prompt in startTypedNote(promptContext: prompt.detail, heroPromptID: nil) },
+                            onSpeak: { prompt in capture.startRecording(prompt: prompt.detail) }
+                        )
+
+                        if !isFirstRun {
+                            TodayProgressStrip(stats: todayStats, hasEntryToday: effectiveLatestEntry != nil)
+                        }
+
+                        if metrics.mode.supportsSupplementaryPanels {
+                            SiriTipView(intent: RecordJournalIntent(), isVisible: $showRecordSiriTip)
+                                .siriTipViewStyle(.automatic)
+                        }
+                    }
+                    .padding(.horizontal, metrics.pageHorizontalPadding)
+                    .padding(.top, OffRecordSpacing.xxl)
+                    .padding(.bottom, OffRecordSpacing.section)
+                    .frame(maxWidth: metrics.readableContentMaxWidth ?? .infinity)
+                    .frame(maxWidth: .infinity)
+                }
             }
+            .scrollIndicators(.hidden)
+            .ignoresSafeArea(edges: .top)
+            .background(OffRecordAppBackground().ignoresSafeArea())
         }
-        .alert("Recording Error", isPresented: Binding(
-            get: { errorMessage != nil },
-            set: { if !$0 { errorMessage = nil } }
-        )) {
-            Button("OK", role: .cancel) { }
-        } message: {
-            Text(errorMessage ?? "")
-        }
-        .alert(SpeechTranscriptionConsent.disclosureTitle, isPresented: $showSpeechConsentPrompt) {
-            Button("Continue") {
-                SpeechTranscriptionConsent.grantAppleSpeechProcessing()
-                resumePendingTranscription()
-            }
-        } message: {
-            Text(SpeechTranscriptionConsent.disclosureMessage)
-        }
+        .toolbar(.hidden, for: .navigationBar)
         .sheet(isPresented: $isShowingPrivacyExplanation) {
             HomePrivacyExplanationView()
-                .presentationDetents([.medium])
-        }
-        .onReceive(NotificationCenter.default.publisher(for: .startRecordingFromSiri)) { _ in
-            // Auto-start recording when triggered from Siri shortcut
-            if recordingState == .idle {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.5) {
-                    toggleRecording()
-                }
-            }
-        }
-        .onChange(of: navigationRouter.shouldStartRecording) { _, shouldStart in
-            guard shouldStart else { return }
-            navigationRouter.shouldStartRecording = false
-            if recordingState == .idle {
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                    toggleRecording()
-                }
-            }
+                .presentationDetents([.medium, .large])
         }
         .navigationDestination(isPresented: $isShowingNoteEditor) {
             if let noteEntry {
@@ -239,39 +208,26 @@ struct TodayView: View {
             }
         }
         .onAppear {
-            recorder.prepareForFirstUse()
             refreshHero(recordExposure: false)
             startTodayPredictionActivity()
-            if navigationRouter.shouldStartRecording {
-                navigationRouter.shouldStartRecording = false
-                DispatchQueue.main.asyncAfter(deadline: .now() + 0.35) {
-                    toggleRecording()
-                }
-            }
+            consumePendingTypedNote()
         }
         .onDisappear {
             todayActivity?.resignCurrent()
             todayActivity = nil
         }
-        .onChange(of: latestEntry?.objectID) { _, _ in
-            guard !isHeroRecordingActive else { return }
-            refreshHero(recordExposure: false)
+        .onChange(of: navigationRouter.pendingTypedNote) { _, _ in
+            consumePendingTypedNote()
         }
-        .onChange(of: recordingState) { _, newState in
-            if newState == .idle, heroRecordingPromptID != nil {
-                heroRecordingPromptID = nil
-                activeHeroPromptID = nil
-                refreshHero(recordExposure: false)
-            }
+        .onChange(of: latestEntry?.objectID) { _, _ in
+            refreshHero(recordExposure: false)
         }
         .onChange(of: scenePhase) { _, newPhase in
             switch newPhase {
             case .background:
                 historicalEntries = []
             case .active:
-                Task {
-                    await refreshHistoricalEntryCache(recordHeroExposure: false)
-                }
+                Task { await refreshHistoricalEntryCache(recordHeroExposure: false) }
             default:
                 break
             }
@@ -282,925 +238,111 @@ struct TodayView: View {
         .task(id: todayEntriesSignature) {
             await refreshHistoricalEntryCache(recordHeroExposure: true)
         }
-        .overlay(alignment: .topLeading) {
-            todayKeyboardShortcuts
-        }
+        .background(todayKeyboardShortcuts)
     }
 
     private var todayKeyboardShortcuts: some View {
-        Button("New journal note") {
-            guard recordingState == .idle else { return }
-            startTypedNote()
+        Button("New Entry") {
+            guard !capture.phase.isCapturing else { return }
+            startTypedNote(promptContext: nil, heroPromptID: nil)
         }
         .keyboardShortcut("n", modifiers: .command)
-        .frame(width: 1, height: 1)
-        .opacity(0.01)
+        .frame(width: 0, height: 0)
+        .opacity(0)
         .accessibilityHidden(true)
     }
 
-    private func phoneFirstTodayLayout(
-        proxy: GeometryProxy,
-        metrics: OffRecordAdaptiveMetrics
-    ) -> some View {
-        ZStack(alignment: .bottom) {
-            OffRecordColor.backgroundPrimary
-                .ignoresSafeArea()
-
-            ScrollView(showsIndicators: false) {
-                todayScrollContent(proxy: proxy, metrics: metrics)
-                    .padding(.bottom, compactTabSelection == nil ? OffRecordSpacing.xl : OffRecordCompactTabBarLayout.todayDockScrollContentBottomPadding)
-                    .frame(maxWidth: metrics.readableContentMaxWidth ?? .infinity)
-                    .frame(maxWidth: .infinity)
-            }
-
-            if compactTabSelection == nil {
-                Spacer(minLength: 0)
-                recordingSection
-            }
-
-            if let compactTabSelection {
-                compactBottomDock(
-                    selectedTab: compactTabSelection,
-                    bottomSafeAreaInset: compactBottomSafeAreaInset
-                )
-                .onAppear {
-                    compactDockOwnership?.wrappedValue = true
-                }
-                .onDisappear {
-                    compactDockOwnership?.wrappedValue = false
-                }
-            }
-        }
-    }
-
-    private func expandedTodayLayout(
-        proxy: GeometryProxy,
-        metrics: OffRecordAdaptiveMetrics
-    ) -> some View {
-        HStack(alignment: .top, spacing: OffRecordSpacing.xxl) {
-            ScrollView(showsIndicators: false) {
-                todayScrollContent(proxy: proxy, metrics: metrics)
-                    .padding(.bottom, OffRecordSpacing.section)
-            }
-            .frame(maxWidth: .infinity)
-
-            VStack(spacing: OffRecordSpacing.lg) {
-                recordingSection
-                    .padding(.horizontal, 0)
-
-                if recordingState == .idle {
-                    VStack(alignment: .leading, spacing: OffRecordSpacing.sm) {
-                        Label("Ready on this device", systemImage: "lock.shield")
-                            .font(OffRecordTypography.labelSmall)
-                            .foregroundStyle(OffRecordColor.textSage)
-
-                        Text("Record, write, or attach photos without losing sight of today.")
-                            .font(OffRecordTypography.metadata)
-                            .foregroundStyle(OffRecordColor.textSecondary)
-                    }
-                    .padding(OffRecordSpacing.lg)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceSage)
-                }
-            }
-            .frame(width: metrics.todayCapturePanelWidth)
-            .padding(.top, max(proxy.safeAreaInsets.top + 24, 36))
-            .padding(.trailing, metrics.pageHorizontalPadding)
-        }
-        .padding(.leading, metrics.pageHorizontalPadding)
-        .background(OffRecordColor.backgroundPrimary.ignoresSafeArea())
-    }
-
-    private func todayScrollContent(
-        proxy: GeometryProxy,
-        metrics: OffRecordAdaptiveMetrics
-    ) -> some View {
-        VStack(spacing: 0) {
-            let heroTopBleed = todayHeroTopBleed(for: proxy.safeAreaInsets.top)
-            let heroContentHeight = todayHeroHeight(
-                for: proxy.size,
-                hasEntryToday: effectiveLatestEntry != nil
-            ) + heroTopBleed
-            let heroHeight = heroContentHeight + proactivePromptHeroExtension
-
-            if let hero = currentHero {
-                TodayFullBleedHeroView(
-                    hero: hero,
-                    greeting: greeting,
-                    dateText: formattedHeroDate,
-                    entriesThisYear: entriesThisYear,
-                    todayEntry: effectiveLatestEntry,
-                    height: heroHeight,
-                    contentHeight: heroContentHeight,
-                    topSafeAreaInset: proxy.safeAreaInsets.top,
-                    isRecording: heroRecordingPromptID == hero.prompt.id && recordingState == .recording,
-                    isProcessing: heroRecordingPromptID == hero.prompt.id && recordingState == .processing,
-                    currentTime: recorder.currentTime,
-                    level: Double(recorder.level),
-                    onPrivacy: { isShowingPrivacyExplanation = true }
-                )
-                .overlay(alignment: .bottom) {
-                    proactiveHeroPrompt
-                }
-                .padding(.top, -heroTopBleed)
-            } else {
-                Color.clear
-                    .frame(height: heroHeight)
-                    .padding(.top, -heroTopBleed)
-            }
-
-            if recordingState == .idle {
-                WeeklyReflectionHomeCard(entries: startedEntries) {
-                    startTypedNote(promptContext: nil, heroPromptID: nil)
-                }
-                .padding(.horizontal, metrics.pageHorizontalPadding)
-                .padding(.top, postHeroTopPadding(hasEntryToday: effectiveLatestEntry != nil))
-
-                TodayNudgeSection(prompts: EntryPrompt.defaultPrompts) { prompt in
-                    startTypedNote(promptContext: prompt.detail, heroPromptID: nil)
-                }
-                .padding(.horizontal, metrics.pageHorizontalPadding)
-                .padding(.top, 18)
-            }
-        }
-    }
-
-    private func todayHeroHeight(for size: CGSize, hasEntryToday: Bool) -> CGFloat {
-        let compactHeight = max(640, size.height * 0.76)
-        let regularHeight = max(620, size.height * 0.66)
-        let entryExtension: CGFloat = hasEntryToday ? (isIPad ? 80 : 110) : 0
-        return (isIPad ? regularHeight : compactHeight) + entryExtension
-    }
-
-    private func todayHeroTopBleed(for safeAreaTop: CGFloat) -> CGFloat {
-        min(max(safeAreaTop + 32, 72), 112)
-    }
-
-    private func postHeroTopPadding(hasEntryToday: Bool) -> CGFloat {
-        hasEntryToday ? 30 : 18
-    }
-
-    private var shouldShowProactiveHeroPrompt: Bool {
-        recordingState == .idle
-            && effectiveLatestEntry == nil
-            && proactiveReflection.selectedPrompt?.priority == .high
-    }
-
-    private var proactivePromptHeroExtension: CGFloat {
-        shouldShowProactiveHeroPrompt ? 150 : 0
-    }
+    // MARK: Hero
 
     @ViewBuilder
-    private var proactiveHeroPrompt: some View {
-        if shouldShowProactiveHeroPrompt {
+    private func heroSection(topInset: CGFloat, metrics: OffRecordAdaptiveMetrics) -> some View {
+        if let hero = currentHero {
+            TodayFullBleedHeroView(
+                hero: hero,
+                greeting: greeting,
+                date: Date(),
+                entriesThisYear: todayStats.entriesThisYear,
+                todayEntry: effectiveLatestEntry,
+                topSafeAreaInset: topInset,
+                horizontalPadding: metrics.pageHorizontalPadding,
+                onSpeak: {
+                    capture.startRecording(prompt: hero.prompt.prompt)
+                },
+                onWrite: {
+                    selectedHero = hero
+                    startTypedNote(promptContext: hero.prompt.prompt, heroPromptID: hero.prompt.id)
+                },
+                onAnotherPrompt: { skipHero(hero) },
+                onPrivacy: { isShowingPrivacyExplanation = true }
+            )
+        }
+    }
+
+    // MARK: Contextual card
+
+    @ViewBuilder
+    private var contextualCardView: some View {
+        switch contextualCard {
+        case .weeklyReflection:
+            WeeklyReflectionHomeCard(entries: historicalEntries) {
+                startTypedNote(promptContext: nil, heroPromptID: nil)
+            }
+            .transition(.opacity)
+        case .proactivePrompt:
             ProactiveReflectionPromptCard(
-                entries: startedEntries,
+                entries: historicalEntries,
                 hasEntryToday: effectiveLatestEntry != nil
             ) { insight in
                 startTypedNote(promptContext: insight.prompt, heroPromptID: nil)
             }
-            .padding(.horizontal, OffRecordSpacing.screenX)
-            .padding(.bottom, 18)
+            .transition(.opacity)
+        case .onThisDay:
+            OnThisDayCard(entries: onThisDayEntries)
+                .transition(.opacity)
+        case nil:
+            // Keeps the weekly reflection eligibility refresh running even when no card is shown.
+            WeeklyReflectionHomeCard(entries: historicalEntries)
+                .frame(height: 0)
+                .hidden()
         }
     }
 
-    // MARK: - Header Section
-
-    private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            // Top row with greeting and privacy badge
-            HStack {
-                VStack(alignment: .leading, spacing: 4) {
-                    Text(greeting)
-                        .font(OffRecordTypography.bodyMedium)
-                        .foregroundColor(OffRecordColor.textSecondary)
-                    Text(formattedToday)
-                        .font(OffRecordTypography.screenTitle)
-                        .foregroundColor(OffRecordColor.textHeading)
-                        .lineLimit(2)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer()
-                OffRecordPrivacyBadge(compact: true)
-            }
-
-            // Stats row
-            HStack(spacing: 12) {
-                if streakCount > 0 {
-                    StatBadge(
-                        icon: "flame.fill",
-                        value: "\(streakCount) day streak",
-                        style: .journal
-                    )
-                }
-
-                if entriesThisYear > 0 {
-                    StatBadge(
-                        icon: "calendar",
-                        value: "\(entriesThisYear) \(entriesThisYear == 1 ? "entry" : "entries") this year",
-                        style: .privacy
-                    )
-                }
-
-                Spacer()
-            }
-        }
-    }
-
-    private var greeting: String {
-        let hour = Calendar.current.component(.hour, from: Date())
-        let baseGreeting: String
-        switch hour {
-        case 5..<12: baseGreeting = "Good morning"
-        case 12..<17: baseGreeting = "Good afternoon"
-        case 17..<21: baseGreeting = "Good evening"
-        default: baseGreeting = "Good night"
-        }
-        return Personalization.appendFirstName(to: baseGreeting, name: authorName)
-    }
-
-    // MARK: - Prompts Section
-
-    private var promptsSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack {
-                Text("Need a nudge?")
-                    .font(OffRecordTypography.labelMedium)
-                    .foregroundColor(OffRecordColor.textBrand)
-                Spacer()
-            }
-
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
-                    ForEach(EntryPrompt.defaultPrompts) { prompt in
-                        PromptChip(
-                            prompt: prompt,
-                            isSelected: prompt == selectedPrompt
-                        ) {
-                            if selectedPrompt == prompt {
-                                selectedPrompt = nil
-                            } else {
-                                selectedPrompt = prompt
-                                HapticManager.shared.selectionChanged()
-                            }
-                        }
-                    }
-                }
-                .padding(.horizontal, 2)
-            }
-        }
-    }
-
-    // MARK: - Entry Card Section
-
-    private var entryCardSection: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            if let entry = effectiveLatestEntry, !isHeroRecordingActive {
-                todaysEntryCard(entry)
-                if let hero = currentHero {
-                    CompactDaypartHeroCard(
-                        hero: hero,
-                        isIPad: isIPad,
-                        onRecord: { startHeroRecording(hero) },
-                        onAddNote: { startTypedNote(from: hero) },
-                        onSkip: { skipHero(hero) }
-                    )
-                }
-            } else {
-                if !hasHistoricalEntriesForHero, let hero = currentHero {
-                    WelcomeDaypartHeroCard(
-                        hero: hero,
-                        authorName: authorName,
-                        isIPad: isIPad,
-                        isRecording: heroRecordingPromptID == hero.prompt.id && recordingState == .recording,
-                        isProcessing: heroRecordingPromptID == hero.prompt.id && recordingState == .processing,
-                        currentTime: recorder.currentTime,
-                        level: Double(recorder.level),
-                        onPrimary: { startHeroRecording(hero) },
-                        onWrite: { startTypedNote(from: hero) },
-                        onSkip: { skipHero(hero) },
-                        onStop: stopHeroRecording
-                    )
-                } else if let hero = currentHero {
-                    LargeDaypartHeroCard(
-                        hero: hero,
-                        isIPad: isIPad,
-                        isRecording: heroRecordingPromptID == hero.prompt.id && recordingState == .recording,
-                        isProcessing: heroRecordingPromptID == hero.prompt.id && recordingState == .processing,
-                        currentTime: recorder.currentTime,
-                        level: Double(recorder.level),
-                        onPrimary: { startHeroRecording(hero) },
-                        onWrite: { startTypedNote(from: hero) },
-                        onSkip: { skipHero(hero) },
-                        onStop: stopHeroRecording
-                    )
-                } else {
-                    WelcomeCard()
-                }
-
-                ProactiveReflectionPromptCard(
-                    entries: startedEntries,
-                    hasEntryToday: effectiveLatestEntry != nil
-                ) { insight in
-                    startTypedNote(promptContext: insight.prompt, heroPromptID: nil)
-                }
-            }
-        }
-    }
-
-    private func todaysEntryCard(_ entry: DiaryEntry) -> some View {
-        NavigationLink {
-            EntryDetailView(entry: entry)
-        } label: {
-            VStack(alignment: .leading, spacing: 12) {
-                HStack {
-                    Label("Today's Entry", systemImage: "doc.text")
-                        .font(OffRecordTypography.labelMedium)
-                        .foregroundColor(OffRecordColor.textPeach)
-                    Spacer()
-                    Image(systemName: "chevron.right")
-                        .font(OffRecordTypography.labelSmall)
-                        .foregroundColor(OffRecordColor.textTertiary)
-                }
-
-                if let text = entry.text, !text.isEmpty {
-                    Text(text)
-                        .font(OffRecordTypography.journalBody)
-                        .foregroundColor(OffRecordColor.textPrimary)
-                        .multilineTextAlignment(.leading)
-                        .lineLimit(nil)
-
-                    HStack(spacing: 16) {
-                        if let duration = entry.value(forKey: "duration") as? Double, duration > 0 {
-                            Label(formatDuration(duration), systemImage: "waveform")
-                                .font(OffRecordTypography.metadata)
-                                .foregroundColor(OffRecordColor.textSecondary)
-                        }
-
-                        let words = wordCount(for: text)
-                        if words > 0 {
-                            Label("\(words) words", systemImage: "text.word.spacing")
-                                .font(OffRecordTypography.metadata)
-                                .foregroundColor(OffRecordColor.textSecondary)
-                        }
-
-                        Spacer()
-
-                        if let updatedAt = entry.updatedAt {
-                            Text(formattedTime(updatedAt))
-                                .font(OffRecordTypography.metadata)
-                                .foregroundColor(OffRecordColor.textTertiary)
-                        }
-                    }
-                } else {
-                    VStack(alignment: .leading, spacing: 8) {
-                        if entry.shouldShowTranscriptionSpinner(displayText: entry.text) && recordingState == .processing {
-                            HStack(spacing: 10) {
-                                ProgressView()
-                                    .scaleEffect(0.8)
-                                Text("Transcribing your recording...")
-                                    .font(OffRecordTypography.bodySmall)
-                                    .foregroundColor(OffRecordColor.textSecondary)
-                            }
-                        } else {
-                            emptyEntryCopy(for: entry)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding(.vertical, 8)
-                }
-            }
-            .padding()
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .offRecordContentCard(cornerRadius: OffRecordRadius.xl, fill: OffRecordColor.surfacePeach)
-        }
-        .buttonStyle(.plain)
-    }
-
-    // MARK: - Recording Section
-
-    private func compactBottomDock(
-        selectedTab: Binding<OffRecordTab>,
-        bottomSafeAreaInset: CGFloat
-    ) -> some View {
-        VStack(spacing: OffRecordCompactTabBarLayout.todayDockRecordingFeedbackClearance) {
-            if recordingState == .idle {
-                DatePicker(
-                    "Journal date",
-                    selection: $captureDate,
-                    in: ...Date(),
-                    displayedComponents: .date
-                )
-                .labelsHidden()
-                .datePickerStyle(.compact)
-                .offRecordGlassControl(
-                    tint: OffRecordReadableTintStyle.journal.tint,
-                    in: Capsule(),
-                    fallbackFill: OffRecordReadableTintStyle.journal.fill,
-                    border: OffRecordReadableTintStyle.journal.border
-                )
-                .accessibilityLabel("Journal date")
-            }
-
-            compactRecordingFeedback
-                .zIndex(4)
-
-            ZStack(alignment: .bottom) {
-                compactActionShelf
-                    .offset(y: -54)
-                    .zIndex(1)
-
-                OffRecordFloatingTabBar(selectedTab: selectedTab)
-                    .zIndex(2)
-
-                compactRecordButton
-                    .offset(y: -92)
-                    .zIndex(3)
-            }
-        }
-        .padding(.horizontal, OffRecordCompactTabBarLayout.horizontalPadding)
-        .padding(.bottom, OffRecordCompactTabBarLayout.screenEdgeBottomPadding)
-        .offset(y: bottomSafeAreaInset)
-        .animation(.spring(response: 0.4, dampingFraction: 0.86), value: recordingState)
-    }
-
-    @ViewBuilder
-    private var compactRecordingFeedback: some View {
-        if recordingState == .processing && !isHeroRecordingActive {
-            OffRecordLoadingView(message: "Transcribing your thoughts...")
-            .overlay(Capsule().stroke(OffRecordColor.borderSoft, lineWidth: 1))
-            .shadow(color: OffRecordShadow.floatingColor, radius: 18, x: 0, y: 8)
-            .transition(.scale.combined(with: .opacity))
-        } else if recordingState == .recording && !isHeroRecordingActive {
-            HeroRecordingMeter(
-                currentTime: recorder.currentTime,
-                level: Double(recorder.level),
-                isProcessing: false,
-                barCount: 20
-            )
-            .frame(maxWidth: 320)
-            .padding(.horizontal, 28)
-            .transition(.scale.combined(with: .opacity))
-        }
-    }
-
-    private var compactActionShelf: some View {
-        HStack {
-            compactPhotoButton
-
-            Spacer(minLength: 92)
-
-            compactNoteButton
-        }
-        .padding(.horizontal, 36)
-        .frame(maxWidth: 340)
-        .frame(height: 92)
-        .offRecordClearGlassSurface(
-            in: RoundedRectangle(cornerRadius: OffRecordRadius.xxl, style: .continuous),
-            fallbackFill: OffRecordColor.surfacePrimary,
-            clearFill: OffRecordColor.surfacePrimary.opacity(0.20),
-            stroke: Color.white.opacity(0.58),
-            shadowColor: Color.black.opacity(0.08),
-            shadowRadius: 24,
-            shadowY: 8
-        )
-        .padding(.horizontal, 24)
-    }
-
-    private var compactPhotoButton: some View {
-        PhotosPicker(
-            selection: $selectedPhotos,
-            maxSelectionCount: 5,
-            matching: .images
-        ) {
-            compactSideActionButton(systemImage: "photo.badge.plus")
-        }
-        .onChange(of: selectedPhotos) { _, newItems in
-            handlePhotoPickerSelection(newItems)
-        }
-        .buttonStyle(.plain)
-        .disabled(recordingState != .idle)
-        .opacity(recordingState == .idle ? 1 : 0.45)
-        .accessibilityLabel("Add photos")
-        .accessibilityIdentifier("todayDock.photo")
-    }
-
-    private var compactNoteButton: some View {
-        Button(action: startTypedNote) {
-            compactSideActionButton(systemImage: "square.and.pencil")
-        }
-        .buttonStyle(.plain)
-        .disabled(recordingState != .idle)
-        .opacity(recordingState == .idle ? 1 : 0.45)
-        .accessibilityLabel("Write note")
-        .accessibilityIdentifier("todayDock.write")
-    }
-
-    private func compactSideActionButton(systemImage: String) -> some View {
-        ZStack {
-            Image(systemName: systemImage)
-                .font(.system(size: 22, weight: .semibold))
-                .foregroundColor(OffRecordColor.brandSageDark)
-        }
-        .frame(width: 60, height: 60)
-        .offRecordClearGlassControl(
-            in: Circle(),
-            fallbackFill: OffRecordColor.backgroundSageTint,
-            clearFill: OffRecordColor.surfacePrimary.opacity(0.20),
-            stroke: Color.white.opacity(0.56)
-        )
-        .contentShape(Circle())
-    }
-
-    private var compactRecordButton: some View {
-        Button {
-            toggleRecording()
-        } label: {
-            ZStack {
-                Circle()
-                    .fill(compactRecordButtonFill)
-                    .frame(width: 92, height: 92)
-
-                Circle()
-                    .stroke(OffRecordColor.surfacePrimary, lineWidth: 4)
-                    .frame(width: 92, height: 92)
-
-                if recordingState == .recording {
-                    RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .fill(OffRecordColor.textInverse)
-                        .frame(width: 30, height: 30)
-                } else if recordingState == .starting || recordingState == .processing {
-                    ProgressView()
-                        .tint(OffRecordColor.textInverse)
-                } else {
-                    Image(systemName: "mic.fill")
-                        .font(.system(size: 38, weight: .semibold))
-                        .foregroundColor(OffRecordColor.textInverse)
-                }
-            }
-            .frame(width: 92, height: 92)
-            .shadow(color: Color.black.opacity(0.12), radius: 18, x: 0, y: 8)
-            .contentShape(Circle())
-        }
-        .buttonStyle(.plain)
-        .disabled(recordingState == .starting || recordingState == .processing)
-        .accessibilityLabel(recordingAccessibilityLabel)
-        .accessibilityIdentifier("todayDock.record")
-    }
-
-    private var compactRecordButtonFill: Color {
-        switch recordingState {
-        case .idle:
-            return OffRecordColor.brandPlum
-        case .starting, .processing:
-            return OffRecordColor.brandPeach
-        case .recording:
-            return OffRecordColor.brandCoral
-        }
-    }
-
-    private var recordingSection: some View {
-        VStack(spacing: 16) {
-            // Processing indicator
-            if recordingState == .processing && !isHeroRecordingActive {
-                HStack(spacing: 10) {
-                    ProgressView()
-                        .scaleEffect(0.9)
-                    Text("Transcribing your thoughts...")
-                        .font(OffRecordTypography.labelMedium)
-                        .foregroundColor(OffRecordColor.textSecondary)
-                }
-                .padding(.vertical, 12)
-                .padding(.horizontal, 20)
-                .offRecordGlassControl(tint: OffRecordColor.brandLavenderDark, in: Capsule(), fallbackFill: OffRecordColor.surfaceLavender)
-                .transition(.scale.combined(with: .opacity))
-            }
-
-            // Audio level meter (when recording)
-            if recordingState == .recording && !isHeroRecordingActive {
-                HeroRecordingMeter(
-                    currentTime: recorder.currentTime,
-                    level: Double(recorder.level),
-                    isProcessing: false,
-                    barCount: isIPad ? 30 : 20
-                )
-                .transition(.scale.combined(with: .opacity))
-            }
-
-            // Entry action buttons
-            HStack(spacing: 24) {
-                Spacer()
-
-                if recordingState == .idle {
-                    photoButton
-                }
-
-                recordButton
-
-                if recordingState == .idle {
-                    noteButton
-                }
-
-                Spacer()
-            }
-
-            // Status text (only when idle)
-            if recordingState == .idle {
-                VStack(spacing: 6) {
-                    DatePicker(
-                        "Journal date",
-                        selection: $captureDate,
-                        in: ...Date(),
-                        displayedComponents: .date
-                    )
-                    .labelsHidden()
-                    .datePickerStyle(.compact)
-                    .accessibilityLabel("Journal date")
-
-                    Text(statusText)
-                        .font(OffRecordTypography.labelMedium)
-                        .foregroundColor(OffRecordColor.textBrand)
-                    Text("Your journal stays on this device")
-                        .font(OffRecordTypography.metadata)
-                        .foregroundColor(OffRecordColor.textSage)
-
-                    if let prompt = selectedPrompt {
-                        Text(prompt.detail)
-                            .font(OffRecordTypography.metadata)
-                            .foregroundColor(OffRecordColor.textSecondary)
-                            .multilineTextAlignment(.center)
-                            .padding(.top, 4)
-                    }
-
-                    SiriTipView(intent: RecordJournalIntent(), isVisible: $showRecordSiriTip)
-                        .siriTipViewStyle(.automatic)
-                        .padding(.top, 6)
-                }
-            }
-        }
-        .padding(.vertical, 20)
-        .padding(.horizontal, 20)
-        .frame(maxWidth: isIPad ? 560 : .infinity)
-        .offRecordClearGlassSurface(
-            in: RoundedRectangle(cornerRadius: OffRecordRadius.xxl, style: .continuous),
-            fallbackFill: OffRecordColor.surfaceWarm,
-            clearFill: OffRecordColor.surfaceWarm.opacity(0.24),
-            stroke: Color.white.opacity(0.58),
-            shadowColor: OffRecordShadow.floatingColor,
-            shadowRadius: 24,
-            shadowY: 10
-        )
-        .padding(.horizontal)
-        .padding(.bottom, 8)
-        .safeAreaPadding(.bottom, 4)
-        .animation(.spring(response: 0.4), value: recordingState)
-    }
-
-    private var recordButtonSize: CGFloat { isIPad ? 88 : 72 }
-    private var recordButtonOuterSize: CGFloat { isIPad ? 108 : 88 }
-    private var sideActionButtonSize: CGFloat { isIPad ? 56 : 48 }
-
-    private var photoButton: some View {
-        PhotosPicker(
-            selection: $selectedPhotos,
-            maxSelectionCount: 5,
-            matching: .images
-        ) {
-            sideActionButton(systemImage: "photo.badge.plus")
-        }
-        .onChange(of: selectedPhotos) { _, newItems in
-            handlePhotoPickerSelection(newItems)
-        }
-        .accessibilityLabel("Add photos")
-    }
-
-    private var noteButton: some View {
-        Button(action: startTypedNote) {
-            sideActionButton(systemImage: "square.and.pencil")
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("Write note")
-    }
-
-    private func sideActionButton(systemImage: String) -> some View {
-        ZStack {
-            Image(systemName: systemImage)
-                .font(.system(size: isIPad ? 22 : 18))
-                .foregroundColor(sideActionIconColor)
-        }
-        .frame(width: sideActionButtonSize, height: sideActionButtonSize)
-        .offRecordClearGlassControl(
-            in: Circle(),
-            fallbackFill: OffRecordReadableTintStyle.brand.fill,
-            clearFill: OffRecordColor.surfacePrimary.opacity(0.20),
-            stroke: Color.white.opacity(0.56)
-        )
-    }
-
-    private var recordButton: some View {
-        Button {
-            toggleRecording()
-        } label: {
-            ZStack {
-                if #available(iOS 26.0, *) {
-                    Circle()
-                        .stroke(buttonColor.opacity(0.35), lineWidth: 4)
-                        .frame(width: recordButtonOuterSize, height: recordButtonOuterSize)
-                } else {
-                    Circle()
-                        .fill(buttonColor)
-                        .frame(width: recordButtonSize, height: recordButtonSize)
-
-                    Circle()
-                        .stroke(buttonColor.opacity(0.3), lineWidth: 4)
-                        .frame(width: recordButtonOuterSize, height: recordButtonOuterSize)
-                }
-
-                // Icon
-                if recordingState == .recording {
-                    // Stop square
-                    RoundedRectangle(cornerRadius: 6)
-                        .fill(recordIconColor)
-                        .frame(width: isIPad ? 30 : 24, height: isIPad ? 30 : 24)
-                } else if recordingState == .starting || recordingState == .processing {
-                    ProgressView()
-                        .tint(recordIconColor)
-                } else {
-                    // Mic icon
-                    Image(systemName: "mic.fill")
-                        .font(.system(size: isIPad ? 34 : 28))
-                        .foregroundColor(recordIconColor)
-                }
-            }
-            .frame(width: recordButtonOuterSize, height: recordButtonOuterSize)
-            .offRecordGlassControl(tint: buttonColor, in: Circle(), fallbackFill: buttonColor)
-        }
-        .buttonStyle(.plain)
-        .disabled(recordingState == .starting || recordingState == .processing)
-        .accessibilityLabel(recordingAccessibilityLabel)
-    }
-
-    private var recordIconColor: Color {
-        .white
-    }
-
-    private var sideActionIconColor: Color {
-        OffRecordReadableTintStyle.brand.foreground
-    }
-
-    private var buttonColor: Color {
-        switch recordingState {
-        case .idle: return OffRecordColor.brandPlum
-        case .starting: return OffRecordColor.brandPeach
-        case .recording: return OffRecordColor.brandCoral
-        case .processing: return OffRecordColor.brandPeach
-        }
-    }
-
-    private var statusText: String {
-        switch recordingState {
-        case .idle: return "Tap to record or write"
-        case .starting: return "Starting..."
-        case .recording: return "Tap to stop"
-        case .processing: return "Almost done..."
-        }
-    }
-
-    private var recordingAccessibilityLabel: String {
-        switch recordingState {
-        case .idle:
-            return "Start recording"
-        case .starting:
-            return "Starting recording"
-        case .recording:
-            return "Stop recording"
-        case .processing:
-            return "Processing recording"
-        }
-    }
-
-    private func barHeight(for index: Int) -> CGFloat {
-        let normalizedLevel = CGFloat(max(0, min(1, recorder.level)))
-        let baseHeight: CGFloat = 8
-        let maxAdditional: CGFloat = 22
-
-        // Create wave effect based on index
-        let wave = sin(Double(index) * 0.5 + Date().timeIntervalSince1970 * 8) * 0.3 + 0.7
-        return baseHeight + maxAdditional * normalizedLevel * CGFloat(wave)
-    }
-
-    private func barColor(for index: Int) -> Color {
-        let normalizedLevel = CGFloat(max(0, min(1, recorder.level)))
-        let barCount = CGFloat(isIPad ? 30 : 20)
-        let threshold = CGFloat(index) / barCount
-
-        if normalizedLevel > threshold {
-            let highThreshold = Int(barCount * 0.7)
-            let midThreshold = Int(barCount * 0.5)
-            return index > highThreshold ? OffRecordColor.brandCoral : (index > midThreshold ? OffRecordColor.brandPeach : OffRecordColor.brandAqua)
-        }
-        return OffRecordColor.textTertiary.opacity(0.2)
-    }
-
-    // MARK: - Photo Handling
-
-    private func handlePhotoPickerSelection(_ items: [PhotosPickerItem]) {
-        guard !items.isEmpty else { return }
-
-        let capturedAt = captureTimestamp()
-        guard let entry = getOrCreateCaptureEntry(capturedAt: capturedAt) else { return }
-        let entryObjectID = entry.objectID
-
-        for item in items {
-            let token = PerformanceSignposts.begin("PhotoImport")
-            item.loadTransferable(type: Data.self) { result in
-                guard case .success(let data) = result, let data else {
-                    PerformanceSignposts.end(token)
-                    return
-                }
-
-                Task { @MainActor in
-                    guard let jpegData = await PhotoAttachmentProcessor.shared.preparedJPEGData(from: data) else {
-                        PerformanceSignposts.end(token)
-                        return
-                    }
-
-                    guard let entry = try? viewContext.existingObject(with: entryObjectID) as? DiaryEntry else {
-                        PerformanceSignposts.end(token)
-                        return
-                    }
-
-                    if let attachment = PhotoStorageManager.shared.addPhotoData(jpegData, to: entry, in: viewContext) {
-                        JournalBlockTimelineStore.appendPhotoBlock(
-                            attachment: attachment,
-                            createdAt: capturedAt,
-                            to: entry,
-                            in: viewContext
-                        )
-                        entry.updatedAt = Date()
-                        try? viewContext.save()
-                        JournalSpotlightIndexer.shared.upsert(entry: entry)
-                        HapticManager.shared.entrySaved()
-                    }
-                    PerformanceSignposts.end(token)
-                }
-            }
-        }
-        selectedPhotos = []
-    }
-
-    private func startTypedNote() {
-        startTypedNote(promptContext: selectedPrompt?.detail, heroPromptID: nil)
-    }
-
-    private func startTypedNote(from hero: SelectedDaypartHero) {
-        selectedHero = hero
-        startTypedNote(promptContext: hero.prompt.prompt, heroPromptID: hero.prompt.id)
+    // MARK: Actions
+
+    private func consumePendingTypedNote() {
+        guard let request = navigationRouter.pendingTypedNote else { return }
+        navigationRouter.pendingTypedNote = nil
+        startTypedNote(promptContext: request.promptContext, heroPromptID: nil)
     }
 
     private func startTypedNote(promptContext: String?, heroPromptID: String?) {
-        guard recordingState == .idle else { return }
-
-        let capturedAt = captureTimestamp()
-        let hadEntry = existingCaptureEntry(on: capturedAt)?.isStartedEntry == true
-        guard let entry = getOrCreateCaptureEntry(capturedAt: capturedAt) else { return }
+        guard !capture.phase.isCapturing else {
+            capture.isPanelPresented = true
+            return
+        }
+        let capturedAt = capture.captureTimestamp()
+        let hadEntry = (try? DiaryEntryDailyStore.entries(on: capturedAt, in: viewContext).first)?.isStartedEntry == true
+        guard let entry = capture.getOrCreateEntry(capturedAt: capturedAt) else {
+            capture.alert = .entryCreationFailed
+            return
+        }
         noteEntry = entry
         notePromptContext = promptContext
         noteHeroPromptID = heroPromptID
-        shouldDeleteEmptyNoteDraft = !hadEntry && entryHasNoContent(entry)
+        shouldDeleteEmptyNoteDraft = !hadEntry && !entry.isStartedEntry
         isShowingNoteEditor = true
         HapticManager.shared.selectionChanged()
     }
 
-    private func startHeroRecording(_ hero: SelectedDaypartHero) {
-        guard recordingState == .idle else { return }
-        selectedHero = hero
-        activeHeroPromptID = hero.prompt.id
-        heroRecordingPromptID = hero.prompt.id
-        startRecording()
-    }
-
-    private func handleHeroPrimaryAction(_ hero: SelectedDaypartHero) {
-        if heroRecordingPromptID == hero.prompt.id && recordingState == .recording {
-            stopHeroRecording()
-        } else {
-            startHeroRecording(hero)
-        }
-    }
-
-    private func stopHeroRecording() {
-        guard recordingState == .recording else { return }
-        stopRecording()
-    }
-
     private func skipHero(_ hero: SelectedDaypartHero) {
-        guard recordingState == .idle else { return }
         heroStore.recordSkip(promptID: hero.prompt.id)
-        selectedHero = DaypartHeroLibrary.selectHero(
-            dayPart: DayPart.current(),
-            hasEntryToday: effectiveLatestEntry != nil,
-            store: heroStore
-        )
+        withOffRecordAnimation(OffRecordMotion.gentle) {
+            selectedHero = DaypartHeroLibrary.selectHero(
+                dayPart: DayPart.current(),
+                hasEntryToday: effectiveLatestEntry != nil,
+                store: heroStore
+            )
+        }
         if let selectedHero {
             heroStore.recordExposure(selectedHero)
             lastExposedHeroPromptID = selectedHero.prompt.id
@@ -1220,412 +362,14 @@ struct TodayView: View {
         }
     }
 
-    private func getOrCreateTodayEntry() -> DiaryEntry? {
-        getOrCreateCaptureEntry(capturedAt: Date())
-    }
-
-    private func getOrCreateCaptureEntry(capturedAt: Date? = nil) -> DiaryEntry? {
-        let now = capturedAt ?? captureTimestamp()
-        do {
-            let entry = try DiaryEntryDailyStore.getOrCreateEntry(on: now, in: viewContext)
-            try viewContext.save()
-            return entry
-        } catch {
-            if let existing = existingCaptureEntry(on: now) {
-                return existing
-            }
-            if let draft = latestDraftOrStartedEntry, entry(draft, isOnSameDayAs: now) {
-                return draft
-            }
-            let entry = DiaryEntry(context: viewContext)
-            entry.id = UUID()
-            entry.date = now
-            entry.createdAt = now
-            entry.text = ""
-            entry.isStarred = false
-            entry.updatedAt = now
-            do {
-                try viewContext.save()
-                return entry
-            } catch {
-                viewContext.rollback()
-                errorMessage = "Could not create today's entry. Please try again."
-                return nil
-            }
-        }
-    }
-
-    private func existingCaptureEntry(on date: Date) -> DiaryEntry? {
-        (try? DiaryEntryDailyStore.entries(on: date, in: viewContext).first)
-    }
-
-    private func entry(_ entry: DiaryEntry, isOnSameDayAs date: Date) -> Bool {
-        guard let entryDate = entry.date else { return false }
-        return Calendar.current.isDate(entryDate, inSameDayAs: date)
-    }
-
-    private func captureTimestamp(clock: Date = Date()) -> Date {
-        let calendar = Calendar.current
-        let day = calendar.dateComponents([.year, .month, .day], from: captureDate)
-        let time = calendar.dateComponents([.hour, .minute, .second, .nanosecond], from: clock)
-        var components = DateComponents()
-        components.calendar = calendar
-        components.year = day.year
-        components.month = day.month
-        components.day = day.day
-        components.hour = time.hour
-        components.minute = time.minute
-        components.second = time.second
-        components.nanosecond = time.nanosecond
-        return calendar.date(from: components) ?? clock
-    }
-
     private func startTodayPredictionActivity() {
         todayActivity?.resignCurrent()
         todayActivity = JournalSpotlightIndexer.shared.predictionActivity(
             type: "com.singularity.offrecord.today",
-            title: "Write in OffRecord",
+            title: String(localized: "Write in OffRecord"),
             route: .today
         )
         todayActivity?.becomeCurrent()
-    }
-
-    @ViewBuilder
-    private func emptyEntryCopy(for entry: DiaryEntry) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
-            if hasAudioReference(entry) {
-                Text("Recording saved")
-                    .font(OffRecordTypography.bodySmall)
-                    .foregroundColor(OffRecordColor.textPrimary)
-                Text("Tap to add text or play your recording")
-                    .font(OffRecordTypography.metadata)
-                    .foregroundColor(OffRecordColor.textSecondary)
-            } else if entry.photos?.count ?? 0 > 0 {
-                Text("Photos added")
-                    .font(OffRecordTypography.bodySmall)
-                    .foregroundColor(OffRecordColor.textPrimary)
-                Text("Tap to add text or more photos")
-                    .font(OffRecordTypography.metadata)
-                    .foregroundColor(OffRecordColor.textSecondary)
-            } else if let moodString = entry.value(forKey: "mood") as? String,
-                      let mood = Mood(rawValue: moodString),
-                      mood != .none {
-                Text("\(mood.displayName) mood")
-                    .font(OffRecordTypography.bodySmall)
-                    .foregroundColor(OffRecordColor.textPrimary)
-                Text("Tap to add text or audio")
-                    .font(OffRecordTypography.metadata)
-                    .foregroundColor(OffRecordColor.textSecondary)
-            } else {
-                Text("Draft note")
-                    .font(OffRecordTypography.bodySmall)
-                    .foregroundColor(OffRecordColor.textPrimary)
-                Text("Tap to start writing")
-                    .font(OffRecordTypography.metadata)
-                    .foregroundColor(OffRecordColor.textSecondary)
-            }
-        }
-    }
-
-    private func hasAudioReference(_ entry: DiaryEntry) -> Bool {
-        entry.hasStartedEntryAudio
-    }
-
-    private func entryHasNoContent(_ entry: DiaryEntry) -> Bool {
-        !entry.isStartedEntry
-    }
-
-    // MARK: - Recording Logic
-
-    private func toggleRecording() {
-        switch recordingState {
-        case .idle:
-            startRecording()
-        case .recording:
-            stopRecording()
-        case .starting, .processing:
-            break
-        }
-    }
-
-    private func startRecording() {
-        PerformanceSignposts.event("RecordTap")
-        recordingState = .starting
-
-        if ProcessInfo.processInfo.arguments.contains("-HeroNudgeUITest") {
-            recordingState = .recording
-            HapticManager.shared.recordingStarted()
-            return
-        }
-
-        #if os(iOS)
-        AVAudioApplication.requestRecordPermission { granted in
-            Task { @MainActor in
-                if granted {
-                    do {
-                        try self.recorder.startRecording()
-                        self.recordingState = .recording
-                        HapticManager.shared.recordingStarted()
-                    } catch {
-                        self.errorMessage = "Unable to start recording. Please try again."
-                        self.recordingState = .idle
-                        self.heroRecordingPromptID = nil
-                        self.activeHeroPromptID = nil
-                        HapticManager.shared.error()
-                    }
-                } else {
-                    self.errorMessage = "OffRecord needs microphone access to record your diary."
-                    self.recordingState = .idle
-                    self.heroRecordingPromptID = nil
-                    self.activeHeroPromptID = nil
-                    HapticManager.shared.warning()
-                }
-            }
-        }
-        #else
-        errorMessage = "Recording is only available on iOS."
-        recordingState = .idle
-        #endif
-    }
-
-    private func stopRecording() {
-        HapticManager.shared.recordingStopped()
-
-        if ProcessInfo.processInfo.arguments.contains("-CaptureSpeechConsentUITest"),
-           let testAudioURL = makeUITestRecordingFile() {
-            _ = recorder.stopRecording()
-            recordingState = .processing
-            saveEntry(audioURL: testAudioURL, duration: 4)
-            return
-        }
-
-        if let result = recorder.stopRecording() {
-            recordingState = .processing
-            saveEntry(audioURL: result.url, duration: result.duration)
-        } else {
-            recordingState = .idle
-            heroRecordingPromptID = nil
-            activeHeroPromptID = nil
-        }
-    }
-
-    private func makeUITestRecordingFile() -> URL? {
-        guard let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
-            return nil
-        }
-        let directory = base.appendingPathComponent("Recordings", isDirectory: true)
-        do {
-            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
-            let url = directory.appendingPathComponent("ui-test-recording-\(UUID().uuidString).m4a")
-            try Data([0, 1, 2, 3]).write(to: url)
-            return url
-        } catch {
-            return nil
-        }
-    }
-
-    private func saveEntry(audioURL: URL, duration: TimeInterval) {
-        let now = captureTimestamp()
-        let entry: DiaryEntry
-        do {
-            entry = try DiaryEntryDailyStore.getOrCreateEntry(on: now, in: viewContext)
-        } catch {
-            entry = DiaryEntry(context: viewContext)
-            entry.id = UUID()
-            entry.date = now
-            entry.createdAt = now
-            entry.text = ""
-            entry.isStarred = false
-        }
-
-        let byteCount = ((try? FileManager.default.attributesOfItem(atPath: audioURL.path)[.size]) as? NSNumber)?.int64Value ?? -1
-        let attachment = AudioAttachmentStore.attachAudio(
-            fileName: audioURL.lastPathComponent,
-            duration: duration,
-            createdAt: now,
-            sourceCaptureID: nil,
-            byteCount: byteCount,
-            codec: "aac-lc",
-            to: entry,
-            in: viewContext
-        )
-        JournalBlockTimelineStore.appendAudioBlock(
-            attachment: attachment,
-            createdAt: now,
-            sourceCaptureID: nil,
-            to: entry,
-            in: viewContext
-        )
-        entry.entryTranscriptionStatus = .processing
-        let fileExists = FileManager.default.fileExists(atPath: audioURL.path)
-        logger.info("Recorded audio saved entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) duration=\(duration, privacy: .public) fileExists=\(fileExists, privacy: .public) bytes=\(byteCount, privacy: .public) transcriptionStatus=processing")
-
-        do {
-            try viewContext.save()
-            JournalSpotlightIndexer.shared.upsert(entry: entry)
-            // Clear any selected prompt once an entry has been saved
-            selectedPrompt = nil
-        } catch {
-            logger.error("Failed to save entry: \(error.localizedDescription)")
-            recordingState = .idle
-            return
-        }
-
-        #if os(iOS)
-        beginTranscription(entryObjectID: entry.objectID, audioURL: audioURL, capturedAt: now)
-        #else
-        recordingState = .idle
-        #endif
-    }
-
-    private func beginTranscription(entryObjectID: NSManagedObjectID, audioURL: URL, capturedAt: Date) {
-        guard let entry = try? viewContext.existingObject(with: entryObjectID) as? DiaryEntry else {
-            recordingState = .idle
-            return
-        }
-
-        guard SpeechTranscriptionConsent.hasGrantedAppleSpeechProcessing else {
-            pendingTranscription = PendingTodayTranscription(entryObjectID: entryObjectID, audioURL: audioURL, capturedAt: capturedAt)
-            entry.entryTranscriptionStatus = .none
-            try? viewContext.save()
-            logger.info("Speech consent required before transcription entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) transcriptionStatus=none")
-            recordingState = .idle
-            showSpeechConsentPrompt = true
-            return
-        }
-
-        transcribeSavedEntry(entryObjectID: entryObjectID, audioURL: audioURL, capturedAt: capturedAt)
-    }
-
-    private func resumePendingTranscription() {
-        guard let pendingTranscription else {
-            recordingState = .idle
-            return
-        }
-
-        self.pendingTranscription = nil
-        guard let entry = try? viewContext.existingObject(with: pendingTranscription.entryObjectID) as? DiaryEntry else {
-            logger.error("Unable to resume pending transcription because entry no longer exists")
-            recordingState = .idle
-            return
-        }
-
-        logger.info("Resuming pending transcription entryID=\(entry.id?.uuidString ?? "missing", privacy: .public)")
-        recordingState = .processing
-        transcribeSavedEntry(entryObjectID: entry.objectID, audioURL: pendingTranscription.audioURL, capturedAt: pendingTranscription.capturedAt)
-    }
-
-    private func transcribeSavedEntry(entryObjectID: NSManagedObjectID, audioURL: URL, capturedAt: Date) {
-        guard let entry = try? viewContext.existingObject(with: entryObjectID) as? DiaryEntry else {
-            recordingState = .idle
-            return
-        }
-        recordingState = .processing
-        entry.entryTranscriptionStatus = .processing
-        try? viewContext.save()
-        let fileExists = FileManager.default.fileExists(atPath: audioURL.path)
-        let byteCount = ((try? FileManager.default.attributesOfItem(atPath: audioURL.path)[.size]) as? NSNumber)?.int64Value ?? -1
-        logger.info("Starting transcription for saved entry entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) fileExists=\(fileExists, privacy: .public) bytes=\(byteCount, privacy: .public) transcriptionStatus=processing")
-        SpeechTranscriber.shared.transcribe(from: audioURL) { result in
-            Task { @MainActor in
-                guard let entry = try? viewContext.existingObject(with: entryObjectID) as? DiaryEntry else {
-                    logger.info("Skipped transcription result because entry was deleted.")
-                    recordingState = .idle
-                    return
-                }
-                PerformanceSignposts.event("TranscriptionCompleted")
-                switch result {
-                case .success(let textSegment):
-                    JournalBlockTimelineStore.appendTextBlock(
-                        text: textSegment,
-                        createdAt: capturedAt,
-                        to: entry,
-                        in: viewContext
-                    )
-                    entry.updatedAt = Date()
-                    entry.entryTranscriptionStatus = .completed
-                    do {
-                        try viewContext.save()
-                        logger.info("Transcript saved entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) chars=\(textSegment.count, privacy: .public) transcriptionStatus=completed")
-                        heroStore.recordPromptResponse(
-                            promptID: activeHeroPromptID,
-                            wordCount: wordCount(for: textSegment)
-                        )
-                        HapticManager.shared.entrySaved()
-                        ReviewManager.shared.recordEntry()
-                        recordingState = .idle
-
-                        EntryLearningPipeline.processSavedEntry(
-                            text: textSegment,
-                            mood: entry.mood,
-                            date: entry.date ?? Date(),
-                            duration: entry.duration
-                        )
-                        EntryLearningPipeline.upsertSemanticEntry(entry)
-                        JournalSpotlightIndexer.shared.upsert(entry: entry)
-                    } catch {
-                        logger.error("Failed to update entry with transcription entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) error=\(error.localizedDescription, privacy: .public)")
-                        recordingState = .idle
-                    }
-                case .failure(let error):
-                    let nsError = error as NSError
-                    logger.error("Transcription failed entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) domain=\(nsError.domain, privacy: .public) code=\(nsError.code, privacy: .public)")
-                    entry.entryTranscriptionStatus = .failed
-                    entry.updatedAt = Date()
-                    try? viewContext.save()
-                    // Show user-friendly message for offline/transcription errors
-                    if let transcriptionError = error as? SpeechTranscriber.TranscriptionError {
-                        self.errorMessage = transcriptionError.errorDescription
-                    } else {
-                        self.errorMessage = "Transcription failed. Your recording is saved—tap the entry to add text manually."
-                    }
-                    recordingState = .idle
-                }
-            }
-        }
-    }
-
-    // MARK: - Formatting
-
-    private var formattedToday: String {
-        TodayDateFormatters.today.string(from: Date())
-    }
-
-    private var formattedHeroDate: String {
-        TodayDateFormatters.heroDate.string(from: Date())
-    }
-
-    private func formattedTime(_ date: Date) -> String {
-        TodayDateFormatters.time.string(from: date)
-    }
-
-    private func formatTime(_ time: TimeInterval) -> String {
-        let minutes = Int(time) / 60
-        let seconds = Int(time) % 60
-        return String(format: "%d:%02d", minutes, seconds)
-    }
-
-    private func formatDuration(_ duration: TimeInterval) -> String {
-        let minutes = Int(duration) / 60
-        let seconds = Int(duration) % 60
-        if minutes > 0 {
-            return "\(minutes)m \(seconds)s"
-        }
-        return "\(seconds)s"
-    }
-
-    private func wordCount(for text: String) -> Int {
-        text.split { $0.isWhitespace || $0.isNewline }.count
-    }
-
-    // MARK: - Stats
-
-    private var entriesThisYear: Int {
-        todayStats.entriesThisYear
-    }
-
-    private var streakCount: Int {
-        todayStats.currentStreak
     }
 
     @MainActor
@@ -1640,11 +384,10 @@ struct TodayView: View {
 
         do {
             let entries = try viewContext.fetch(request).startedEntries
-            let snapshots = entries.journalSnapshots
             let stats = await JournalAnalyticsWorker.shared.makeStats(
-                from: snapshots,
+                from: entries.journalSnapshots,
                 now: Date(),
-                weeklyTarget: 3,
+                weeklyTarget: GoalManager.shared.weeklyTarget,
                 goalEnabled: false
             )
             historicalEntries = entries
@@ -1658,31 +401,206 @@ struct TodayView: View {
     }
 }
 
-// MARK: - Stat Badge Component
+// MARK: - First entry
 
-struct StatBadge: View {
-    let icon: String
-    let value: String
-    let style: OffRecordReadableTintStyle
+/// Shown until the first entry exists: an invitation, not an empty list.
+private struct TodayFirstEntryCard: View {
+    let onSpeak: () -> Void
+    let onWrite: () -> Void
 
     var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: icon)
-                .font(OffRecordTypography.metadata)
-            Text(value)
-                .font(OffRecordTypography.metadata)
+        VStack(alignment: .leading, spacing: OffRecordSpacing.lg) {
+            HStack(alignment: .top, spacing: OffRecordSpacing.md) {
+                FridayMascotView(pose: .wave, size: 56)
+                    .accessibilityHidden(true)
+                VStack(alignment: .leading, spacing: OffRecordSpacing.xs) {
+                    Text("Your First Entry")
+                        .font(OffRecordTypography.cardTitle)
+                        .foregroundStyle(OffRecordColor.textHeading)
+                    Text("Say a few sentences about today.")
+                        .font(OffRecordTypography.bodySmall)
+                        .foregroundStyle(OffRecordColor.textSecondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            HStack(spacing: OffRecordSpacing.md) {
+                Button(action: onSpeak) {
+                    Label(String(localized: "Record", comment: "Button that starts a voice recording"), systemImage: "mic.fill")
+                        .frame(maxWidth: .infinity)
+                        .offRecordPillButton()
+                }
+                .buttonStyle(.plain)
+                Button(action: onWrite) {
+                    Label(String(localized: "Write", comment: "Button that starts a typed journal entry"), systemImage: "square.and.pencil")
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(OffRecordSoftButtonStyle())
+            }
         }
-        .foregroundColor(style.foreground)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .offRecordGlassControl(
-            tint: style.tint,
-            in: Capsule(),
-            fallbackFill: style.fill,
-            border: style.border
-        )
+        .padding(OffRecordSpacing.xl)
+        .offRecordCard(fill: OffRecordColor.surfaceBlush, border: OffRecordColor.borderSoft)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("today.firstEntry")
     }
 }
+
+// MARK: - On This Day
+
+struct OnThisDayCard: View {
+    let entries: [DiaryEntry]
+
+    private var entry: DiaryEntry? { entries.first }
+
+    var body: some View {
+        if let entry {
+            NavigationLink {
+                EntryDetailView(entry: entry)
+            } label: {
+                HStack(alignment: .top, spacing: OffRecordSpacing.md) {
+                    moodArt(for: entry)
+                    VStack(alignment: .leading, spacing: OffRecordSpacing.xs) {
+                        Text(yearsAgoText(for: entry).uppercased())
+                            .font(OffRecordTypography.labelSmall)
+                            .foregroundStyle(OffRecordColor.textSky)
+                            .tracking(0.6)
+                        Text("On This Day")
+                            .font(OffRecordTypography.cardTitle)
+                            .foregroundStyle(OffRecordColor.textHeading)
+                        Text(snippet(for: entry))
+                            .font(OffRecordTypography.bodySmall)
+                            .foregroundStyle(OffRecordColor.textSecondary)
+                            .lineLimit(3)
+                            .fixedSize(horizontal: false, vertical: true)
+                        if entries.count > 1 {
+                            Text("+\(entries.count - 1) more")
+                                .font(OffRecordTypography.metadata)
+                                .foregroundStyle(OffRecordColor.textTertiary)
+                        }
+                    }
+                    Spacer(minLength: 0)
+                    Image(systemName: "chevron.right")
+                        .font(OffRecordTypography.labelMedium)
+                        .foregroundStyle(OffRecordColor.textTertiary)
+                        .accessibilityHidden(true)
+                }
+                .padding(OffRecordSpacing.xl)
+                .offRecordCard(fill: OffRecordColor.surfaceBlue)
+            }
+            .buttonStyle(.plain)
+            .accessibilityElement(children: .combine)
+            .accessibilityHint("Opens the entry.")
+            .accessibilityIdentifier("today.onThisDay")
+        }
+    }
+
+    @ViewBuilder
+    private func moodArt(for entry: DiaryEntry) -> some View {
+        let mood = Mood(rawValue: entry.mood ?? "") ?? .none
+        Group {
+            if mood != .none {
+                mood.miniImage
+                    .resizable()
+                    .scaledToFit()
+            } else {
+                Image(systemName: "clock.arrow.circlepath")
+                    .font(OffRecordTypography.titleSmall)
+                    .foregroundStyle(OffRecordColor.textSky)
+            }
+        }
+        .frame(width: 48, height: 48)
+        .background(OffRecordColor.surfacePrimary.opacity(0.7), in: Circle())
+        .accessibilityHidden(true)
+    }
+
+    private func yearsAgoText(for entry: DiaryEntry) -> String {
+        let years = Calendar.current.dateComponents([.year], from: entry.date ?? Date(), to: Date()).year ?? 1
+        return String(AttributedString(localized: "^[\(max(years, 1)) year](inflect: true) ago").characters)
+    }
+
+    private func snippet(for entry: DiaryEntry) -> String {
+        let text = entry.text?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        if !text.isEmpty { return text }
+        if entry.hasStartedEntryAudio { return String(localized: "Recording", comment: "Stands in for an On This Day entry that has a voice recording but no text") }
+        return String(localized: "Photo", comment: "Stands in for an On This Day entry that has only photos")
+    }
+}
+
+// MARK: - Progress strip
+
+/// Gentle, self-referential progress: no loss framing, a warm welcome back after gaps.
+struct TodayProgressStrip: View {
+    let stats: JournalStatsSnapshot
+    let hasEntryToday: Bool
+
+    private var daysThisWeek: Int {
+        stats.last7Days.filter { $0.hasEntry }.count
+    }
+
+    private var headline: String {
+        if stats.currentStreak >= 2 {
+            return String(localized: "\(stats.currentStreak)-day streak")
+        }
+        if stats.entryCount > 0 && !hasEntryToday && stats.currentStreak == 0 {
+            return String(localized: "Welcome back")
+        }
+        return String(localized: "\(daysThisWeek) of 7 days this week")
+    }
+
+    private var subtitle: String {
+        if stats.currentStreak >= 2 {
+            return hasEntryToday ? String(localized: "Today’s entry keeps it going.") : String(localized: "Add today’s entry to keep it going.")
+        }
+        if stats.entryCount > 0 && !hasEntryToday && stats.currentStreak == 0 {
+            return String(localized: "Start with today.")
+        }
+        return String(AttributedString(localized: "^[\(stats.entriesThisYear) entry](inflect: true) this year").characters)
+    }
+
+    var body: some View {
+        HStack(spacing: OffRecordSpacing.md) {
+            let isActive = stats.currentStreak >= 2 || hasEntryToday
+            StreakFireArtworkView(
+                imageName: isActive ? "StreakFire" : "StreakFireInactive",
+                size: 44,
+                accentFill: isActive ? OffRecordColor.brandPeach : OffRecordColor.brandLavender,
+                isActive: isActive
+            )
+            .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(headline)
+                    .font(OffRecordTypography.labelLarge)
+                    .foregroundStyle(OffRecordColor.textHeading)
+                    .contentTransition(.numericText())
+                Text(subtitle)
+                    .font(OffRecordTypography.metadata)
+                    .foregroundStyle(OffRecordColor.textSecondary)
+            }
+            Spacer(minLength: 0)
+            WeekDots(days: stats.last7Days)
+        }
+        .padding(OffRecordSpacing.lg)
+        .offRecordCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfacePeach, border: OffRecordColor.borderWarm, shadow: false)
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("today.progress")
+    }
+}
+
+private struct WeekDots: View {
+    let days: [JournalDayActivity]
+
+    var body: some View {
+        HStack(spacing: 4) {
+            ForEach(Array(days.suffix(7).enumerated()), id: \.offset) { _, day in
+                Circle()
+                    .fill(day.hasEntry ? OffRecordColor.textPeach : OffRecordColor.textTertiary.opacity(0.25))
+                    .frame(width: 7, height: 7)
+            }
+        }
+        .accessibilityHidden(true)
+    }
+}
+
+// MARK: - Prompts
 
 struct EntryPrompt: Identifiable, Equatable {
     enum Kind: Equatable {
@@ -1703,65 +621,33 @@ struct EntryPrompt: Identifiable, Equatable {
     static let defaultPrompts: [EntryPrompt] = [
         EntryPrompt(
             kind: .dailyReflection,
-            title: "Daily reflection",
-            detail: "What is one moment from today that you want to remember?"
+            title: String(localized: "Today", comment: "Title of the daily reflection writing prompt"),
+            detail: String(localized: "What’s one moment from today you want to remember?")
         ),
         EntryPrompt(
             kind: .gratitude,
-            title: "Gratitude",
-            detail: "What are three small things you feel grateful for right now?"
+            title: String(localized: "Gratitude", comment: "Title of a writing prompt"),
+            detail: String(localized: "What are 3 small things you’re grateful for?")
         ),
         EntryPrompt(
             kind: .energyCheck,
-            title: "Energy check",
-            detail: "How does your body feel today - tense, tired, or calm?"
+            title: String(localized: "Body", comment: "Title of a writing prompt about how your body feels"),
+            detail: String(localized: "How does your body feel right now?")
         ),
         EntryPrompt(
             kind: .lettingGo,
-            title: "Letting go",
-            detail: "What is one worry you can gently put down for tonight?"
+            title: String(localized: "Letting Go", comment: "Title of a writing prompt"),
+            detail: String(localized: "What worry can you put down tonight?")
         ),
         EntryPrompt(
             kind: .selfKindness,
-            title: "Self-kindness",
-            detail: "If you spoke to yourself like a friend, what would you say?"
+            title: String(localized: "Kindness", comment: "Title of a writing prompt about self-kindness"),
+            detail: String(localized: "What would you tell a friend in your place?")
         ),
         EntryPrompt(
             kind: .tomorrow,
-            title: "Tomorrow",
-            detail: "What is one gentle intention you have for tomorrow?"
+            title: String(localized: "Tomorrow", comment: "Title of a writing prompt about the next day"),
+            detail: String(localized: "What do you want from tomorrow?")
         )
     ]
-}
-
-struct PromptChip: View {
-    let prompt: EntryPrompt
-    let isSelected: Bool
-    let onTap: () -> Void
-
-    var body: some View {
-        Button(action: onTap) {
-            VStack(alignment: .leading, spacing: 4) {
-                Text(prompt.title)
-                    .font(OffRecordTypography.labelSmall)
-                    .foregroundColor(isSelected ? OffRecordReadableTintStyle.friday.foreground : OffRecordColor.textPrimary)
-                Text(prompt.detail)
-                    .font(OffRecordTypography.metadata)
-                    .foregroundColor(OffRecordColor.textSecondary)
-                    .lineLimit(2)
-            }
-            .padding(.horizontal, 14)
-            .padding(.vertical, 10)
-            .frame(maxWidth: 280, alignment: .leading)
-            .offRecordGlassControl(
-                tint: isSelected ? OffRecordReadableTintStyle.friday.tint : OffRecordReadableTintStyle.neutral.tint,
-                in: RoundedRectangle(cornerRadius: 12, style: .continuous),
-                fallbackFill: isSelected ? OffRecordReadableTintStyle.friday.fill : OffRecordReadableTintStyle.neutral.fill,
-                border: isSelected ? OffRecordReadableTintStyle.friday.border : OffRecordReadableTintStyle.neutral.border
-            )
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel("\(prompt.title): \(prompt.detail)")
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
-    }
 }

@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<model type="com.apple.IDECoreDataModeler.DataModel" documentVersion="1.0" lastSavedToolsVersion="23605" systemVersion="24B2083" minimumToolsVersion="Automatic" sourceLanguage="Swift" userDefinedModelVersionIdentifier="">
+    <entity name="AIState" representedClassName="AIState" syncable="YES" codeGenerationType="class">
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="payload" optional="YES" attributeType="Binary"/>
+        <attribute name="type" optional="YES" attributeType="String"/>
+        <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+    </entity>
+    <entity name="AudioAttachment" representedClassName="AudioAttachment" syncable="YES" codeGenerationType="class">
+        <attribute name="byteCount" optional="YES" attributeType="Integer 64" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="codec" optional="YES" attributeType="String"/>
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="duration" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="fileName" optional="YES" attributeType="String"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="sourceCaptureID" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="transcriptBlockID" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="transcriptionAttemptCount" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="transcriptionEngine" optional="YES" attributeType="String"/>
+        <attribute name="transcriptionErrorCode" optional="YES" attributeType="String"/>
+        <attribute name="transcriptionLocale" optional="YES" attributeType="String"/>
+        <attribute name="transcriptionStatus" optional="YES" attributeType="String"/>
+        <attribute name="transcriptionUpdatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="entry" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="DiaryEntry" inverseName="audioAttachments" inverseEntity="DiaryEntry"/>
+    </entity>
+    <entity name="DiaryEntry" representedClassName="DiaryEntry" syncable="YES" codeGenerationType="class">
+        <attribute name="audioFileName" optional="YES" attributeType="String"/>
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="date" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="duration" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="isStarred" optional="YES" attributeType="Boolean" defaultValueString="NO" usesScalarValueType="YES"/>
+        <attribute name="mood" optional="YES" attributeType="String"/>
+        <attribute name="photoFileNames" optional="YES" attributeType="String"/>
+        <attribute name="text" optional="YES" attributeType="String"/>
+        <attribute name="transcriptionStatus" optional="YES" attributeType="String"/>
+        <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="audioAttachments" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="AudioAttachment" inverseName="entry" inverseEntity="AudioAttachment"/>
+        <relationship name="blocks" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="JournalBlock" inverseName="entry" inverseEntity="JournalBlock"/>
+        <relationship name="photos" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="PhotoAttachment" inverseName="entry" inverseEntity="PhotoAttachment"/>
+    </entity>
+    <entity name="JournalBlock" representedClassName="JournalBlock" syncable="YES" codeGenerationType="class">
+        <attribute name="audioAttachmentID" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="duration" optional="YES" attributeType="Double" defaultValueString="0.0" usesScalarValueType="YES"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="kind" optional="YES" attributeType="String"/>
+        <attribute name="mood" optional="YES" attributeType="String"/>
+        <attribute name="photoAttachmentID" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="sortOrder" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <attribute name="sourceCaptureID" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="text" optional="YES" attributeType="String"/>
+        <attribute name="updatedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <relationship name="entry" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="DiaryEntry" inverseName="blocks" inverseEntity="DiaryEntry"/>
+    </entity>
+    <entity name="PhotoAttachment" representedClassName="PhotoAttachment" syncable="YES" codeGenerationType="class">
+        <attribute name="createdAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="fileName" optional="YES" attributeType="String"/>
+        <attribute name="id" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="imageData" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES"/>
+        <attribute name="mimeType" optional="YES" attributeType="String"/>
+        <attribute name="sortOrder" optional="YES" attributeType="Integer 32" defaultValueString="0" usesScalarValueType="YES"/>
+        <relationship name="entry" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="DiaryEntry" inverseName="photos" inverseEntity="DiaryEntry"/>
+    </entity>
+    <entity name="WatchImportReceipt" representedClassName="WatchImportReceipt" syncable="NO" codeGenerationType="class">
+        <attribute name="captureID" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="importHash" optional="YES" attributeType="String"/>
+        <attribute name="importedAt" optional="YES" attributeType="Date" usesScalarValueType="NO"/>
+        <attribute name="importedEntryID" optional="YES" attributeType="UUID" usesScalarValueType="NO"/>
+        <attribute name="kind" optional="YES" attributeType="String"/>
+    </entity>
+</model>

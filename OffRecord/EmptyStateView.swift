@@ -2,7 +2,7 @@
 //  EmptyStateView.swift
 //  OffRecord
 //
-//  Beautiful empty states for the app
+//  Empty states for the app
 //
 
 import SwiftUI
@@ -14,41 +14,27 @@ struct EmptyStateView: View {
     var actionTitle: String? = nil
     var action: (() -> Void)? = nil
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+
     var body: some View {
-        VStack(spacing: 24) {
-            // Animated icon
-            ZStack {
-                Circle()
-                    .fill(OffRecordColor.backgroundLavenderTint)
-                    .frame(width: 120, height: 120)
+        VStack(spacing: OffRecordSpacing.xxl) {
+            illustration
+                .accessibilityHidden(true)
 
-                Circle()
-                    .fill(OffRecordColor.backgroundPeachTint.opacity(0.7))
-                    .frame(width: 160, height: 160)
-
-                Image(systemName: icon)
-                    .font(.system(size: 48))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [OffRecordColor.brandLavenderDark, OffRecordColor.brandPeach],
-                            startPoint: .topLeading,
-                            endPoint: .bottomTrailing
-                        )
-                    )
-            }
-
-            VStack(spacing: 8) {
+            VStack(spacing: OffRecordSpacing.sm) {
                 Text(title)
                     .font(OffRecordTypography.titleMedium)
-                    .foregroundColor(OffRecordColor.textHeading)
+                    .foregroundStyle(OffRecordColor.textHeading)
                     .multilineTextAlignment(.center)
+                    .accessibilityAddTraits(.isHeader)
 
                 Text(subtitle)
                     .font(OffRecordTypography.bodySmall)
-                    .foregroundColor(OffRecordColor.textSecondary)
+                    .foregroundStyle(OffRecordColor.textSecondary)
                     .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
                     .frame(maxWidth: 400)
-                    .padding(.horizontal, 40)
+                    .padding(.horizontal, OffRecordSpacing.xxl)
             }
 
             if let actionTitle = actionTitle, let action = action {
@@ -56,152 +42,75 @@ struct EmptyStateView: View {
                     Text(actionTitle)
                         .offRecordPillButton()
                 }
+                .buttonStyle(.plain)
             }
         }
         .padding()
         .accessibilityElement(children: .combine)
+    }
+
+    /// A soft peach halo behind a lavender disc, with the symbol on top.
+    private var illustration: some View {
+        ZStack {
+            Circle()
+                .fill(OffRecordColor.backgroundPeachTint)
+                .frame(width: 160, height: 160)
+
+            Circle()
+                .fill(OffRecordColor.backgroundLavenderTint)
+                .frame(width: 120, height: 120)
+                .overlay(Circle().stroke(OffRecordColor.borderSoft, lineWidth: 1))
+
+            floatingSymbol
+        }
+    }
+
+    @ViewBuilder
+    private var floatingSymbol: some View {
+        let symbol = Image(systemName: icon)
+            .font(OffRecordTypography.screenTitle)
+            .imageScale(.large)
+            .foregroundStyle(
+                LinearGradient(
+                    colors: [OffRecordColor.brandLavenderDark, OffRecordColor.brandPeach],
+                    startPoint: .topLeading,
+                    endPoint: .bottomTrailing
+                )
+            )
+
+        if reduceMotion {
+            symbol
+        } else {
+            symbol.phaseAnimator([false, true]) { content, isUp in
+                content.offset(y: isUp ? -6 : 2)
+            } animation: { _ in
+                .easeInOut(duration: 2.4)
+            }
+        }
     }
 }
 
 // MARK: - Preset Empty States
 
 extension EmptyStateView {
-    static var noEntries: EmptyStateView {
-        EmptyStateView(
-            icon: "mic.circle",
-            title: "Start Your Journey",
-            subtitle: "Tap the microphone below to record your first voice diary entry"
-        )
-    }
-
-    static var noSearchResults: EmptyStateView {
-        EmptyStateView(
-            icon: "magnifyingglass",
-            title: "No Results",
-            subtitle: "Try a different search term"
-        )
-    }
-
-    static var noStarredEntries: EmptyStateView {
-        EmptyStateView(
-            icon: "star",
-            title: "No Starred Entries",
-            subtitle: "Star your favorite entries to find them quickly"
-        )
-    }
-
     static var noInsights: EmptyStateView {
         EmptyStateView(
             icon: "chart.line.uptrend.xyaxis",
-            title: "Insights Coming Soon",
-            subtitle: "Keep journaling to unlock personalized insights about your writing patterns"
+            title: String(localized: "No Insights Yet"),
+            subtitle: String(localized: "I need 3 entries before I can spot patterns.")
         )
     }
 
     static var fridayGettingToKnow: EmptyStateView {
         EmptyStateView(
             icon: "sparkles",
-            title: "Getting to Know You",
-            subtitle: "Friday learns your personality, emotions, and patterns as you journal. Keep recording to unlock deeper insights."
+            title: String(localized: "Still Getting to Know You"),
+            subtitle: String(localized: "After 5 entries, I can start telling you what I see.")
         )
-    }
-
-    static var noTimelineEntries: EmptyStateView {
-        EmptyStateView(
-            icon: "book.closed",
-            title: "Your Timeline",
-            subtitle: "Entries will appear here as you record them. Start by tapping the microphone on the Today tab."
-        )
-    }
-}
-
-// MARK: - Welcome Card (for Today view)
-
-struct WelcomeCard: View {
-    @AppStorage("authorName") private var authorName: String = ""
-
-    var body: some View {
-        VStack(spacing: 20) {
-            // Privacy badge
-            OffRecordPrivacyBadge(title: "Private", subtitle: "On your device")
-
-            FridayMascotView(pose: .wave, size: 82)
-
-            VStack(spacing: 12) {
-                Text(Personalization.appendFirstName(to: "Welcome to Your Private Diary", name: authorName))
-                    .font(OffRecordTypography.titleMedium)
-                    .foregroundColor(OffRecordColor.textHeading)
-                    .multilineTextAlignment(.center)
-
-                Text("Speak your thoughts freely. All AI runs on your device — private by design, with optional iCloud sync.")
-                    .font(OffRecordTypography.bodySmall)
-                    .foregroundColor(OffRecordColor.textSecondary)
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(4)
-            }
-
-            // Features list
-            VStack(alignment: .leading, spacing: 16) {
-                FeatureRow(icon: "mic.fill", color: OffRecordColor.textPeach, text: "Tap to record your voice")
-                FeatureRow(icon: "text.quote", color: OffRecordColor.brandLavenderDark, text: "Automatically transcribed to text")
-                FeatureRow(icon: "sparkles", color: OffRecordColor.textAqua, text: "Friday notices patterns privately")
-                FeatureRow(icon: "lock.fill", color: OffRecordColor.brandSageDark, text: "100% private, stored locally")
-            }
-            .padding(.top, 8)
-        }
-        .padding(24)
-        .offRecordContentCard(cornerRadius: OffRecordRadius.xl, fill: OffRecordColor.surfaceWarm)
-    }
-}
-
-struct FeatureRow: View {
-    let icon: String
-    let color: Color
-    let text: String
-
-    var body: some View {
-        HStack(spacing: 12) {
-            Image(systemName: icon)
-                .font(OffRecordTypography.bodySmall)
-                .foregroundColor(color)
-                .frame(width: 24)
-
-            Text(text)
-                .font(OffRecordTypography.bodySmall)
-                .foregroundColor(OffRecordColor.textPrimary)
-        }
-    }
-}
-
-// MARK: - Loading View
-
-struct OffRecordLoadingView: View {
-    let message: String
-    var tint: Color = OffRecordColor.brandLavenderDark
-
-    var body: some View {
-        HStack(spacing: 12) {
-            ProgressView()
-                .tint(tint)
-                .scaleEffect(0.9)
-            Text(message)
-                .font(OffRecordTypography.labelSmall)
-                .foregroundStyle(OffRecordColor.textSecondary)
-        }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(
-            OffRecordColor.surfaceWarm,
-            in: RoundedRectangle(cornerRadius: OffRecordRadius.lg, style: .continuous)
-        )
-        .accessibilityElement(children: .combine)
     }
 }
 
 #Preview {
-    VStack(spacing: 40) {
-        EmptyStateView.noEntries
-        OffRecordLoadingView(message: "Transcribing your thoughts...")
-    }
+    EmptyStateView.noInsights
 }
+

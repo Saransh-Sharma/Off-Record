@@ -102,14 +102,14 @@ struct JournalBlockTimelineItem: Identifiable {
     var accessibilityLabel: String {
         switch kind {
         case .text:
-            return "Text entry, \(timestamp)"
+            return String(localized: "Text, \(timestamp)", comment: "VoiceOver label for a text block in an entry. The argument is when it was added.")
         case .audio:
             let seconds = Int(duration.rounded())
-            return "Audio recording, \(seconds) seconds, \(timestamp)"
+            return String(AttributedString(localized: "Recording, ^[\(seconds) second](inflect: true), \(timestamp)").characters)
         case .mood:
-            return "Mood check-in, \(mood.displayName), \(timestamp)"
+            return String(localized: "Mood, \(mood.displayName), \(timestamp)", comment: "VoiceOver label for a mood block in an entry. The arguments are the mood and when it was added.")
         case .photo:
-            return "Photo, \(timestamp)"
+            return String(localized: "Photo, \(timestamp)", comment: "VoiceOver label for a photo block in an entry. The argument is when it was added.")
         }
     }
 }
@@ -119,7 +119,7 @@ extension JournalBlockTimelineItem {
         switch kind {
         case .text: return "square.and.pencil"
         case .audio: return "waveform"
-        case .mood: return "leaf.fill"
+        case .mood: return mood == .none ? "face.smiling" : mood.icon
         case .photo: return "photo"
         }
     }
@@ -187,6 +187,9 @@ struct EntryDetailView: View {
     @State private var newTextBlockText = ""
     @State private var newTextBlockError: String?
     @State private var showDeleteDayConfirm = false
+    @State private var pendingBlockDeletion: JournalBlockTimelineItem?
+    @State private var deeperQuestion: String?
+    @State private var composerPrompt: String?
     @State private var isDeletingDay = false
     private let deleteEmptyDraftOnDisappear: Bool
     private let promptContext: String?
@@ -238,7 +241,7 @@ struct EntryDetailView: View {
 
     var body: some View {
         ZStack {
-            OffRecordColor.appBackgroundGradient
+            OffRecordAppBackground()
                 .ignoresSafeArea()
 
             ScrollView {
@@ -257,6 +260,9 @@ struct EntryDetailView: View {
                     journalTimelineView
 
                     if !isComposingTextBlock {
+                        if !text.isEmpty {
+                            goDeeperCard
+                        }
                         addToDaySection
                     }
 
@@ -274,17 +280,34 @@ struct EntryDetailView: View {
         }
         .navigationBarBackButtonHidden(true)
         .toolbar(showsDismissButton ? .hidden : .visible, for: .navigationBar)
+        .toolbar(.hidden, for: .tabBar)
         .confirmationDialog(
-            "Delete this day?",
+            blockDeletionTitle(for: pendingBlockDeletion?.kind),
+            isPresented: Binding(
+                get: { pendingBlockDeletion != nil },
+                set: { if !$0 { pendingBlockDeletion = nil } }
+            ),
+            titleVisibility: .visible,
+            presenting: pendingBlockDeletion
+        ) { item in
+            Button(item.kind == .mood ? "Remove" : "Delete", role: .destructive) {
+                deleteBlock(item)
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: { item in
+            Text(item.kind == .audio ? "The audio and transcript will be deleted." : "This can’t be undone.")
+        }
+        .confirmationDialog(
+            "Delete This Entry?",
             isPresented: $showDeleteDayConfirm,
             titleVisibility: .visible
         ) {
-            Button("Delete Day", role: .destructive) {
+            Button("Delete Entry", role: .destructive) {
                 deleteWholeDay()
             }
             Button("Cancel", role: .cancel) {}
         } message: {
-            Text("This removes all text, audio, moods, and photos for this date.")
+            Text("Its text, recordings, photos, and moods will be deleted. This can’t be undone.")
         }
         .onDisappear {
             if !isDeletingDay {
@@ -297,8 +320,17 @@ struct EntryDetailView: View {
             currentActivity?.resignCurrent()
             currentActivity = nil
             clearPhotoThumbnails()
+            // Recording from the accessory goes back to today once this day is closed.
+            let capture = CaptureController.shared
+            if !capture.phase.isCapturing {
+                capture.captureDate = Date()
+            }
         }
         .onAppear {
+            // While a day is open, the capture accessory records into that day.
+            if let date = entry.date, !CaptureController.shared.phase.isCapturing {
+                CaptureController.shared.captureDate = date
+            }
             loadPhotos()
             loadBlocks(backfill: true)
             startEntryActivity()
@@ -329,10 +361,12 @@ struct EntryDetailView: View {
         }
         .fullScreenCover(isPresented: compactMoodPickerBinding) {
             MoodDialSheet(selectedMood: $selectedMood, onSave: saveMood)
+                .offRecordMoodDialEnvironment()
         }
         .sheet(isPresented: regularMoodPickerBinding) {
             MoodDialSheet(selectedMood: $selectedMood, onSave: saveMood)
                 .presentationDetents([.large])
+                .offRecordMoodDialEnvironment()
         }
     }
 
@@ -344,12 +378,12 @@ struct EntryDetailView: View {
                 if showsDismissButton {
                     Button(action: { dismiss() }) {
                         Image(systemName: "chevron.left")
-                            .font(.system(size: 18, weight: .semibold))
+                            .font(OffRecordTypography.labelLarge)
                             .foregroundStyle(OffRecordColor.textBrand)
                             .frame(width: 48, height: 48)
                             .background(OffRecordColor.surfacePrimary, in: Circle())
                             .overlay(Circle().stroke(OffRecordColor.borderSoft, lineWidth: 1))
-                            .shadow(color: OffRecordShadow.cardColor, radius: 14, x: 0, y: 6)
+                            .offRecordShadow(.chip)
                     }
                     .buttonStyle(.plain)
                     .accessibilityLabel("Back")
@@ -370,7 +404,7 @@ struct EntryDetailView: View {
                 if isActivelyEditing {
                     HStack(spacing: 8) {
                         editorToolbarButton(
-                            title: "Cancel",
+                            title: String(localized: "Cancel"),
                             systemImage: "xmark.circle.fill",
                             tint: OffRecordColor.textCoral,
                             fill: OffRecordColor.surfaceBlush,
@@ -379,7 +413,7 @@ struct EntryDetailView: View {
                         )
 
                         editorToolbarButton(
-                            title: "Save",
+                            title: String(localized: "Save"),
                             systemImage: "checkmark.circle.fill",
                             tint: OffRecordColor.brandSageDark,
                             fill: OffRecordColor.surfaceSage,
@@ -394,32 +428,47 @@ struct EntryDetailView: View {
                     HStack(spacing: 10) {
                         Button(action: toggleStar) {
                             Image(systemName: entry.isStarred ? "star.fill" : "star")
-                                .font(.system(size: 20, weight: .semibold))
+                                .font(OffRecordTypography.titleSmall)
                                 .foregroundStyle(entry.isStarred ? OffRecordColor.textYellow : OffRecordColor.textBrand)
+                                .contentTransition(.symbolEffect(.replace))
+                                .symbolEffect(.bounce, value: entry.isStarred)
                                 .frame(width: 48, height: 48)
                                 .background(OffRecordColor.surfacePrimary, in: Circle())
                                 .overlay(Circle().stroke(OffRecordColor.borderSoft, lineWidth: 1))
                         }
                         .buttonStyle(.plain)
-                        .accessibilityLabel(entry.isStarred ? "Unstar day" : "Star day")
+                        .accessibilityLabel(entry.isStarred ? "Unstar" : "Star")
 
                         Menu {
+                            Button {
+                                showMoodPicker = true
+                            } label: {
+                                Label(selectedMood == .none ? "Add Mood" : "Change Mood", systemImage: "face.smiling")
+                            }
+                            if !text.isEmpty {
+                                Button {
+                                    UIPasteboard.general.string = text
+                                } label: {
+                                    Label("Copy Text", systemImage: "doc.on.doc")
+                                }
+                            }
+                            Divider()
                             Button(role: .destructive) {
                                 showDeleteDayConfirm = true
                             } label: {
-                                Label("Delete Day", systemImage: "trash")
+                                Label("Delete Entry", systemImage: "trash")
                             }
                         } label: {
                             Image(systemName: "ellipsis")
-                                .font(.system(size: 20, weight: .bold))
+                                .font(OffRecordTypography.titleSmall)
                                 .foregroundStyle(OffRecordColor.textBrand)
                                 .frame(width: 48, height: 48)
                                 .background(OffRecordColor.surfacePrimary, in: Circle())
                                 .overlay(Circle().stroke(OffRecordColor.borderSoft, lineWidth: 1))
                         }
-                        .accessibilityLabel("More actions")
+                        .accessibilityLabel(Text("More", comment: "Accessibility label for the menu with more actions for this entry."))
                     }
-                    .shadow(color: OffRecordShadow.cardColor, radius: 14, x: 0, y: 6)
+                    .offRecordShadow(.chip)
                 }
             }
         }
@@ -450,8 +499,8 @@ struct EntryDetailView: View {
     }
 
     private var daySummaryCard: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack(alignment: .center, spacing: 12) {
+        VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
+            HStack(alignment: .center, spacing: OffRecordSpacing.md) {
                 OffRecordIconBubble(
                     systemImage: "calendar",
                     tint: selectedMood == .none ? OffRecordColor.textBrand : selectedMood.readableStyle.foreground,
@@ -464,8 +513,7 @@ struct EntryDetailView: View {
                     Text(formattedFullDate)
                         .font(OffRecordTypography.labelLarge)
                         .foregroundStyle(OffRecordColor.textHeading)
-                        .lineLimit(1)
-                        .minimumScaleFactor(0.82)
+                        .fixedSize(horizontal: false, vertical: true)
 
                     if let updatedAt = entry.updatedAt {
                         Text("Updated \(formattedTime(updatedAt))")
@@ -473,16 +521,16 @@ struct EntryDetailView: View {
                             .foregroundStyle(OffRecordColor.textSecondary)
                     }
                 }
-                .layoutPriority(1)
-
-                moodHeaderButton
+                Spacer(minLength: 0)
             }
 
             ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: 8) {
+                HStack(spacing: OffRecordSpacing.sm) {
+                    moodHeaderButton
+
                     metadataChip(
                         systemImage: "text.word.spacing",
-                        text: "\(activeWordCount) words"
+                        text: String(AttributedString(localized: "^[\(activeWordCount) word](inflect: true)").characters)
                     )
 
                     if let duration = entry.value(forKey: "duration") as? Double, duration > 0 {
@@ -492,58 +540,50 @@ struct EntryDetailView: View {
                     if !photoAttachments.isEmpty {
                         metadataChip(
                             systemImage: "photo",
-                            text: "\(photoAttachments.count) \(photoAttachments.count == 1 ? "photo" : "photos")"
+                            text: String(AttributedString(localized: "^[\(photoAttachments.count) photo](inflect: true)").characters)
                         )
                     }
 
                     if audioOnOtherDevice {
-                        metadataChip(systemImage: "icloud", text: "Audio on original device")
+                        metadataChip(systemImage: "icloud", text: String(localized: "Recording on another device"))
                     }
                 }
                 .padding(.vertical, 1)
             }
         }
-        .padding(18)
+        .padding(OffRecordSpacing.lg)
         .background(OffRecordColor.surfaceWarm, in: RoundedRectangle(cornerRadius: OffRecordRadius.xl, style: .continuous))
         .overlay(
             RoundedRectangle(cornerRadius: OffRecordRadius.xl, style: .continuous)
                 .stroke(OffRecordColor.borderSoft, lineWidth: 1)
         )
-        .shadow(color: OffRecordShadow.cardColor, radius: 18, x: 0, y: 8)
+        .offRecordShadow(.card)
     }
 
     private var moodHeaderButton: some View {
         Button(action: { showMoodPicker = true }) {
-            if selectedMood == .none {
-                Label("Mood", systemImage: "plus.circle.fill")
-                    .font(OffRecordTypography.labelSmall)
-                    .foregroundColor(OffRecordReadableTintStyle.journal.foreground)
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 7)
-                    .offRecordGlassControl(
-                        tint: OffRecordReadableTintStyle.journal.tint,
-                        in: Capsule(),
-                        fallbackFill: OffRecordReadableTintStyle.journal.fill,
-                        border: OffRecordReadableTintStyle.journal.border
-                    )
-            } else {
-                HStack(spacing: 6) {
-                    MiniMoodIcon(mood: selectedMood, size: 16, opacity: 0.92)
+            HStack(spacing: OffRecordSpacing.xs) {
+                if selectedMood == .none {
+                    Image(systemName: "plus.circle.fill")
+                    Text("Add Mood")
+                } else {
+                    selectedMood.miniImage
+                        .resizable()
+                        .scaledToFit()
+                        .frame(width: 22, height: 22)
                     Text(selectedMood.displayName)
-                        .font(OffRecordTypography.labelSmall)
                 }
-                .foregroundColor(selectedMood.readableStyle.foreground)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 7)
-                .offRecordGlassControl(
-                    tint: selectedMood.readableStyle.tint,
-                    in: Capsule(),
-                    fallbackFill: selectedMood.readableStyle.fill,
-                    border: selectedMood.readableStyle.border
-                )
             }
+            .font(OffRecordTypography.labelSmall)
+            .foregroundStyle(selectedMood == .none ? OffRecordReadableTintStyle.journal.foreground : selectedMood.readableStyle.foreground)
+            .padding(.horizontal, OffRecordSpacing.md)
+            .frame(minHeight: OffRecordLayout.minimumTapTarget)
+            .background(selectedMood == .none ? OffRecordReadableTintStyle.journal.fill : selectedMood.readableStyle.fill, in: Capsule())
+            .overlay(Capsule().stroke(selectedMood == .none ? OffRecordReadableTintStyle.journal.border : selectedMood.readableStyle.border, lineWidth: 1))
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(selectedMood == .none ? "Add Mood" : "Mood, \(selectedMood.displayName)")
+        .accessibilityHint("Opens the mood dial.")
         .accessibilityIdentifier("entryDetail.moodButton")
     }
 
@@ -551,8 +591,8 @@ struct EntryDetailView: View {
         Label(text, systemImage: systemImage)
             .font(OffRecordTypography.metadata)
             .foregroundStyle(OffRecordColor.textSecondary)
-            .padding(.horizontal, 9)
-            .padding(.vertical, 5)
+            .padding(.horizontal, OffRecordSpacing.md)
+            .frame(minHeight: 32)
             .background(OffRecordColor.surfacePrimary.opacity(0.68), in: Capsule())
             .overlay(Capsule().stroke(OffRecordColor.borderSoft, lineWidth: 1))
     }
@@ -573,16 +613,19 @@ struct EntryDetailView: View {
         VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
             if timelineItems.isEmpty {
                 if isTranscribing {
-                    VStack(spacing: 12) {
-                        ProgressView()
-                            .scaleEffect(1.2)
-                        Text("Transcribing your recording...")
+                    VStack(spacing: OffRecordSpacing.md) {
+                        Image(systemName: "waveform")
+                            .font(OffRecordTypography.titleLarge)
+                            .foregroundStyle(OffRecordColor.textLavender)
+                            .symbolEffect(.variableColor.iterative, isActive: !reduceMotion)
+                            .accessibilityHidden(true)
+                        Text("Transcribing…")
                             .font(OffRecordTypography.bodySmall)
                             .foregroundColor(OffRecordColor.textSecondary)
                     }
                     .frame(maxWidth: .infinity)
-                    .padding(.vertical, 60)
-                    .offRecordContentCard(cornerRadius: 12)
+                    .padding(.vertical, OffRecordSpacing.section)
+                    .offRecordContentCard(cornerRadius: OffRecordRadius.lg)
                 } else {
                     if !isComposingTextBlock {
                         emptyEntryPrompt
@@ -591,10 +634,10 @@ struct EntryDetailView: View {
             } else {
                 switch entryPresentationLayout {
                 case .singleEntry:
-                    sectionLabel("TODAY'S ENTRY")
+                    sectionLabel(dayName)
                     singleEntryCanvas
                 case .multiEntry:
-                    sectionLabel("TODAY'S JOURNEY")
+                    sectionLabel(dayName)
                     multiEntryTimeline
                 }
             }
@@ -602,12 +645,36 @@ struct EntryDetailView: View {
         .animation(reduceMotion ? .easeOut(duration: 0.01) : .easeOut(duration: 0.22), value: timelineItems.map(\.id))
     }
 
+    /// "Today", "Yesterday", the weekday ("Wednesday") within a week, or the date ("Sep 12").
+    private var dayName: String {
+        let date = entry.date ?? Date()
+        let calendar = Calendar.current
+        if calendar.isDateInToday(date) { return String(localized: "Today") }
+        if calendar.isDateInYesterday(date) { return String(localized: "Yesterday") }
+        if let days = calendar.dateComponents([.day], from: calendar.startOfDay(for: date), to: calendar.startOfDay(for: Date())).day, days < 7 {
+            return date.formatted(.dateTime.weekday(.wide))
+        }
+        return date.formatted(.dateTime.month(.abbreviated).day())
+    }
+
+    private func blockDeletionTitle(for kind: JournalBlockKind?) -> String {
+        switch kind {
+        case .audio: return String(localized: "Delete Recording?")
+        case .text: return String(localized: "Delete Text?")
+        case .photo: return String(localized: "Delete Photo?")
+        case .mood: return String(localized: "Remove Mood?")
+        case nil: return String(localized: "Delete?")
+        }
+    }
+
     private func sectionLabel(_ title: String) -> some View {
         Text(title)
             .font(OffRecordTypography.labelSmall)
             .foregroundStyle(OffRecordColor.textSecondary)
             .textCase(.uppercase)
+            .tracking(0.6)
             .padding(.horizontal, 2)
+            .accessibilityAddTraits(.isHeader)
     }
 
     private var emptyEntryPrompt: some View {
@@ -619,10 +686,10 @@ struct EntryDetailView: View {
                 size: 46,
                 iconSize: 18
             )
-            Text("No journal blocks yet")
+            Text("Nothing Here Yet")
                 .font(OffRecordTypography.labelMedium)
                 .foregroundStyle(OffRecordColor.textHeading)
-            Text("Add a note, photo, or mood to start this day.")
+            Text("Add text, a photo, or a mood.")
                 .font(OffRecordTypography.bodySmall)
                 .foregroundStyle(OffRecordColor.textSecondary)
                 .multilineTextAlignment(.center)
@@ -670,9 +737,79 @@ struct EntryDetailView: View {
         }
     }
 
+    private var goDeeperCard: some View {
+        VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
+            HStack(spacing: OffRecordSpacing.sm) {
+                Image(systemName: "sparkles")
+                    .foregroundStyle(OffRecordColor.textLavender)
+                    .accessibilityHidden(true)
+                Text("Go Deeper")
+                    .font(OffRecordTypography.labelLarge)
+                    .foregroundStyle(OffRecordColor.textHeading)
+                Spacer(minLength: 0)
+                Button {
+                    withOffRecordAnimation(OffRecordMotion.gentle) {
+                        deeperQuestion = EntryFollowUpQuestion.make(
+                            text: text,
+                            mood: selectedMood,
+                            excluding: deeperQuestion
+                        )
+                    }
+                    HapticManager.shared.selectionChanged()
+                } label: {
+                    Image(systemName: deeperQuestion == nil ? "questionmark.bubble" : "arrow.triangle.2.circlepath")
+                        .font(OffRecordTypography.labelLarge)
+                        .foregroundStyle(OffRecordColor.textLavender)
+                        .frame(width: OffRecordLayout.minimumTapTarget, height: OffRecordLayout.minimumTapTarget)
+                        .contentTransition(.symbolEffect(.replace))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(deeperQuestion == nil ? "Get a Question" : "Another Question")
+                .accessibilityIdentifier("entryDetail.goDeeper")
+            }
+
+            if let deeperQuestion {
+                Text(deeperQuestion)
+                    .font(OffRecordTypography.bodyLarge)
+                    .foregroundStyle(OffRecordColor.textBrand)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .transition(.opacity.combined(with: .move(edge: .top)))
+                    .id(deeperQuestion)
+
+                HStack(spacing: OffRecordSpacing.sm) {
+                    Button {
+                        composerPrompt = deeperQuestion
+                        beginNewTextBlock()
+                    } label: {
+                        Label(String(localized: "Write", comment: "Button that answers the question by writing."), systemImage: "square.and.pencil")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(OffRecordSoftButtonStyle(tint: OffRecordColor.textBrand, fill: OffRecordColor.surfacePrimary))
+
+                    Button {
+                        let capture = CaptureController.shared
+                        if let date = entry.date { capture.captureDate = date }
+                        capture.startRecording(prompt: deeperQuestion)
+                    } label: {
+                        Label(String(localized: "Record", comment: "Button that answers the question by recording audio."), systemImage: "mic.fill")
+                            .frame(maxWidth: .infinity)
+                    }
+                    .buttonStyle(OffRecordSoftButtonStyle(tint: OffRecordColor.textOnAccent, fill: OffRecordColor.brandPlum))
+                }
+            } else {
+                Text("I’ll ask one question about what you wrote.")
+                    .font(OffRecordTypography.bodySmall)
+                    .foregroundStyle(OffRecordColor.textSecondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .padding(OffRecordSpacing.lg)
+        .offRecordCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceLavender.opacity(0.7), shadow: false)
+    }
+
     private var addToDaySection: some View {
         VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
-            sectionLabel("ADD TO YOUR DAY")
+            sectionLabel(String(localized: "Add", comment: "Section header above the Add Text and Add Photos buttons."))
             HStack(spacing: OffRecordSpacing.md) {
                 addTextButton
                 addPhotosButton
@@ -684,7 +821,7 @@ struct EntryDetailView: View {
         Button {
             beginNewTextBlock()
         } label: {
-            Label("Add text", systemImage: "square.and.pencil")
+            Label("Add Text", systemImage: "square.and.pencil")
                 .frame(maxWidth: .infinity)
         }
         .font(OffRecordTypography.labelMedium)
@@ -701,7 +838,7 @@ struct EntryDetailView: View {
             maxSelectionCount: 5,
             matching: .images
         ) {
-            Label(photoAttachments.isEmpty ? "Add photos" : "Add more", systemImage: "photo.badge.plus")
+            Label("Add Photos", systemImage: "photo.badge.plus")
                 .font(OffRecordTypography.labelMedium)
                 .foregroundStyle(OffRecordReadableTintStyle.journal.foreground)
                 .frame(maxWidth: .infinity)
@@ -747,9 +884,18 @@ struct EntryDetailView: View {
                             .stroke(OffRecordColor.brandSky.opacity(0.28), lineWidth: 1)
                     )
             case .mood:
-                Text(item.mood.displayName)
-                    .font(OffRecordTypography.labelMedium)
-                    .foregroundStyle(OffRecordColor.textPrimary)
+                HStack(spacing: OffRecordSpacing.sm) {
+                    if item.mood != .none {
+                        item.mood.miniImage
+                            .resizable()
+                            .scaledToFit()
+                            .frame(width: 28, height: 28)
+                            .accessibilityHidden(true)
+                    }
+                    Text(item.mood.displayName)
+                        .font(OffRecordTypography.labelMedium)
+                        .foregroundStyle(OffRecordColor.textPrimary)
+                }
                     .padding(12)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .background(item.mood.readableStyle.fill, in: RoundedRectangle(cornerRadius: OffRecordRadius.lg, style: .continuous))
@@ -796,7 +942,7 @@ struct EntryDetailView: View {
                 .fill(item.nodeFill)
                 .overlay(Circle().stroke(item.nodeBorder, lineWidth: 1))
             Image(systemName: item.systemImage)
-                .font(.system(size: size == 44 ? 16 : 14, weight: .semibold))
+                .font(size == 44 ? OffRecordTypography.labelLarge : OffRecordTypography.labelMedium)
                 .foregroundStyle(item.nodeForeground)
         }
         .frame(width: size, height: size)
@@ -809,13 +955,20 @@ struct EntryDetailView: View {
             Button {
                 beginEditingBlock(item)
             } label: {
-                Label("Edit Block", systemImage: "pencil")
+                Label(String(localized: "Edit", comment: "Menu action that edits a text block."), systemImage: "pencil")
+            }
+        }
+        if item.kind == .text, let text = block(for: item)?.textValue, !text.isEmpty {
+            Button {
+                UIPasteboard.general.string = text
+            } label: {
+                Label("Copy Text", systemImage: "doc.on.doc")
             }
         }
         Button(role: .destructive) {
-            deleteBlock(item)
+            pendingBlockDeletion = item
         } label: {
-            Label("Delete Block", systemImage: "trash")
+            Label(String(localized: "Delete", comment: "Menu action that deletes a block from the entry."), systemImage: "trash")
         }
     }
 
@@ -916,7 +1069,7 @@ struct EntryDetailView: View {
         } else {
             HStack(spacing: 6) {
                 Image(systemName: "icloud")
-                Text("Audio on original device")
+                Text("Recording on another device")
             }
             .font(OffRecordTypography.metadata)
             .foregroundColor(OffRecordColor.textSecondary)
@@ -965,12 +1118,12 @@ struct EntryDetailView: View {
                 .scaledToFit()
                 .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         } else {
-            Label("Photo attachment", systemImage: "photo")
+            Label("Photo", systemImage: "photo")
                 .font(OffRecordTypography.metadata)
                 .foregroundStyle(OffRecordColor.textSecondary)
         }
         #else
-        Label("Photo attachment", systemImage: "photo")
+        Label("Photo", systemImage: "photo")
             .font(OffRecordTypography.metadata)
             .foregroundStyle(OffRecordColor.textSecondary)
         #endif
@@ -999,25 +1152,25 @@ struct EntryDetailView: View {
                 Button {
                     beginEditingBlock(item)
                 } label: {
-                    Label("Edit Block", systemImage: "pencil")
+                    Label(String(localized: "Edit", comment: "Menu action that edits a text block."), systemImage: "pencil")
                 }
             }
             Button(role: .destructive) {
                 deleteBlock(item)
             } label: {
-                Label("Delete Block", systemImage: "trash")
+                Label(String(localized: "Delete", comment: "Menu action that deletes a block from the entry."), systemImage: "trash")
             }
         } label: {
             Image(systemName: "ellipsis.circle")
                 .font(OffRecordTypography.labelSmall)
                 .foregroundColor(OffRecordColor.textSecondary)
         }
-        .accessibilityLabel("Block actions")
+        .accessibilityLabel(Text("More", comment: "Accessibility label for the menu with more actions for this block."))
     }
 
     private var newTextBlockComposer: some View {
         VStack(alignment: .leading, spacing: 12) {
-            if let promptContext, !promptContext.isEmpty {
+            if let promptContext = composerPrompt ?? promptContext, !promptContext.isEmpty {
                 HStack(alignment: .top, spacing: 10) {
                     Image(systemName: "sparkles")
                         .font(OffRecordTypography.labelMedium)
@@ -1054,7 +1207,7 @@ struct EntryDetailView: View {
                         .stroke(newTextBlockError == nil ? OffRecordColor.borderWarm : OffRecordColor.brandCoral.opacity(0.42), lineWidth: 1)
                 )
                 .shadow(color: OffRecordShadow.cardColor, radius: 18, x: 0, y: 8)
-                .accessibilityLabel("New text block")
+                .accessibilityLabel("New text")
                 .accessibilityIdentifier("entryDetail.newTextBlock")
 
             if let newTextBlockError {
@@ -1064,15 +1217,11 @@ struct EntryDetailView: View {
             }
 
             HStack(spacing: 8) {
-                Text("\(newTextBlockText.split { $0.isWhitespace || $0.isNewline }.count) words")
+                Text("^[\(newTextBlockText.split { $0.isWhitespace || $0.isNewline }.count) word](inflect: true)")
                     .font(OffRecordTypography.metadata)
                     .foregroundColor(OffRecordColor.textSecondary)
 
                 Spacer()
-
-                Label("Private draft", systemImage: "lock.shield.fill")
-                    .font(OffRecordTypography.metadata)
-                    .foregroundStyle(OffRecordColor.textSage)
             }
         }
         .padding(.top, 10)
@@ -1082,72 +1231,12 @@ struct EntryDetailView: View {
         }
     }
 
-    private var readingView: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            if text.isEmpty {
-                if isTranscribing {
-                    VStack(spacing: 12) {
-                        ProgressView()
-                            .scaleEffect(1.2)
-                        Text("Transcribing your recording...")
-                            .font(OffRecordTypography.bodySmall)
-                            .foregroundColor(OffRecordColor.textSecondary)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 60)
-                } else {
-                    VStack(spacing: 12) {
-                        Image(systemName: "text.cursor")
-                            .font(.system(size: 32))
-                            .foregroundColor(OffRecordColor.textTertiary)
-                        Text("No text yet")
-                            .font(OffRecordTypography.bodySmall)
-                            .foregroundColor(OffRecordColor.textSecondary)
-                    Button("Add text") {
-                        beginNewTextBlock()
-                    }
-                    .font(OffRecordTypography.labelMedium)
-                    .foregroundColor(OffRecordReadableTintStyle.brand.foreground)
-                    .padding(.horizontal, 14)
-                    .padding(.vertical, 8)
-                    .offRecordGlassControl(
-                        tint: OffRecordReadableTintStyle.brand.tint,
-                        in: Capsule(),
-                        fallbackFill: OffRecordReadableTintStyle.brand.fill,
-                        border: OffRecordReadableTintStyle.brand.border
-                    )
-                }
-                    .frame(maxWidth: .infinity)
-                    .padding(.vertical, 60)
-                }
-            } else {
-                Text(text)
-                    .font(OffRecordTypography.journalBody)
-                    .foregroundColor(OffRecordColor.textPrimary)
-                    .lineSpacing(6)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                    .padding()
-                    .textSelection(.enabled)
-                    .accessibilityIdentifier("entryDetail.mainText")
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .offRecordContentCard(cornerRadius: 12)
-        .padding(.horizontal)
-        .padding(.vertical, 8)
-        .onTapGesture {
-            if !isTranscribing {
-                beginNewTextBlock()
-            }
-        }
-    }
-
     // MARK: - AI Insights Section
     
     private var aiInsightsSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             Button(action: {
-                withAnimation(.spring(response: 0.3)) {
+                withOffRecordAnimation(OffRecordMotion.snappy) {
                     showAIInsights.toggle()
                     if showAIInsights && aiAnalysis == nil {
                         aiAnalysis = LocalAIEngine.shared.analyze(text: text)
@@ -1164,13 +1253,9 @@ struct EntryDetailView: View {
                     )
 
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("AI Insights")
+                        Text("From Friday", comment: "Header for the assistant’s notes on this entry. Friday is the assistant’s name, not the weekday.")
                             .font(OffRecordTypography.labelMedium)
                             .foregroundColor(OffRecordColor.textHeading)
-                        Text("Gain perspective and gentle insights from your day.")
-                            .font(OffRecordTypography.bodySmall)
-                            .foregroundColor(OffRecordColor.textSecondary)
-                            .multilineTextAlignment(.leading)
                     }
                     .layoutPriority(1)
 
@@ -1198,14 +1283,14 @@ struct EntryDetailView: View {
                                 size: 24,
                                 opacity: 0.92
                             )
-                            Text(analysis.dominantEmotion.rawValue.capitalized)
+                            Text(analysis.dominantEmotion.representativeMood.displayName)
                                 .font(OffRecordTypography.metadata)
                                 .foregroundColor(OffRecordColor.textSecondary)
                         }
                         .frame(width: 70)
                         
                         VStack(alignment: .leading, spacing: 4) {
-                            Text("Sentiment")
+                            Text("Tone")
                                 .font(OffRecordTypography.metadata)
                                 .foregroundColor(OffRecordColor.textSecondary)
                             GeometryReader { geo in
@@ -1218,8 +1303,11 @@ struct EntryDetailView: View {
                                 }
                             }
                             .frame(height: 8)
-                            
-                            Text(analysis.sentiment > 0.2 ? "Positive" : (analysis.sentiment < -0.2 ? "Negative" : "Neutral"))
+                            .accessibilityElement()
+                            .accessibilityLabel("Tone")
+                            .accessibilityValue(toneLabel(for: analysis.sentiment))
+
+                            Text(toneLabel(for: analysis.sentiment))
                                 .font(OffRecordTypography.metadata)
                                 .foregroundColor(OffRecordColor.textSecondary)
                         }
@@ -1232,7 +1320,7 @@ struct EntryDetailView: View {
                         Image(systemName: "quote.bubble")
                             .foregroundColor(OffRecordColor.textSky)
                         VStack(alignment: .leading, spacing: 2) {
-                            Text("Intent")
+                            Text("About")
                                 .font(OffRecordTypography.metadata)
                                 .foregroundColor(OffRecordColor.textSecondary)
                             Text(analysis.intent.description)
@@ -1267,7 +1355,7 @@ struct EntryDetailView: View {
                         HStack(spacing: 4) {
                             Image(systemName: "bubble.left.and.text.bubble.right")
                                 .font(OffRecordTypography.metadata)
-                            Text("Reflection")
+                            Text("Friday", comment: "Name of the in-app assistant, not the weekday.")
                                 .font(OffRecordTypography.metadata)
                         }
                         .foregroundColor(OffRecordColor.textSecondary)
@@ -1287,134 +1375,6 @@ struct EntryDetailView: View {
             }
         }
         .padding(.bottom, 8)
-    }
-
-    // MARK: - Editing View
-
-    private var editingView: some View {
-        VStack(spacing: 0) {
-            if let promptContext, !promptContext.isEmpty {
-                HStack(alignment: .top, spacing: 10) {
-                    Image(systemName: "sparkles")
-                        .font(OffRecordTypography.labelMedium)
-                        .foregroundStyle(OffRecordColor.textLavender)
-                        .padding(.top, 2)
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Writing prompt")
-                            .font(OffRecordTypography.labelSmall)
-                            .foregroundStyle(OffRecordColor.textPeach)
-                        Text(promptContext)
-                            .font(OffRecordTypography.bodySmall)
-                            .foregroundStyle(OffRecordColor.textPrimary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-
-                    Spacer(minLength: 0)
-                }
-                .padding(14)
-                .offRecordContentCard(cornerRadius: 14, fill: OffRecordColor.surfaceLavender)
-                .padding(.horizontal)
-                .padding(.top, 8)
-            }
-
-            TextEditor(text: editableTextBinding)
-                .font(OffRecordTypography.journalBody)
-                .foregroundColor(OffRecordColor.textPrimary)
-                .lineSpacing(6)
-                .focused($isTextFocused)
-                .scrollContentBackground(.hidden)
-                .frame(minHeight: 300)
-                .padding()
-                .offRecordContentCard(cornerRadius: 12)
-                .padding(.horizontal)
-                .padding(.vertical, 8)
-
-            // Keyboard toolbar
-            if isTextFocused {
-                HStack {
-                    Text("\(wordCount) words · \(characterCount) chars")
-                        .font(OffRecordTypography.metadata)
-                        .foregroundColor(OffRecordColor.textSecondary)
-
-                    Spacer()
-
-                    Button("Done") {
-                        saveNewTextBlock()
-                    }
-                    .font(OffRecordTypography.labelMedium)
-                }
-                .padding(.horizontal)
-                .padding(.vertical, 8)
-                .offRecordGlassBar(cornerRadius: 0, fallbackFill: OffRecordColor.surfaceWarm)
-            }
-        }
-        .onAppear {
-            isTextFocused = true
-        }
-    }
-
-    // MARK: - Photo Section
-
-    private var photoSection: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            #if canImport(UIKit)
-            // Photo thumbnails
-            if !photoImages.isEmpty {
-                ScrollView(.horizontal, showsIndicators: false) {
-                    HStack(spacing: 8) {
-                        ForEach(Array(photoImages.enumerated()), id: \.offset) { index, image in
-                            ZStack(alignment: .topTrailing) {
-                                Image(uiImage: image)
-                                    .resizable()
-                                    .scaledToFill()
-                                    .frame(width: isIPad ? 120 : 80, height: isIPad ? 120 : 80)
-                                    .clipShape(RoundedRectangle(cornerRadius: isIPad ? 12 : 8))
-
-                                Button {
-                                    removePhoto(at: index)
-                                } label: {
-                                    Image(systemName: "xmark.circle.fill")
-                                        .font(.system(size: 20))
-                                        .foregroundStyle(OffRecordColor.textInverse, OffRecordColor.brandCoral)
-                                }
-                                .offset(x: 6, y: -6)
-                            }
-                        }
-                    }
-                }
-            }
-            #endif
-
-            // Photo picker
-            PhotosPicker(
-                selection: $selectedPhotos,
-                maxSelectionCount: 5,
-                matching: .images
-            ) {
-                HStack(spacing: 6) {
-                    Image(systemName: "photo.badge.plus")
-                        .font(OffRecordTypography.metadata)
-                    Text(photoAttachments.isEmpty ? "Add Photos" : "Add More")
-                        .font(OffRecordTypography.labelSmall)
-                }
-                .foregroundColor(OffRecordReadableTintStyle.journal.foreground)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .offRecordGlassControl(
-                    tint: OffRecordReadableTintStyle.journal.tint,
-                    in: Capsule(),
-                    fallbackFill: OffRecordReadableTintStyle.journal.fill,
-                    border: OffRecordReadableTintStyle.journal.border
-                )
-            }
-
-            if !photoAttachments.isEmpty {
-                Text("Photos sync with iCloud")
-                    .font(OffRecordTypography.metadata)
-                    .foregroundColor(OffRecordColor.textSecondary)
-            }
-        }
     }
 
     private func loadPhotos() {
@@ -1536,20 +1496,6 @@ struct EntryDetailView: View {
         #endif
     }
 
-    private func removePhoto(at index: Int) {
-        guard index < photoAttachments.count else { return }
-        let attachment = photoAttachments[index]
-        PhotoStorageManager.shared.removePhoto(attachment, from: entry, in: viewContext)
-        photoAttachments.remove(at: index)
-        #if canImport(UIKit)
-        if index < photoImages.count {
-            photoImages.remove(at: index)
-        }
-        #endif
-        savePhotos()
-        HapticManager.shared.entryDeleted()
-    }
-
     private func savePhotos() {
         entry.updatedAt = Date()
         try? viewContext.save()
@@ -1623,7 +1569,7 @@ struct EntryDetailView: View {
                     .font(OffRecordTypography.labelSmall)
             } icon: {
                 Image(systemName: systemImage)
-                    .font(.system(size: 15, weight: .semibold))
+                    .font(OffRecordTypography.labelMedium)
                     .symbolRenderingMode(.hierarchical)
             }
             .foregroundStyle(tint)
@@ -1642,6 +1588,16 @@ struct EntryDetailView: View {
 
     private var formattedFullDate: String {
         EntryDetailDateFormatters.fullDate.string(from: entry.date ?? Date())
+    }
+
+    private func toneLabel(for sentiment: Double) -> String {
+        if sentiment > 0.2 {
+            return String(localized: "Light", comment: "Tone of an entry: mostly positive.")
+        }
+        if sentiment < -0.2 {
+            return String(localized: "Heavy", comment: "Tone of an entry: mostly negative.")
+        }
+        return String(localized: "Neutral", comment: "Tone of an entry: neither positive nor negative.")
     }
 
     private func formattedTime(_ date: Date) -> String {
@@ -1667,9 +1623,9 @@ struct EntryDetailView: View {
         let minutes = Int(time) / 60
         let seconds = Int(time) % 60
         if minutes > 0 {
-            return "\(minutes)m \(seconds)s"
+            return String(localized: "\(minutes)m \(seconds)s", comment: "Short recording length in minutes and seconds.")
         }
-        return "\(seconds)s"
+        return String(localized: "\(seconds)s", comment: "Short recording length in seconds.")
     }
 
     private func audioURL() -> URL? {
@@ -1798,6 +1754,7 @@ struct EntryDetailView: View {
 
     private func cancelNewTextBlock() {
         isTextFocused = false
+        composerPrompt = nil
         isComposingTextBlock = false
         newTextBlockText = ""
         newTextBlockError = nil
@@ -1807,7 +1764,7 @@ struct EntryDetailView: View {
     private func saveNewTextBlock() -> Bool {
         let trimmed = newTextBlockText.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else {
-            newTextBlockError = "Write something before saving this block."
+            newTextBlockError = String(localized: "Write something first.")
             return false
         }
 
@@ -1834,7 +1791,7 @@ struct EntryDetailView: View {
             return true
         } catch {
             viewContext.rollback()
-            newTextBlockError = "Could not save this block. Please try again."
+            newTextBlockError = String(localized: "Couldn’t save. Try again.")
             return false
         }
     }
@@ -1854,7 +1811,7 @@ struct EntryDetailView: View {
     private func finishEditingBlock(_ item: JournalBlockTimelineItem) -> Bool {
         guard let block = block(for: item) else { return false }
         guard JournalBlockTimelineStore.updateTextBlock(block, text: editingBlockText) else {
-            blockEditError = "Text blocks cannot be empty. Delete the block if you no longer need it."
+            blockEditError = String(localized: "Text can’t be empty. Delete it instead?")
             return false
         }
         do {

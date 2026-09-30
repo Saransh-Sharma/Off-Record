@@ -12,7 +12,7 @@ final class ReminderManager: ObservableObject {
     private let reminderMinuteKey = "solyn_reminder_minute"
     private let smartPromptsKey = "offrecord_reminder_smart_prompts"
     private let notificationIdentifier = "solyn_daily_reminder"
-    private let fallbackBody = "Take a minute to speak about your day."
+    private let fallbackBody = String(localized: "How was today?")
 
     @Published var isEnabled: Bool {
         didSet {
@@ -114,7 +114,10 @@ final class ReminderManager: ObservableObject {
 
     func makeReminderRequest(now: Date = Date(), calendar: Calendar = .current) -> UNNotificationRequest {
         let content = UNMutableNotificationContent()
-        content.title = "OffRecord AI Journal"
+        // Smart prompts speak as Friday, so they carry her name; the plain reminder has no title.
+        if usesFridaySmartPrompts {
+            content.title = String(localized: "Friday", comment: "Name of the in-app assistant, shown as the reminder notification title")
+        }
         content.body = reminderBody()
         content.sound = .default
 

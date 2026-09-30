@@ -1,0 +1,15 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Dictation" : {},
+    "Mood" : {},
+    "On Watch" : {},
+    "On iPhone" : {},
+    "Recording" : {},
+    "Recording, %@" : {},
+    "Sending" : {},
+    "Try Again" : {},
+    "Waiting" : {}
+  },
+  "version" : "1.0"
+}

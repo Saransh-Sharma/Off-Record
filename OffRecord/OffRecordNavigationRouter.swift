@@ -12,6 +12,11 @@ enum OffRecordRoute: Equatable {
     case weeklyReflection(UUID)
 }
 
+struct TypedNoteRequest: Equatable {
+    let id = UUID()
+    let promptContext: String?
+}
+
 @MainActor
 final class OffRecordNavigationRouter: ObservableObject {
     static let shared = OffRecordNavigationRouter()
@@ -25,6 +30,11 @@ final class OffRecordNavigationRouter: ObservableObject {
     @Published var routedWeeklyReflectionID: UUID?
     @Published var shouldOpenCurrentWeeklyReflection = false
     @Published var shouldStartRecording = false
+    /// True while a screen with its own composer (Friday chat) is showing, so the
+    /// Record bar doesn't sit on top of it or ride up over it with the keyboard.
+    @Published var hidesCaptureAccessory = false
+    /// Set when Write is tapped outside Today; Today opens the editor and clears it.
+    @Published var pendingTypedNote: TypedNoteRequest?
 
     private var deferredRoute: OffRecordRoute?
 
@@ -98,7 +108,7 @@ final class OffRecordNavigationRouter: ObservableObject {
         case .today:
             selectedTab = .today
         case .record:
-            selectedTab = .today
+            // Capture is available from every tab; stay where the person is.
             shouldStartRecording = true
         case .timeline(let query):
             selectedTab = .timeline
@@ -118,6 +128,11 @@ final class OffRecordNavigationRouter: ObservableObject {
             shouldOpenCurrentWeeklyReflection = false
             routedWeeklyReflectionID = id
         }
+    }
+
+    func requestTypedNote(promptContext: String? = nil) {
+        selectedTab = .today
+        pendingTypedNote = TypedNoteRequest(promptContext: promptContext)
     }
 
     nonisolated static func storePendingRoute(_ route: OffRecordRoute) {

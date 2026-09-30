@@ -154,13 +154,13 @@ struct ConcentricPageTransitionView<Content: View>: View {
         }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { notification in
             if let frame = notification.userInfo?[UIResponder.keyboardFrameEndUserInfoKey] as? CGRect {
-                withAnimation(.easeOut(duration: 0.25)) {
+                withOffRecordAnimation(OffRecordMotion.snappy) {
                     keyboardHeight = frame.height
                 }
             }
         }
         .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
-            withAnimation(.easeOut(duration: 0.25)) {
+            withOffRecordAnimation(OffRecordMotion.snappy) {
                 keyboardHeight = 0
             }
         }
@@ -254,6 +254,7 @@ struct ConcentricPageTransitionView<Content: View>: View {
     private func bottomControls(bottomInset: CGFloat) -> some View {
         VStack(spacing: 14) {
             ConcentricCircleButton(
+                title: ctaTitle,
                 icon: ctaIcon ?? "chevron.forward",
                 circleColor: effectiveCircleColor,
                 foregroundColor: backgroundColor,
@@ -303,6 +304,7 @@ struct ConcentricPageTransitionView<Content: View>: View {
 }
 
 private struct ConcentricCircleButton: View {
+    let title: String
     let icon: String
     let circleColor: Color
     let foregroundColor: Color
@@ -311,9 +313,9 @@ private struct ConcentricCircleButton: View {
     let action: () -> Void
 
     private let size: CGFloat = 60
-    @State private var glowPulse = false
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
-    private var isGlowActive: Bool { !isDisabled && !isAnimating }
+    private var isGlowActive: Bool { !isDisabled && !isAnimating && !reduceMotion }
 
     private var iconColor: Color {
         foregroundColor == circleColor ? OffRecordColor.textBrand : foregroundColor
@@ -331,40 +333,45 @@ private struct ConcentricCircleButton: View {
                         x: 0,
                         y: 6
                     )
-                    .overlay(
-                        Circle()
-                            .stroke(circleColor.opacity(isGlowActive ? 0.5 : 0), lineWidth: 3)
-                            .frame(width: size + 10, height: size + 10)
-                            .scaleEffect(glowPulse ? 1.18 : 1.0)
-                            .opacity(glowPulse ? 0.0 : 0.7)
-                            .animation(
-                                isGlowActive
-                                    ? .easeInOut(duration: 1.5).repeatForever(autoreverses: false)
-                                    : .default,
-                                value: glowPulse
-                            )
-                    )
                     .shadow(
                         color: circleColor.opacity(isGlowActive ? 0.45 : 0),
                         radius: isGlowActive ? 16 : 0,
                         x: 0, y: 0
                     )
                 Image(systemName: icon)
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
+                    .font(.system(.body, design: .rounded, weight: .bold))
                     .symbolRenderingMode(.monochrome)
                     .foregroundStyle(iconColor)
+                    .contentTransition(.symbolEffect(.replace))
             }
         }
         .buttonStyle(.plain)
+        // The pulse ring sits outside the button so the tappable and accessibility frame
+        // stays the 60pt circle instead of growing and shrinking with the animation.
+        .background {
+            if isGlowActive {
+                // phaseAnimator only animates the ring's own scale and opacity, so the pulse can
+                // never loop a layout move of the button (a repeatForever transaction would).
+                Circle()
+                    .stroke(circleColor.opacity(0.5), lineWidth: 3)
+                    .frame(width: size + 10, height: size + 10)
+                    .phaseAnimator([false, true]) { ring, expanded in
+                        ring
+                            .scaleEffect(expanded ? 1.18 : 1.0)
+                            .opacity(expanded ? 0.0 : 0.7)
+                    } animation: { expanded in
+                        expanded ? .easeOut(duration: 1.5) : nil
+                    }
+                    .allowsHitTesting(false)
+                    .accessibilityHidden(true)
+            }
+        }
         .disabled(isDisabled)
         .opacity(isAnimating ? 0 : (isDisabled ? 0.55 : 1))
         .animation(.easeInOut(duration: 0.15), value: isAnimating)
-        .accessibilityLabel("Next")
+        // VoiceOver reads the same words sighted people see next to the button.
+        .accessibilityLabel(title)
         .accessibilityIdentifier("onboarding.primaryCTA")
-        .onAppear { glowPulse = true }
-        .onChange(of: isGlowActive) { _, active in
-            glowPulse = active
-        }
     }
 }
 

@@ -6,6 +6,7 @@
 //
 
 import SwiftUI
+import TranscriptionKit
 import CoreData
 import AVFoundation
 import os.log
@@ -17,6 +18,7 @@ private let onboardingLogger = Logger(subsystem: "com.singularity.offrecord", ca
 
 private struct PendingOnboardingTranscription {
     let entryObjectID: NSManagedObjectID
+    let attachmentObjectID: NSManagedObjectID
     let audioURL: URL
 }
 
@@ -58,7 +60,7 @@ struct OnboardingView: View {
     @State private var isFirstReflectionTextFocused = false
 
     private var isIPad: Bool { horizontalSizeClass == .regular }
-    private var onboardingTransitionDuration: Double { reduceMotion ? 0.01 : 0.86 }
+    private var onboardingTransitionDuration: Double { reduceMotion ? 0.01 : 0.7 }
     private var isWelcomeKeyboardLiftActive: Bool {
         step == .welcome && isWelcomeNameFieldFocused
     }
@@ -79,8 +81,9 @@ struct OnboardingView: View {
             )
         }
         .foregroundStyle(OffRecordColor.textBrand)
+        // The full-bleed pastel pages are light-only artwork; keep text and fields readable on them.
+        .environment(\.colorScheme, .light)
         .onAppear {
-            response = response.normalizedForCurrentOnboarding()
             nameDraft = authorName
             firstEntryDraft = response.firstEntryText
             if response.microphoneChoice == .denied {
@@ -99,7 +102,7 @@ struct OnboardingView: View {
                 isFirstReflectionTextFocused = false
             }
         }
-        .alert("OffRecord could not continue", isPresented: Binding(
+        .alert("Something Went Wrong", isPresented: Binding(
             get: { onboardingError != nil },
             set: { if !$0 { onboardingError = nil } }
         )) {
@@ -107,13 +110,13 @@ struct OnboardingView: View {
         } message: {
             Text(onboardingError ?? "")
         }
-        .alert("Notifications Disabled", isPresented: $showNotificationDeniedAlert) {
+        .alert("Notifications Are Off", isPresented: $showNotificationDeniedAlert) {
             Button("OK", role: .cancel) { }
         } message: {
-            Text("You can enable reminders later in Settings. OffRecord still works fully offline.")
+            Text("You can turn on reminders later in Settings.")
         }
         .alert(SpeechTranscriptionConsent.disclosureTitle, isPresented: $showSpeechConsentPrompt) {
-            Button("Continue") {
+            Button("Transcribe") {
                 SpeechTranscriptionConsent.grantAppleSpeechProcessing()
                 resumePendingTranscription()
             }
@@ -208,6 +211,7 @@ struct OnboardingView: View {
         case .welcome:
             WelcomeStep(nameDraft: $nameDraft, isCompact: isWelcomeKeyboardLiftActive)
         case .intent:
+            // Friday's reflection focus and prompt style keep their defaults.
             IntentStep(selectedIntents: $response.painPoints)
         case .privacy:
             PrivacyProofStep()
@@ -217,8 +221,6 @@ struct OnboardingView: View {
                 isEnabled: lockManager.isEnabled,
                 isAvailable: lockManager.biometricsAvailable
             )
-        case .tuneFriday:
-            PreferencesStep(response: $response)
         case .firstReflection:
             FirstEntryStep(
                 recorder: recorder,
@@ -232,8 +234,6 @@ struct OnboardingView: View {
                 entryCreated: entryCreated,
                 onRecordTap: toggleRecording
             )
-        case .snapshot:
-            ValueRevealStep(response: response, entryText: firstEntryDraft, mood: selectedMood)
         case .habit:
             HabitSetupStep(
                 reminderManager: reminderManager,
@@ -245,41 +245,33 @@ struct OnboardingView: View {
 
     private var primaryTitle: String {
         switch step {
-        case .welcome: return "Continue"
-        case .intent, .privacy, .tuneFriday, .snapshot: return "Continue"
-        case .lock: return lockManager.isEnabled ? "Continue" : lockPrimaryTitle
+        case .welcome: return String(localized: "Continue")
+        case .intent, .privacy: return String(localized: "Continue")
+        case .lock: return lockManager.isEnabled ? String(localized: "Continue") : lockPrimaryTitle
         case .firstReflection: return firstReflectionPrimaryTitle
-        case .habit: return "Start journaling"
+        case .habit: return String(localized: "Start Journaling")
         }
     }
 
+    /// "Use Face ID", "Use Touch ID", "Use Optic ID", or "Use Passcode".
     private var lockPrimaryTitle: String {
-        switch lockManager.biometryTypeName {
-        case "Face ID":
-            return "Enable Face ID"
-        case "Touch ID":
-            return "Enable Touch ID"
-        case "Passcode":
-            return "Enable Passcode Lock"
-        default:
-            return "Enable \(lockManager.biometryTypeName)"
-        }
+        String(localized: "Use \(lockManager.biometryTypeName)")
     }
 
     private var firstReflectionPrimaryTitle: String {
-        if isTranscribing { return "Transcribing..." }
-        if entryCreated { return "Continue" }
+        if isTranscribing { return String(localized: "Transcribing…") }
+        if entryCreated { return String(localized: "Continue") }
         switch firstEntryMode {
         case .voice:
-            return isRecording ? "Stop recording" : "Record privately"
+            return isRecording ? String(localized: "Stop Recording") : String(localized: "Record", comment: "Button that starts a voice recording")
         case .textFallback:
-            return "Save entry"
+            return String(localized: "Save", comment: "Onboarding button that saves the typed first entry")
         }
     }
 
     private var primaryIcon: String? {
         switch step {
-        case .welcome, .intent, .privacy, .tuneFriday, .snapshot, .habit:
+        case .welcome, .intent, .privacy, .habit:
             return "arrow.right"
         case .lock:
             return lockManager.isEnabled ? "arrow.right" : "lock.shield.fill"
@@ -298,11 +290,11 @@ struct OnboardingView: View {
     private var secondaryTitle: String? {
         switch step {
         case .lock:
-            return lockManager.isEnabled ? nil : "Not now"
+            return lockManager.isEnabled ? nil : String(localized: "Not Now")
         case .firstReflection:
-            return (isRecording || isTranscribing) ? nil : "Skip first entry"
+            return (isRecording || isTranscribing) ? nil : String(localized: "Skip", comment: "Button that skips an onboarding step")
         case .habit:
-            return "Skip reminders"
+            return String(localized: "Skip", comment: "Button that skips an onboarding step")
         default:
             return nil
         }
@@ -312,8 +304,6 @@ struct OnboardingView: View {
         switch step {
         case .intent:
             return response.painPoints.isEmpty
-        case .tuneFriday:
-            return false
         case .firstReflection:
             if isTranscribing { return true }
             if entryCreated { return false }
@@ -386,7 +376,8 @@ struct OnboardingView: View {
         guard nextStep != step, !transitionGate.isLocked else { return }
         transitionGate.isLocked = true
         step = nextStep
-        DispatchQueue.main.asyncAfter(deadline: .now() + onboardingTransitionDuration + 0.16) {
+        // Short guard against double taps; the page transition itself keeps running.
+        DispatchQueue.main.asyncAfter(deadline: .now() + min(0.4, onboardingTransitionDuration + 0.05)) {
             transitionGate.isLocked = false
         }
     }
@@ -399,7 +390,7 @@ struct OnboardingView: View {
                 goForward()
             } else {
                 response.faceIDChoice = .failed
-                onboardingError = "Face ID was not enabled. You can try again or skip it for now."
+                onboardingError = String(localized: "\(lockManager.biometryTypeName) wasn’t turned on. You can turn it on in Settings.")
             }
         }
     }
@@ -427,14 +418,14 @@ struct OnboardingView: View {
                     HapticManager.shared.recordingStarted()
                 } catch {
                     firstEntryMode = .textFallback
-                    onboardingError = "Unable to start recording. Please type your first entry instead."
+                    onboardingError = String(localized: "Recording didn’t start. You can type instead.")
                     HapticManager.shared.error()
                 }
             }
         }
         #else
         firstEntryMode = .textFallback
-        onboardingError = "Recording is only available on iOS."
+        onboardingError = String(localized: "Recording didn’t start. You can type instead.")
         #endif
     }
 
@@ -455,12 +446,39 @@ struct OnboardingView: View {
         let byteCount = ((try? FileManager.default.attributesOfItem(atPath: result.url.path)[.size]) as? NSNumber)?.int64Value ?? -1
         onboardingLogger.info("Onboarding audio saved entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) duration=\(result.duration, privacy: .public) fileExists=\(fileExists, privacy: .public) bytes=\(byteCount, privacy: .public) transcriptionStatus=processing")
 
-        beginTranscription(entry: entry, audioURL: result.url)
+        guard let attachment = AudioAttachmentStore.audioAttachment(
+            fileName: result.url.lastPathComponent,
+            entry: entry,
+            in: viewContext
+        ) else {
+            onboardingError = String(localized: "Recording saved. Transcription didn’t start.")
+            isTranscribing = false
+            return
+        }
+        beginTranscription(
+            entryObjectID: entry.objectID,
+            attachmentObjectID: attachment.objectID,
+            audioURL: result.url
+        )
     }
 
-    private func beginTranscription(entry: DiaryEntry, audioURL: URL) {
+    private func beginTranscription(
+        entryObjectID: NSManagedObjectID,
+        attachmentObjectID: NSManagedObjectID,
+        audioURL: URL
+    ) {
+        guard let entry = try? viewContext.existingObject(with: entryObjectID) as? DiaryEntry,
+              let attachment = try? viewContext.existingObject(with: attachmentObjectID) else {
+            isTranscribing = false
+            return
+        }
         guard SpeechTranscriptionConsent.hasGrantedAppleSpeechProcessing else {
-            pendingTranscription = PendingOnboardingTranscription(entryObjectID: entry.objectID, audioURL: audioURL)
+            pendingTranscription = PendingOnboardingTranscription(
+                entryObjectID: entryObjectID,
+                attachmentObjectID: attachmentObjectID,
+                audioURL: audioURL
+            )
+            attachment.setValue(AudioTranscriptionStatus.none.rawValue, forKey: "transcriptionStatus")
             entry.entryTranscriptionStatus = .none
             try? viewContext.save()
             onboardingLogger.info("Onboarding speech consent required entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) transcriptionStatus=none")
@@ -470,7 +488,11 @@ struct OnboardingView: View {
             return
         }
 
-        transcribeFirstEntry(entry: entry, audioURL: audioURL)
+        transcribeFirstEntry(
+            entryObjectID: entryObjectID,
+            attachmentObjectID: attachmentObjectID,
+            audioURL: audioURL
+        )
     }
 
     private func resumePendingTranscription() {
@@ -489,27 +511,65 @@ struct OnboardingView: View {
         onboardingLogger.info("Resuming onboarding transcription entryID=\(entry.id?.uuidString ?? "missing", privacy: .public)")
         isTranscribing = true
         firstEntryMode = .voice
-        transcribeFirstEntry(entry: entry, audioURL: pendingTranscription.audioURL)
+        transcribeFirstEntry(
+            entryObjectID: entry.objectID,
+            attachmentObjectID: pendingTranscription.attachmentObjectID,
+            audioURL: pendingTranscription.audioURL
+        )
     }
 
-    private func transcribeFirstEntry(entry: DiaryEntry, audioURL: URL) {
+    private func transcribeFirstEntry(
+        entryObjectID: NSManagedObjectID,
+        attachmentObjectID: NSManagedObjectID,
+        audioURL: URL
+    ) {
+        guard let entry = try? viewContext.existingObject(with: entryObjectID) as? DiaryEntry,
+              let attachment = try? viewContext.existingObject(with: attachmentObjectID) else {
+            isTranscribing = false
+            return
+        }
         isTranscribing = true
-        entry.entryTranscriptionStatus = .processing
+        AudioAttachmentStore.markTranscriptionProcessing(attachment)
         try? viewContext.save()
         let fileExists = FileManager.default.fileExists(atPath: audioURL.path)
         let byteCount = ((try? FileManager.default.attributesOfItem(atPath: audioURL.path)[.size]) as? NSNumber)?.int64Value ?? -1
         onboardingLogger.info("Starting onboarding transcription entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) fileExists=\(fileExists, privacy: .public) bytes=\(byteCount, privacy: .public) transcriptionStatus=processing")
-        SpeechTranscriber.shared.transcribe(from: audioURL) { result in
-            DispatchQueue.main.async {
+        Task {
+            let result: Result<FileTranscriptionResult, Error>
+            do {
+                result = .success(try await TranscriptionService.shared.transcribe(from: audioURL))
+            } catch {
+                result = .failure(error)
+            }
+            await MainActor.run {
+                guard let entry = try? viewContext.existingObject(with: entryObjectID) as? DiaryEntry,
+                      let attachment = try? viewContext.existingObject(with: attachmentObjectID) else {
+                    isTranscribing = false
+                    return
+                }
                 switch result {
-                case .success(let text):
+                case .success(let transcription):
+                    let text = transcription.text
                     response.speechChoice = .granted
                     firstEntryDraft = text
                     response.firstEntryText = text
-                    JournalBlockTimelineStore.appendTextBlock(text: text, createdAt: entry.date ?? Date(), to: entry, in: viewContext)
+                    guard let transcriptBlock = JournalBlockTimelineStore.upsertTranscriptBlock(
+                        text: text,
+                        createdAt: entry.date ?? Date(),
+                        attachment: attachment,
+                        to: entry,
+                        in: viewContext
+                    ) else {
+                        isTranscribing = false
+                        return
+                    }
                     JournalBlockTimelineStore.appendMoodBlock(mood: selectedMood, createdAt: entry.date ?? Date(), to: entry, in: viewContext)
-                    entry.entryTranscriptionStatus = .completed
-                    entry.updatedAt = Date()
+                    AudioAttachmentStore.markTranscriptionCompleted(
+                        attachment,
+                        engine: transcription.engine.rawValue,
+                        locale: transcription.locale,
+                        transcriptBlockID: transcriptBlock.blockID
+                    )
                     try? viewContext.save()
                     onboardingLogger.info("Onboarding transcript saved entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) chars=\(text.count, privacy: .public) transcriptionStatus=completed")
                     EntryLearningPipeline.processSavedEntry(
@@ -523,12 +583,11 @@ struct OnboardingView: View {
                     entryCreated = true
                 case .failure(let error):
                     response.speechChoice = .denied
-                    entry.entryTranscriptionStatus = .failed
-                    entry.updatedAt = Date()
+                    AudioAttachmentStore.markTranscriptionFailed(attachment, error: error)
                     try? viewContext.save()
                     let nsError = error as NSError
                     onboardingLogger.error("Onboarding transcription failed entryID=\(entry.id?.uuidString ?? "missing", privacy: .public) domain=\(nsError.domain, privacy: .public) code=\(nsError.code, privacy: .public) transcriptionStatus=failed")
-                    onboardingError = "Your recording was saved, but transcription did not finish. You can type a few words before continuing."
+                    onboardingError = String(localized: "Recording saved. Add a few words before continuing.")
                     firstEntryMode = .textFallback
                 }
                 isTranscribing = false
@@ -617,7 +676,7 @@ struct OnboardingView: View {
         authorName = Personalization.trimmedName(from: nameDraft)
         response.completedAt = Date()
         store.save(response)
-        withAnimation(.easeInOut(duration: 0.3)) {
+        withOffRecordAnimation(OffRecordMotion.gentle) {
             hasCompletedOnboarding = true
         }
         UserDefaults.standard.set(true, forKey: "hasCompletedOnboarding")
@@ -645,9 +704,7 @@ enum OnboardingStep: Int, CaseIterable, Identifiable {
     case intent
     case privacy
     case lock
-    case tuneFriday
     case firstReflection
-    case snapshot
     case habit
 
     var id: Int { rawValue }
@@ -669,19 +726,18 @@ enum OnboardingStep: Int, CaseIterable, Identifiable {
     }
 
     var progressText: String {
-        "\(rawValue + 1) of \(Self.allCases.count)"
+        String(localized: "\(rawValue + 1) of \(Self.allCases.count)", comment: "Onboarding progress, e.g. “2 of 6”")
     }
 
+    @MainActor
     var pageTitle: String {
         switch self {
-        case .welcome: return "Your private voice journal"
-        case .intent: return "What brings you here?"
-        case .privacy: return "Private by design"
-        case .lock: return "Lock your journal"
-        case .tuneFriday: return "Tune Friday"
-        case .firstReflection: return "Start with one honest thought"
-        case .snapshot: return "Your first snapshot is ready"
-        case .habit: return "Make reflection easy to repeat"
+        case .welcome: return String(localized: "Your private voice journal")
+        case .intent: return String(localized: "What brings you here?")
+        case .privacy: return String(localized: "Stays on your \(DeviceNoun.current)")
+        case .lock: return String(localized: "Lock your journal")
+        case .firstReflection: return String(localized: "Say one thing about today")
+        case .habit: return String(localized: "Make it a habit")
         }
     }
 
@@ -695,12 +751,8 @@ enum OnboardingStep: Int, CaseIterable, Identifiable {
             return OffRecordColor.moodGood
         case .lock:
             return OffRecordColor.moodCalm
-        case .tuneFriday:
-            return OffRecordColor.moodSad
         case .firstReflection:
             return OffRecordColor.moodCalm
-        case .snapshot:
-            return OffRecordColor.moodGood
         case .habit:
             return OffRecordColor.moodTired
         }
@@ -708,25 +760,13 @@ enum OnboardingStep: Int, CaseIterable, Identifiable {
 }
 
 struct OnboardingResponse: Codable, Equatable {
-    var goal: OnboardingGoal?
     var painPoints: Set<OnboardingPainPoint> = []
-    var relatableStatements: Set<RelatableStatement> = []
-    var reflectionFocus: ReflectionFocus? = .emotions
-    var promptStyle: PromptStyle? = .gentle
-    var moodBaseline: MoodChoice = .mixed
     var firstEntryText: String = ""
     var firstEntrySkipped: Bool = false
     var faceIDChoice: PermissionChoice = .notAsked
     var microphoneChoice: PermissionChoice = .notAsked
     var speechChoice: PermissionChoice = .notAsked
     var completedAt: Date?
-
-    func normalizedForCurrentOnboarding() -> OnboardingResponse {
-        var response = self
-        response.reflectionFocus = response.reflectionFocus ?? .emotions
-        response.promptStyle = response.promptStyle ?? .gentle
-        return response
-    }
 }
 
 struct OnboardingStore {
@@ -738,11 +778,16 @@ struct OnboardingStore {
     }
 
     static func load() -> OnboardingResponse {
+        let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("-UITesting"), arguments.contains("-OnboardingUITest") {
+            // Each UI test starts from a clean slate instead of answers saved by an earlier run.
+            return OnboardingResponse()
+        }
         guard let data = UserDefaults.standard.data(forKey: responseKey),
               let response = try? JSONDecoder().decode(OnboardingResponse.self, from: data) else {
-            return OnboardingResponse().normalizedForCurrentOnboarding()
+            return OnboardingResponse()
         }
-        return response.normalizedForCurrentOnboarding()
+        return response
     }
 }
 
@@ -777,39 +822,6 @@ private enum OnboardingPalette {
     static let selectedBorder = OffRecordColor.textBrand.opacity(0.78)
 }
 
-enum OnboardingGoal: String, CaseIterable, Codable, Identifiable {
-    case moodPatterns
-    case clearerThoughts
-    case privateVenting
-    case consistency
-    case peopleTopics
-    case fridayInsights
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .moodPatterns: return "Understand my mood patterns"
-        case .clearerThoughts: return "Clear my head faster"
-        case .privateVenting: return "Vent without worrying"
-        case .consistency: return "Build a journaling habit"
-        case .peopleTopics: return "See people and topics over time"
-        case .fridayInsights: return "Let Friday notice patterns"
-        }
-    }
-
-    var icon: String {
-        switch self {
-        case .moodPatterns: return "chart.line.uptrend.xyaxis"
-        case .clearerThoughts: return "brain.head.profile"
-        case .privateVenting: return "lock.shield.fill"
-        case .consistency: return "flame.fill"
-        case .peopleTopics: return "point.3.connected.trianglepath.dotted"
-        case .fridayInsights: return "sparkles"
-        }
-    }
-}
-
 enum OnboardingPainPoint: String, CaseIterable, Codable, Identifiable {
     case typingSlow
     case detailsFade
@@ -822,25 +834,15 @@ enum OnboardingPainPoint: String, CaseIterable, Codable, Identifiable {
 
     var title: String {
         switch self {
-        case .typingSlow: return "Clear my head"
-        case .detailsFade: return "Remember moments"
-        case .privacyWorry: return "Vent privately"
-        case .blankPage: return "Talk things through"
-        case .manualMood: return "Track my mood"
-        case .hardToSearch: return "Understand patterns"
+        case .typingSlow: return String(localized: "Clear my head")
+        case .detailsFade: return String(localized: "Remember my days")
+        case .privacyWorry: return String(localized: "Vent")
+        case .blankPage: return String(localized: "Talk things through")
+        case .manualMood: return String(localized: "Track my mood")
+        case .hardToSearch: return String(localized: "Spot patterns")
         }
     }
 
-    var solutionTitle: String {
-        switch self {
-        case .typingSlow: return "Speak naturally and let OffRecord transcribe."
-        case .detailsFade: return "Capture the honest version while it is fresh."
-        case .privacyWorry: return "Friday works on this device, not a developer server."
-        case .blankPage: return "Private prompts make the first sentence easier."
-        case .manualMood: return "Mood trends emerge from entries over time."
-        case .hardToSearch: return "Friday connects people, topics, and themes."
-        }
-    }
 
     var icon: String {
         switch self {
@@ -850,96 +852,6 @@ enum OnboardingPainPoint: String, CaseIterable, Codable, Identifiable {
         case .blankPage: return "bubble.left.and.bubble.right.fill"
         case .manualMood: return "heart.text.square"
         case .hardToSearch: return "point.3.connected.trianglepath.dotted"
-        }
-    }
-}
-
-enum RelatableStatement: String, CaseIterable, Codable, Identifiable {
-    case honestVersion
-    case cloudConcern
-    case patternWish
-    case voiceEasier
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .honestVersion: return "I lose the honest version when I wait to write."
-        case .cloudConcern: return "I avoid journaling when I think an app might upload it."
-        case .patternWish: return "I want to see patterns without tagging everything manually."
-        case .voiceEasier: return "I can say more in 30 seconds than I can type in minutes."
-        }
-    }
-}
-
-enum ReflectionFocus: String, CaseIterable, Codable, Identifiable {
-    case emotions
-    case relationships
-    case decisions
-    case growth
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .emotions: return "Emotions"
-        case .relationships: return "People"
-        case .decisions: return "Decisions"
-        case .growth: return "Growth"
-        }
-    }
-
-    var icon: String {
-        switch self {
-        case .emotions: return "heart.fill"
-        case .relationships: return "person.2.fill"
-        case .decisions: return "arrow.triangle.branch"
-        case .growth: return "leaf.fill"
-        }
-    }
-}
-
-enum PromptStyle: String, CaseIterable, Codable, Identifiable {
-    case gentle
-    case direct
-    case gratitude
-    case evening
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .gentle: return "Gentle check-ins"
-        case .direct: return "Straight questions"
-        case .gratitude: return "Gratitude prompts"
-        case .evening: return "End-of-day recaps"
-        }
-    }
-}
-
-enum MoodChoice: String, CaseIterable, Codable, Identifiable {
-    case calm
-    case mixed
-    case stretched
-    case hopeful
-
-    var id: String { rawValue }
-
-    var title: String {
-        switch self {
-        case .calm: return "Calm"
-        case .mixed: return "Mixed"
-        case .stretched: return "Stretched"
-        case .hopeful: return "Hopeful"
-        }
-    }
-
-    var mood: Mood {
-        switch self {
-        case .calm: return .calm
-        case .mixed: return .tired
-        case .stretched: return .anxious
-        case .hopeful: return .grateful
         }
     }
 }
@@ -1063,7 +975,7 @@ private struct ConcentricOnboardingPage<Content: View>: View {
                 .onChange(of: isTextInputFocused) { _, isFocused in
                     guard isKeyboardAdaptive, isFocused, let scrollTargetID else { return }
                     DispatchQueue.main.async {
-                        withAnimation(.easeInOut(duration: 0.25)) {
+                        withOffRecordAnimation(OffRecordMotion.snappy) {
                             scrollProxy.scrollTo(scrollTargetID, anchor: .center)
                         }
                     }
@@ -1118,7 +1030,7 @@ private struct WelcomeStep: View {
                 .accessibilityHidden(true)
             }
 
-            Text("Speak or write freely. Your journal stays on this device.")
+            Text("Talk or type. It all stays on your \(DeviceNoun.current).")
                 .font(OffRecordTypography.bodyMedium)
                 .foregroundStyle(OnboardingPalette.secondaryForeground)
                 .multilineTextAlignment(.center)
@@ -1143,7 +1055,7 @@ private struct OnboardingNameField: UIViewRepresentable {
         let textField = InsetTextField(frame: .zero)
         textField.delegate = context.coordinator
         textField.text = text
-        textField.placeholder = "Your name (optional)"
+        textField.placeholder = String(localized: "Your name (optional)")
         textField.textColor = UIColor(OffRecordColor.textPrimary)
         textField.tintColor = UIColor(OffRecordColor.textCoral)
         textField.font = UIFont.preferredFont(forTextStyle: .headline)
@@ -1216,38 +1128,12 @@ private final class InsetTextField: UITextField {
     }
 }
 
-private struct GoalStep: View {
-    @Binding var selectedGoal: OnboardingGoal?
-
-    var body: some View {
-        OnboardingQuestion(
-            eyebrow: "Your goal",
-            title: "What do you want your journal to help with?",
-            subtitle: "Pick the outcome that would make OffRecord worth opening every day."
-        ) {
-            VStack(spacing: 10) {
-                ForEach(OnboardingGoal.allCases) { goal in
-                    ChoiceRow(
-                        title: goal.title,
-                        icon: goal.icon,
-                        isSelected: selectedGoal == goal
-                    ) {
-                        selectedGoal = goal
-                    }
-                }
-            }
-        }
-    }
-}
-
 private struct IntentStep: View {
     @Binding var selectedIntents: Set<OnboardingPainPoint>
 
     var body: some View {
         OnboardingQuestion(
-            eyebrow: "Intent",
-            title: "What brings you here?",
-            subtitle: "Pick what matters most. Choose one or more.",
+            subtitle: String(localized: "Choose any."),
             contentSpacing: 18
         ) {
             VStack(spacing: 10) {
@@ -1273,15 +1159,13 @@ private struct IntentStep: View {
 private struct PrivacyProofStep: View {
     var body: some View {
         OnboardingQuestion(
-            eyebrow: "Privacy proof",
-            title: "Private by design",
-            subtitle: "Your journal stays on this device. Voice transcription only starts after you allow it.",
+            subtitle: String(localized: "Nothing leaves your \(DeviceNoun.current) unless you export it or turn on iCloud."),
             contentSpacing: 16
         ) {
             VStack(spacing: 10) {
-                PrivacyProofRow(icon: "person.crop.circle.badge.xmark", title: "No account required", detail: "Start journaling without a cloud profile.")
-                PrivacyProofRow(icon: "server.rack", title: "No server journal processing", detail: "Entries and Friday insights stay in OffRecord.")
-                PrivacyProofRow(icon: "chart.bar.xaxis", title: "No ads or tracking", detail: "Your reflections are not used for ads.")
+                PrivacyProofRow(icon: "person.crop.circle.badge.xmark", title: String(localized: "No account"), detail: String(localized: "Open the app and start."))
+                PrivacyProofRow(icon: "server.rack", title: String(localized: "No OffRecord servers"), detail: String(localized: "Transcription and Friday run on your \(DeviceNoun.current)."))
+                PrivacyProofRow(icon: "chart.bar.xaxis", title: String(localized: "No ads or tracking"), detail: String(localized: "Nothing you write is used for ads."))
             }
         }
     }
@@ -1294,9 +1178,9 @@ private struct FaceIDStep: View {
 
     var body: some View {
         OnboardingQuestion(
-            eyebrow: "Privacy lock",
-            title: "Lock your journal",
-            subtitle: "Use \(biometryName) or your device passcode when opening OffRecord.",
+            subtitle: isPasscode
+                ? String(localized: "Require your passcode to open OffRecord.")
+                : String(localized: "Require \(biometryName) to open OffRecord.", comment: "The placeholder is Face ID, Touch ID, or Optic ID"),
             contentSpacing: 18
         ) {
             VStack(spacing: 16) {
@@ -1305,25 +1189,37 @@ private struct FaceIDStep: View {
                         .fill(OffRecordColor.backgroundSageTint.opacity(0.28))
                         .frame(width: 132, height: 132)
                     Image(systemName: isEnabled ? "checkmark.shield.fill" : lockIcon)
-                        .font(.system(size: 54, weight: .semibold))
+                        .font(.system(.largeTitle, weight: .semibold)).imageScale(.large)
                         .foregroundStyle(OnboardingPalette.foreground)
                 }
 
                 VStack(alignment: .leading, spacing: 12) {
-                    BenefitRow(icon: "lock.fill", text: "Require \(biometryName) or passcode before showing your journal.")
-                    BenefitRow(icon: "iphone", text: "Lock automatically when OffRecord leaves the foreground.")
+                    BenefitRow(icon: "lock.fill", text: String(localized: "Locks again when you leave the app."))
                 }
 
                 if !isAvailable {
-                    Text("Biometrics are unavailable on this device. You can continue with your passcode or skip for now.")
+                    Text(unavailableMessage)
                         .font(OffRecordTypography.metadata)
                         .foregroundStyle(OnboardingPalette.secondaryForeground)
+                        .fixedSize(horizontal: false, vertical: true)
                         .padding()
                         .background(OnboardingPalette.surfaceSubtle)
                         .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
                 }
             }
         }
+    }
+
+    /// "Face ID" reads as a name; a bare "Passcode" doesn't, so it gets its own sentences.
+    /// AppLockManager returns the localized "Passcode", so compare against the same key.
+    private var isPasscode: Bool {
+        biometryName == String(localized: "Passcode")
+    }
+
+    private var unavailableMessage: String {
+        isPasscode
+            ? String(localized: "OffRecord will use your passcode.")
+            : String(localized: "\(biometryName) isn’t set up. Your passcode will be used instead.")
     }
 
     private var lockIcon: String {
@@ -1335,171 +1231,6 @@ private struct FaceIDStep: View {
         default:
             return "lock.shield.fill"
         }
-    }
-}
-
-private struct RelatableStep: View {
-    @Binding var selectedStatements: Set<RelatableStatement>
-
-    var body: some View {
-        OnboardingQuestion(
-            eyebrow: "A quick check",
-            title: "Which statements sound like you?",
-            subtitle: "Tap any that feel true. This helps Friday understand what matters first."
-        ) {
-            VStack(spacing: 12) {
-                ForEach(RelatableStatement.allCases) { statement in
-                    StatementCard(
-                        statement: statement.title,
-                        isSelected: selectedStatements.contains(statement)
-                    ) {
-                        if selectedStatements.contains(statement) {
-                            selectedStatements.remove(statement)
-                        } else {
-                            selectedStatements.insert(statement)
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-private struct PersonalizedSolutionStep: View {
-    let response: OnboardingResponse
-
-    private var rows: [OnboardingPainPoint] {
-        let selected = Array(response.painPoints).prefix(4)
-        return selected.isEmpty ? Array(OnboardingPainPoint.allCases.prefix(4)) : Array(selected)
-    }
-
-    var body: some View {
-        OnboardingQuestion(
-            eyebrow: "Your private setup",
-            title: "A smarter way to reflect, built around you.",
-            subtitle: "Everything below runs locally. No internet connection, account, analytics, or third-party AI server is needed."
-        ) {
-            VStack(spacing: 12) {
-                ForEach(rows) { pain in
-                    SolutionRow(pain: pain)
-                }
-            }
-        }
-    }
-}
-
-private struct PreferencesStep: View {
-    @Binding var response: OnboardingResponse
-
-    var body: some View {
-        OnboardingQuestion(
-            eyebrow: "Make it yours",
-            title: "Tune Friday",
-            subtitle: "Choose what Friday should notice first.",
-            contentSpacing: 18
-        ) {
-            VStack(alignment: .leading, spacing: 22) {
-                PreferencePicker(
-                    title: "Reflection focus",
-                    items: ReflectionFocus.allCases,
-                    selection: $response.reflectionFocus
-                ) { item in
-                    Label(item.title, systemImage: item.icon)
-                }
-
-                VStack(alignment: .leading, spacing: 10) {
-                    Text("How you feel lately")
-                        .font(OffRecordTypography.sectionTitle)
-                    LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                        ForEach(MoodChoice.allCases) { item in
-                            Button {
-                                HapticManager.shared.selectionChanged()
-                                response.moodBaseline = item
-                            } label: {
-                                OnboardingPreferenceChip(isSelected: response.moodBaseline == item) {
-                                    Text(item.title)
-                                        .frame(maxWidth: .infinity, alignment: .leading)
-                                }
-                            }
-                            .buttonStyle(.plain)
-                        }
-                    }
-                }
-
-                PreferencePicker(
-                    title: "Prompt style",
-                    items: PromptStyle.allCases,
-                    selection: $response.promptStyle
-                ) { item in
-                    Text(item.title)
-                }
-            }
-        }
-    }
-}
-
-private struct PermissionPrimerStep: View {
-    let icon: String
-    let title: String
-    let subtitle: String
-    let bullets: [String]
-
-    var body: some View {
-        OnboardingQuestion(
-            eyebrow: "Before your first entry",
-            title: title,
-            subtitle: subtitle
-        ) {
-            VStack(spacing: 20) {
-                ZStack {
-                    Circle()
-                        .fill(OnboardingPalette.surfaceSubtle)
-                        .frame(width: 128, height: 128)
-                    Image(systemName: icon)
-                        .font(.system(size: 48, weight: .semibold))
-                        .foregroundStyle(OnboardingPalette.foreground)
-                }
-
-                VStack(alignment: .leading, spacing: 12) {
-                    ForEach(bullets, id: \.self) { bullet in
-                        BenefitRow(icon: "checkmark.circle.fill", text: bullet)
-                    }
-                }
-            }
-        }
-    }
-}
-
-private struct ProcessingStep: View {
-    @State private var animate = false
-
-    var body: some View {
-        VStack(spacing: 24) {
-            Spacer(minLength: 80)
-            ZStack {
-                Circle()
-                    .stroke(OnboardingPalette.surfaceBarelyVisible, lineWidth: 18)
-                    .frame(width: 150, height: 150)
-                Circle()
-                    .trim(from: 0.1, to: 0.82)
-                    .stroke(OnboardingPalette.foreground, style: StrokeStyle(lineWidth: 18, lineCap: .round))
-                    .frame(width: 150, height: 150)
-                    .rotationEffect(.degrees(animate ? 360 : 0))
-                    .animation(.linear(duration: 1.1).repeatForever(autoreverses: false), value: animate)
-                Image(systemName: "sparkles")
-                    .font(.system(size: 42, weight: .bold))
-                    .foregroundStyle(OnboardingPalette.foreground)
-            }
-
-            VStack(spacing: 10) {
-                Text("No account needed. OffRecord is preparing your first reflection.")
-                    .font(OffRecordTypography.labelMedium)
-                    .foregroundStyle(OnboardingPalette.secondaryForeground)
-                    .multilineTextAlignment(.center)
-            }
-            Spacer(minLength: 80)
-        }
-        .onAppear { animate = true }
     }
 }
 
@@ -1519,9 +1250,7 @@ private struct FirstEntryStep: View {
 
     var body: some View {
         OnboardingQuestion(
-            eyebrow: "First entry",
-            title: "Start with one honest thought",
-            subtitle: "Record a short thought. If recording is unavailable, you can type instead.",
+            subtitle: String(localized: "A sentence is enough."),
             contentSpacing: 16
         ) {
             VStack(spacing: 18) {
@@ -1533,7 +1262,7 @@ private struct FirstEntryStep: View {
                 }
 
                 VStack(alignment: .leading, spacing: 10) {
-                    Text("Add a starting mood")
+                    Text("How are you feeling?")
                         .font(OffRecordTypography.sectionTitle)
                     LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
                         ForEach(Mood.selectableMoods.prefix(6)) { mood in
@@ -1583,7 +1312,7 @@ private struct FirstEntryStep: View {
                         .fill(isRecording ? OffRecordColor.textCoral : OnboardingPalette.surface)
                         .frame(width: 104, height: 104)
                     Image(systemName: isRecording ? "stop.fill" : "mic.fill")
-                        .font(.system(size: 38, weight: .bold))
+                        .font(.system(.largeTitle, weight: .bold))
                         .foregroundStyle(isRecording ? OffRecordColor.textInverse : OffRecordColor.textAqua)
                 }
 
@@ -1591,23 +1320,20 @@ private struct FirstEntryStep: View {
                     Text(formatTime(elapsedTime))
                         .font(OffRecordTypography.numberMedium)
                     WaveformMeter(level: level)
-                    Text("Tap to stop")
+                    Text("Recording")
                         .font(OffRecordTypography.labelMedium)
                         .foregroundStyle(OnboardingPalette.secondaryForeground)
                 } else if isTranscribing {
-                    ProgressView("Transcribing on this device...")
+                    ProgressView("Transcribing…")
                         .tint(OnboardingPalette.foreground)
                         .foregroundStyle(OnboardingPalette.foreground)
                 } else if entryCreated {
-                    Label("First entry saved", systemImage: "checkmark.circle.fill")
+                    Label("Saved", systemImage: "checkmark.circle.fill")
                         .font(OffRecordTypography.sectionTitle)
                         .foregroundStyle(OnboardingPalette.foreground)
                 } else {
-                    Text("Record privately")
+                    Text("Record", comment: "Button that starts a voice recording")
                         .font(OffRecordTypography.sectionTitle)
-                    Text("Your recording is stored locally.")
-                        .font(OffRecordTypography.bodySmall)
-                        .foregroundStyle(OnboardingPalette.secondaryForeground)
                 }
             }
             .frame(maxWidth: .infinity)
@@ -1625,9 +1351,9 @@ private struct FirstEntryStep: View {
 
     private var textFallbackEditor: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Type your first entry")
+            Text("Write it down")
                 .font(OffRecordTypography.sectionTitle)
-            TextField("Write your first entry...", text: $draft, axis: .vertical)
+            TextField("Today I…", text: $draft, axis: .vertical)
                 .focused($isTextEditorFocused)
                 .id(OnboardingScrollTarget.firstEntryTextField)
                 .accessibilityIdentifier("onboarding.firstEntry.textField")
@@ -1664,25 +1390,6 @@ private struct FirstEntryStep: View {
     }
 }
 
-private struct ValueRevealStep: View {
-    let response: OnboardingResponse
-    let entryText: String
-    let mood: Mood
-
-    var body: some View {
-        OnboardingQuestion(
-            eyebrow: "Your starter snapshot",
-            title: "Your first snapshot is ready",
-            subtitle: "Friday has enough to begin noticing patterns privately.",
-            contentSpacing: 16
-        ) {
-            VStack(spacing: 14) {
-                StarterSnapshotCard(response: response, entryText: entryText, mood: mood)
-            }
-        }
-    }
-}
-
 private struct HabitSetupStep: View {
     @ObservedObject var reminderManager: ReminderManager
     @ObservedObject var goalManager: GoalManager
@@ -1690,9 +1397,7 @@ private struct HabitSetupStep: View {
 
     var body: some View {
         OnboardingQuestion(
-            eyebrow: "Build the habit",
-            title: "Make reflection easy to repeat.",
-            subtitle: "Optional reminders and a weekly goal can help you build the habit. You can change these anytime.",
+            subtitle: String(localized: "Optional. You can change these in Settings."),
             contentSpacing: 18
         ) {
             VStack(spacing: 16) {
@@ -1713,7 +1418,7 @@ private struct HabitSetupStep: View {
                         }
                     }
                 )) {
-                    Label("Remind me once a day", systemImage: "bell.badge.fill")
+                    Label("Daily Reminder", systemImage: "bell.badge.fill")
                 }
                 .tint(OffRecordColor.textBrand)
                 .padding()
@@ -1722,7 +1427,7 @@ private struct HabitSetupStep: View {
 
                 if reminderManager.isEnabled {
                     DatePicker(
-                        "Reminder time",
+                        "Time",
                         selection: Binding(
                             get: { reminderManager.reminderTime },
                             set: { reminderManager.reminderTime = $0 }
@@ -1735,7 +1440,7 @@ private struct HabitSetupStep: View {
                 }
 
                 Toggle(isOn: $goalManager.isEnabled) {
-                    Label("Set a weekly journaling goal", systemImage: "flame.fill")
+                    Label("Weekly Goal", systemImage: "flame.fill")
                 }
                 .tint(.orange)
                 .padding()
@@ -1743,35 +1448,14 @@ private struct HabitSetupStep: View {
                 .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
 
                 if goalManager.isEnabled {
-                    Stepper("Target: \(goalManager.weeklyTarget) entries/week", value: $goalManager.weeklyTarget, in: 1...7)
-                        .padding()
-                        .background(OnboardingPalette.surfaceSubtle)
-                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                    Stepper(value: $goalManager.weeklyTarget, in: 1...7) {
+                        Text("^[\(goalManager.weeklyTarget) day](inflect: true) a week")
+                    }
+                    .padding()
+                    .background(OnboardingPalette.surfaceSubtle)
+                    .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
                 }
             }
-        }
-    }
-}
-
-private struct FinishStep: View {
-    var body: some View {
-        VStack(spacing: 24) {
-            Spacer(minLength: 80)
-            ZStack {
-                Circle()
-                    .fill(OnboardingPalette.surfaceSubtle)
-                    .frame(width: 150, height: 150)
-                FridayMascotView(pose: .wave, size: 104)
-            }
-
-            VStack(spacing: 12) {
-                Text("Record, reflect, and let Friday notice patterns entirely on this device. No internet connection required for the core experience.")
-                    .font(OffRecordTypography.titleSmall)
-                    .foregroundStyle(OnboardingPalette.secondaryForeground)
-                    .multilineTextAlignment(.center)
-                    .lineSpacing(4)
-            }
-            Spacer(minLength: 80)
         }
     }
 }
@@ -1796,6 +1480,7 @@ private struct OnboardingProgressHeader: View {
                         .clipShape(Circle())
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel("Back")
                 .disabled(!canGoBack)
                 .opacity(canGoBack ? 1 : 0)
                 .frame(width: sideWidth, alignment: .leading)
@@ -1887,43 +1572,12 @@ private struct OnboardingSelectedAccessibility: ViewModifier {
     }
 }
 
-private struct OnboardingPreferenceChip<Content: View>: View {
-    let isSelected: Bool
-    let content: Content
-
-    init(isSelected: Bool, @ViewBuilder content: () -> Content) {
-        self.isSelected = isSelected
-        self.content = content()
-    }
-
-    var body: some View {
-        OnboardingSelectableContainer(isSelected: isSelected, cornerRadius: 14, padding: 10) {
-            HStack(spacing: 8) {
-                content
-                    .font(isSelected ? OffRecordTypography.labelLarge : OffRecordTypography.labelMedium)
-                    .foregroundStyle(OnboardingPalette.foreground)
-                    .lineLimit(2)
-                    .minimumScaleFactor(0.82)
-
-                if isSelected {
-                    Image(systemName: "checkmark.circle.fill")
-                        .font(OffRecordTypography.labelMedium)
-                        .foregroundStyle(OnboardingPalette.foreground)
-                }
-            }
-            .frame(maxWidth: .infinity, minHeight: 46)
-        }
-    }
-}
-
 private struct OnboardingQuestion<Content: View>: View {
     let subtitle: String
     let contentSpacing: CGFloat
     let content: Content
 
     init(
-        eyebrow _: String,
-        title _: String,
         subtitle: String,
         contentSpacing: CGFloat = 24,
         @ViewBuilder content: () -> Content
@@ -2002,67 +1656,6 @@ private struct ChoiceRow: View {
     }
 }
 
-private struct StatementCard: View {
-    let statement: String
-    let isSelected: Bool
-    let action: () -> Void
-
-    var body: some View {
-        Button {
-            HapticManager.shared.selectionChanged()
-            action()
-        } label: {
-            OnboardingSelectableContainer(isSelected: isSelected, cornerRadius: 20, padding: 18) {
-                HStack(alignment: .top, spacing: 14) {
-                    Image(systemName: isSelected ? "checkmark.circle.fill" : "quote.opening")
-                        .font(OffRecordTypography.titleSmall)
-                        .foregroundStyle(OnboardingPalette.foreground)
-                    Text(statement)
-                        .font(isSelected ? OffRecordTypography.titleSmall : OffRecordTypography.labelLarge)
-                        .lineSpacing(3)
-                    Spacer()
-                }
-                .frame(maxWidth: .infinity, alignment: .leading)
-            }
-        }
-        .buttonStyle(.plain)
-    }
-}
-
-private struct PrivacyComparisonRow: View {
-    let label: String
-    let offRecord: String
-    let other: String
-
-    var body: some View {
-        HStack(spacing: 10) {
-            Text(label)
-                .font(OffRecordTypography.labelMedium)
-                .frame(maxWidth: .infinity, alignment: .leading)
-
-            Text(offRecord)
-                .font(OffRecordTypography.labelSmall)
-                .foregroundStyle(OffRecordColor.textPrimary)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(OnboardingPalette.surface)
-                .clipShape(Capsule())
-
-            Text(other)
-                .font(OffRecordTypography.labelSmall)
-                .foregroundStyle(OnboardingPalette.secondaryForeground)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 6)
-                .background(OnboardingPalette.surfaceSubtle)
-                .clipShape(Capsule())
-        }
-        .padding(.horizontal, 14)
-        .padding(.vertical, 10)
-        .background(OnboardingPalette.surfaceBarelyVisible)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-    }
-}
-
 private struct PrivacyProofRow: View {
     let icon: String
     let title: String
@@ -2092,34 +1685,6 @@ private struct PrivacyProofRow: View {
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(OnboardingPalette.surfaceSoft)
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-    }
-}
-
-private struct SolutionRow: View {
-    let pain: OnboardingPainPoint
-
-    var body: some View {
-        HStack(alignment: .top, spacing: 14) {
-            Image(systemName: pain.icon)
-                .font(OffRecordTypography.sectionTitle)
-                .foregroundStyle(OnboardingPalette.foreground)
-                .frame(width: 34, height: 34)
-                .background(OnboardingPalette.surfaceSubtle)
-                .clipShape(Circle())
-
-            VStack(alignment: .leading, spacing: 4) {
-                Text(pain.title)
-                    .font(OffRecordTypography.labelSmall)
-                    .foregroundStyle(OnboardingPalette.secondaryForeground)
-                Text(pain.solutionTitle)
-                    .font(OffRecordTypography.sectionTitle)
-                    .foregroundStyle(OnboardingPalette.foreground)
-            }
-        }
-        .padding(16)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(OnboardingPalette.surfaceBarelyVisible)
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
     }
 }
@@ -2160,98 +1725,6 @@ private struct BenefitRow: View {
     }
 }
 
-private struct PreferencePicker<Item: Identifiable & Equatable, Label: View>: View {
-    let title: String
-    let items: [Item]
-    @Binding var selection: Item?
-    let label: (Item) -> Label
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            Text(title)
-                .font(OffRecordTypography.sectionTitle)
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 10) {
-                ForEach(items) { item in
-                    Button {
-                        HapticManager.shared.selectionChanged()
-                        selection = item
-                    } label: {
-                        OnboardingPreferenceChip(isSelected: selection == item) {
-                            label(item)
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                        }
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-        }
-    }
-}
-
-private struct LocalAIBadge: View {
-    var body: some View {
-        HStack(spacing: 8) {
-            Image(systemName: "cpu.fill")
-            Text("On device")
-            Circle().fill(OnboardingPalette.tertiaryForeground).frame(width: 4, height: 4)
-            Text("Core works offline")
-        }
-        .font(OffRecordTypography.labelSmall)
-        .foregroundStyle(OffRecordColor.textPrimary)
-        .lineLimit(1)
-        .minimumScaleFactor(0.78)
-        .padding(.horizontal, 12)
-        .padding(.vertical, 8)
-        .background(OnboardingPalette.surface)
-        .clipShape(Capsule())
-    }
-}
-
-private struct JournalPreviewCard: View {
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Label("Today", systemImage: "mic.fill")
-                    .font(OffRecordTypography.sectionTitle)
-                Spacer()
-                OfflineIndicator()
-            }
-
-            Text("I finally said the thing I kept editing in my head...")
-                .font(OffRecordTypography.titleSmall)
-                .lineSpacing(3)
-
-            HStack(spacing: 10) {
-                PreviewPill(icon: "heart.fill", text: "Calm")
-                PreviewPill(icon: "person.2.fill", text: "People")
-                PreviewPill(icon: "sparkles", text: "Friday")
-            }
-        }
-        .padding(18)
-        .background(OnboardingPalette.surfaceSubtle)
-        .overlay(
-            RoundedRectangle(cornerRadius: 24, style: .continuous)
-                .stroke(OnboardingPalette.border, lineWidth: 1)
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
-    }
-}
-
-private struct PreviewPill: View {
-    let icon: String
-    let text: String
-
-    var body: some View {
-        Label(text, systemImage: icon)
-            .font(OffRecordTypography.labelSmall)
-            .foregroundStyle(OnboardingPalette.secondaryForeground)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 7)
-            .background(OnboardingPalette.surfaceSubtle)
-            .clipShape(Capsule())
-    }
-}
-
 private struct WaveformMeter: View {
     let level: Float
 
@@ -2279,171 +1752,6 @@ private struct WaveformMeter: View {
     }
 }
 
-private struct StarterSnapshotCard: View {
-    let response: OnboardingResponse
-    let entryText: String
-    let mood: Mood
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Label("Friday snapshot", systemImage: "sparkles")
-                .font(OffRecordTypography.sectionTitle)
-                .foregroundStyle(OnboardingPalette.foreground)
-
-            Text(snapshotText)
-                .font(OffRecordTypography.bodyLarge)
-                .lineSpacing(4)
-
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], alignment: .leading, spacing: 8) {
-                PreviewPill(icon: "lock.shield.fill", text: "Stored locally")
-                PreviewPill(icon: "person.crop.circle.badge.xmark", text: "No account")
-                PreviewPill(icon: "heart.fill", text: mood.displayName)
-            }
-            .frame(maxWidth: .infinity, alignment: .leading)
-        }
-        .padding(18)
-        .background(OnboardingPalette.surfaceSubtle)
-        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-    }
-
-    private var snapshotText: String {
-        let goal = response.goal?.title ?? "reflect more clearly"
-        let focus = response.reflectionFocus?.title.lowercased() ?? "patterns"
-        if entryText.trimmed.isEmpty {
-            return "You want a clearer place to think. Friday will start by watching for \(focus) across your entries while keeping your journal on this device."
-        }
-        return "You want to \(goal.lowercased()). From your first entry, Friday will start watching for \(focus) while keeping everything private."
-    }
-}
-
-private struct TopicGraphCard: View {
-    let response: OnboardingResponse
-    let entryText: String
-
-    private var nodes: [String] {
-        var values = [
-            response.reflectionFocus?.title ?? "Reflection",
-            response.goal?.title.components(separatedBy: " ").suffix(2).joined(separator: " ") ?? "Patterns",
-            response.promptStyle?.title ?? "Prompts"
-        ]
-
-        let words = entryText
-            .split { !$0.isLetter }
-            .map(String.init)
-            .filter { $0.count > 4 }
-            .prefix(2)
-        values.append(contentsOf: words)
-        return Array(values.prefix(5))
-    }
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            Label("Sample People and Topics", systemImage: "point.3.connected.trianglepath.dotted")
-                .font(OffRecordTypography.sectionTitle)
-                .foregroundStyle(OnboardingPalette.foreground)
-
-            ZStack {
-                ForEach(Array(nodes.enumerated()), id: \.offset) { index, node in
-                    TopicNode(title: node, index: index)
-                }
-            }
-            .frame(height: 210)
-            .frame(maxWidth: .infinity)
-
-            Text("As you journal, OffRecord connects recurring people, places, moods, and themes locally. These connections stay on this device.")
-                .font(OffRecordTypography.labelMedium)
-                .foregroundStyle(OnboardingPalette.secondaryForeground)
-        }
-        .padding(18)
-        .background(OnboardingPalette.surfaceSubtle)
-        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
-    }
-}
-
-private struct TopicNode: View {
-    let title: String
-    let index: Int
-
-    private var position: CGPoint {
-        switch index {
-        case 0: return CGPoint(x: 0.50, y: 0.18)
-        case 1: return CGPoint(x: 0.22, y: 0.50)
-        case 2: return CGPoint(x: 0.76, y: 0.48)
-        case 3: return CGPoint(x: 0.36, y: 0.82)
-        default: return CGPoint(x: 0.66, y: 0.78)
-        }
-    }
-
-    var body: some View {
-        GeometryReader { proxy in
-            ZStack {
-                if index != 0 {
-                    Path { path in
-                        path.move(to: CGPoint(x: proxy.size.width * 0.50, y: proxy.size.height * 0.18))
-                        path.addLine(to: CGPoint(x: proxy.size.width * position.x, y: proxy.size.height * position.y))
-                    }
-                    .stroke(OnboardingPalette.tertiaryForeground, lineWidth: 2)
-                }
-
-                Text(title)
-                    .font(OffRecordTypography.labelSmall)
-                    .foregroundStyle(OnboardingPalette.foreground)
-                    .lineLimit(1)
-                    .minimumScaleFactor(0.72)
-                    .padding(.horizontal, 12)
-                    .padding(.vertical, 9)
-                    .background(index == 0 ? OnboardingPalette.surface : OnboardingPalette.surfaceSubtle)
-                    .clipShape(Capsule())
-                    .position(x: proxy.size.width * position.x, y: proxy.size.height * position.y)
-            }
-        }
-    }
-}
-
-// MARK: - Privacy Badge Component
-
-struct PrivacyBadge: View {
-    var compact: Bool = false
-
-    var body: some View {
-        HStack(spacing: 6) {
-            Image(systemName: "lock.shield.fill")
-                .font(compact ? OffRecordTypography.annotation : OffRecordTypography.bodySmall)
-                .foregroundColor(OffRecordColor.textSage)
-
-            if !compact {
-                Text("100% Private")
-                    .font(OffRecordTypography.labelSmall)
-                    .foregroundColor(OffRecordColor.textSage)
-            }
-        }
-        .padding(.horizontal, compact ? 8 : 12)
-        .padding(.vertical, compact ? 4 : 6)
-        .background(OffRecordColor.backgroundSageTint)
-        .overlay(Capsule().stroke(OffRecordColor.borderSage, lineWidth: 1))
-        .clipShape(Capsule())
-    }
-}
-
-// MARK: - Offline Indicator
-
-struct OfflineIndicator: View {
-    var body: some View {
-        HStack(spacing: 4) {
-            Circle()
-                .fill(OffRecordColor.brandSageDark)
-                .frame(width: 6, height: 6)
-            Text("Offline")
-                .font(OffRecordTypography.labelSmall)
-                .foregroundColor(OffRecordColor.textSage)
-        }
-        .padding(.horizontal, 8)
-        .padding(.vertical, 4)
-        .background(OffRecordColor.backgroundSageTint)
-        .overlay(Capsule().stroke(OffRecordColor.borderSage, lineWidth: 1))
-        .clipShape(Capsule())
-    }
-}
 
 private extension String {
     var trimmed: String {

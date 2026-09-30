@@ -185,3 +185,11 @@ extension View {
         modifier(OffRecordPointerLiftModifier(enabled: enabled))
     }
 }
+
+/// The device named in copy ("iPhone" or "iPad"), so text says where the journal lives.
+@MainActor
+enum DeviceNoun {
+    static var current: String {
+        UIDevice.current.userInterfaceIdiom == .pad ? "iPad" : "iPhone"
+    }
+}

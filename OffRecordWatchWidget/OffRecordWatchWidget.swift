@@ -42,7 +42,7 @@ struct OffRecordWatchWidgetEntryView: View {
                     .font(.headline.weight(.heavy))
             }
             .widgetURL(URL(string: "offrecordwatch://home?source=complication"))
-            .accessibilityLabel("OffRecord Quick Capture")
+            .accessibilityLabel("Quick Capture")
         case .accessoryRectangular:
             HStack(spacing: 8) {
                 Image(systemName: "plus.circle.fill")
@@ -50,13 +50,13 @@ struct OffRecordWatchWidgetEntryView: View {
                 VStack(alignment: .leading, spacing: 1) {
                     Text("Quick Capture")
                         .font(.headline.weight(.semibold))
-                    Text(entry.queueCount == 0 ? "Private and synced" : "\(entry.queueCount) saved on watch")
+                    Text(entry.queueCount == 0 ? "All synced" : "\(entry.queueCount) waiting on watch")
                         .font(.caption2)
                 }
             }
             .containerBackground(.fill.tertiary, for: .widget)
             .widgetURL(URL(string: "offrecordwatch://home?source=smartStack"))
-            .accessibilityLabel("OffRecord Quick Capture")
+            .accessibilityLabel("Quick Capture")
         default:
             Text("Capture")
                 .containerBackground(.fill.tertiary, for: .widget)
@@ -73,7 +73,7 @@ struct OffRecordWatchWidget: Widget {
             OffRecordWatchWidgetEntryView(entry: entry)
         }
         .configurationDisplayName("Quick Capture")
-        .description("Open OffRecord without showing journal text.")
+        .description("Opens OffRecord for a quick capture.")
         .supportedFamilies([.accessoryCircular, .accessoryRectangular])
     }
 }

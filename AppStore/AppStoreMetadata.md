@@ -25,7 +25,7 @@ Capture from your wrist without browsing your private journal on watch:
 The iPhone remains your full journal. Apple Watch is for fast, private capture.
 
 YOUR VOICE, YOUR DIARY
-Record your thoughts naturally with voice. OffRecord AI Journal uses Apple Speech for transcription after clearly asking permission; when your device is online, voice audio may be processed by Apple Speech and returned as a transcript saved in your journal.
+Record your thoughts naturally with voice. OffRecord AI Journal uses Apple SpeechAnalyzer for transcription after clearly asking permission. Transcription runs entirely on-device with a system-managed language model, and your original audio stays saved alongside the transcript.
 
 YOUR DIGITAL TWIN
 This is what makes OffRecord AI Journal different. As you journal, OffRecord AI Journal tracks and visualizes patterns in your life:

@@ -16,20 +16,20 @@ struct HomePrivacyExplanationView: View {
                     )
 
                     VStack(alignment: .leading, spacing: 10) {
-                        Text("Private by design")
+                        Text("Your Privacy")
                             .font(OffRecordTypography.titleMedium)
                             .foregroundStyle(OffRecordColor.textBrand)
 
-                        Text("Your journal entries stay on this device. OffRecord uses local processing for private reflection features whenever possible, so your most personal notes are treated as yours first.")
+                        Text("Your entries, recordings, and transcripts are stored on this \(DeviceNoun.current). Transcription and Friday run here too, so nothing you write goes to a server.")
                             .font(OffRecordTypography.bodyLarge)
                             .foregroundStyle(OffRecordColor.textSecondary)
                             .lineSpacing(3)
                     }
 
                     VStack(alignment: .leading, spacing: 12) {
-                        Label("Entries are stored locally", systemImage: "iphone")
-                        Label("Private AI context stays personal", systemImage: "sparkles")
-                        Label("You control what gets exported", systemImage: "square.and.arrow.up")
+                        Label("Stored on your \(DeviceNoun.current)", systemImage: "iphone")
+                        Label("Processed on your \(DeviceNoun.current)", systemImage: "sparkles")
+                        Label("Leaves only when you export or turn on iCloud", systemImage: "square.and.arrow.up")
                     }
                     .font(OffRecordTypography.labelMedium)
                     .foregroundStyle(OffRecordColor.textSage)

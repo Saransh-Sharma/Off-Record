@@ -2,7 +2,7 @@
 //  PDFExportService.swift
 //  OffRecord
 //
-//  Generates PDF exports of diary entries.
+//  Generates PDF exports of journal entries.
 //  PDFs are created locally and stored in temporary directory until shared.
 //
 //  Privacy: PDF generation happens entirely on-device.
@@ -37,7 +37,7 @@ enum PDFPaperSize: String, CaseIterable, Identifiable {
 }
 
 struct PDFExportService {
-    private static let footerText = "Created with OffRecord AI Journal"
+    private static let footerText = String(localized: "Made with OffRecord", comment: "PDF export page footer")
     private static let margin: CGFloat = 40
     private static let footerHeight: CGFloat = 30
 
@@ -130,7 +130,7 @@ struct PDFExportService {
         dateFormatter.timeStyle = .none
 
         let exportDateFormatter = DateFormatter()
-        exportDateFormatter.dateFormat = "MMMM d, yyyy"
+        exportDateFormatter.setLocalizedDateFormatFromTemplate("MMMMdyyyy")
 
         let data = renderer.pdfData { context in
             // MARK: - Cover Page
@@ -240,7 +240,7 @@ struct PDFExportService {
 
         // Create safe filename from period title
         let safeTitle = periodTitle.replacingOccurrences(of: " ", with: "-")
-        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("OffRecord AI Journal-\(safeTitle)-\(UUID().uuidString).pdf")
+        let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent("OffRecord Journal-\(safeTitle)-\(UUID().uuidString).pdf")
         try data.write(to: tempURL)
         return tempURL
     }
@@ -258,7 +258,7 @@ struct PDFExportService {
         var yPosition: CGFloat = pageRect.height * 0.3
 
         // App name / Title
-        let titleText = "OffRecord AI Journal"
+        let titleText = String(localized: "Journal", comment: "PDF export cover title, above the period (e.g. 2026)")
         let titleAttrs: [NSAttributedString.Key: Any] = [
             .font: UIFont.systemFont(ofSize: 36, weight: .light),
             .foregroundColor: PDFExportPalette.textSecondary
@@ -326,14 +326,14 @@ struct PDFExportService {
             .foregroundColor: PDFExportPalette.textSecondary
         ]
 
-        let countText = "\(entryCount) entr\(entryCount == 1 ? "y" : "ies")"
+        let countText = String(AttributedString(localized: "^[\(entryCount) entry](inflect: true)").characters)
         let countSize = (countText as NSString).size(withAttributes: infoAttrs)
         (countText as NSString).draw(
             at: CGPoint(x: centerX - countSize.width / 2, y: bottomY),
             withAttributes: infoAttrs
         )
 
-        let dateText = "Exported on \(exportDate)"
+        let dateText = String(localized: "Exported on \(exportDate)", comment: "PDF export cover: date the PDF was made")
         let dateSize = (dateText as NSString).size(withAttributes: infoAttrs)
         (dateText as NSString).draw(
             at: CGPoint(x: centerX - dateSize.width / 2, y: bottomY + 16),

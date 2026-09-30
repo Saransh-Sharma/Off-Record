@@ -23,7 +23,7 @@ struct FridayComposer: View {
             }
 
             HStack(alignment: .bottom, spacing: OffRecordSpacing.sm) {
-                TextField("Ask Friday about your journal...", text: $text, axis: .vertical)
+                TextField("Ask me about your journal", text: $text, axis: .vertical)
                     .font(OffRecordTypography.bodyMedium)
                     .foregroundStyle(OffRecordColor.textPrimary)
                     .textFieldStyle(.plain)
@@ -35,15 +35,17 @@ struct FridayComposer: View {
                     .accessibilityIdentifier("friday.askField")
 
                 Button(action: onSend) {
-                    Image(systemName: isAnswering ? "hourglass" : "arrow.right")
-                        .font(.system(size: 19, weight: .bold))
-                        .foregroundStyle(OffRecordColor.textInverse)
+                    Image(systemName: isAnswering ? "hourglass" : "arrow.up")
+                        .font(OffRecordTypography.titleSmall.weight(.bold))
+                        .foregroundStyle(canSend ? OffRecordColor.textOnAccent : OffRecordColor.textTertiary)
+                        .contentTransition(.symbolEffect(.replace))
                         .frame(width: 48, height: 48)
-                        .background(canSend ? OffRecordColor.brandLavenderDark : OffRecordColor.brandLavender, in: Circle())
+                        .background(canSend ? OffRecordColor.brandLavenderDark : OffRecordColor.surfaceLavender, in: Circle())
+                        .offRecordAnimation(OffRecordMotion.snappy, value: canSend)
                 }
                 .disabled(!canSend)
                 .buttonStyle(.plain)
-                .accessibilityLabel("Send message")
+                .accessibilityLabel("Send")
                 .accessibilityIdentifier("friday.askButton")
                 .padding(.trailing, 6)
                 .padding(.bottom, 6)
@@ -54,7 +56,7 @@ struct FridayComposer: View {
                 RoundedRectangle(cornerRadius: 30)
                     .stroke(OffRecordColor.borderSoft, lineWidth: 1)
             }
-            .shadow(color: Color.black.opacity(0.08), radius: 24, x: 0, y: 8)
+            .offRecordShadow(.floating)
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("friday.composer")
         }

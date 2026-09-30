@@ -2,10 +2,11 @@
 //  SpeechTranscriptionConsent.swift
 //  OffRecord
 //
-//  Shared disclosure and consent state for Apple Speech transcription.
+//  Shared disclosure and consent state for on-device SpeechAnalyzer transcription.
 //
 
 import Foundation
+import TranscriptionKit
 
 enum SpeechTranscriptionConsent {
     static let appleSpeechProcessingKey = "offrecord.appleSpeechProcessingConsentGranted"
@@ -16,21 +17,31 @@ enum SpeechTranscriptionConsent {
 
     static func grantAppleSpeechProcessing() {
         UserDefaults.standard.set(true, forKey: appleSpeechProcessingKey)
+        #if os(iOS)
+        TranscriptionService.prewarmPreferredModelIfNeeded()
+        #endif
     }
 
     static func revokeAppleSpeechProcessing() {
         UserDefaults.standard.set(false, forKey: appleSpeechProcessingKey)
+        #if os(iOS)
+        if #available(iOS 26.0, *) {
+            Task {
+                await TranscriptionAssetManager.shared.releaseReservedModels()
+            }
+        }
+        #endif
     }
 
-    static let disclosureTitle = "Apple Speech Transcription"
+    static let disclosureTitle = String(localized: "Transcribe Recordings?")
 
-    static let disclosureMessage = """
-    OffRecord uses Apple Speech to turn your voice into text. When your device is online, your voice audio may be sent to Apple for speech recognition, and Apple returns the transcript. The transcript is saved in your journal.
+    static var disclosureMessage: String {
+        String(localized: "OffRecord uses Apple’s on-device speech recognition. Your audio is never sent to a server. iOS may download a language file first.")
+    }
 
-    OffRecord does not send your journal or audio to developer servers or non-Apple AI services.
-    """
-
-    static let settingsDescription = "When this is on, voice audio may be processed by Apple Speech when your device is online. OffRecord stores the returned transcript in your journal and does not send your data to developer servers or non-Apple AI services."
+    static var settingsDescription: String {
+        String(localized: "Uses Apple’s on-device speech recognition. Unsupported languages keep the recording without a transcript.")
+    }
 }
 
 enum OffRecordExternalLinks {

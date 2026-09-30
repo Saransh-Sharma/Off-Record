@@ -9,7 +9,7 @@
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://saransh-sharma.github.io/Off-Record/privacy.html">
   <meta property="og:title" content="Privacy Policy - OffRecord AI Journal">
-  <meta property="og:description" content="Private journaling with Weekly Reflection, Apple Watch quick capture, optional iCloud Sync, and permission-based Apple Speech transcription.">
+  <meta property="og:description" content="Private journaling with Weekly Reflection, Apple Watch quick capture, optional iCloud Sync, and on-device SpeechAnalyzer transcription.">
   <link rel="canonical" href="https://saransh-sharma.github.io/Off-Record/privacy.html">
   <link rel="stylesheet" href="style.css">
   <link rel="icon" href="/Off-Record/app-icon.png">
@@ -49,19 +49,20 @@
         <li><strong>Weekly Reflections</strong> - private weekly reports, saved takeaways, source choices, and export choices</li>
         <li><strong>Photos</strong> - images you attach to diary entries</li>
         <li><strong>Apple Watch Captures</strong> - quick moods, dictated text, and voice notes saved from your watch</li>
-        <li><strong>Settings</strong> - preferences such as theme, reminders, Weekly Reflection, app lock, iCloud sync, and Apple Speech consent</li>
+        <li><strong>Settings</strong> - preferences such as theme, reminders, Weekly Reflection, app lock, iCloud sync, and on-device transcription consent</li>
       </ul>
 
-      <h2>Apple Speech Transcription</h2>
-      <p>If you choose to transcribe voice recordings, OffRecord uses Apple's Speech framework.</p>
+      <h2>On-Device SpeechAnalyzer Transcription</h2>
+      <p>If you choose to transcribe voice recordings, OffRecord uses Apple's SpeechAnalyzer framework.</p>
       <ul>
-        <li>OffRecord asks for your permission before transcription begins.</li>
-        <li>When your device is online, voice audio may be sent to Apple Speech for speech recognition.</li>
-        <li>Apple Speech returns the transcript, and OffRecord saves that transcript in your journal.</li>
-        <li>If you do not allow Apple Speech transcription, your recording is saved locally and you can type manually.</li>
-        <li>You can revoke Apple Speech transcription consent in Settings.</li>
+        <li>OffRecord shows an in-app disclosure before transcription begins.</li>
+        <li><code>SpeechTranscriber</code> is preferred, with <code>DictationTranscriber</code> for additional locale coverage.</li>
+        <li>Recognition runs entirely on your device. Audio is not sent to Apple or a speech-recognition server.</li>
+        <li>iOS may download a language model from Apple before first use.</li>
+        <li>If your language is unsupported, or you turn off transcription, your recording remains saved locally and you can type manually.</li>
+        <li>You can turn off on-device transcription in Settings.</li>
       </ul>
-      <p>Apple Speech processing is provided by Apple and is subject to Apple's privacy protections and policies. OffRecord does not send your audio, transcripts, journal entries, photos, Friday prompts, Semantic Memory, or AI analysis to developer servers or non-Apple AI services.</p>
+      <p>OffRecord does not send your audio, transcripts, journal entries, photos, Friday prompts, Semantic Memory, or AI analysis to developer servers, speech-recognition servers, or non-Apple AI services.</p>
 
       <h2>Where Your Data Lives</h2>
       <p>By default, your journal is stored locally on your iPhone or iPad. Quick captures made on Apple Watch are saved on the watch first, then added to your journal when your paired iPhone is nearby.</p>
@@ -158,7 +159,7 @@
         <li>Delete individual entries or all local app data.</li>
         <li>Dismiss or delete Weekly Reflection reports from the app.</li>
         <li>Disable iCloud Sync in Settings.</li>
-        <li>Revoke Apple Speech transcription consent in Settings.</li>
+        <li>Turn off on-device transcription in Settings.</li>
         <li>Uninstall the app to remove local data.</li>
       </ul>
 

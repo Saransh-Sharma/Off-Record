@@ -42,9 +42,13 @@ final class SemanticMemoryUITests: XCTestCase {
         XCTAssertTrue(waitForChunkCount(app, equals: 0, timeout: 8))
         XCTAssertTrue(app.staticTexts["semanticMemory.statusMessage"].label.localizedCaseInsensitiveContains("deleted"))
 
-        app.buttons["tab.timeline"].firstMatch.tap()
+        offRecordTabButton("timeline", in: app).firstMatch.tap()
+        // Timeline keeps its search across tabs; clear it to see every entry.
+        clearTimelineSearch(in: app)
         XCTAssertTrue(app.staticTexts.matching(labelContaining: "quarterly review").firstMatch.waitForExistence(timeout: 8))
-        XCTAssertTrue(app.staticTexts.matching(labelContaining: "Bangalore cafe").firstMatch.waitForExistence(timeout: 4))
+        let bangalore = app.staticTexts.matching(labelContaining: "Bangalore cafe").firstMatch
+        scrollUntilExists(bangalore, in: app)
+        XCTAssertTrue(bangalore.waitForExistence(timeout: 4))
     }
 
     func testDeletingSemanticIndexShowsUnavailableSettingsCopy() throws {
@@ -57,7 +61,6 @@ final class SemanticMemoryUITests: XCTestCase {
         let status = app.staticTexts["semanticMemory.statusMessage"]
         XCTAssertTrue(status.waitForExistence(timeout: 4))
         XCTAssertTrue(status.label.localizedCaseInsensitiveContains("deleted"))
-        XCTAssertTrue(status.label.localizedCaseInsensitiveContains("rebuild"))
     }
 
     func testRebuildAfterDeleteRestoresSearch() throws {
@@ -86,7 +89,7 @@ final class SemanticMemoryUITests: XCTestCase {
         let app = launchSemanticMemoryApp()
         waitForSemanticIndexReady(app)
 
-        app.buttons["tab.timeline"].firstMatch.tap()
+        offRecordTabButton("timeline", in: app).firstMatch.tap()
         enterSearch("Maya Bangalore", in: app)
 
         let mayaDinner = app.staticTexts.matching(labelContaining: "Dinner with Maya and Arjun").firstMatch
@@ -107,7 +110,7 @@ final class SemanticMemoryUITests: XCTestCase {
     func testTimelineShowsBuildingStateWhileIndexing() throws {
         let app = launchSemanticMemoryApp(extraArguments: ["-SemanticMemorySlowIndexingUITest"])
 
-        app.buttons["tab.timeline"].firstMatch.tap()
+        offRecordTabButton("timeline", in: app).firstMatch.tap()
         enterSearch("stress after work", in: app)
 
         let buildingTitle = app.descendants(matching: .any)["semanticMemory.buildingTitle"].firstMatch
@@ -128,10 +131,14 @@ final class SemanticMemoryUITests: XCTestCase {
 
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "identifier BEGINSWITH %@", "friday.answerMessage.")).firstMatch.waitForExistence(timeout: 15))
         XCTAssertTrue(app.descendants(matching: .any)["friday.evidenceRail"].firstMatch.waitForExistence(timeout: 8))
-        XCTAssertTrue(app.descendants(matching: .any)["friday.evidenceChip"].firstMatch.exists)
-        XCTAssertTrue(app.descendants(matching: .any)["friday.evidenceChip.snippet"].firstMatch.label.localizedCaseInsensitiveContains("work"))
-        XCTAssertTrue(app.descendants(matching: .any)["friday.evidenceChip.mood"].firstMatch.waitForExistence(timeout: 4))
-        XCTAssertTrue(app.descendants(matching: .any)["friday.evidenceChip.reason"].firstMatch.waitForExistence(timeout: 4))
+        // Each source chip is a single VoiceOver element: "Source 1, <date>, mood <mood>, <snippet>",
+        // with the match reason as its value.
+        let chip = app.descendants(matching: .any)["friday.evidenceChip"].firstMatch
+        XCTAssertTrue(chip.exists)
+        XCTAssertTrue(chip.label.localizedCaseInsensitiveContains("work"))
+        XCTAssertTrue(chip.label.localizedCaseInsensitiveContains("mood"))
+        XCTAssertFalse((chip.value as? String ?? "").isEmpty)
+        XCTAssertTrue(app.descendants(matching: .any)["friday.evidenceStrength"].firstMatch.waitForExistence(timeout: 4))
     }
 
     func testFridaySuggestedQuestionAttachesEvidence() throws {
@@ -147,7 +154,7 @@ final class SemanticMemoryUITests: XCTestCase {
 
         XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "identifier BEGINSWITH %@", "friday.answerMessage.")).firstMatch.waitForExistence(timeout: 15))
         XCTAssertTrue(app.descendants(matching: .any)["friday.evidenceRail"].firstMatch.waitForExistence(timeout: 8))
-        XCTAssertTrue(app.descendants(matching: .any)["friday.evidenceChip.snippet"].firstMatch.waitForExistence(timeout: 4))
+        XCTAssertTrue(app.descendants(matching: .any)["friday.evidenceChip"].firstMatch.waitForExistence(timeout: 4))
     }
 
     func testFridaySuggestedQuestionUsesProfileAnswerWhenFallbackHasNoCitationMatch() throws {
@@ -241,7 +248,7 @@ final class SemanticMemoryUITests: XCTestCase {
         XCTAssertTrue(chip.waitForExistence(timeout: 8))
         chip.tap()
 
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "identifier BEGINSWITH %@", "friday.userMessage.")).firstMatch.waitForExistence(timeout: 4))
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH %@", "friday.userMessage.")).firstMatch.waitForExistence(timeout: 4))
         XCTAssertTrue(app.staticTexts["Friday"].firstMatch.waitForExistence(timeout: 4))
         XCTAssertTrue(app.descendants(matching: .any)["friday.askField"].firstMatch.exists)
     }
@@ -251,7 +258,7 @@ final class SemanticMemoryUITests: XCTestCase {
 
         openFridayChat(app)
 
-        XCTAssertTrue(app.staticTexts["I need a little context."].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.staticTexts["I don’t know you yet."].waitForExistence(timeout: 8))
         XCTAssertTrue(app.staticTexts.matching(labelContaining: "Write or record a few entries").firstMatch.exists)
         XCTAssertTrue(app.descendants(matching: .any)["friday.askField"].firstMatch.exists)
         XCTAssertTrue(app.buttons["friday.askButton"].firstMatch.exists)
@@ -291,26 +298,26 @@ final class SemanticMemoryUITests: XCTestCase {
             "-SemanticMemoryUseFallbackEmbeddings"
         ] + extraArguments
         app.launch()
-        XCTAssertTrue(app.buttons["tab.today"].waitForExistence(timeout: 10))
+        XCTAssertTrue(offRecordTabButton("today", in: app).waitForExistence(timeout: 10))
         return app
     }
 
     @discardableResult
     private func waitForSemanticIndexReady(_ app: XCUIApplication, timeout: TimeInterval = 15) -> Bool {
-        app.buttons["tab.timeline"].firstMatch.tap()
+        offRecordTabButton("timeline", in: app).firstMatch.tap()
         enterSearch("stress after work", in: app)
         guard waitForSearchResult(containing: "work stress and pressure", in: app, timeout: timeout) else {
             return false
         }
 
-        app.buttons["tab.settings"].firstMatch.tap()
+        offRecordTabButton("settings", in: app).firstMatch.tap()
         let section = app.descendants(matching: .any)["semanticMemory.section"].firstMatch
         scrollUntilExists(section, in: app)
         return waitForChunkCountGreaterThanZero(app, timeout: timeout)
     }
 
     private func openSemanticMemorySettings(_ app: XCUIApplication) {
-        app.buttons["tab.settings"].firstMatch.tap()
+        offRecordTabButton("settings", in: app).firstMatch.tap()
         let section = app.descendants(matching: .any)["semanticMemory.section"].firstMatch
         scrollUntilExists(section, in: app)
         XCTAssertTrue(section.waitForExistence(timeout: 8))
@@ -322,7 +329,7 @@ final class SemanticMemoryUITests: XCTestCase {
         XCTAssertTrue(deleteButton.waitForExistence(timeout: 4))
         deleteButton.tap()
 
-        let confirm = app.buttons["Delete Local Index"]
+        let confirm = app.alerts.buttons["Delete Index"]
         XCTAssertTrue(confirm.waitForExistence(timeout: 4))
         confirm.tap()
     }
@@ -335,7 +342,7 @@ final class SemanticMemoryUITests: XCTestCase {
     }
 
     private func assertWorkStressSearch(in app: XCUIApplication) {
-        app.buttons["tab.timeline"].firstMatch.tap()
+        offRecordTabButton("timeline", in: app).firstMatch.tap()
         enterSearch("stress after work", in: app)
 
         XCTAssertTrue(waitForSearchResult(containing: "work stress and pressure", in: app, timeout: 15))
@@ -354,6 +361,17 @@ final class SemanticMemoryUITests: XCTestCase {
         searchField.typeText(text)
     }
 
+    private func clearTimelineSearch(in app: XCUIApplication) {
+        let field = app.searchFields.firstMatch
+        guard field.waitForExistence(timeout: 4),
+              let value = field.value as? String,
+              !value.isEmpty,
+              value != "Search entries" else { return }
+        field.tap()
+        field.typeText(String(repeating: XCUIKeyboardKey.delete.rawValue, count: value.count))
+        dismissKeyboardIfNeeded(in: app)
+    }
+
     private func waitForSearchResult(containing text: String, in app: XCUIApplication, timeout: TimeInterval) -> Bool {
         app.staticTexts.matching(labelContaining: text).firstMatch.waitForExistence(timeout: timeout)
     }
@@ -369,11 +387,11 @@ final class SemanticMemoryUITests: XCTestCase {
         let askButton = app.descendants(matching: .any)["friday.askButton"].firstMatch
         XCTAssertTrue(askButton.waitForExistence(timeout: 4))
         askButton.tap()
-        XCTAssertTrue(app.staticTexts.matching(NSPredicate(format: "identifier BEGINSWITH %@", "friday.userMessage.")).firstMatch.waitForExistence(timeout: 4))
+        XCTAssertTrue(app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH %@", "friday.userMessage.")).firstMatch.waitForExistence(timeout: 4))
     }
 
     private func openFridayChat(_ app: XCUIApplication) {
-        app.buttons["tab.friday"].firstMatch.tap()
+        offRecordTabButton("friday", in: app).firstMatch.tap()
         let talkButton = app.buttons["friday.talk"].firstMatch
         let talkToFriday = talkButton.exists ? talkButton : app.descendants(matching: .any)["friday.talk"].firstMatch
         XCTAssertTrue(talkToFriday.waitForExistence(timeout: 8))
@@ -393,35 +411,34 @@ final class SemanticMemoryUITests: XCTestCase {
         return field
     }
 
+    /// The chat hides the tab bar, so the composer should sit just above the keyboard
+    /// (or the bottom safe area) and remain fully on screen.
     private func waitForFridayComposerAboveFloatingTabBar(_ app: XCUIApplication, timeout: TimeInterval = 4) -> Bool {
         let composer = app.descendants(matching: .any)["friday.composer"].firstMatch
-        let floatingTabBar = app.descendants(matching: .any)["offrecord.floatingTabBar"].firstMatch
-        guard composer.waitForExistence(timeout: timeout), floatingTabBar.waitForExistence(timeout: timeout) else {
-            return false
-        }
+        guard composer.waitForExistence(timeout: timeout) else { return false }
 
         let deadline = Date().addingTimeInterval(timeout)
         while Date() < deadline {
-            if composerGapAboveFloatingTabBar(composer: composer, tabBar: floatingTabBar).map({ (CGFloat(0)...CGFloat(6)).contains($0) }) == true {
+            if composerIsClearOfBottomChrome(composer, in: app) {
                 return true
             }
             RunLoop.current.run(until: Date().addingTimeInterval(0.1))
         }
-
-        return composerGapAboveFloatingTabBar(composer: composer, tabBar: floatingTabBar).map { (CGFloat(0)...CGFloat(6)).contains($0) } ?? false
+        return composerIsClearOfBottomChrome(composer, in: app)
     }
 
-    private func composerGapAboveFloatingTabBar(composer: XCUIElement, tabBar: XCUIElement) -> CGFloat? {
-        guard composer.exists, tabBar.exists else { return nil }
-        return tabBar.frame.minY - composer.frame.maxY
+    private func composerIsClearOfBottomChrome(_ composer: XCUIElement, in app: XCUIApplication) -> Bool {
+        guard composer.exists else { return false }
+        let keyboard = app.keyboards.firstMatch
+        let limit = keyboard.exists ? keyboard.frame.minY : app.windows.firstMatch.frame.maxY
+        return composer.frame.maxY <= limit + 1 && !app.tabBars.firstMatch.isHittable
     }
 
     private func fridayComposerGapDebugDescription(_ app: XCUIApplication) -> String {
         let composer = app.descendants(matching: .any)["friday.composer"].firstMatch
         let field = app.descendants(matching: .any)["friday.askField"].firstMatch
-        let floatingTabBar = app.descendants(matching: .any)["offrecord.floatingTabBar"].firstMatch
-        let gap = composerGapAboveFloatingTabBar(composer: composer, tabBar: floatingTabBar).map(String.init(describing:)) ?? "nil"
-        return "composerExists=\(composer.exists) composerFrame=\(composer.frame) fieldExists=\(field.exists) fieldFrame=\(field.frame) tabBarExists=\(floatingTabBar.exists) tabBarFrame=\(floatingTabBar.frame) gap=\(gap)"
+        let keyboard = app.keyboards.firstMatch
+        return "composerExists=\(composer.exists) composerFrame=\(composer.frame) fieldExists=\(field.exists) fieldFrame=\(field.frame) keyboardFrame=\(keyboard.exists ? keyboard.frame : .zero) tabBarHittable=\(app.tabBars.firstMatch.exists && app.tabBars.firstMatch.isHittable)"
     }
 
     private func scrollQuestionChipIntoView(_ chip: XCUIElement, in app: XCUIApplication) {
@@ -444,6 +461,11 @@ final class SemanticMemoryUITests: XCTestCase {
     private func openFirstEvidenceChip(_ app: XCUIApplication) {
         let chip = app.descendants(matching: .any)["friday.evidenceChip"].firstMatch
         XCTAssertTrue(chip.waitForExistence(timeout: 12))
+        // A short answer can leave the chip behind the composer and keyboard; scroll it clear first.
+        let composer = app.descendants(matching: .any)["friday.askField"].firstMatch
+        for _ in 0..<3 where composer.exists && chip.frame.maxY > composer.frame.minY - 12 {
+            app.scrollViews["friday.questionChips"].firstMatch.swipeUp()
+        }
         chip.tap()
     }
 

@@ -70,6 +70,8 @@ struct SettingsCard<Content: View>: View {
         .padding(OffRecordSpacing.xl)
         .offRecordContentCard(cornerRadius: OffRecordRadius.xl, fill: fill)
         .offRecordPointerLift()
+        // Keeps a section identifier set by callers on the card instead of its controls.
+        .accessibilityElement(children: .contain)
     }
 }
 
@@ -285,35 +287,51 @@ struct ThemeButton: View {
     let isSelected: Bool
     let action: () -> Void
 
+    @ScaledMetric(relativeTo: .body) private var tileHeight: CGFloat = 64
+
     var body: some View {
         Button(action: action) {
             VStack(spacing: OffRecordSpacing.sm) {
-                ZStack {
-                    Color.clear
-                        .frame(width: 48, height: 48)
-                        .offRecordGlassControl(
-                            tint: isSelected ? theme.accentColor : nil,
-                            in: Circle(),
-                            fallbackFill: theme.accentColor.opacity(0.2)
-                        )
+                // A miniature of the theme: its background wash, a card, and its accent.
+                ZStack(alignment: .bottomTrailing) {
+                    RoundedRectangle(cornerRadius: OffRecordRadius.md, style: .continuous)
+                        .fill(theme.backgroundGradient)
+
+                    VStack(alignment: .leading, spacing: 4) {
+                        Capsule().fill(OffRecordColor.textSecondary.opacity(0.35)).frame(width: 26, height: 4)
+                        Capsule().fill(OffRecordColor.textSecondary.opacity(0.22)).frame(width: 18, height: 4)
+                    }
+                    .padding(6)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
 
                     Circle()
-                        .fill(theme.accentColor.opacity(isSelected ? 1 : 0.8))
-                        .frame(width: 32, height: 32)
-
-                    Image(systemName: theme.icon)
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(theme.swatchForegroundColor)
+                        .fill(theme.swatchColor)
+                        .frame(width: 22, height: 22)
+                        .overlay {
+                            Image(systemName: theme.icon)
+                                .font(OffRecordTypography.annotation.weight(.semibold))
+                                .foregroundStyle(theme.swatchForegroundColor)
+                                .imageScale(.small)
+                        }
+                        .padding(6)
                 }
+                .frame(height: tileHeight)
                 .overlay {
+                    RoundedRectangle(cornerRadius: OffRecordRadius.md, style: .continuous)
+                        .stroke(isSelected ? theme.readableAccentColor : OffRecordColor.borderSoft, lineWidth: isSelected ? 2 : 1)
+                }
+                .overlay(alignment: .topTrailing) {
                     if isSelected {
-                        Circle()
-                            .stroke(theme.accentColor, lineWidth: 2)
-                            .frame(width: 52, height: 52)
+                        Image(systemName: "checkmark.circle.fill")
+                            .symbolRenderingMode(.palette)
+                            .foregroundStyle(OffRecordColor.textOnAccent, theme.readableAccentColor)
+                            .font(OffRecordTypography.labelMedium)
+                            .offset(x: 6, y: -6)
+                            .transition(.scale.combined(with: .opacity))
                     }
                 }
 
-                Text(theme.rawValue)
+                Text(theme.displayName)
                     .font(OffRecordTypography.metadata)
                     .foregroundStyle(isSelected ? theme.readableAccentColor : OffRecordColor.textSecondary)
                     .lineLimit(2)
@@ -321,12 +339,13 @@ struct ThemeButton: View {
                     .minimumScaleFactor(0.85)
             }
             .frame(maxWidth: .infinity)
-            .frame(minHeight: 76)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .offRecordPointerLift()
-        .accessibilityLabel(theme.rawValue)
-        .accessibilityValue(isSelected ? "Selected" : "Not selected")
+        .offRecordAnimation(OffRecordMotion.snappy, value: isSelected)
+        .sensoryFeedback(.selection, trigger: isSelected) { _, new in new }
+        .accessibilityLabel("\(theme.displayName) theme")
         .accessibilityAddTraits(isSelected ? [.isSelected] : [])
     }
 }
@@ -386,5 +405,85 @@ struct PrivacyInfoRow: View {
             subtitle: description,
             tint: tint
         )
+    }
+}
+
+// MARK: - Privacy at a glance
+
+struct PrivacyGlanceRow: Identifiable {
+    let id: String
+    let systemImage: String
+    let title: String
+    let status: String
+    let isPositive: Bool
+}
+
+/// The one place Settings states privacy, with live status for each row.
+struct PrivacyAtAGlanceCard: View {
+    let rows: [PrivacyGlanceRow]
+    let onSelect: (String) -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
+            HStack(spacing: OffRecordSpacing.md) {
+                OffRecordIconBubble(
+                    systemImage: "lock.shield.fill",
+                    tint: OffRecordColor.textSage,
+                    fill: OffRecordColor.surfacePrimary.opacity(0.8),
+                    size: 44,
+                    iconSize: 18
+                )
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Privacy")
+                        .font(OffRecordTypography.cardTitle)
+                        .foregroundStyle(OffRecordColor.textHeading)
+                        .accessibilityAddTraits(.isHeader)
+                    Text("Your entries, recordings, and AI stay on this \(DeviceNoun.current).")
+                        .font(OffRecordTypography.metadata)
+                        .foregroundStyle(OffRecordColor.textSecondary)
+                }
+            }
+
+            VStack(spacing: 0) {
+                ForEach(rows) { row in
+                    Button {
+                        onSelect(row.id)
+                    } label: {
+                        HStack(spacing: OffRecordSpacing.md) {
+                            Image(systemName: row.systemImage)
+                                .font(OffRecordTypography.labelMedium)
+                                .foregroundStyle(OffRecordColor.textSage)
+                                .frame(width: 24)
+                                .accessibilityHidden(true)
+                            Text(row.title)
+                                .font(OffRecordTypography.bodyMedium)
+                                .foregroundStyle(OffRecordColor.textPrimary)
+                            Spacer(minLength: OffRecordSpacing.sm)
+                            Text(row.status)
+                                .font(OffRecordTypography.labelSmall)
+                                .foregroundStyle(row.isPositive ? OffRecordColor.textSage : OffRecordColor.textWarm)
+                                .contentTransition(.opacity)
+                            Image(systemName: "chevron.right")
+                                .font(OffRecordTypography.annotation.weight(.semibold))
+                                .foregroundStyle(OffRecordColor.textTertiary)
+                                .accessibilityHidden(true)
+                        }
+                        .frame(minHeight: OffRecordLayout.minimumTapTarget)
+                        .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityElement(children: .combine)
+                    .accessibilityHint("Shows this setting.")
+
+                    if row.id != rows.last?.id {
+                        Divider().overlay(OffRecordColor.borderSage)
+                    }
+                }
+            }
+        }
+        .padding(OffRecordSpacing.xl)
+        .offRecordCard(fill: OffRecordColor.surfaceSage, border: OffRecordColor.borderSage)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("settings.privacyGlance")
     }
 }

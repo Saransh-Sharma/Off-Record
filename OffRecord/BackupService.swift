@@ -4,10 +4,11 @@
 //
 //  Handles data backup and export functionality.
 //  Supports JSON export/import and plain text export.
-//  All data remains on-device or in user-controlled locations.
+//  Files are written to a temporary folder until the user shares them.
 //
 
 import Foundation
+import JournalSecurityKit
 import CoreData
 import UniformTypeIdentifiers
 #if canImport(UIKit)
@@ -45,6 +46,13 @@ struct ExportableAudioAttachment: Codable, Identifiable {
     let byteCount: Int64
     let codec: String?
     let audioData: Data?
+    let transcriptBlockID: UUID?
+    let transcriptionAttemptCount: Int32?
+    let transcriptionEngine: String?
+    let transcriptionErrorCode: String?
+    let transcriptionLocale: String?
+    let transcriptionStatus: String?
+    let transcriptionUpdatedAt: Date?
 
     init(from attachment: NSManagedObject) {
         self.id = attachment.value(forKey: "id") as? UUID ?? UUID()
@@ -55,6 +63,13 @@ struct ExportableAudioAttachment: Codable, Identifiable {
         self.byteCount = attachment.value(forKey: "byteCount") as? Int64 ?? 0
         self.codec = attachment.value(forKey: "codec") as? String
         self.audioData = nil
+        self.transcriptBlockID = attachment.value(forKey: "transcriptBlockID") as? UUID
+        self.transcriptionAttemptCount = attachment.value(forKey: "transcriptionAttemptCount") as? Int32
+        self.transcriptionEngine = attachment.value(forKey: "transcriptionEngine") as? String
+        self.transcriptionErrorCode = attachment.value(forKey: "transcriptionErrorCode") as? String
+        self.transcriptionLocale = attachment.value(forKey: "transcriptionLocale") as? String
+        self.transcriptionStatus = attachment.value(forKey: "transcriptionStatus") as? String
+        self.transcriptionUpdatedAt = attachment.value(forKey: "transcriptionUpdatedAt") as? Date
     }
 
     private init(
@@ -65,7 +80,14 @@ struct ExportableAudioAttachment: Codable, Identifiable {
         sourceCaptureID: UUID?,
         byteCount: Int64,
         codec: String?,
-        audioData: Data?
+        audioData: Data?,
+        transcriptBlockID: UUID?,
+        transcriptionAttemptCount: Int32?,
+        transcriptionEngine: String?,
+        transcriptionErrorCode: String?,
+        transcriptionLocale: String?,
+        transcriptionStatus: String?,
+        transcriptionUpdatedAt: Date?
     ) {
         self.id = id
         self.fileName = fileName
@@ -75,6 +97,13 @@ struct ExportableAudioAttachment: Codable, Identifiable {
         self.byteCount = byteCount
         self.codec = codec
         self.audioData = audioData
+        self.transcriptBlockID = transcriptBlockID
+        self.transcriptionAttemptCount = transcriptionAttemptCount
+        self.transcriptionEngine = transcriptionEngine
+        self.transcriptionErrorCode = transcriptionErrorCode
+        self.transcriptionLocale = transcriptionLocale
+        self.transcriptionStatus = transcriptionStatus
+        self.transcriptionUpdatedAt = transcriptionUpdatedAt
     }
 
     func embeddingAudioPayload() -> ExportableAudioAttachment {
@@ -91,7 +120,14 @@ struct ExportableAudioAttachment: Codable, Identifiable {
             sourceCaptureID: sourceCaptureID,
             byteCount: byteCount,
             codec: codec,
-            audioData: data
+            audioData: data,
+            transcriptBlockID: transcriptBlockID,
+            transcriptionAttemptCount: transcriptionAttemptCount,
+            transcriptionEngine: transcriptionEngine,
+            transcriptionErrorCode: transcriptionErrorCode,
+            transcriptionLocale: transcriptionLocale,
+            transcriptionStatus: transcriptionStatus,
+            transcriptionUpdatedAt: transcriptionUpdatedAt
         )
     }
 }
@@ -259,17 +295,27 @@ private func backupFormattedFullDate(_ date: Date) -> String {
     return formatter.string(from: date)
 }
 
-private func backupMoodToEmoji(_ mood: String) -> String {
-    switch mood.lowercased() {
-    case "happy": return "☀️"
-    case "calm": return "🍃"
-    case "grateful": return "💗"
-    case "excited": return "⭐"
-    case "tired": return "🌙"
-    case "anxious": return "💨"
-    case "sad": return "🌧️"
-    case "angry": return "🔥"
-    default: return "📝"
+/// Human-readable copy for the text and Markdown exports. CSV headers and
+/// backup JSON keys stay in English because they are machine-readable.
+private enum ReadableExportCopy {
+    static var plainTextTitle: String { String(localized: "OFFRECORD JOURNAL", comment: "Plain-text export title, in capitals") }
+    static var markdownTitle: String { String(localized: "OffRecord Journal", comment: "Markdown export title") }
+    static var endOfExport: String { String(localized: "END OF EXPORT", comment: "Plain-text export closing line, in capitals") }
+    static var exported: String { String(localized: "Exported:", comment: "Export header label, followed by the export date") }
+    static var entries: String { String(localized: "Entries:", comment: "Export header label, followed by the number of entries") }
+    static var mood: String { String(localized: "Mood:", comment: "Export label, followed by the entry's mood") }
+    static var starredSuffix: String { " · " + String(localized: "Starred", comment: "Export: marks a starred entry after its date") }
+    static var noText: String { String(localized: "(No text)", comment: "Export placeholder for an entry without text") }
+
+    /// Stored moods are raw values ("happy"); show the localized name.
+    static func moodName(_ rawValue: String) -> String {
+        Mood(rawValue: rawValue)?.displayName ?? rawValue.capitalized
+    }
+
+    static func dayHeadingFormatter() -> DateFormatter {
+        let formatter = DateFormatter()
+        formatter.setLocalizedDateFormatFromTemplate("EEEEMMMMd")
+        return formatter
     }
 }
 
@@ -326,11 +372,11 @@ final class BackupService {
     nonisolated static func writeTextExport(entries: [ExportableEntry]) throws -> URL {
         var textContent = """
         ═══════════════════════════════════════════════════════════════
-                              DAILYVOX DIARY EXPORT
+                                \(ReadableExportCopy.plainTextTitle)
         ═══════════════════════════════════════════════════════════════
 
-        Exported: \(backupFormattedFullDate(Date()))
-        Total Entries: \(entries.count)
+        \(ReadableExportCopy.exported) \(backupFormattedFullDate(Date()))
+        \(ReadableExportCopy.entries) \(entries.count)
 
         ═══════════════════════════════════════════════════════════════
 
@@ -342,21 +388,21 @@ final class BackupService {
         dateFormatter.timeStyle = .short
 
         for entry in sortedEntries {
-            let starred = entry.isStarred ? " ⭐" : ""
+            let starred = entry.isStarred ? ReadableExportCopy.starredSuffix : ""
             textContent += """
             ───────────────────────────────────────────────────────────────
-            📅 \(dateFormatter.string(from: entry.date))\(starred)
+            \(dateFormatter.string(from: entry.date))\(starred)
             """
 
             if let mood = entry.mood, !mood.isEmpty {
-                textContent += "\n\(backupMoodToEmoji(mood)) Mood: \(mood.capitalized)"
+                textContent += "\n\(ReadableExportCopy.mood) \(ReadableExportCopy.moodName(mood))"
             }
 
             textContent += """
 
             ───────────────────────────────────────────────────────────────
 
-            \(entry.text.isEmpty ? "(No text)" : entry.text)
+            \(entry.text.isEmpty ? ReadableExportCopy.noText : entry.text)
 
 
             """
@@ -364,11 +410,11 @@ final class BackupService {
 
         textContent += """
         ═══════════════════════════════════════════════════════════════
-                              END OF EXPORT
+                              \(ReadableExportCopy.endOfExport)
         ═══════════════════════════════════════════════════════════════
         """
 
-        let fileName = "offrecord_diary_\(backupFormattedDate()).txt"
+        let fileName = "offrecord_journal_\(backupFormattedDate()).txt"
         let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
         try textContent.write(to: tempURL, atomically: true, encoding: .utf8)
         return tempURL
@@ -376,10 +422,10 @@ final class BackupService {
 
     nonisolated static func writeMarkdownExport(entries: [ExportableEntry]) throws -> URL {
         var mdContent = """
-        # OffRecord AI Journal Export
+        # \(ReadableExportCopy.markdownTitle)
 
-        **Exported:** \(backupFormattedFullDate(Date()))
-        **Total Entries:** \(entries.count)
+        **\(ReadableExportCopy.exported)** \(backupFormattedFullDate(Date()))
+        **\(ReadableExportCopy.entries)** \(entries.count)
 
         ---
 
@@ -403,18 +449,17 @@ final class BackupService {
         for month in sortedMonths {
             mdContent += "## \(month)\n\n"
             for entry in groupedByMonth[month] ?? [] {
-                let dayFormatter = DateFormatter()
-                dayFormatter.dateFormat = "EEEE, MMMM d"
-                let starred = entry.isStarred ? " ⭐" : ""
+                let dayFormatter = ReadableExportCopy.dayHeadingFormatter()
+                let starred = entry.isStarred ? ReadableExportCopy.starredSuffix : ""
                 mdContent += "### \(dayFormatter.string(from: entry.date))\(starred)\n\n"
                 if let mood = entry.mood, !mood.isEmpty {
-                    mdContent += "**Mood:** \(mood.capitalized)\n\n"
+                    mdContent += "**\(ReadableExportCopy.mood)** \(ReadableExportCopy.moodName(mood))\n\n"
                 }
-                mdContent += "\(entry.text.isEmpty ? "(No text)" : entry.text)\n\n---\n\n"
+                mdContent += "\(entry.text.isEmpty ? ReadableExportCopy.noText : entry.text)\n\n---\n\n"
             }
         }
 
-        let fileName = "offrecord_diary_\(backupFormattedDate()).md"
+        let fileName = "offrecord_journal_\(backupFormattedDate()).md"
         let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
         try mdContent.write(to: tempURL, atomically: true, encoding: .utf8)
         return tempURL
@@ -520,11 +565,11 @@ final class BackupService {
     func exportToText(entries: [DiaryEntry]) throws -> URL {
         var textContent = """
         ═══════════════════════════════════════════════════════════════
-                              DAILYVOX DIARY EXPORT
+                                \(ReadableExportCopy.plainTextTitle)
         ═══════════════════════════════════════════════════════════════
         
-        Exported: \(formattedFullDate(Date()))
-        Total Entries: \(entries.count)
+        \(ReadableExportCopy.exported) \(formattedFullDate(Date()))
+        \(ReadableExportCopy.entries) \(entries.count)
         
         ═══════════════════════════════════════════════════════════════
         
@@ -537,18 +582,17 @@ final class BackupService {
         
         for entry in sortedEntries {
             let date = entry.date ?? Date()
-            let text = entry.text ?? "(No text)"
+            let text = entry.text ?? ReadableExportCopy.noText
             let mood = entry.value(forKey: "mood") as? String ?? ""
-            let starred = entry.isStarred ? " ⭐" : ""
+            let starred = entry.isStarred ? ReadableExportCopy.starredSuffix : ""
             
             textContent += """
             ───────────────────────────────────────────────────────────────
-            📅 \(dateFormatter.string(from: date))\(starred)
+            \(dateFormatter.string(from: date))\(starred)
             """
             
             if !mood.isEmpty {
-                let moodEmoji = moodToEmoji(mood)
-                textContent += "\n\(moodEmoji) Mood: \(mood.capitalized)"
+                textContent += "\n\(ReadableExportCopy.mood) \(ReadableExportCopy.moodName(mood))"
             }
             
             textContent += """
@@ -563,12 +607,12 @@ final class BackupService {
         
         textContent += """
         ═══════════════════════════════════════════════════════════════
-                              END OF EXPORT
+                              \(ReadableExportCopy.endOfExport)
         ═══════════════════════════════════════════════════════════════
         """
         
         // Create temp file
-        let fileName = "offrecord_diary_\(formattedDate()).txt"
+        let fileName = "offrecord_journal_\(formattedDate()).txt"
         let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
         
         try textContent.write(to: tempURL, atomically: true, encoding: .utf8)
@@ -600,10 +644,10 @@ final class BackupService {
     /// Export entries to Markdown format
     func exportToMarkdown(entries: [DiaryEntry]) throws -> URL {
         var mdContent = """
-        # OffRecord AI Journal Export
+        # \(ReadableExportCopy.markdownTitle)
         
-        **Exported:** \(formattedFullDate(Date()))  
-        **Total Entries:** \(entries.count)
+        **\(ReadableExportCopy.exported)** \(formattedFullDate(Date()))  
+        **\(ReadableExportCopy.entries)** \(entries.count)
         
         ---
         
@@ -634,17 +678,16 @@ final class BackupService {
             if let monthEntries = groupedByMonth[month] {
                 for entry in monthEntries {
                     let date = entry.date ?? Date()
-                    let text = entry.text ?? "(No text)"
+                    let text = entry.text ?? ReadableExportCopy.noText
                     let mood = entry.value(forKey: "mood") as? String ?? ""
-                    let starred = entry.isStarred ? " ⭐" : ""
+                    let starred = entry.isStarred ? ReadableExportCopy.starredSuffix : ""
                     
-                    let dayFormatter = DateFormatter()
-                    dayFormatter.dateFormat = "EEEE, MMMM d"
+                    let dayFormatter = ReadableExportCopy.dayHeadingFormatter()
                     
                     mdContent += "### \(dayFormatter.string(from: date))\(starred)\n\n"
                     
                     if !mood.isEmpty {
-                        mdContent += "**Mood:** \(mood.capitalized)\n\n"
+                        mdContent += "**\(ReadableExportCopy.mood)** \(ReadableExportCopy.moodName(mood))\n\n"
                     }
                     
                     mdContent += "\(text)\n\n---\n\n"
@@ -653,7 +696,7 @@ final class BackupService {
         }
         
         // Create temp file
-        let fileName = "offrecord_diary_\(formattedDate()).md"
+        let fileName = "offrecord_journal_\(formattedDate()).md"
         let tempURL = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
         
         try mdContent.write(to: tempURL, atomically: true, encoding: .utf8)
@@ -783,6 +826,13 @@ final class BackupService {
             attachment.setValue(audio.sourceCaptureID, forKey: "sourceCaptureID")
             attachment.setValue(audio.byteCount, forKey: "byteCount")
             attachment.setValue(audio.codec, forKey: "codec")
+            attachment.setValue(audio.transcriptBlockID, forKey: "transcriptBlockID")
+            attachment.setValue(audio.transcriptionAttemptCount ?? 0, forKey: "transcriptionAttemptCount")
+            attachment.setValue(audio.transcriptionEngine, forKey: "transcriptionEngine")
+            attachment.setValue(audio.transcriptionErrorCode, forKey: "transcriptionErrorCode")
+            attachment.setValue(audio.transcriptionLocale, forKey: "transcriptionLocale")
+            attachment.setValue(audio.transcriptionStatus ?? AudioTranscriptionStatus.none.rawValue, forKey: "transcriptionStatus")
+            attachment.setValue(audio.transcriptionUpdatedAt, forKey: "transcriptionUpdatedAt")
             attachment.setValue(entry, forKey: "entry")
         }
     }
@@ -836,20 +886,6 @@ final class BackupService {
         formatter.timeStyle = .short
         return formatter.string(from: date)
     }
-    
-    private func moodToEmoji(_ mood: String) -> String {
-        switch mood.lowercased() {
-        case "happy": return "☀️"
-        case "calm": return "🍃"
-        case "grateful": return "💗"
-        case "excited": return "⭐"
-        case "tired": return "🌙"
-        case "anxious": return "💨"
-        case "sad": return "🌧️"
-        case "angry": return "🔥"
-        default: return "📝"
-        }
-    }
 }
 
 // MARK: - Export Format Enum
@@ -863,6 +899,18 @@ enum ExportFormat: String, CaseIterable, Identifiable {
     case encryptedBackup = "Encrypted Backup"
 
     var id: String { rawValue }
+
+    /// The name shown in the export picker.
+    var title: String {
+        switch self {
+        case .json: return String(localized: "Backup (JSON)")
+        case .text: return String(localized: "Plain Text")
+        case .markdown: return String(localized: "Markdown")
+        case .csv: return String(localized: "CSV")
+        case .pdf: return String(localized: "PDF")
+        case .encryptedBackup: return String(localized: "Encrypted Backup")
+        }
+    }
 
     var icon: String {
         switch self {
@@ -888,12 +936,12 @@ enum ExportFormat: String, CaseIterable, Identifiable {
 
     var description: String {
         switch self {
-        case .json: return "Full backup with all data. Can be imported back."
-        case .text: return "Simple readable format for archiving."
-        case .markdown: return "Formatted text for notes apps."
-        case .csv: return "Spreadsheet format for analysis."
-        case .pdf: return "Beautiful formatted document."
-        case .encryptedBackup: return "Password-protected backup. Maximum privacy."
+        case .json: return String(localized: "Can be restored in OffRecord.")
+        case .text: return String(localized: "Readable anywhere.")
+        case .markdown: return String(localized: "For notes apps.")
+        case .csv: return String(localized: "For spreadsheets.")
+        case .pdf: return String(localized: "For reading and printing.")
+        case .encryptedBackup: return String(localized: "Password-protected. Can be restored in OffRecord.")
         }
     }
 }
