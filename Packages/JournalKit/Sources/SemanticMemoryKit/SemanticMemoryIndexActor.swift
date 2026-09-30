@@ -249,7 +249,7 @@ public actor SemanticMemoryIndexActor {
     }
 
     private func staleReason(for records: [IndexableEntry]) -> String? {
-        guard currentIndexUsesSupportedProvider else { return "unsupported embedding model" }
+        guard currentIndexUsesSupportedProvider else { return "unsupported embedding model" }  // copy-lint:ignore (logged only)
         let chunksByEntry = Dictionary(grouping: chunks, by: \.entryID)
         guard Set(chunksByEntry.keys) == Set(records.map(\.id)) else { return "entries added or removed" }
         for record in records {
