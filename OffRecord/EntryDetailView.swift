@@ -178,7 +178,7 @@ struct EntryDetailView: View {
     @State private var showMoodPicker = false
     @State private var hasEditedText = false
     @State private var showAIInsights = false
-    @State private var aiAnalysis: AIAnalysisResult?
+    @State private var aiAnalysis: EntryInsight?
     @State private var journalBlocks: [JournalBlock] = []
     @State private var timelineItems: [JournalBlockTimelineItem] = []
     @State private var editingBlockObjectID: NSManagedObjectID?
@@ -1267,8 +1267,13 @@ struct EntryDetailView: View {
             Button(action: {
                 withOffRecordAnimation(OffRecordMotion.snappy) {
                     showAIInsights.toggle()
-                    if showAIInsights && aiAnalysis == nil {
-                        aiAnalysis = LocalAIEngine.shared.analyze(text: text)
+                    if showAIInsights {
+                        // Read fresh each time it opens, so an edit never shows stale notes.
+                        aiAnalysis = EntryInsightAnalyzer.analyze(
+                            text: text,
+                            responseMode: entryResponseMode,
+                            recurringTopic: recurringTopicName(for:)
+                        )
                     }
                 }
             }) {
@@ -1388,7 +1393,7 @@ struct EntryDetailView: View {
                                 .font(OffRecordTypography.metadata)
                         }
                         .foregroundColor(OffRecordColor.textSecondary)
-                        Text(analysis.suggestedResponse)
+                        Text(analysis.fridayLine)
                             .font(OffRecordTypography.metadata)
                             .foregroundColor(OffRecordColor.textPrimary)
                             .italic()
@@ -1404,6 +1409,16 @@ struct EntryDetailView: View {
             }
         }
         .padding(.bottom, 8)
+    }
+
+    /// The name Friday uses for `topic` when it comes up often, honoring Forget and Rename.
+    private func recurringTopicName(for topic: String) -> String? {
+        guard let node = FridayAssistantEngine.shared.knowledgeGraph.nodes[topic.lowercased()],
+              node.type == .topic || node.type == .place,
+              node.mentions > 3 else { return nil }
+        let preferences = FridayMemoryPreferences.shared
+        guard !preferences.isForgotten(node) else { return nil }
+        return preferences.displayName(for: node)
     }
 
     private func loadPhotos() {

@@ -148,8 +148,6 @@ struct ShareableInsightGenerator {
 
         guard weekEntries.count >= 3 else { return [] }
 
-        let profile = LocalAIEngine.shared.userProfile
-
         var insights: [ShareableInsight] = []
 
         // Try each generator, collect all, then pick the best 3
@@ -167,7 +165,7 @@ struct ShareableInsightGenerator {
         if let insight = dayOfWeekMoodInsight(weekEntries: weekEntries) {
             candidates.append(insight)
         }
-        if let insight = topicAvoidanceInsight(weekEntries: weekEntries, profile: profile) {
+        if let insight = topicAvoidanceInsight(weekEntries: weekEntries) {
             candidates.append(insight)
         }
         if let insight = entryLengthEmotionInsight(weekEntries: weekEntries) {
@@ -413,17 +411,18 @@ struct ShareableInsightGenerator {
     }
 
     /// "You haven't mentioned [topic] this week."
-    private static func topicAvoidanceInsight(weekEntries: [DiaryEntry], profile: UserProfile) -> ShareableInsight? {
+    private static func topicAvoidanceInsight(weekEntries: [DiaryEntry]) -> ShareableInsight? {
         let weekText = weekEntries.compactMap { $0.text }.joined(separator: " ").lowercased()
 
-        // Find top historical topics that are absent this week
-        let topHistorical = profile.commonTopics
-            .sorted { $0.value > $1.value }
-            .prefix(5)
+        // Find Friday's most-mentioned topics that are absent this week
+        let topHistorical = FridayAssistantEngine.shared.knowledgeGraph
+            .fridayVisibleNodes(ofType: .topic, limit: 5)
+            .sorted { $0.mentions > $1.mentions }
+            // The id is the name as written in entries; the label honors any rename.
+            .map { (match: $0.id, topic: $0.label, count: $0.mentions) }
 
-        for (topic, count) in topHistorical where count >= 5 {
-            let lowered = topic.lowercased()
-            if !weekText.contains(lowered) {
+        for (match, topic, count) in topHistorical where count >= 5 {
+            if !weekText.contains(match) {
                 return ShareableInsight(
                     headline: String(localized: "\u{201C}\(topic)\u{201D} didn’t come up this week."),
                     subtext: String(localized: "It used to come up often."),
@@ -673,13 +672,5 @@ struct ShareableInsightGenerator {
             supportingEntryIDs: evidence(topTopic.value),
             personNames: ShareableInsightPrivacy.isLikelyPersonName(topic) ? [topic] : []
         )
-    }
-}
-
-// MARK: - LocalAIEngine Extension
-
-extension LocalAIEngine {
-    func isStopWord(_ word: String) -> Bool {
-        Self.stopWords.contains(word)
     }
 }

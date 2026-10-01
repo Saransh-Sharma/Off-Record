@@ -41,6 +41,7 @@ struct OffRecordApp: App {
         WatchCaptureImporter.shared.start(context: persistenceController.container.viewContext)
         WidgetSnapshotExporter.shared.start(container: persistenceController.container)
         FridayProfileRebuilder.shared.start(container: persistenceController.container)
+        RetiredEntryInsightProfile.removeIfPresent(container: persistenceController.container)
         // A fresh process is never mid-capture, so any capture Live Activity is a leftover.
         Task { await CaptureLiveActivityManager.shared.endOrphanedActivities() }
     }

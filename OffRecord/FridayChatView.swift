@@ -161,7 +161,6 @@ struct FridayResponseGenerator {
 
     static func generateResponse(for question: FridayQuestion) -> String {
         let assistant = FridayAssistantEngine.shared
-        let profile = LocalAIEngine.shared.userProfile
         let hasEnoughData = assistant.summary.dataPointsCollected >= 5
 
         switch question {
@@ -172,7 +171,7 @@ struct FridayResponseGenerator {
         case .happiestWhen:
             return happiestWhenResponse(assistant: assistant, hasData: hasEnoughData)
         case .dominantTopics:
-            return dominantTopicsResponse(assistant: assistant, profile: profile, hasData: hasEnoughData)
+            return dominantTopicsResponse(assistant: assistant, hasData: hasEnoughData)
         case .moodOverTime:
             return moodOverTimeResponse(assistant: assistant, hasData: hasEnoughData)
         case .communicationStyle:
@@ -184,7 +183,7 @@ struct FridayResponseGenerator {
         case .personality:
             return personalityResponse(assistant: assistant, hasData: hasEnoughData)
         case .bestJournalTime:
-            return bestJournalTimeResponse(assistant: assistant, profile: profile, hasData: hasEnoughData)
+            return bestJournalTimeResponse(assistant: assistant, hasData: hasEnoughData)
         }
     }
 
@@ -290,25 +289,10 @@ struct FridayResponseGenerator {
         return parts.isEmpty ? insufficientData : parts.joined(separator: " ")
     }
 
-    private static func dominantTopicsResponse(assistant: FridayAssistantEngine, profile: UserProfile, hasData: Bool) -> String {
+    private static func dominantTopicsResponse(assistant: FridayAssistantEngine, hasData: Bool) -> String {
         guard hasData else { return insufficientData }
 
-        let graphTopics = assistant.knowledgeGraph.fridayVisibleNodes(ofType: .topic, limit: 5)
-        let profileTopics = profile.commonTopics
-            .filter { !FridayMemoryPreferences.shared.isForgottenLabel($0.key) }
-            .sorted { $0.value > $1.value }
-            .prefix(5)
-
-        var allTopics: [String] = []
-        for node in graphTopics {
-            allTopics.append(node.label)
-        }
-        for (topic, _) in profileTopics {
-            let capitalized = topic.capitalized
-            if !allTopics.contains(where: { $0.lowercased() == capitalized.lowercased() }) {
-                allTopics.append(capitalized)
-            }
-        }
+        let allTopics = assistant.knowledgeGraph.fridayVisibleNodes(ofType: .topic, limit: 5).map(\.label)
 
         guard !allTopics.isEmpty else {
             return String(localized: "No clear topics yet. I’ll see more after a few entries.")
@@ -515,7 +499,7 @@ struct FridayResponseGenerator {
         return parts.joined(separator: " ")
     }
 
-    private static func bestJournalTimeResponse(assistant: FridayAssistantEngine, profile: UserProfile, hasData: Bool) -> String {
+    private static func bestJournalTimeResponse(assistant: FridayAssistantEngine, hasData: Bool) -> String {
         guard hasData else { return insufficientData }
 
         var parts: [String] = []
