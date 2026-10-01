@@ -105,18 +105,21 @@ final class FridayAssistantEngine: ObservableObject {
     private let tokenizer = NLTokenizer(unit: .word)
     private let sentenceTokenizer = NLTokenizer(unit: .sentence)
 
-    /// Off for a scratch engine, which learns without touching the saved profile.
-    private let persistsChanges: Bool
+    /// Nil for a scratch engine, which learns without touching the saved profile.
+    private let profileStore: FridayProfileStore?
 
     // MARK: - Initialization
 
     private init() {
-        persistsChanges = true
+        // UI tests and screenshots seed Friday on every launch and keep nothing on disk.
+        let arguments = ProcessInfo.processInfo.arguments
+        let isFixtureRun = arguments.contains("-UITesting") || arguments.contains("-ScreenshotMode")
+        profileStore = isFixtureRun ? nil : FridayProfileStore(legacyContext: PersistenceController.shared.container.viewContext)
         load()
     }
 
     private init(scratch: Void) {
-        persistsChanges = false
+        profileStore = nil
     }
 
     /// An empty engine that learns without saving, so a rebuild can run off to the side.
@@ -133,6 +136,17 @@ final class FridayAssistantEngine: ObservableObject {
         behavioralPatterns = other.behavioralPatterns
         updateSummary()
         save()
+    }
+
+    /// Forgets everything Friday learned and deletes the saved profile.
+    func deleteProfile() {
+        communicationStyle = CommunicationStyle()
+        emotionalSignature = EmotionalSignature()
+        thoughtPatterns = ThoughtPatterns()
+        knowledgeGraph = PersonalKnowledgeGraph()
+        behavioralPatterns = BehavioralPatterns()
+        summary = FridaySummary()
+        profileStore?.delete()
     }
 
     func resetForUITesting() {
@@ -763,69 +777,31 @@ final class FridayAssistantEngine: ObservableObject {
 
     // MARK: - Persistence
 
-    private struct FridayPayload: Codable {
-        var communicationStyle: CommunicationStyle
-        var emotionalSignature: EmotionalSignature
-        var thoughtPatterns: ThoughtPatterns
-        var knowledgeGraph: PersonalKnowledgeGraph
-        var behavioralPatterns: BehavioralPatterns
-        var summary: FridaySummary
-    }
-
+    // Saved by FridayProfileStore in a protected local file that never syncs.
     private func save() {
-        guard persistsChanges else { return }
-        let payload = FridayPayload(
+        guard let profileStore else { return }
+        profileStore.save(FridayProfilePayload(
             communicationStyle: communicationStyle,
             emotionalSignature: emotionalSignature,
             thoughtPatterns: thoughtPatterns,
             knowledgeGraph: knowledgeGraph,
             behavioralPatterns: behavioralPatterns,
             summary: summary
-        )
-        guard let data = try? JSONEncoder().encode(payload) else { return }
-
-        let context = PersistenceController.shared.container.newBackgroundContext()
-        context.perform {
-            let request = NSFetchRequest<AIState>(entityName: "AIState")
-            request.predicate = NSPredicate(format: "type == %@", "friday_assistant")
-            let existing = try? context.fetch(request).first
-
-            let state = existing ?? AIState(context: context)
-            if existing == nil {
-                state.id = UUID()
-                state.type = "friday_assistant"
-            }
-            state.payload = data
-            state.updatedAt = Date()
-            try? context.save()
-        }
+        ))
     }
 
     private func load() {
-        let context = PersistenceController.shared.container.viewContext
-        let request = NSFetchRequest<AIState>(entityName: "AIState")
-        request.predicate = NSPredicate(format: "type IN %@", ["friday_assistant", "digital_twin"])
-        request.sortDescriptors = [
-            NSSortDescriptor(keyPath: \AIState.updatedAt, ascending: false)
-        ]
-
-        if let state = try? context.fetch(request).first, let data = state.payload {
-            let decoder = JSONDecoder()
-            if let payload = try? decoder.decode(FridayPayload.self, from: data) {
-                communicationStyle = payload.communicationStyle
-                emotionalSignature = payload.emotionalSignature
-                thoughtPatterns = payload.thoughtPatterns
-                knowledgeGraph = payload.knowledgeGraph
-                behavioralPatterns = payload.behavioralPatterns
-                summary = payload.summary
-                // The snapshot sentences are derived copy, so rebuild them from the loaded
-                // models; otherwise a saved summary keeps old wording until the next entry.
-                updateSummary()
-                if state.type == "digital_twin" {
-                    save()
-                }
-                return
-            }
+        if let payload = profileStore?.load() {
+            communicationStyle = payload.communicationStyle
+            emotionalSignature = payload.emotionalSignature
+            thoughtPatterns = payload.thoughtPatterns
+            knowledgeGraph = payload.knowledgeGraph
+            behavioralPatterns = payload.behavioralPatterns
+            summary = payload.summary
+            // The snapshot sentences are derived copy, so rebuild them from the loaded
+            // models; otherwise a saved summary keeps old wording until the next entry.
+            updateSummary()
+            return
         }
 
         // One-time migration from UserDefaults

@@ -20,17 +20,27 @@ private let fridayHistoryLogger = Logger(subsystem: "com.singularity.offrecord",
 
 // MARK: - Protected JSON file
 
+/// Every Friday file lives here, so deleting this folder deletes them all.
+enum FridayLocalDirectory {
+    static var url: URL {
+        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        return base.appendingPathComponent("FridayLocal", isDirectory: true)
+    }
+}
+
 /// A small JSON document in Application Support, written atomically with
 /// `.completeFileProtection` and excluded from device backups.
 struct FridayProtectedJSONFile<Value: Codable> {
     let fileName: String
+    /// Application Support/FridayLocal unless a test passes its own folder.
+    let directoryURL: URL
 
-    private static var directoryURL: URL {
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        return base.appendingPathComponent("FridayLocal", isDirectory: true)
+    init(fileName: String, directoryURL: URL? = nil) {
+        self.fileName = fileName
+        self.directoryURL = directoryURL ?? FridayLocalDirectory.url
     }
 
-    var url: URL { Self.directoryURL.appendingPathComponent(fileName) }
+    var url: URL { directoryURL.appendingPathComponent(fileName) }
 
     func load() -> Value? {
         guard let data = try? Data(contentsOf: url) else { return nil }
@@ -61,7 +71,7 @@ struct FridayProtectedJSONFile<Value: Codable> {
     }
 
     private func prepareDirectory() throws {
-        var directory = Self.directoryURL
+        var directory = directoryURL
         if !FileManager.default.fileExists(atPath: directory.path) {
             try FileManager.default.createDirectory(
                 at: directory,
