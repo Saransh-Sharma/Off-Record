@@ -199,6 +199,12 @@ enum WeeklyReflectionGenerationService {
         )
     }
 
+    /// `report` with its cover line and summary phrased on-device when the week
+    /// allows it (see `WeeklyReflectionNarrator`); the facts stay deterministic.
+    static func narrated(_ report: WeeklyReflectionReport, entries: [WeeklyReflectionEntrySnapshot]) async -> WeeklyReflectionReport {
+        await WeeklyReflectionNarrator.narrated(report, entries: entries)
+    }
+
     static func validate(_ report: WeeklyReflectionReport) -> Bool {
         guard report.heroSentence.split(separator: " ").count <= 25 else { return false }
         guard report.summary.split(separator: " ").count <= 120 else { return false }

@@ -131,6 +131,23 @@ final class WeeklyReflectionController: ObservableObject {
         isPreparing = false
         persist()
         WeeklyReflectionNotificationScheduler.reconcile(settings: settings, now: now)
+        narrate(report, entries: entries)
+    }
+
+    /// Swaps in the on-device cover line and summary once they pass validation.
+    /// The deterministic report is already saved and shown, so nothing waits on the model.
+    private func narrate(_ report: WeeklyReflectionReport, entries: [WeeklyReflectionEntrySnapshot]) {
+        Task { [weak self] in
+            let narrated = await WeeklyReflectionGenerationService.narrated(report, entries: entries)
+            guard let self,
+                  narrated.heroSentence != report.heroSentence || narrated.summary != report.summary else { return }
+            self.update(reportID: report.id) { value in
+                // A report changed in the meantime keeps its own text.
+                guard value.heroSentence == report.heroSentence, value.summary == report.summary else { return }
+                value.heroSentence = narrated.heroSentence
+                value.summary = narrated.summary
+            }
+        }
     }
 
     private func update(reportID: UUID, persistAfterUpdate: Bool = true, mutate: (inout WeeklyReflectionReport) -> Void) {
