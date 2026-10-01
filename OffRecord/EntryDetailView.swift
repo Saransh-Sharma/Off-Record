@@ -166,6 +166,7 @@ extension JournalBlockTimelineItem {
 /// Allows viewing, editing text, setting mood, playing back audio, and attaching photos.
 struct EntryDetailView: View {
     @ObservedObject var entry: DiaryEntry
+    @ObservedObject private var entryTitles = EntryTitleStore.shared
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.scenePhase) private var scenePhase
@@ -345,6 +346,7 @@ struct EntryDetailView: View {
             loadBlocks(backfill: true)
             startEntryActivity()
             syncTextFromEntry(reason: "appear")
+            entryTitles.requestTitle(for: entry)
         }
         .onChange(of: scenePhase) { _, newPhase in
             switch newPhase {
@@ -365,6 +367,7 @@ struct EntryDetailView: View {
         .onChange(of: entry.updatedAt) { _, _ in
             syncTextFromEntry(reason: "updatedAtChanged")
             loadBlocks(backfill: false)
+            entryTitles.requestTitle(for: entry)
         }
         .onChange(of: entry.entryTranscriptionStatus) { _, _ in
             syncTextFromEntry(reason: "transcriptionStatusChanged")
@@ -491,6 +494,18 @@ struct EntryDetailView: View {
                 .foregroundStyle(OffRecordColor.textHeading)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
+
+            // A generated title only when one passed validation; otherwise the date stands alone.
+            if let title = entryTitles.title(for: entry) {
+                Text(title)
+                    .font(OffRecordTypography.bodyLarge)
+                    .foregroundStyle(OffRecordColor.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .frame(maxWidth: .infinity)
+                    .transition(.opacity)
+                    .accessibilityIdentifier("entryDetail.title")
+            }
 
             HStack(spacing: 8) {
                 Rectangle()
