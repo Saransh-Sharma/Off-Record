@@ -1166,6 +1166,7 @@ private struct PrivacyProofStep: View {
                 PrivacyProofRow(icon: "person.crop.circle.badge.xmark", title: String(localized: "No account"), detail: String(localized: "Open the app and start."))
                 PrivacyProofRow(icon: "server.rack", title: String(localized: "No OffRecord servers"), detail: String(localized: "Transcription and Friday run on your \(DeviceNoun.current)."))
                 PrivacyProofRow(icon: "chart.bar.xaxis", title: String(localized: "No ads or tracking"), detail: String(localized: "Nothing you write is used for ads."))
+                PrivacyProofRow(icon: "sparkles", title: String(localized: "Friday is AI"), detail: String(localized: "She can be wrong, and she isn’t a therapist."))
             }
         }
     }
