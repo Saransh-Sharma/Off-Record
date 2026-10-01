@@ -1,0 +1,100 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint:
+    name: Copy and claims lint
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install zsh
+        run: sudo apt-get update && sudo apt-get install -y zsh
+
+      - name: Copy lint (Swift strings)
+        run: scripts/copy-lint.sh
+
+      - name: Claims lint (docs, App Store, website)
+        run: scripts/claims-lint.sh
+
+  journalkit:
+    name: JournalKit tests
+    runs-on: macos-26
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show toolchain
+        run: xcodebuild -version && swift --version
+
+      - name: Run package tests
+        working-directory: Packages/JournalKit
+        run: swift test
+
+  app-unit-tests:
+    name: App unit tests
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Show toolchain and simulators
+        run: |
+          xcodebuild -version
+          xcrun simctl list runtimes
+
+      # The OffRecord scheme embeds the watch app, so even an iOS simulator
+      # build needs the watchOS platform. Download it only when the image lacks it.
+      - name: Ensure watchOS platform
+        run: |
+          if ! xcrun simctl list runtimes | grep -q watchOS; then
+            xcodebuild -downloadPlatform watchOS
+          fi
+
+      - name: Pick an iPhone simulator
+        id: simulator
+        run: |
+          udid=$(xcrun simctl list devices available --json | python3 -c '
+          import json, sys
+          runtimes = json.load(sys.stdin)["devices"]
+          devices = [d for r, ds in sorted(runtimes.items(), reverse=True) if ".iOS-" in r for d in ds]
+          iphones = [d for d in devices if d["name"].startswith("iPhone")]
+          print((iphones or devices)[0]["udid"])
+          ')
+          echo "Using simulator $udid"
+          echo "udid=$udid" >> "$GITHUB_OUTPUT"
+
+      - name: Run OffRecordTests
+        run: |
+          xcodebuild test \
+            -project OffRecord.xcodeproj \
+            -scheme OffRecord \
+            -destination "platform=iOS Simulator,id=${{ steps.simulator.outputs.udid }}" \
+            -only-testing:OffRecordTests \
+            -derivedDataPath DerivedData \
+            -resultBundlePath TestResults.xcresult \
+            ARCHS=arm64 ONLY_ACTIVE_ARCH=YES COMPILER_INDEX_STORE_ENABLE=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: OffRecordTests-results
+          path: TestResults.xcresult
+          retention-days: 7
