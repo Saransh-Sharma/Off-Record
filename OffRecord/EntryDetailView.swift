@@ -9,6 +9,7 @@
 import SwiftUI
 import AVFoundation
 import CoreData
+import JournalFoundation
 import PhotosUI
 import os.log
 
@@ -261,12 +262,20 @@ struct EntryDetailView: View {
 
                     if !isComposingTextBlock {
                         if !text.isEmpty {
-                            goDeeperCard
+                            switch entryResponseMode {
+                            case .normal:
+                                goDeeperCard
+                            case .gentle:
+                                // Heavy entries get no probing question.
+                                EmptyView()
+                            case .supportOnly:
+                                entrySupportCard
+                            }
                         }
                         addToDaySection
                     }
 
-                    if !text.isEmpty {
+                    if !text.isEmpty, entryResponseMode != .supportOnly {
                         aiInsightsSection
                     }
                 }
@@ -735,6 +744,26 @@ struct EntryDetailView: View {
                 .frame(minHeight: minHeight(for: item), alignment: .top)
             }
         }
+    }
+
+    /// How Friday may respond to this entry; high-risk text is never analyzed or asked about.
+    private var entryResponseMode: SensitiveResponseMode {
+        JournalRiskClassifier.responseMode(for: text)
+    }
+
+    private var entrySupportCard: some View {
+        VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
+            Text(FridayPersonality.riskSafeSupport)
+                .font(OffRecordTypography.bodyLarge)
+                .foregroundStyle(OffRecordColor.textBrand)
+                .fixedSize(horizontal: false, vertical: true)
+            GetSupportButton()
+        }
+        .padding(OffRecordSpacing.lg)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .offRecordCard(cornerRadius: OffRecordRadius.lg)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("entryDetail.support")
     }
 
     private var goDeeperCard: some View {

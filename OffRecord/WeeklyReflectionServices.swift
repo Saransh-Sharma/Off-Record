@@ -1,6 +1,7 @@
 import CoreData
 import Foundation
 import NaturalLanguage
+import JournalFoundation
 import os.log
 import UserNotifications
 
@@ -44,10 +45,6 @@ enum WeeklyReflectionEligibilityService {
 }
 
 enum WeeklyReflectionSafetyFilter {
-    private static let highRiskTerms = [
-        "kill myself", "suicide", "end my life", "self harm", "self-harm", "hurt myself"
-    ]
-
     private static let forbiddenOutputTerms = [
         "you are depressed", "you have depression", "you are anxious", "you have anxiety",
         "burnout diagnosis", "treatment plan", "stop taking medication",
@@ -55,19 +52,13 @@ enum WeeklyReflectionSafetyFilter {
     ]
 
     static func isHighRisk(_ entry: WeeklyReflectionEntrySnapshot) -> Bool {
-        let text = entry.text.lowercased()
-        return highRiskTerms.contains(where: text.contains)
+        JournalRiskClassifier.level(for: entry.text) == .highRiskExcluded
     }
 
     static func safetyLevel(for entries: [WeeklyReflectionEntrySnapshot]) -> WeeklyReflectionSafetyLevel {
-        if entries.contains(where: isHighRisk) {
-            return .highRiskExcluded
-        }
-        let joined = entries.map(\.text).joined(separator: " ").lowercased()
-        if joined.contains("overwhelmed") || joined.contains("exhausted") || joined.contains("panic") {
-            return .mildDistress
-        }
-        return .none
+        // Reports store the weekly ladder, which shares the shared ladder's cases.
+        let level = JournalRiskClassifier.level(forAll: entries.map(\.text))
+        return WeeklyReflectionSafetyLevel(rawValue: level.rawValue) ?? .none
     }
 
     static func sanitized(_ text: String) -> String {

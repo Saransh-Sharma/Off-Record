@@ -8,6 +8,7 @@
 
 import CoreData
 import Foundation
+import JournalFoundation
 import os.log
 import SwiftUI
 
@@ -103,7 +104,7 @@ final class ProactiveReflectionController: ObservableObject {
 
     @discardableResult
     func refreshIfNeeded(entries: [DiaryEntry], now: Date = Date(), force: Bool = false) -> Task<Void, Never>? {
-        let snapshots = entries.compactMap(ReflectionEntrySnapshot.init(entry:))
+        let snapshots = Self.analyzableSnapshots(entries)
         let signature = inputSignature(for: snapshots)
         if !force, signature == lastInputSignature, let lastRefreshAt, now.timeIntervalSince(lastRefreshAt) < debounceInterval {
             return nil
@@ -113,8 +114,15 @@ final class ProactiveReflectionController: ObservableObject {
 
     @discardableResult
     func refresh(entries: [DiaryEntry], now: Date = Date()) -> Task<Void, Never>? {
-        let snapshots = entries.compactMap(ReflectionEntrySnapshot.init(entry:))
+        let snapshots = Self.analyzableSnapshots(entries)
         return refresh(snapshots: snapshots, signature: inputSignature(for: snapshots), now: now)
+    }
+
+    /// Proactive cards and Smart Prompts never quote, analyze, or follow up on
+    /// high-risk or hopeless entries, so those never reach the analyzer.
+    static func analyzableSnapshots(_ entries: [DiaryEntry]) -> [ReflectionEntrySnapshot] {
+        entries.compactMap(ReflectionEntrySnapshot.init(entry:))
+            .filter { JournalRiskClassifier.level(for: $0.text) < .moderateConcern }
     }
 
     func markPrompted(_ insight: ReflectionInsight, now: Date = Date()) {

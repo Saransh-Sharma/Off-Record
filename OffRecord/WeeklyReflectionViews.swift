@@ -542,6 +542,7 @@ struct WeeklyReflectionReportView: View {
                 .font(OffRecordTypography.bodySmall)
                 .foregroundStyle(OffRecordColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
+            GetSupportButton()
         }
         .accessibilityIdentifier("weeklyReflection.support")
     }

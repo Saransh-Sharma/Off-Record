@@ -9,6 +9,7 @@
 
 import SwiftUI
 import CoreData
+import JournalFoundation
 #if os(iOS)
 import UIKit
 #endif
@@ -91,6 +92,8 @@ struct FridayChatMessage: Identifiable, Equatable {
     let confidence: Double?
     let limitations: String?
     let followUps: [FridayFollowUp]
+    /// Friday replied with support copy instead of an answer; the bubble offers crisis resources.
+    let needsSupport: Bool
 
     /// A user message.
     init(id: UUID = UUID(), timestamp: Date = Date(), text: String, isUser: Bool) {
@@ -106,7 +109,8 @@ struct FridayChatMessage: Identifiable, Equatable {
         observations: [EvidenceObservation] = [],
         confidence: Double? = nil,
         limitations: String? = nil,
-        followUps: [FridayFollowUp] = []
+        followUps: [FridayFollowUp] = [],
+        needsSupport: Bool = false
     ) {
         self.id = id
         self.timestamp = timestamp
@@ -117,6 +121,7 @@ struct FridayChatMessage: Identifiable, Equatable {
         self.confidence = confidence
         self.limitations = limitations
         self.followUps = followUps
+        self.needsSupport = needsSupport
     }
 
     var segments: [FridayAnswerSegment] {
@@ -130,7 +135,7 @@ struct FridayChatMessage: Identifiable, Equatable {
     }
 
     var evidenceStrength: FridayEvidenceStrength? {
-        isUser ? nil : FridayEvidenceStrength.assess(confidence: confidence, evidence: evidence)
+        isUser || needsSupport ? nil : FridayEvidenceStrength.assess(confidence: confidence, evidence: evidence)
     }
 }
 
@@ -882,7 +887,7 @@ struct FridayChatView: View {
     private var showsStaticPrompts: Bool {
         guard !isAnswering else { return false }
         guard let last = messages.last(where: { !$0.isUser }) else { return true }
-        return last.followUps.isEmpty
+        return last.followUps.isEmpty && !last.needsSupport
     }
 
     private var landingQuestions: [FridayQuestion] {
@@ -1055,7 +1060,11 @@ struct FridayChatView: View {
                 return
             }
 
-            let followUps = FridayFollowUpBuilder.followUps(
+            // Heavy questions get no probing follow-ups; high-risk ones get support instead of an answer.
+            let needsSupport = answer.responseMode == .supportOnly
+            let isSensitive = needsSupport || answer.responseMode == .gentle
+                || JournalRiskClassifier.responseMode(for: question) != .normal
+            let followUps = isSensitive ? [] : FridayFollowUpBuilder.followUps(
                 question: question,
                 evidence: answer.evidence,
                 knownNames: knownNames,
@@ -1069,7 +1078,8 @@ struct FridayChatView: View {
                 observations: answer.observations,
                 confidence: answer.confidence,
                 limitations: answer.limitations,
-                followUps: followUps
+                followUps: followUps,
+                needsSupport: needsSupport
             )
             revealingMessageID = fridayMessage.id
             withOffRecordAnimation(OffRecordMotion.fade) {

@@ -15,6 +15,7 @@ import CryptoKit
 import os
 @_exported import SemanticMemoryKit
 @_exported import AssistantCoreKit
+import JournalFoundation
 
 private let semanticMemoryLogger = Logger(subsystem: "com.singularity.offrecord", category: "SemanticMemory")
 
@@ -250,6 +251,11 @@ final class SemanticMemoryIndexController: ObservableObject {
 @MainActor
 enum EvidenceFridayEngine {
     static func answer(question: String, entries: [DiaryEntry], profileSummary: String? = nil) async -> EvidenceBackedFridayAnswer {
+        // A question about self-harm gets support copy, never retrieval or quotes.
+        if JournalRiskClassifier.responseMode(for: question) == .supportOnly {
+            semanticMemoryLogger.notice("Friday answered a high-risk question with support copy.")
+            return .supportOnly(persona: .friday)
+        }
         let isSuggestedQuestion = profileSummary?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
         semanticMemoryLogger.notice(
             "Friday answer requested suggested=\(isSuggestedQuestion.description, privacy: .public) entries=\(entries.count, privacy: .public)"
@@ -320,7 +326,23 @@ enum EvidenceFridayEngine {
         }
     }
 
-    static func answer(question: String, evidence: [EvidenceReference], profileSummary: String? = nil) async -> EvidenceBackedFridayAnswer {
+    static func answer(question: String, evidence retrieved: [EvidenceReference], profileSummary: String? = nil) async -> EvidenceBackedFridayAnswer {
+        let questionMode = JournalRiskClassifier.responseMode(for: question)
+        if questionMode == .supportOnly {
+            return .supportOnly(persona: .friday)
+        }
+        // High-risk passages are never quoted or analyzed. If every strong
+        // match was one, reply with support copy instead of a thin answer;
+        // weak matches alone never turn an unrelated question into support.
+        let isHighRisk: (EvidenceReference) -> Bool = { JournalRiskClassifier.level(for: $0.chunkText) == .highRiskExcluded }
+        let evidence = retrieved.filter { !isHighRisk($0) }
+        if evidence.count < retrieved.count {
+            let strongRetrieved = strongEvidence(from: retrieved)
+            if !strongRetrieved.isEmpty, strongRetrieved.allSatisfy(isHighRisk) {
+                semanticMemoryLogger.notice("Friday withheld high-risk evidence and replied with support copy.")
+                return .supportOnly(persona: .friday)
+            }
+        }
         let strongEvidence = strongEvidence(from: evidence)
         semanticMemoryLogger.notice(
             "Friday evidence evaluated retrieved=\(evidence.count, privacy: .public) strong=\(strongEvidence.count, privacy: .public) profileFallback=\((profileSummary?.isEmpty == false).description, privacy: .public)"
@@ -355,7 +377,8 @@ enum EvidenceFridayEngine {
             evidence: topEvidence,
             confidence: confidence,
             followUpPrompt: nil,
-            limitations: confidence < 0.65 ? String(localized: "I’m not sure. Only a few entries match.") : nil
+            limitations: confidence < 0.65 ? String(localized: "I’m not sure. Only a few entries match.") : nil,
+            responseMode: questionMode
         )
 
         #if canImport(FoundationModels)
@@ -366,7 +389,7 @@ enum EvidenceFridayEngine {
                 evidence: topEvidence,
                 fallback: deterministicAnswer
                ) {
-                return generatedAnswer
+                return generatedAnswer.withResponseMode(questionMode)
             }
         }
         #endif

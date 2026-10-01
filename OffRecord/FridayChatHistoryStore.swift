@@ -106,6 +106,8 @@ struct FridayStoredMessage: Codable, Equatable {
     let confidence: Double?
     let limitations: String?
     let followUps: [FridayStoredFollowUp]
+    /// Optional so threads saved before this field still decode.
+    var needsSupport: Bool?
 }
 
 struct FridayStoredThread: Codable {
@@ -166,7 +168,8 @@ enum FridayChatHistoryStore {
             },
             confidence: message.confidence,
             limitations: message.limitations,
-            followUps: message.followUps.map { FridayStoredFollowUp(title: $0.title, prompt: $0.prompt, questionID: $0.question?.rawValue) }
+            followUps: message.followUps.map { FridayStoredFollowUp(title: $0.title, prompt: $0.prompt, questionID: $0.question?.rawValue) },
+            needsSupport: message.needsSupport ? true : nil
         )
     }
 
@@ -223,7 +226,8 @@ enum FridayChatHistoryStore {
             limitations: limitations,
             followUps: stored.followUps.map {
                 FridayFollowUp(title: $0.title, prompt: $0.prompt, question: $0.questionID.flatMap(FridayQuestion.init(rawValue:)))
-            }
+            },
+            needsSupport: stored.needsSupport ?? false
         )
     }
 }
