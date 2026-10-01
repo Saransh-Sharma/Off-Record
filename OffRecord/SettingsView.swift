@@ -626,6 +626,16 @@ struct SettingsView: View {
                 .buttonStyle(SettingsSecondaryButtonStyle(tint: OffRecordColor.textCoral, fill: OffRecordColor.backgroundBlushTint))
                 .accessibilityIdentifier("semanticMemory.delete")
                 .disabled(semanticMemory.isBuilding || semanticMemory.chunkCount == 0)
+
+                Button {
+                    FridayProfileRebuilder.shared.rebuildNow()
+                    HapticManager.shared.selectionChanged()
+                } label: {
+                    Label("Rebuild Friday", systemImage: "sparkles")
+                }
+                .buttonStyle(SettingsSecondaryButtonStyle(tint: OffRecordColor.textLavender, fill: OffRecordColor.surfaceLavender))
+                .accessibilityHint("Relearns Friday’s patterns from your entries.")
+                .accessibilityIdentifier("settings.friday.rebuild")
             }
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("semanticMemory.section")

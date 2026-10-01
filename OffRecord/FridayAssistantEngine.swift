@@ -105,10 +105,34 @@ final class FridayAssistantEngine: ObservableObject {
     private let tokenizer = NLTokenizer(unit: .word)
     private let sentenceTokenizer = NLTokenizer(unit: .sentence)
 
+    /// Off for a scratch engine, which learns without touching the saved profile.
+    private let persistsChanges: Bool
+
     // MARK: - Initialization
 
     private init() {
+        persistsChanges = true
         load()
+    }
+
+    private init(scratch: Void) {
+        persistsChanges = false
+    }
+
+    /// An empty engine that learns without saving, so a rebuild can run off to the side.
+    static func makeScratch() -> FridayAssistantEngine {
+        FridayAssistantEngine(scratch: ())
+    }
+
+    /// Replaces this profile with `other`'s, refreshes the summary, and saves.
+    func adoptProfile(from other: FridayAssistantEngine) {
+        communicationStyle = other.communicationStyle
+        emotionalSignature = other.emotionalSignature
+        thoughtPatterns = other.thoughtPatterns
+        knowledgeGraph = other.knowledgeGraph
+        behavioralPatterns = other.behavioralPatterns
+        updateSummary()
+        save()
     }
 
     func resetForUITesting() {
@@ -141,61 +165,6 @@ final class FridayAssistantEngine: ObservableObject {
         save()
     }
 
-    /// Re-process an edited entry — updates entity labels in the knowledge graph
-    func reprocessEditedEntry(oldText: String, newText: String, mood: String?, date: Date, duration: Double) {
-        guard !newText.isEmpty else { return }
-
-        // Extract entities from old and new text to detect name changes
-        let oldEntities = extractNamedEntities(from: oldText)
-        let newEntities = extractNamedEntities(from: newText)
-
-        // Find entities that were renamed (same position/context, different text)
-        // Simple heuristic: if old had "Jhon" and new has "John", update the label
-        for oldEntity in oldEntities {
-            let oldKey = oldEntity.lowercased()
-            if knowledgeGraph.nodes[oldKey] != nil {
-                // Check if this entity is missing from new text
-                let stillPresent = newEntities.contains { $0.lowercased() == oldKey }
-                if !stillPresent {
-                    // Look for a similar new entity that could be a correction
-                    for newEntity in newEntities {
-                        let newKey = newEntity.lowercased()
-                        if knowledgeGraph.nodes[newKey] == nil && levenshteinSimilar(oldKey, newKey) {
-                            // Transfer the old node data to the new key
-                            if var node = knowledgeGraph.nodes[oldKey] {
-                                node.label = newEntity
-                                knowledgeGraph.nodes[newKey] = PersonalKnowledgeGraph.KnowledgeNode(
-                                    id: newKey,
-                                    label: newEntity,
-                                    type: node.type,
-                                    mentions: node.mentions,
-                                    firstSeen: node.firstSeen,
-                                    lastSeen: Date(),
-                                    sentimentAssociation: node.sentimentAssociation,
-                                    importance: node.importance
-                                )
-                                knowledgeGraph.nodes.removeValue(forKey: oldKey)
-                                // Update edges too
-                                for i in 0..<knowledgeGraph.edges.count {
-                                    if knowledgeGraph.edges[i].from == oldKey {
-                                        knowledgeGraph.edges[i].from = newKey
-                                    }
-                                    if knowledgeGraph.edges[i].to == oldKey {
-                                        knowledgeGraph.edges[i].to = newKey
-                                    }
-                                }
-                            }
-                            break
-                        }
-                    }
-                }
-            }
-        }
-
-        // Now do the standard processing with new text
-        processEntry(text: newText, mood: mood, date: date, duration: duration)
-    }
-
     /// Extract named entities from text
     private func extractNamedEntities(from text: String) -> [String] {
         guard !text.isEmpty else { return [] }
@@ -209,31 +178,6 @@ final class FridayAssistantEngine: ObservableObject {
             return true
         }
         return entities
-    }
-
-    /// Check if two strings are similar enough to be a typo correction (Levenshtein distance <= 2)
-    private func levenshteinSimilar(_ a: String, _ b: String) -> Bool {
-        let aChars = Array(a)
-        let bChars = Array(b)
-        let m = aChars.count, n = bChars.count
-        guard abs(m - n) <= 2 else { return false }
-        var dp = Array(repeating: Array(repeating: 0, count: n + 1), count: m + 1)
-        for i in 0...m { dp[i][0] = i }
-        for j in 0...n { dp[0][j] = j }
-        for i in 1...m {
-            for j in 1...n {
-                dp[i][j] = aChars[i-1] == bChars[j-1] ? dp[i-1][j-1] : min(dp[i-1][j-1], dp[i-1][j], dp[i][j-1]) + 1
-            }
-        }
-        return dp[m][n] <= 2 && dp[m][n] > 0
-    }
-
-    /// Process a chat message (lighter analysis)
-    func processChatMessage(_ text: String) {
-        guard !text.isEmpty else { return }
-        analyzeCommunicationStyle(text)
-        analyzeEmotionalSignature(text, mood: nil, date: Date())
-        save()
     }
 
     // MARK: - Communication Style Analysis
@@ -829,6 +773,7 @@ final class FridayAssistantEngine: ObservableObject {
     }
 
     private func save() {
+        guard persistsChanges else { return }
         let payload = FridayPayload(
             communicationStyle: communicationStyle,
             emotionalSignature: emotionalSignature,

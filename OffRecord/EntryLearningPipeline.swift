@@ -8,21 +8,10 @@ private actor FridayLearningWorker {
             FridayAssistantEngine.shared.processEntry(text: text, mood: mood, date: date, duration: duration)
         }
     }
-
-    func reprocessEditedEntry(oldText: String, newText: String, mood: String?, date: Date, duration: Double) async {
-        await MainActor.run {
-            FridayAssistantEngine.shared.reprocessEditedEntry(
-                oldText: oldText,
-                newText: newText,
-                mood: mood,
-                date: date,
-                duration: duration
-            )
-        }
-    }
 }
 
 enum EntryLearningPipeline {
+    @MainActor
     static func processSavedEntry(
         text: String,
         mood: String?,
@@ -32,35 +21,19 @@ enum EntryLearningPipeline {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
 
+        // Normally Friday's profile is rebuilt from the journal after every save.
+        // Fixture runs (UI tests, screenshots) don't start the rebuilder, so they
+        // keep learning one entry at a time.
+        if FridayProfileRebuilder.shared.isActive {
+            FridayProfileRebuilder.shared.scheduleRefresh()
+            return
+        }
+
         PerformanceSignposts.event("FridayProcessingScheduled")
         Task(priority: .utility) {
             let token = PerformanceSignposts.begin("FridayProcessing")
             await FridayLearningWorker.shared.processEntry(
                 text: trimmed,
-                mood: mood,
-                date: date,
-                duration: duration
-            )
-            PerformanceSignposts.end(token)
-        }
-    }
-
-    static func reprocessEditedEntry(
-        oldText: String,
-        newText: String,
-        mood: String?,
-        date: Date,
-        duration: Double
-    ) {
-        let trimmed = newText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-
-        PerformanceSignposts.event("FridayReprocessingScheduled")
-        Task(priority: .utility) {
-            let token = PerformanceSignposts.begin("FridayReprocessing")
-            await FridayLearningWorker.shared.reprocessEditedEntry(
-                oldText: oldText,
-                newText: trimmed,
                 mood: mood,
                 date: date,
                 duration: duration
