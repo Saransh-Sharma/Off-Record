@@ -133,6 +133,7 @@ struct SettingsView: View {
                         items: [
                             .init(id: "export", keywords: "export pdf print", view: AnyView(exportSection)),
                             .init(id: "backup", keywords: "backup encrypted json markdown csv import restore", view: AnyView(backupSection)),
+                            .init(id: "import", keywords: "import day one apple journal markdown text csv", view: AnyView(importSection)),
                             .init(id: "icloud", keywords: "icloud sync cloud devices", view: AnyView(iCloudSection)),
                             .init(id: "storage", keywords: "storage space audio photos delete", view: AnyView(storageSection))
                         ]
