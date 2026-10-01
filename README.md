@@ -1,7 +1,7 @@
 # OffRecord AI Journal — Free Voice Journal with Private AI for iPhone, iPad & Apple Watch
 
 [![Download on the App Store](https://img.shields.io/badge/Download_Free-App%20Store-0D96F6?style=for-the-badge&logo=apple&logoColor=white)](https://apps.apple.com/app/id6766499684)
-[![Platform](https://img.shields.io/badge/Platform-iOS%2017%2B%20%7C%20iPadOS%2017%2B%20%7C%20watchOS%2026%2B-lightgrey?style=for-the-badge&logo=apple)](https://apps.apple.com/app/id6766499684)
+[![Platform](https://img.shields.io/badge/Platform-iOS%2026%2B%20%7C%20iPadOS%2026%2B%20%7C%20watchOS%2026%2B-lightgrey?style=for-the-badge&logo=apple)](https://apps.apple.com/app/id6766499684)
 [![Privacy](https://img.shields.io/badge/Privacy-Data%20Not%20Collected-brightgreen?style=for-the-badge&logo=apple)](https://saransh-sharma.github.io/Off-Record/privacy.html)
 [![Website](https://img.shields.io/badge/Website-saransh--sharma.github.io%2FOff--Record-blue?style=for-the-badge)](https://saransh-sharma.github.io/Off-Record/)
 
@@ -11,24 +11,24 @@ Speak naturally, and OffRecord AI Journal transcribes entirely on-device with Ap
 
 **Your journal text, audio, transcripts, and semantic memory stay on your device and are not sent to developer or speech-recognition servers. Apple Watch captures are stored locally first and transfer to the iPhone through Apple WatchConnectivity for on-device analysis.**
 
-[Download OffRecord AI Journal Free](https://apps.apple.com/app/id6766499684) | [Visit Website](https://saransh-sharma.github.io/Off-Record/) | [See Features](https://saransh-sharma.github.io/Off-Record/features.html) | [Privacy](https://saransh-sharma.github.io/Off-Record/privacy.html) | [Support](https://saransh-sharma.github.io/Off-Record/support.html)
+[Download OffRecord AI Journal Free](https://apps.apple.com/app/id6766499684) | [Visit Website](https://saransh-sharma.github.io/Off-Record/) | [See Features](https://saransh-sharma.github.io/Off-Record/#features) | [Privacy](https://saransh-sharma.github.io/Off-Record/privacy.html) | [Support](https://saransh-sharma.github.io/Off-Record/support.html)
 
 ---
 
 ## Screenshots
 
 <p align="center">
-  <img src="OffRecord/AppStore/screenshots/iPhone_67/01_TodayView.png" width="180" alt="OffRecord AI Journal voice journal app - Today view with daily entries" />
-  <img src="OffRecord/AppStore/screenshots/iPhone_67/02_Timeline.png" width="180" alt="AI diary app timeline showing past journal entries" />
-  <img src="OffRecord/AppStore/screenshots/iPhone_67/03_Insights.png" width="180" alt="On-device AI journal mood insights and analytics" />
-  <img src="OffRecord/AppStore/screenshots/iPhone_67/04_Friday.png" width="180" alt="Friday journal - AI personality analysis on-device" />
+  <img src="AppStore/screenshots/iPhone_69/light/01_Today.png" width="180" alt="OffRecord AI Journal voice journal app - Today view with daily entries" />
+  <img src="AppStore/screenshots/iPhone_69/light/03_Timeline.png" width="180" alt="AI diary app timeline showing past journal entries" />
+  <img src="AppStore/screenshots/iPhone_69/light/06_Insights.png" width="180" alt="On-device AI journal mood insights and analytics" />
+  <img src="AppStore/screenshots/iPhone_69/light/08_Friday.png" width="180" alt="Friday journal - AI personality analysis on-device" />
 </p>
 
 <p align="center">
-  <img src="OffRecord/AppStore/screenshots/iPhone_67/05_FridayEmotions.png" width="180" alt="Private journal app emotional pattern tracking" />
-  <img src="OffRecord/AppStore/screenshots/iPhone_67/06_FridayWorld.png" width="180" alt="Knowledge graph showing people and topics in your journal" />
-  <img src="OffRecord/AppStore/screenshots/iPhone_67/07_EntryDetail.png" width="180" alt="Free journal app entry detail with photo attachments" />
-  <img src="OffRecord/AppStore/screenshots/iPhone_67/08_Settings.png" width="180" alt="OffRecord AI Journal settings with theme and privacy options" />
+  <img src="AppStore/screenshots/iPhone_69/light/09_FridayChat.png" width="180" alt="Friday chat answering with citations from journal entries" />
+  <img src="AppStore/screenshots/iPhone_69/light/11_FridayWorld.png" width="180" alt="Knowledge graph showing people and topics in your journal" />
+  <img src="AppStore/screenshots/iPhone_69/light/05_EntryDetail.png" width="180" alt="Free journal app entry detail with photo attachments" />
+  <img src="AppStore/screenshots/iPhone_69/light/12_Settings.png" width="180" alt="OffRecord AI Journal settings with theme and privacy options" />
 </p>
 
 ---
@@ -202,7 +202,7 @@ Settings lets you enable or disable Weekly Reflection, choose the reminder weekd
 The source sheet lists entries from the report period. You can open an available source entry, exclude it from the regenerated report, or re-include a previously hidden source. These controls affect only that report version; they do not edit the original journal entry or create global private/exclude flags.
 
 ### Are Weekly Reflection notifications private?
-Yes. Weekly Reflection reminders are local notifications with static copy only: "Your weekly reflection is ready" and "A private look back at your week." Notification content and user info do not include entry text, names, snippets, themes, or report summaries.
+Yes. Weekly Reflection reminders are local notifications with static copy only: "Weekly Reflection" and "Your week is ready to look back on." Notification content and user info do not include entry text, names, snippets, themes, or report summaries.
 
 ### What is Friday?
 Friday is an on-device AI assistant that learns your personality traits, communication style, emotional patterns, and life themes from your journal entries. Evidence-Based Friday retrieves relevant entries before answering free-form questions, cites the source entries it used, and hedges or refuses when the journal does not contain enough evidence.

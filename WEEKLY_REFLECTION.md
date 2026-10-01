@@ -131,8 +131,8 @@ Notification requirements:
 
 - identifier is separate from daily reminders
 - trigger is a recurring weekly `UNCalendarNotificationTrigger`
-- title is exactly `Your weekly reflection is ready`
-- body is exactly `A private look back at your week.`
+- title is exactly `Weekly Reflection`
+- body is exactly `Your week is ready to look back on.`
 - notification payload must not include journal text, snippets, names, themes, summaries, quotes, or source metadata
 
 Cold-launch notification taps store the route until private content can be navigated. Active-app taps route immediately when onboarding and app lock state allow private navigation.

@@ -126,4 +126,4 @@ The goal of v3.0 is a private assistant with deep understanding of your journali
 
 ---
 
-For technical details, see [ARCHITECTURE.md](ARCHITECTURE.md), [SEMANTIC_MEMORY_FRIDAY.md](SEMANTIC_MEMORY_FRIDAY.md), [WEEKLY_REFLECTION.md](WEEKLY_REFLECTION.md), and the [Technology page](https://offrecord.example.com/technology.html).
+For technical details, see [ARCHITECTURE.md](ARCHITECTURE.md), [SEMANTIC_MEMORY_FRIDAY.md](SEMANTIC_MEMORY_FRIDAY.md), [WEEKLY_REFLECTION.md](WEEKLY_REFLECTION.md), and the [Technology page](https://saransh-sharma.github.io/Off-Record/technology.html).

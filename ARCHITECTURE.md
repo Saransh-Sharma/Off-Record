@@ -145,8 +145,8 @@ Friday engine (`FridayAssistantEngine.swift`) maintains four interconnected mode
 
 | Module | File | Purpose |
 |---|---|---|
-| **EncryptionService** | `EncryptionService.swift` | AES-256-GCM via CryptoKit. File format: `[DVX1 magic][salt][nonce][ciphertext+tag]` |
-| **AppLockManager** | `AppLockManager.swift` | Face ID / Touch ID via LocalAuthentication |
+| **EncryptionService** | `Packages/JournalKit/Sources/JournalSecurityKit/EncryptionService.swift` | AES-256-GCM via CryptoKit with a PBKDF2-SHA256 key (100,000 iterations). File format: `[DVX2 magic][iteration count][salt][nonce][ciphertext+tag]`. Legacy DVX1 (HKDF) backups still decrypt. |
+| **AppLockManager** | `AppLockManager.swift` (core in `JournalSecurityKit/AppLock.swift`) | Face ID / Touch ID via LocalAuthentication |
 | **ThemeManager** | `ThemeManager.swift` | 8 themes (System, Light, Sage, Lavender, Rose, Ocean, Warm, Dark) |
 | **PhotoStorageManager** | `PhotoStorageManager.swift` | On-device photo attachment storage (up to 5 per entry) |
 | **GoalManager** | `GoalManager.swift` | Journaling goals, streaks, milestones |
@@ -225,7 +225,7 @@ For canonical feature designs, see [SEMANTIC_MEMORY_FRIDAY.md](SEMANTIC_MEMORY_F
 
 ## Building
 
-1. Open `OffRecord/OffRecord.xcodeproj` in Xcode 15+
+1. Open `OffRecord.xcodeproj` in Xcode 26+
 2. Select the `OffRecord` scheme
 3. Build and run on an iOS 26+ Simulator or device
 4. Tests: `OffRecordTests` (unit) and `OffRecordUITests` (UI)

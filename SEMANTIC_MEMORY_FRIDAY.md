@@ -103,7 +103,7 @@ Friday has two evidence modes:
 
 Every substantive observation in a Friday answer must map to real `EvidenceReference` IDs. Unsupported generated observations should be dropped or downgraded to a limitation. If the available evidence is missing, weak, contradictory, unavailable, or still indexing, Friday should hedge or refuse instead of fabricating a claim.
 
-Foundation Models integration is optional. On supported iOS 26 Apple Intelligence-capable devices, it may improve wording after evidence retrieval succeeds. The responder must still validate that generated observations cite retrieved evidence. iOS 17-25 users get deterministic evidence-backed fallback behavior.
+Foundation Models integration is optional. On supported iOS 26 Apple Intelligence-capable devices, it may improve wording after evidence retrieval succeeds. The responder must still validate that generated observations cite retrieved evidence. Devices without Apple Intelligence, or with the model unavailable, get deterministic evidence-backed fallback behavior.
 
 ## Testing And QA
 
@@ -122,7 +122,7 @@ Manual QA should include:
 
 - Simulator smoke with seeded journal data.
 - Real-device testing for `NLEmbedding.sentenceEmbedding(for:)` availability.
-- iOS 17/18 deterministic fallback behavior.
+- Deterministic fallback behavior when Apple Intelligence is unavailable.
 - iOS 26 Apple Intelligence availability checks when a capable device is available.
 - Low Power Mode and thermal-throttling behavior during rebuild.
 - Offline rebuild/search behavior, especially asset-unavailable messaging.
