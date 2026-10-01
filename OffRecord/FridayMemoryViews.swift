@@ -62,6 +62,13 @@ final class FridayMemoryPreferences: ObservableObject {
         persist()
     }
 
+    /// Clears every forget and rename and deletes the file. Used when Friday is turned off.
+    func reset() {
+        forgottenIDs.removeAll()
+        aliases.removeAll()
+        file.delete()
+    }
+
     func rename(_ node: PersonalKnowledgeGraph.KnowledgeNode, to name: String) {
         let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty || trimmed == node.label {

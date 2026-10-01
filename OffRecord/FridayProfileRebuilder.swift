@@ -117,7 +117,8 @@ final class FridayProfileRebuilder {
     /// Coalesces bursts of saves into one check. Friday's own saves leave the
     /// fingerprint unchanged, so they never trigger a rebuild.
     func scheduleRefresh(after delay: Duration = .seconds(2), force: Bool = false) {
-        guard isActive else { return }
+        // While Friday is off she learns nothing.
+        guard isActive, FridayAvailability.isEnabled else { return }
         pending?.cancel()
         pending = Task { [weak self] in
             try? await Task.sleep(for: delay)
@@ -129,6 +130,13 @@ final class FridayProfileRebuilder {
     /// Relearns now, even if nothing changed. Settings uses this.
     func rebuildNow() {
         scheduleRefresh(after: .zero, force: true)
+    }
+
+    /// Stops any pending pass and forgets the fingerprint, so the next start relearns.
+    func cancelPendingRefresh() {
+        pending?.cancel()
+        pending = nil
+        UserDefaults.standard.removeObject(forKey: Self.fingerprintKey)
     }
 
     private func refreshIfNeeded(force: Bool) async {
@@ -159,7 +167,7 @@ final class FridayProfileRebuilder {
             scratch.learn(input)
             await Task.yield()
         }
-        guard !Task.isCancelled else { return }
+        guard !Task.isCancelled, FridayAvailability.isEnabled else { return }
 
         FridayAssistantEngine.shared.adoptProfile(from: scratch)
         UserDefaults.standard.set(fingerprint, forKey: Self.fingerprintKey)

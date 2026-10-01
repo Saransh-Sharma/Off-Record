@@ -19,7 +19,7 @@ enum EntryLearningPipeline {
         duration: Double
     ) {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
+        guard !trimmed.isEmpty, FridayAvailability.isEnabled else { return }
 
         // Normally Friday's profile is rebuilt from the journal after every save.
         // Fixture runs (UI tests, screenshots) don't start the rebuilder, so they

@@ -92,8 +92,13 @@ final class ReminderManager: ObservableObject {
         scheduleReminder(now: now)
     }
 
+    /// Smart Prompts speak as Friday, so they stop while Friday is off.
+    private var sendsSmartPrompts: Bool {
+        usesFridaySmartPrompts && FridayAvailability.isEnabled
+    }
+
     func reminderBody() -> String {
-        usesFridaySmartPrompts
+        sendsSmartPrompts
             ? ProactiveReflectionController.cachedPrivacySafeReminderBody()
             : fallbackBody
     }
@@ -115,14 +120,14 @@ final class ReminderManager: ObservableObject {
     func makeReminderRequest(now: Date = Date(), calendar: Calendar = .current) -> UNNotificationRequest {
         let content = UNMutableNotificationContent()
         // Smart prompts speak as Friday, so they carry her name; the plain reminder has no title.
-        if usesFridaySmartPrompts {
+        if sendsSmartPrompts {
             content.title = String(localized: "Friday", comment: "Name of the in-app assistant, shown as the reminder notification title")
         }
         content.body = reminderBody()
         content.sound = .default
 
         let trigger: UNNotificationTrigger
-        if usesFridaySmartPrompts {
+        if sendsSmartPrompts {
             let nextDate = nextReminderDate(after: now, calendar: calendar)
             let components = calendar.dateComponents([.year, .month, .day, .hour, .minute], from: nextDate)
             trigger = UNCalendarNotificationTrigger(dateMatching: components, repeats: false)

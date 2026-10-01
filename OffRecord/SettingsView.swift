@@ -121,6 +121,7 @@ struct SettingsView: View {
                         items: [
                             .init(id: "lock", keywords: "lock face id touch id passcode privacy security", view: AnyView(securitySection)),
                             .init(id: "localAI", keywords: "on-device ai transcription speech offline privacy", view: AnyView(localAIPrivacySection)),
+                            .init(id: "friday", keywords: FridaySettingsSection.searchKeywords, view: AnyView(FridaySettingsSection())),
                             .init(id: "health", keywords: "apple health state of mind mood sync", view: AnyView(healthSection)),
                             .init(id: "semantic", keywords: "search index meaning friday rebuild delete", view: AnyView(semanticMemorySection)),
                             .init(id: "spotlight", keywords: "siri spotlight system search shortcuts", view: AnyView(systemSearchSection))
@@ -276,7 +277,8 @@ struct SettingsView: View {
             "apple health state of mind mood sync", "search index meaning friday rebuild delete",
             "siri spotlight system search shortcuts", "export pdf print", "backup encrypted json markdown csv import restore",
             "icloud sync cloud devices", "storage space audio photos delete", "theme appearance dark light color accent",
-            "privacy policy data not collected", "about version support"
+            "privacy policy data not collected", "about version support",
+            FridaySettingsSection.searchKeywords
         ]
     }
 

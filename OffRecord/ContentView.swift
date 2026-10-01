@@ -148,7 +148,7 @@ enum OffRecordTab: String, CaseIterable, Identifiable {
         case .today: TodayView()
         case .timeline: TimelineView()
         case .insights: StatsView()
-        case .friday: FridayView()
+        case .friday: FridayTabRoot()
         case .settings: SettingsView()
         }
     }

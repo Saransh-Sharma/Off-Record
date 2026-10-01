@@ -118,7 +118,8 @@ final class OffRecordNavigationRouter: ObservableObject {
             routedEntryID = id
         case .friday(let question):
             selectedTab = .friday
-            fridayQuestion = question
+            // With Friday off the tab shows her off state, and the question is dropped.
+            fridayQuestion = FridayAvailability.isEnabled ? question : nil
         case .weeklyReflectionCurrent:
             selectedTab = .insights
             routedWeeklyReflectionID = nil
