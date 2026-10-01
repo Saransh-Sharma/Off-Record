@@ -96,6 +96,24 @@ struct FridayConversationTests {
         #expect(answer.summary.contains("not have enough journal evidence"))
     }
 
+    @Test func restoredHistoryReachesTheModelOnceWithoutSupportTurns() {
+        let responder = ScriptedResponder { _, _ in nil }
+        let engine = makeEngine(responder: responder, retrieve: { _, _ in .ready([]) })
+        let messages = [
+            FridayChatMessage(text: "Who do I mention most?", isUser: true),
+            FridayChatMessage(summary: "You mention Maya most.", isUser: false),
+            FridayChatMessage(text: "Why do I want to hurt myself?", isUser: true),
+            FridayChatMessage(summary: FridayPersonality.riskSafeSupport, isUser: false, needsSupport: true),
+        ]
+
+        let turns = FridayChatView.shownTurns(in: messages)
+        engine.restore(turns: turns)
+        engine.restore(turns: turns)
+
+        #expect(turns.count == 1)
+        #expect(responder.shownTurns.map(\.question) == ["Who do I mention most?"])
+    }
+
     // MARK: Citations
 
     @Test func answerCitingToolResultsIsKept() async {

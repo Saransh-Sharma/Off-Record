@@ -135,11 +135,26 @@ final class FridayConversationEngine {
     func reset() {
         responder?.reset()
         ledger.reset()
+        hasRestoredHistory = true
+    }
+
+    private var hasRestoredHistory = false
+
+    /// After a relaunch, gives the model the last few turns still on screen, so a
+    /// follow-up makes sense. Runs once per launch; support turns are never passed on.
+    func restore(turns: [(question: String, answer: String)]) {
+        guard !hasRestoredHistory else { return }
+        hasRestoredHistory = true
+        guard usesModel, let responder else { return }
+        for turn in turns.suffix(3) where JournalRiskClassifier.responseMode(for: turn.question) != .supportOnly {
+            responder.recordShownTurn(question: turn.question, answer: turn.answer)
+        }
     }
 
     /// One chat turn. Suggested questions (with a profile summary) and every
     /// gate's fallback go through `EvidenceFridayEngine`, unchanged.
     func answer(question: String, entries: [DiaryEntry], profileSummary: String?) async -> EvidenceBackedFridayAnswer {
+        hasRestoredHistory = true
         // 1. The model never sees a high-risk question.
         if JournalRiskClassifier.responseMode(for: question) == .supportOnly {
             return .supportOnly(persona: .friday)

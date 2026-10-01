@@ -981,7 +981,18 @@ struct FridayChatView: View {
             // Older history sent the rawValue as the message text.
             askedQuestions = Set(FridayQuestion.allCases.filter { askedTexts.contains($0.question) || askedTexts.contains($0.rawValue) })
         }
+        FridayConversationEngine.shared.restore(turns: Self.shownTurns(in: restored))
         hasRestoredHistory = true
+    }
+
+    /// Question-and-answer pairs from a restored thread, skipping support replies.
+    static func shownTurns(in messages: [FridayChatMessage]) -> [(question: String, answer: String)] {
+        var turns: [(question: String, answer: String)] = []
+        for (index, message) in messages.enumerated() where !message.isUser && !message.needsSupport && index > 0 {
+            let previous = messages[index - 1]
+            if previous.isUser { turns.append((previous.summary, message.summary)) }
+        }
+        return turns
     }
 
     private func startNewChat() {
