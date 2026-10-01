@@ -45,11 +45,18 @@ enum WeeklyReflectionEligibilityService {
 }
 
 enum WeeklyReflectionSafetyFilter {
-    private static let forbiddenOutputTerms = [
+    /// Phrases no reflection or other generated text may contain.
+    static let forbiddenOutputTerms = [
         "you are depressed", "you have depression", "you are anxious", "you have anxiety",
         "burnout diagnosis", "treatment plan", "stop taking medication",
         "you are burned out", "you have burnout"
     ]
+
+    /// The forbidden phrases found in `text`, for checking model output.
+    static func forbiddenTermViolations(in text: String) -> [String] {
+        let lowered = text.lowercased()
+        return forbiddenOutputTerms.filter(lowered.contains)
+    }
 
     static func isHighRisk(_ entry: WeeklyReflectionEntrySnapshot) -> Bool {
         JournalRiskClassifier.level(for: entry.text) == .highRiskExcluded
