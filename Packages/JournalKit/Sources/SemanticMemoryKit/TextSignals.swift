@@ -46,17 +46,9 @@ public enum TextSignals {
         return result
     }
 
+    /// Distinct people, places, and organizations in `text`, sorted.
     public static func extractEntities(from text: String) -> [String] {
-        let tagger = NLTagger(tagSchemes: [.nameType])
-        tagger.string = text
-        var values: [String] = []
-        tagger.enumerateTags(in: text.startIndex..<text.endIndex, unit: .word, scheme: .nameType, options: [.omitWhitespace, .joinNames]) { tag, range in
-            guard tag == .personalName || tag == .placeName || tag == .organizationName else { return true }
-            let value = String(text[range]).trimmingCharacters(in: .whitespacesAndNewlines)
-            if value.count > 1 { values.append(value) }
-            return true
-        }
-        return Array(Set(values)).sorted()
+        Array(Set(EntityExtractor.nameOccurrences(in: text).map(\.text))).sorted()
     }
 
     public static func extractTopics(from text: String, limit: Int = 10) -> [String] {
