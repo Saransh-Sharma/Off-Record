@@ -190,6 +190,7 @@ struct EntryDetailView: View {
     @State private var showDeleteDayConfirm = false
     @State private var pendingBlockDeletion: JournalBlockTimelineItem?
     @State private var deeperQuestion: String?
+    @State private var isFetchingDeeperQuestion = false
     @State private var composerPrompt: String?
     @State private var isDeletingDay = false
     private let deleteEmptyDraftOnDisappear: Bool
@@ -776,23 +777,22 @@ struct EntryDetailView: View {
                     .font(OffRecordTypography.labelLarge)
                     .foregroundStyle(OffRecordColor.textHeading)
                 Spacer(minLength: 0)
-                Button {
-                    withOffRecordAnimation(OffRecordMotion.gentle) {
-                        deeperQuestion = EntryFollowUpQuestion.make(
-                            text: text,
-                            mood: selectedMood,
-                            excluding: deeperQuestion
-                        )
+                Button(action: showDeeperQuestion) {
+                    Group {
+                        if isFetchingDeeperQuestion {
+                            ProgressView()
+                                .tint(OffRecordColor.textLavender)
+                        } else {
+                            Image(systemName: deeperQuestion == nil ? "questionmark.bubble" : "arrow.triangle.2.circlepath")
+                                .font(OffRecordTypography.labelLarge)
+                                .foregroundStyle(OffRecordColor.textLavender)
+                                .contentTransition(.symbolEffect(.replace))
+                        }
                     }
-                    HapticManager.shared.selectionChanged()
-                } label: {
-                    Image(systemName: deeperQuestion == nil ? "questionmark.bubble" : "arrow.triangle.2.circlepath")
-                        .font(OffRecordTypography.labelLarge)
-                        .foregroundStyle(OffRecordColor.textLavender)
-                        .frame(width: OffRecordLayout.minimumTapTarget, height: OffRecordLayout.minimumTapTarget)
-                        .contentTransition(.symbolEffect(.replace))
+                    .frame(width: OffRecordLayout.minimumTapTarget, height: OffRecordLayout.minimumTapTarget)
                 }
                 .buttonStyle(.plain)
+                .disabled(isFetchingDeeperQuestion)
                 .accessibilityLabel(deeperQuestion == nil ? "Get a Question" : "Another Question")
                 .accessibilityIdentifier("entryDetail.goDeeper")
             }
@@ -834,6 +834,31 @@ struct EntryDetailView: View {
         }
         .padding(OffRecordSpacing.lg)
         .offRecordCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceLavender.opacity(0.7), shadow: false)
+    }
+
+    /// The first tap asks for the entry's question (the model's, when it passes
+    /// validation); later taps cycle through the templates.
+    private func showDeeperQuestion() {
+        let provider = GoDeeperQuestionProvider.shared
+        guard deeperQuestion != nil else {
+            let entryText = text
+            let mood = selectedMood
+            let allowsModel = FridayEntryIntelligence.isEligible(entry)
+            isFetchingDeeperQuestion = true
+            Task { @MainActor in
+                let question = await provider.firstQuestion(text: entryText, mood: mood, allowsModel: allowsModel)
+                isFetchingDeeperQuestion = false
+                withOffRecordAnimation(OffRecordMotion.gentle) {
+                    deeperQuestion = question
+                }
+                HapticManager.shared.selectionChanged()
+            }
+            return
+        }
+        withOffRecordAnimation(OffRecordMotion.gentle) {
+            deeperQuestion = provider.nextQuestion(text: text, mood: selectedMood, excluding: deeperQuestion) ?? deeperQuestion
+        }
+        HapticManager.shared.selectionChanged()
     }
 
     private var addToDaySection: some View {
