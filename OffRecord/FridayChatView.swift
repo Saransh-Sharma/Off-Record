@@ -3,8 +3,9 @@
 //  OffRecord
 //
 //  Talk to Friday - a conversational interface to explore your journal data.
-//  All responses are generated from on-device Friday data.
-//  No external APIs or LLMs are used.
+//  Answers come from on-device Friday data. When Apple Intelligence is
+//  available, FridayConversationEngine phrases them with the on-device model
+//  across turns; otherwise they're deterministic. No network is involved.
 //
 
 import SwiftUI
@@ -628,6 +629,9 @@ struct FridayChatView: View {
     @State private var isConfirmingNewChat = false
     @State private var answerFeedbackTrigger = 0
     @State private var newChatTrigger = 0
+    /// Shown for one visit when Apple Intelligence can't be used, then remembered as seen.
+    @State private var modelNote: String?
+    @AppStorage("friday.modelNote.seenReason") private var seenModelNoteReason = ""
     @Namespace private var evidenceNamespace
 
     private var startedEntries: [DiaryEntry] { entries.startedEntries }
@@ -733,6 +737,7 @@ struct FridayChatView: View {
         .task {
             restoreHistoryIfNeeded()
             semanticMemory.ensureIndexed(entries: startedEntries)
+            prepareModel()
             applyInitialQuestionIfNeeded()
         }
         .onChange(of: messages) { _, newMessages in
@@ -770,6 +775,7 @@ struct FridayChatView: View {
         switch screenMode {
         case .activeChat:
             FridayActiveChatHeader(onNewChat: { isConfirmingNewChat = true })
+            modelNoteView
             messageList(contentWidth: contentWidth)
             if showsStaticPrompts {
                 FridayPromptSection(
@@ -789,6 +795,7 @@ struct FridayChatView: View {
                 )
             } else {
                 FridayActiveChatHeader(onNewChat: { isConfirmingNewChat = true })
+                modelNoteView
                 messageList(contentWidth: contentWidth)
                 FridayChatErrorCard(
                     detail: activeError?.detail ?? "",
@@ -804,6 +811,7 @@ struct FridayChatView: View {
                 mode: .indexing(semanticMemory.statusMessage),
                 action: askQuestion
             )
+            modelNoteView
         case .noJournalData:
             FridayWarmMinimalContent(
                 userName: authorName,
@@ -812,6 +820,7 @@ struct FridayChatView: View {
                 mode: .noJournalData,
                 action: askQuestion
             )
+            modelNoteView
         case .warmMinimal:
             FridayWarmMinimalContent(
                 userName: authorName,
@@ -820,7 +829,29 @@ struct FridayChatView: View {
                 mode: .warm,
                 action: askQuestion
             )
+            modelNoteView
         }
+    }
+
+    @ViewBuilder
+    private var modelNoteView: some View {
+        if let modelNote {
+            FridayModelNote(text: modelNote)
+        }
+    }
+
+    /// Loads the model for the first question, or decides on the one-time note
+    /// when Apple Intelligence can't be used.
+    private func prepareModel() {
+        let availability = FridayLanguageModel.availability
+        if let note = availability.chatNote, seenModelNoteReason != availability.rawValue {
+            modelNote = note
+            // UI tests launch fresh every time and expect the note on each launch.
+            if !ProcessInfo.processInfo.arguments.contains("-UITesting") {
+                seenModelNoteReason = availability.rawValue
+            }
+        }
+        FridayConversationEngine.shared.prewarm()
     }
 
     private func messageList(contentWidth: CGFloat) -> some View {
@@ -961,6 +992,7 @@ struct FridayChatView: View {
             revealingMessageID = nil
         }
         FridayChatHistoryStore.clear()
+        FridayConversationEngine.shared.reset()
         newChatTrigger += 1
     }
 
@@ -1033,7 +1065,7 @@ struct FridayChatView: View {
         let askedPrompts = Set(messages.filter(\.isUser).map { $0.summary.lowercased() })
 
         Task {
-            let answer = await EvidenceFridayEngine.answer(question: question, entries: entrySnapshot, profileSummary: profileSummary)
+            let answer = await FridayConversationEngine.shared.answer(question: question, entries: entrySnapshot, profileSummary: profileSummary)
 
             if case .failed(let detail) = semanticMemory.lastSearchState,
                answer.evidence.isEmpty, answer.confidence == 0 {
