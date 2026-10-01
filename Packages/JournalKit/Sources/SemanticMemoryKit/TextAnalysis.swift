@@ -136,7 +136,8 @@ public enum EntityExtractor {
         let tagger = NLTagger(tagSchemes: [.nameType])
         tagger.string = text
         var result: [NamedEntity] = []
-        let options: NLTagger.Options = [.omitWhitespace, .omitPunctuation, .joinNames]
+        // The options TextSignals and Friday's profile always used, so names tag exactly as before.
+        let options: NLTagger.Options = [.omitWhitespace, .joinNames]
         tagger.enumerateTags(in: text.startIndex..<text.endIndex, unit: .word, scheme: .nameType, options: options) { tag, range in
             guard let kind = tag.flatMap(NamedEntity.Kind.init(nameTag:)) else { return true }
             let value = String(text[range]).trimmingCharacters(in: .whitespacesAndNewlines)

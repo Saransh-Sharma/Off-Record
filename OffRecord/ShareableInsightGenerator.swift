@@ -6,13 +6,13 @@
 //  feel personal but reveal nothing private: names of people are hidden from
 //  shared images unless the person explicitly opts in.
 //
-//  Built from existing data in FridayAssistantEngine, LocalAIEngine, and
-//  raw diary entries.
+//  Built from existing data in FridayAssistantEngine and the entries
+//  themselves.
 //
 
 import CoreData
 import Foundation
-import NaturalLanguage
+import SemanticMemoryKit
 
 // MARK: - Shareable Insight Model
 
@@ -69,17 +69,10 @@ enum ShareableInsightPrivacy {
 
     /// Personal names that NaturalLanguage finds in `texts`.
     static func detectedNames(in texts: [String]) -> [String] {
-        let tagger = NLTagger(tagSchemes: [.nameType])
         var names: [String] = []
         for text in texts where !text.isEmpty {
-            tagger.string = text
-            let options: NLTagger.Options = [.omitWhitespace, .omitPunctuation, .joinNames]
-            tagger.enumerateTags(in: text.startIndex..<text.endIndex, unit: .word, scheme: .nameType, options: options) { tag, range in
-                if tag == .personalName {
-                    let name = String(text[range])
-                    if name.count > 1, !names.contains(name) { names.append(name) }
-                }
-                return true
+            for name in EntityExtractor.personalNames(in: text) where !names.contains(name) {
+                names.append(name)
             }
         }
         return names
@@ -243,10 +236,7 @@ struct ShareableInsightGenerator {
     }
 
     private static func sentiment(of text: String) -> Double? {
-        let tagger = NLTagger(tagSchemes: [.sentimentScore])
-        tagger.string = text
-        let (tag, _) = tagger.tag(at: text.startIndex, unit: .paragraph, scheme: .sentimentScore)
-        return tag.flatMap { Double($0.rawValue) }
+        SentimentScorer.languageScore(for: text)
     }
 
     // MARK: - Insight Generators
@@ -274,29 +264,21 @@ struct ShareableInsightGenerator {
 
     /// "You mentioned Sarah 8 times this week."
     private static func personSentimentInsight(weekEntries: [DiaryEntry]) -> ShareableInsight? {
-        let tagger = NLTagger(tagSchemes: [.nameType])
         var personSentiments: [String: (count: Int, totalSentiment: Double, entries: [DiaryEntry])] = [:]
 
         for entry in weekEntries {
             guard let text = entry.text, !text.isEmpty else { continue }
-            tagger.string = text
-            let options: NLTagger.Options = [.omitWhitespace, .omitPunctuation, .joinNames]
             let entrySentiment = sentiment(of: text) ?? 0
 
-            tagger.enumerateTags(in: text.startIndex..<text.endIndex, unit: .word, scheme: .nameType, options: options) { tag, range in
-                if tag == .personalName {
-                    let name = String(text[range])
-                    if name.count > 1 {
-                        var existing = personSentiments[name] ?? (count: 0, totalSentiment: 0, entries: [])
-                        existing.count += 1
-                        existing.totalSentiment += entrySentiment
-                        if !existing.entries.contains(where: { $0.objectID == entry.objectID }) {
-                            existing.entries.append(entry)
-                        }
-                        personSentiments[name] = existing
-                    }
+            for occurrence in EntityExtractor.nameOccurrences(in: text) where occurrence.kind == .person {
+                let name = occurrence.text
+                var existing = personSentiments[name] ?? (count: 0, totalSentiment: 0, entries: [])
+                existing.count += 1
+                existing.totalSentiment += entrySentiment
+                if !existing.entries.contains(where: { $0.objectID == entry.objectID }) {
+                    existing.entries.append(entry)
                 }
-                return true
+                personSentiments[name] = existing
             }
         }
 
@@ -657,24 +639,11 @@ struct ShareableInsightGenerator {
 
     /// "Your #1 topic this week: work."
     private static func topConcernInsight(weekEntries: [DiaryEntry]) -> ShareableInsight? {
-        let tagger = NLTagger(tagSchemes: [.lexicalClass])
         var topicEntries: [String: [DiaryEntry]] = [:]
 
         for entry in weekEntries {
             guard let text = entry.text, !text.isEmpty else { continue }
-            tagger.string = text
-            var entryTopics: Set<String> = []
-
-            let options: NLTagger.Options = [.omitWhitespace, .omitPunctuation]
-            tagger.enumerateTags(in: text.startIndex..<text.endIndex, unit: .word, scheme: .lexicalClass, options: options) { tag, range in
-                if tag == .noun {
-                    let word = String(text[range]).lowercased()
-                    if word.count > 3 && !LocalAIEngine.shared.isStopWord(word) {
-                        entryTopics.insert(word)
-                    }
-                }
-                return true
-            }
+            let entryTopics = Set(EntityExtractor.nouns(in: text, minimumLength: 4))
 
             for topic in entryTopics {
                 topicEntries[topic, default: []].append(entry)

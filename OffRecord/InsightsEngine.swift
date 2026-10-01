@@ -6,12 +6,12 @@
 //
 //  Every insight carries the IDs of the entries that support it plus a short
 //  plain-language rationale, so the UI can answer "Why am I seeing this?".
-//  Analysis uses Apple's NaturalLanguage framework. Copy states facts and
+//  Tone comes from the shared SentimentScorer. Copy states facts and
 //  numbers, not diagnoses.
 //
 
 import Foundation
-import NaturalLanguage
+import SemanticMemoryKit
 
 enum InsightsEngine {
     /// Upper bound on how many supporting entries an insight cites.
@@ -233,13 +233,8 @@ enum InsightsEngine {
         let recent = entries.prefix(10).filter { !$0.text.isEmpty }
         guard !recent.isEmpty else { return nil }
 
-        let tagger = NLTagger(tagSchemes: [.sentimentScore])
-        var scored: [(entry: JournalEntrySnapshot, score: Double)] = []
-        for entry in recent {
-            tagger.string = entry.text
-            let (sentiment, _) = tagger.tag(at: entry.text.startIndex, unit: .paragraph, scheme: .sentimentScore)
-            let score = sentiment.flatMap { Double($0.rawValue) } ?? 0
-            scored.append((entry, score))
+        let scored: [(entry: JournalEntrySnapshot, score: Double)] = recent.map { entry in
+            (entry, SentimentScorer.score(entry.text))
         }
 
         let average = scored.reduce(0) { $0 + $1.score } / Double(scored.count)
