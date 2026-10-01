@@ -188,7 +188,7 @@ We may update this privacy policy from time to time. We will notify you of chang
 
 If you have questions about this privacy policy:
 
-- Email: intrepidkarthi@gmail.com
+- Email: saransh1337@gmail.com
 
 ## Summary
 

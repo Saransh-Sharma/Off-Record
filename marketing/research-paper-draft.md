@@ -1,6 +1,6 @@
 # OffRecord AI Journal: An On-Device Framework for Privacy-Preserving Personality Modeling from Voice Diaries
 
-**Authors:** Karthikeyan NG
+**Authors:** Saransh Sharma
 **Target Venues:** ACM MobiSys, ACM CHI, ACM UIST
 **Status:** Draft Outline with Full Abstract
 

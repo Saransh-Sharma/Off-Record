@@ -6,7 +6,7 @@ If you discover a security vulnerability in OffRecord AI Journal, please report 
 
 **Do NOT open a public issue for security vulnerabilities.**
 
-Instead, email **intrepidkarthi@gmail.com** with:
+Instead, email **saransh1337@gmail.com** with:
 
 - A description of the vulnerability
 - Steps to reproduce
