@@ -188,9 +188,15 @@ enum FridayChatHistoryStore {
             return FridayChatMessage(id: stored.id, timestamp: stored.timestamp, text: stored.summary, isUser: true)
         }
 
-        // Re-resolve every citation against the live journal.
+        // Re-resolve every citation against the live journal. Entries kept out
+        // of Friday since the answer are dropped like deleted ones.
+        var droppedKeptOut = false
         let evidence: [EvidenceReference] = stored.citations.compactMap { citation in
             guard let entry = entryProvider(citation.entryID) else { return nil }
+            guard entry.journalAIExclusion.permitsAssistantEvidence else {
+                droppedKeptOut = true
+                return nil
+            }
             let date = entry.date ?? entry.createdAt ?? stored.timestamp
             let mood = entry.value(forKey: "mood") as? String
             return EvidenceReference(
@@ -219,9 +225,16 @@ enum FridayChatHistoryStore {
 
         var limitations = stored.limitations
         if droppedAny {
-            let note = evidence.isEmpty
-                ? String(localized: "The entries behind this answer were deleted.")
-                : String(localized: "Some entries behind this answer were deleted.")
+            let note: String
+            if droppedKeptOut {
+                note = evidence.isEmpty
+                    ? String(localized: "The entries behind this answer are kept out of Friday.")
+                    : String(localized: "Some entries behind this answer are kept out of Friday.")
+            } else {
+                note = evidence.isEmpty
+                    ? String(localized: "The entries behind this answer were deleted.")
+                    : String(localized: "Some entries behind this answer were deleted.")
+            }
             limitations = [limitations, note].compactMap { $0 }.joined(separator: " ")
         }
 

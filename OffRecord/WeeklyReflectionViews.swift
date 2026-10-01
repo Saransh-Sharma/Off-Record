@@ -718,7 +718,7 @@ private struct WeeklyReflectionSourcesSheet: View {
 
     private var availableEntries: [DiaryEntry] {
         sourceEntries.filter { entry in
-            guard entry.id != nil else { return false }
+            guard entry.id != nil, entry.journalAIExclusion.permitsReflection else { return false }
             return report.period.contains(entry.date ?? entry.createdAt ?? .distantPast)
         }
         .sorted { ($0.date ?? .distantPast) < ($1.date ?? .distantPast) }

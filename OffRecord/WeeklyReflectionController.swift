@@ -64,7 +64,7 @@ final class WeeklyReflectionController: ObservableObject {
             return
         }
 
-        prepareReport(entries: snapshots, period: period, hiddenEntryIds: hidden, previousVersion: currentVisibleReport(for: period), now: now)
+        prepareReport(entries: snapshots, period: period, hiddenEntryIds: hidden, previousVersion: currentVisibleReport(for: period), leftOutEntryIds: Self.leftOutEntryIDs(entries), now: now)
     }
 
     func openCurrentReport(entries: [DiaryEntry], now: Date = Date()) -> WeeklyReflectionReport? {
@@ -99,7 +99,27 @@ final class WeeklyReflectionController: ObservableObject {
     func regenerate(report: WeeklyReflectionReport, hiding entryIds: [UUID], entries: [DiaryEntry], now: Date = Date()) {
         let snapshots = entries.compactMap(WeeklyReflectionEntrySnapshot.init(entry:))
         let hidden = Array(Set(entryIds))
-        prepareReport(entries: snapshots, period: report.period, hiddenEntryIds: hidden, previousVersion: report, now: now)
+        prepareReport(entries: snapshots, period: report.period, hiddenEntryIds: hidden, previousVersion: report, leftOutEntryIds: Self.leftOutEntryIDs(entries), now: now)
+    }
+
+    /// Removes quotes from an entry that was just kept out of Friday, in every saved report.
+    func forgetQuotes(fromEntryID entryID: UUID) {
+        var changed = false
+        for reportIndex in reports.indices {
+            for themeIndex in reports[reportIndex].themes.indices {
+                let before = reports[reportIndex].themes[themeIndex].evidenceRefs.count
+                reports[reportIndex].themes[themeIndex].evidenceRefs.removeAll { $0.entryId == entryID }
+                changed = changed || reports[reportIndex].themes[themeIndex].evidenceRefs.count != before
+            }
+        }
+        guard changed else { return }
+        currentReport = Self.currentReport(in: reports)
+        persist()
+    }
+
+    /// Entries the person left out of Weekly Reflection, which no report may mention.
+    private static func leftOutEntryIDs(_ entries: [DiaryEntry]) -> Set<UUID> {
+        Set(entries.filter { !$0.journalAIExclusion.permitsReflection }.compactMap(\.id))
     }
 
     var visibleReports: [WeeklyReflectionReport] {
@@ -113,6 +133,7 @@ final class WeeklyReflectionController: ObservableObject {
         period: WeeklyReflectionPeriod,
         hiddenEntryIds: [UUID],
         previousVersion: WeeklyReflectionReport?,
+        leftOutEntryIds: Set<UUID>,
         now: Date
     ) {
         isPreparing = true
@@ -124,6 +145,7 @@ final class WeeklyReflectionController: ObservableObject {
             entries: entries,
             hiddenEntryIds: hiddenEntryIds,
             previousVersion: previousVersion,
+            leftOutEntryIds: leftOutEntryIds,
             now: now
         )
         reports.append(report)

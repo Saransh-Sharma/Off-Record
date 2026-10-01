@@ -26,8 +26,9 @@ typealias EvidenceBackedFridayAnswer = EvidenceBackedAnswer
 // MARK: - Core Data bridge
 
 extension IndexableEntry {
+    /// Nil for entries without text and for entries kept out of Friday, which are never indexed.
     init?(entry: DiaryEntry) {
-        guard let id = entry.id else { return nil }
+        guard let id = entry.id, entry.journalAIExclusion.permitsSemanticIndexing else { return nil }
         let text = (entry.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty else { return nil }
         self.init(
@@ -250,12 +251,14 @@ final class SemanticMemoryIndexController: ObservableObject {
 
 @MainActor
 enum EvidenceFridayEngine {
-    static func answer(question: String, entries: [DiaryEntry], profileSummary: String? = nil) async -> EvidenceBackedFridayAnswer {
+    static func answer(question: String, entries allEntries: [DiaryEntry], profileSummary: String? = nil) async -> EvidenceBackedFridayAnswer {
         // A question about self-harm gets support copy, never retrieval or quotes.
         if JournalRiskClassifier.responseMode(for: question) == .supportOnly {
             semanticMemoryLogger.notice("Friday answered a high-risk question with support copy.")
             return .supportOnly(persona: .friday)
         }
+        // Entries kept out of Friday are never evidence, even if the index still holds them.
+        let entries = citableEntries(allEntries)
         let isSuggestedQuestion = profileSummary?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty == false
         semanticMemoryLogger.notice(
             "Friday answer requested suggested=\(isSuggestedQuestion.description, privacy: .public) entries=\(entries.count, privacy: .public)"
@@ -322,8 +325,19 @@ enum EvidenceFridayEngine {
                 limitations: nil
             )
         case .ready(let evidence):
-            return await answer(question: question, evidence: evidence, profileSummary: profileSummary)
+            return await answer(question: question, evidence: citableEvidence(evidence, from: entries), profileSummary: profileSummary)
         }
+    }
+
+    /// Entries Friday may search and cite.
+    static func citableEntries(_ entries: [DiaryEntry]) -> [DiaryEntry] {
+        entries.filter { $0.journalAIExclusion.permitsAssistantEvidence }
+    }
+
+    /// Evidence from entries Friday may cite; anything else is dropped.
+    static func citableEvidence(_ evidence: [EvidenceReference], from entries: [DiaryEntry]) -> [EvidenceReference] {
+        let citableIDs = Set(citableEntries(entries).compactMap(\.id))
+        return evidence.filter { citableIDs.contains($0.entryID) }
     }
 
     static func answer(question: String, evidence retrieved: [EvidenceReference], profileSummary: String? = nil) async -> EvidenceBackedFridayAnswer {

@@ -85,17 +85,26 @@ enum WeeklyReflectionGenerationService {
         entries allEntries: [WeeklyReflectionEntrySnapshot],
         hiddenEntryIds: [UUID] = [],
         previousVersion: WeeklyReflectionReport? = nil,
+        leftOutEntryIds: Set<UUID> = [],
         now: Date = Date()
     ) -> WeeklyReflectionReport {
         let hiddenSet = Set(hiddenEntryIds)
         let periodEntries = allEntries
-            .filter { period.contains($0.date) && !hiddenSet.contains($0.id) }
+            .filter { period.contains($0.date) && !hiddenSet.contains($0.id) && $0.aiExclusion.permitsReflection }
             .sorted { $0.date < $1.date }
         let eligibility = WeeklyReflectionEligibilityService.evaluate(entries: periodEntries)
-        let highRiskIDs = Set(periodEntries.filter(WeeklyReflectionSafetyFilter.isHighRisk).map(\.id))
-        let insightEntries = periodEntries.filter { !highRiskIDs.contains($0.id) }
+        // Entries kept out of Friday count toward totals and mood, but are never read, quoted, or themed.
+        let readableEntries = periodEntries.filter { $0.aiExclusion.permitsReflectionQuotes }
+        let privateEntryCount = periodEntries.count - readableEntries.count
+        let highRiskIDs = Set(readableEntries.filter(WeeklyReflectionSafetyFilter.isHighRisk).map(\.id))
+        let insightEntries = readableEntries.filter { !highRiskIDs.contains($0.id) }
+        let arcEntries = periodEntries.filter { entry in
+            guard !highRiskIDs.contains(entry.id) else { return false }
+            return entry.aiExclusion.permitsReflectionQuotes || hasMood(entry)
+        }
+        // Entries left out of Weekly Reflection aren't deleted, so they aren't reported as unavailable.
         let unavailable = previousVersion?.includedEntryIds.filter { id in
-            !allEntries.contains(where: { $0.id == id })
+            !allEntries.contains(where: { $0.id == id }) && !leftOutEntryIds.contains(id)
         } ?? []
 
         if eligibility.kind == .empty {
@@ -115,11 +124,12 @@ enum WeeklyReflectionGenerationService {
                 wins: [],
                 frictions: [],
                 questions: [String(localized: "What’s one small moment worth writing down this week?")],
-                safetyLevel: .none
+                safetyLevel: .none,
+                privateEntryCount: privateEntryCount
             )
         }
 
-        let safetyLevel = WeeklyReflectionSafetyFilter.safetyLevel(for: periodEntries)
+        let safetyLevel = WeeklyReflectionSafetyFilter.safetyLevel(for: readableEntries)
         if safetyLevel == .highRiskExcluded, insightEntries.isEmpty {
             return baseReport(
                 period: period,
@@ -137,20 +147,44 @@ enum WeeklyReflectionGenerationService {
                 wins: [String(localized: "You kept writing through a hard week.")],
                 frictions: [String(localized: "I left the heaviest entries out of this reflection.")],
                 questions: [String(localized: "Who could you lean on this week?"), String(localized: "What’s one small thing that would make next week easier?")],
-                safetyLevel: safetyLevel
+                safetyLevel: safetyLevel,
+                privateEntryCount: privateEntryCount
+            )
+        }
+
+        let entryDays = Set(periodEntries.map { Calendar.current.startOfDay(for: $0.date) }).count
+        let daysWritten = String(AttributedString(localized: "You wrote on ^[\(entryDays) day](inflect: true).").characters)
+        if insightEntries.isEmpty {
+            // Everything readable this week is kept out of Friday: totals and mood only.
+            let arc = makeEmotionalArc(entries: arcEntries)
+            return baseReport(
+                period: period,
+                eligibility: eligibility.kind,
+                status: .ready,
+                entries: periodEntries,
+                hiddenEntryIds: hiddenEntryIds,
+                unavailableEntryIds: unavailable,
+                previousVersion: previousVersion,
+                now: now,
+                heroSentence: String(localized: "A short look back at your week."),
+                summary: summaryText(entries: periodEntries, topics: [], arc: arc, eligibility: eligibility, safetyLevel: .none, privateEntryCount: privateEntryCount),
+                emotionalArc: arc,
+                themes: [],
+                wins: [daysWritten],
+                frictions: [],
+                questions: makeQuestions(topics: [], eligibility: eligibility.kind),
+                safetyLevel: .none,
+                privateEntryCount: privateEntryCount
             )
         }
 
         let topics = topTopics(in: insightEntries, limit: eligibility.kind == .full ? 4 : 2)
         let themes = makeThemes(topics: topics, entries: insightEntries, limit: eligibility.kind == .full ? 4 : 2)
-        let arc = makeEmotionalArc(entries: insightEntries)
-        let entryDays = Set(periodEntries.map { Calendar.current.startOfDay(for: $0.date) }).count
+        let arc = makeEmotionalArc(entries: arcEntries)
         let hero = heroSentence(for: eligibility.kind, topics: topics, arc: arc, safetyLevel: safetyLevel)
-        let summary = summaryText(entries: periodEntries, topics: topics, arc: arc, eligibility: eligibility, safetyLevel: safetyLevel)
+        let summary = summaryText(entries: periodEntries, topics: topics, arc: arc, eligibility: eligibility, safetyLevel: safetyLevel, privateEntryCount: privateEntryCount)
 
-        var wins = [
-            String(AttributedString(localized: "You wrote on ^[\(entryDays) day](inflect: true).").characters)
-        ]
+        var wins = [daysWritten]
         if insightEntries.contains(where: { $0.sentiment > 0.25 }) {
             wins.append(String(localized: "Some entries were upbeat or grateful."))
         }
@@ -188,7 +222,8 @@ enum WeeklyReflectionGenerationService {
             wins: wins,
             frictions: frictions,
             questions: questions,
-            safetyLevel: safetyLevel
+            safetyLevel: safetyLevel,
+            privateEntryCount: privateEntryCount
         )
     }
 
@@ -225,7 +260,8 @@ enum WeeklyReflectionGenerationService {
         wins: [String],
         frictions: [String],
         questions: [String],
-        safetyLevel: WeeklyReflectionSafetyLevel
+        safetyLevel: WeeklyReflectionSafetyLevel,
+        privateEntryCount: Int
     ) -> WeeklyReflectionReport {
         let report = WeeklyReflectionReport(
             id: UUID(),
@@ -239,7 +275,7 @@ enum WeeklyReflectionGenerationService {
             includedEntryIds: entries.map(\.id),
             hiddenEntryIds: hiddenEntryIds,
             unavailableEntryIds: unavailableEntryIds,
-            privateEntryCount: 0,
+            privateEntryCount: privateEntryCount,
             inputSignature: inputSignature(for: entries, hiddenEntryIds: hiddenEntryIds),
             heroSentence: WeeklyReflectionSafetyFilter.sanitized(heroSentence),
             summary: WeeklyReflectionSafetyFilter.sanitized(summary),
@@ -285,8 +321,13 @@ enum WeeklyReflectionGenerationService {
 
     static func inputSignature(for entries: [WeeklyReflectionEntrySnapshot], hiddenEntryIds: [UUID] = []) -> String {
         let entryPart = entries
+            .filter { $0.aiExclusion.permitsReflection }
             .sorted { $0.id.uuidString < $1.id.uuidString }
-            .map { "\($0.id.uuidString):\($0.updatedAt.timeIntervalSinceReferenceDate):\($0.wordCount)" }
+            .map { entry in
+                // Included entries keep their old signature, so existing reports stay current.
+                let exclusion = entry.aiExclusion == .included ? "" : ":\(entry.aiExclusion.rawValue)"
+                return "\(entry.id.uuidString):\(entry.updatedAt.timeIntervalSinceReferenceDate):\(entry.wordCount)\(exclusion)"
+            }
             .joined(separator: "|")
         let hiddenPart = hiddenEntryIds.map(\.uuidString).sorted().joined(separator: "|")
         return "\(entryPart)#hidden:\(hiddenPart)"
@@ -321,7 +362,8 @@ enum WeeklyReflectionGenerationService {
         topics: [String],
         arc: WeeklyReflectionEmotionalArc?,
         eligibility: WeeklyReflectionEligibility,
-        safetyLevel: WeeklyReflectionSafetyLevel
+        safetyLevel: WeeklyReflectionSafetyLevel,
+        privateEntryCount: Int
     ) -> String {
         var parts: [String] = []
         if !topics.isEmpty {
@@ -334,7 +376,16 @@ enum WeeklyReflectionGenerationService {
         if safetyLevel == .highRiskExcluded {
             parts.append(String(localized: "Some entries were heavy, so I’ve kept this brief."))
         }
+        if privateEntryCount > 0 {
+            parts.append(String(AttributedString(localized: "I only counted the ^[\(privateEntryCount) entry](inflect: true) you kept out of Friday.").characters))
+        }
         return parts.joined(separator: " ")
+    }
+
+    /// Whether an entry has a mood that says something about the day.
+    private static func hasMood(_ entry: WeeklyReflectionEntrySnapshot) -> Bool {
+        guard let mood = entry.mood?.trimmingCharacters(in: .whitespacesAndNewlines), !mood.isEmpty else { return false }
+        return mood != Mood.none.rawValue
     }
 
     /// Stored English identifiers; `WeeklyReflectionEmotionalArc.localizedLabel` is the display form.

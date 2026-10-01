@@ -31,3 +31,36 @@ extension DiaryEntry {
         NSPredicate(format: "aiExclusion == nil OR aiExclusion == %@", JournalAIExclusion.included.rawValue)
     }
 }
+
+@MainActor
+enum EntryAIExclusionUpdater {
+    /// Saves the new level, then brings every AI surface in line right away:
+    /// the search index, saved weekly quotes, and Friday's cards. Friday's
+    /// profile relearns on its own after the save.
+    static func setExclusion(
+        _ exclusion: JournalAIExclusion,
+        for entry: DiaryEntry,
+        in context: NSManagedObjectContext
+    ) throws {
+        guard entry.journalAIExclusion != exclusion else { return }
+        entry.journalAIExclusion = exclusion
+        try context.save()
+
+        if exclusion.permitsSemanticIndexing {
+            SemanticMemoryIndexController.shared.upsertEntry(entry)
+        } else {
+            SemanticMemoryIndexController.shared.deleteEntry(id: entry.id)
+        }
+        if !exclusion.permitsReflectionQuotes, let id = entry.id {
+            WeeklyReflectionController.shared.forgetQuotes(fromEntryID: id)
+        }
+
+        let request: NSFetchRequest<DiaryEntry> = DiaryEntry.fetchRequest()
+        request.predicate = DiaryEntry.startedEntryPredicate
+        let started = (try? context.fetch(request)) ?? []
+        WeeklyReflectionController.shared.refreshIfNeeded(entries: started)
+        if FridayAvailability.isEnabled {
+            ProactiveReflectionController.shared.refresh(entries: started)
+        }
+    }
+}

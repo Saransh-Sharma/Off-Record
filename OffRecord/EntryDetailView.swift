@@ -192,6 +192,7 @@ struct EntryDetailView: View {
     @State private var deeperQuestion: String?
     @State private var composerPrompt: String?
     @State private var isDeletingDay = false
+    @AppStorage(FridayAvailability.defaultsKey) private var isFridayEnabled = true
     private let deleteEmptyDraftOnDisappear: Bool
     private let promptContext: String?
     private let heroPromptID: String?
@@ -208,6 +209,8 @@ struct EntryDetailView: View {
     #endif
 
     private var isIPad: Bool { horizontalSizeClass == .regular }
+    /// Go Deeper and entry insights need Friday on and this entry not kept out of her.
+    private var fridayReadsEntry: Bool { isFridayEnabled && entry.journalAIExclusion.permitsAssistantEvidence }
     private var compactMoodPickerBinding: Binding<Bool> {
         Binding(
             get: { showMoodPicker && !isIPad },
@@ -260,11 +263,13 @@ struct EntryDetailView: View {
 
                     journalTimelineView
 
+                    EntryAIExclusionNote(exclusion: entry.journalAIExclusion)
+
                     if !isComposingTextBlock {
                         if !text.isEmpty {
                             switch entryResponseMode {
                             case .normal:
-                                goDeeperCard
+                                if fridayReadsEntry { goDeeperCard }
                             case .gentle:
                                 // Heavy entries get no probing question.
                                 EmptyView()
@@ -275,7 +280,7 @@ struct EntryDetailView: View {
                         addToDaySection
                     }
 
-                    if !text.isEmpty, entryResponseMode != .supportOnly {
+                    if !text.isEmpty, entryResponseMode != .supportOnly, fridayReadsEntry {
                         aiInsightsSection
                     }
                 }
@@ -461,6 +466,7 @@ struct EntryDetailView: View {
                                     Label("Copy Text", systemImage: "doc.on.doc")
                                 }
                             }
+                            EntryAIExclusionMenuItems(entry: entry)
                             Divider()
                             Button(role: .destructive) {
                                 showDeleteDayConfirm = true

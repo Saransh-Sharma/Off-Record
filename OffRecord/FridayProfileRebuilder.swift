@@ -31,9 +31,10 @@ struct FridayLearningInput: Equatable {
 }
 
 extension FridayLearningInput {
-    /// Nil for entries without text and for high-risk entries, which Friday never analyzes.
+    /// Nil for entries without text, entries kept out of Friday, and high-risk
+    /// entries, none of which Friday analyzes.
     init?(entry: DiaryEntry) {
-        guard let id = entry.id else { return nil }
+        guard let id = entry.id, entry.journalAIExclusion.permitsAssistantEvidence else { return nil }
         let text = (entry.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         guard !text.isEmpty, JournalRiskClassifier.level(for: text) != .highRiskExcluded else { return nil }
         self.init(
@@ -174,14 +175,18 @@ final class FridayProfileRebuilder {
         rebuilderLogger.notice("Friday profile rebuilt from \(inputs.count, privacy: .public) entries.")
     }
 
-    nonisolated private static func currentFingerprint(container: NSPersistentContainer) async -> String {
+    nonisolated static func currentFingerprint(container: NSPersistentContainer) async -> String {
         let context = container.newBackgroundContext()
         return await context.perform {
             let request = NSFetchRequest<NSDictionary>(entityName: "DiaryEntry")
             request.predicate = DiaryEntry.startedEntryPredicate
             request.resultType = .dictionaryResultType
-            request.propertiesToFetch = ["id", "updatedAt"]
-            let rows = (try? context.fetch(request)) ?? []
+            request.propertiesToFetch = ["id", "updatedAt", "aiExclusion"]
+            // Entries kept out of Friday aren't learned, so they aren't part of the fingerprint.
+            let rows = ((try? context.fetch(request)) ?? []).filter { row in
+                let raw = row["aiExclusion"] as? String
+                return raw == nil || raw == JournalAIExclusion.included.rawValue
+            }
             let entries: [(id: UUID, updatedAt: Date?)] = rows.compactMap { row in
                 guard let id = row["id"] as? UUID else { return nil }
                 return (id: id, updatedAt: row["updatedAt"] as? Date)

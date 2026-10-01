@@ -127,9 +127,12 @@ final class ProactiveReflectionController: ObservableObject {
     }
 
     /// Proactive cards and Smart Prompts never quote, analyze, or follow up on
-    /// high-risk or hopeless entries, so those never reach the analyzer.
+    /// high-risk or hopeless entries, or on entries kept out of Friday, so those
+    /// never reach the analyzer.
     static func analyzableSnapshots(_ entries: [DiaryEntry]) -> [ReflectionEntrySnapshot] {
-        entries.compactMap(ReflectionEntrySnapshot.init(entry:))
+        entries
+            .filter { $0.journalAIExclusion.permitsAssistantEvidence }
+            .compactMap(ReflectionEntrySnapshot.init(entry:))
             .filter { JournalRiskClassifier.level(for: $0.text) < .moderateConcern }
     }
 
