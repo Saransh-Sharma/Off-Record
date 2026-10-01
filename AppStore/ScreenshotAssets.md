@@ -225,7 +225,7 @@ Apple Watch Quick Capture extends that privacy posture to your wrist: mood, dict
 ---
 
 ## App Store Categories & Similar Apps
-**Primary Category**: Health & Fitness
+**Primary Category**: Lifestyle
 **Secondary Category**: Lifestyle
 
 **Positioning**: Unlike Day One (cloud-based), Journey (social features), or generic journal apps, OffRecord AI Journal is positioned as the **privacy-first AI companion** with Friday. No other diary app offers on-device personality modeling, emotional signature tracking, or a personal knowledge graph.

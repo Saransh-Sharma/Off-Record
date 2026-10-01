@@ -1,7 +1,7 @@
 # OffRecord AI Journal - App Store Metadata
 
 ## App Name
-OffRecord AI Journal - AI Voice Journal
+OffRecord AI Journal
 
 ## Subtitle (30 characters max)
 Private Journal & Mood Tracker
@@ -98,7 +98,7 @@ Your thoughts deserve a home. OffRecord AI Journal is that home.
 diary,journal,voice,mood,private AI,private,speech to text,mindfulness,encrypted,anxiety
 
 ## Category
-Primary: Health & Fitness
+Primary: Lifestyle
 Secondary: Productivity
 
 ## Age Rating

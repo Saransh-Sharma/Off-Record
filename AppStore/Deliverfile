@@ -10,19 +10,19 @@ name({
 })
 
 subtitle({
-  "en-US" => "Your Private AI Assistant"
+  "en-US" => "Private Journal & Mood Tracker"
 })
 
 keywords({
-  "en-US" => "diary,journal,voice,AI,private AI assistant,mood,mindfulness,private,mental health,companion,recording"
+  "en-US" => "diary,journal,voice,mood tracker,private AI assistant,private,speech to text,mindfulness,encrypted,anxiety"
 })
 
 promotional_text({
-  "en-US" => "NEW: Friday is your private AI assistant for journaling. See personality, emotion, and thought patterns evolve locally."
+  "en-US" => "NEW: Apple Watch Quick Capture for mood, dictation, and audio notes. Saved on watch first, synced privately to iPhone."
 })
 
 release_notes({
-  "en-US" => "Welcome to OffRecord AI Journal - your private AI voice diary with Friday.\n\n- Record diary entries with your voice\n- Apple Speech transcription with clear permission\n- Local Friday insights and mood trends\n- Watch Friday evolve as it learns about you\n- Track moods, streaks, and emotional patterns\n- 8 beautiful themes\n- Face ID security\n- Lock Screen & Home Screen widgets\n- Export your journal in multiple formats\n- Privacy-first: no developer AI servers or non-Apple AI services"
+  "en-US" => "New in v1.4:\n\n- Apple Watch Quick Capture: Save Mood, Speak, and Record captures from your wrist.\n- Private Outbox: Watch captures save locally first and retry later if your iPhone is unreachable.\n- Watch Complication and Smart Stack: Open Quick Capture with generic, privacy-safe status only.\n- Better Audio Notes: Multiple watch recordings can attach to the same daily entry.\n- Safer Sync: Duplicate watch deliveries are ignored, and audio imports require the file before a receipt is created.\n- Still private: No analytics, no tracking, and no developer servers for watch captures."
 })
 
 privacy_url "https://saransh-sharma.github.io/Off-Record/privacy.html"
@@ -31,8 +31,8 @@ marketing_url "https://saransh-sharma.github.io/Off-Record/"
 
 copyright "2026 OffRecord AI Journal"
 
-primary_category "HEALTH_AND_FITNESS"
-secondary_category "LIFESTYLE"
+primary_category "LIFESTYLE"
+secondary_category "PRODUCTIVITY"
 
 # Pricing
 price_tier 0  # Free

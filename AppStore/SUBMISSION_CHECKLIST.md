@@ -36,7 +36,7 @@
 - [x] Keywords (under 100 chars)
 - [x] Promotional Text
 - [x] What's New text
-- [x] Category: Health & Fitness / Lifestyle
+- [x] Category: Lifestyle / Productivity
 - [x] Age Rating: 4+
 - [x] Copyright
 - [x] Support URL
@@ -66,7 +66,7 @@
 6. SKU: OFFRECORD-Journal
 
 ### App Information
-1. Category: Health & Fitness
+1. Category: Lifestyle
 2. Secondary Category: Lifestyle
 3. Content Rights: Does not contain third-party content
 4. Age Rating: Configure with `rating_config.json`
