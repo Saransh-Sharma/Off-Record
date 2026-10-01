@@ -38,6 +38,7 @@ struct JournalStore {
     func createJournal(named name: String, iconName: String? = nil, colorName: String? = nil) throws -> Journal {
         let trimmed = Self.normalizedName(name)
         guard !trimmed.isEmpty else { throw JournalOrganizationError.emptyName }
+        let nextSortOrder = (journals(includingArchived: true).map(\.sortOrder).max() ?? -1) + 1
         let journal = Journal(context: context)
         journal.id = UUID()
         journal.name = trimmed
@@ -45,7 +46,7 @@ struct JournalStore {
         journal.colorName = colorName
         journal.createdAt = Date()
         journal.isArchived = false
-        journal.sortOrder = (journals(includingArchived: true).map(\.sortOrder).max() ?? -1) + 1
+        journal.sortOrder = nextSortOrder
         try context.save()
         return journal
     }
