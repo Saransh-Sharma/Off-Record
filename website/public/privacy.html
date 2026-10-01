@@ -32,7 +32,7 @@
   <main class="container">
     <div class="page-header">
       <h1>Privacy Policy</h1>
-      <p class="updated">Last Updated: May 27, 2026</p>
+      <p class="updated">Last Updated: October 1, 2026</p>
     </div>
 
     <div class="page-content">
@@ -42,14 +42,14 @@
       <h2>What Data OffRecord Processes</h2>
       <ul>
         <li><strong>Voice Recordings</strong> - audio files recorded through the app</li>
-        <li><strong>Transcriptions</strong> - text converted from voice recordings using Apple Speech</li>
+        <li><strong>Transcriptions</strong> - text converted from voice recordings on device using Apple SpeechAnalyzer</li>
         <li><strong>Journal Entries</strong> - text you write or dictate</li>
         <li><strong>Mood Data</strong> - mood selections you make for entries</li>
         <li><strong>AI Analysis</strong> - emotional patterns, personality insights, Semantic Memory, and your Friday model</li>
         <li><strong>Weekly Reflections</strong> - private weekly reports, saved takeaways, source choices, and export choices</li>
         <li><strong>Photos</strong> - images you attach to diary entries</li>
         <li><strong>Apple Watch Captures</strong> - quick moods, dictated text, and voice notes saved from your watch</li>
-        <li><strong>Settings</strong> - preferences such as theme, reminders, Weekly Reflection, app lock, iCloud sync, and on-device transcription consent</li>
+        <li><strong>Settings</strong> - preferences such as theme, reminders, Weekly Reflection, app lock, iCloud sync, Apple Health, and on-device transcription consent</li>
       </ul>
 
       <h2>On-Device SpeechAnalyzer Transcription</h2>
@@ -86,6 +86,14 @@
         <li>OffRecord does not send Weekly Reflection reports to developer servers or non-Apple AI services.</li>
       </ul>
 
+      <h2>Optional Apple Health</h2>
+      <p>If you turn on Save Moods to Health in Settings, OffRecord saves the moods you choose to Apple Health as State of Mind samples.</p>
+      <ul>
+        <li>Only the mood and the time are saved. Journal text, transcripts, photos, and recordings are never written to Health.</li>
+        <li>OffRecord asks for permission to write State of Mind data only. It never reads any Health data.</li>
+        <li>Apple Health is off by default. You can turn it off in Settings or manage access in the Health app.</li>
+      </ul>
+
       <h2>Optional iCloud Sync</h2>
       <p>If iCloud Sync is enabled, entries and attached photos sync through your personal Apple iCloud account using Apple's CloudKit infrastructure.</p>
       <ul>
@@ -113,7 +121,7 @@
         <li><strong>Semantic Memory</strong> - on-device search index and embeddings derived from journal entries</li>
         <li><strong>Foundation Models Friday Responder</strong> - optional on-device Apple Foundation Models phrasing layer on supported systems</li>
       </ul>
-      <p>Voice transcription is separate from these journal analysis features and may use Apple Speech as described above.</p>
+      <p>Voice transcription is separate from these journal analysis features and runs on device with Apple SpeechAnalyzer as described above.</p>
 
       <h2>Permissions We Request</h2>
       <table>
@@ -122,12 +130,13 @@
         </thead>
         <tbody>
           <tr><td>Microphone</td><td>Record voice diary entries</td><td>Only while recording</td></tr>
-          <tr><td>Speech Recognition</td><td>Transcribe voice to text with Apple Speech</td><td>Only after consent</td></tr>
           <tr><td>Face ID / Touch ID</td><td>Lock the app for privacy</td><td>When app lock is enabled</td></tr>
           <tr><td>Notifications</td><td>Daily journal reminders and Weekly Reflection reminders</td><td>If you enable reminders</td></tr>
           <tr><td>Photo Library</td><td>Attach photos to entries</td><td>When using the photo picker</td></tr>
+          <tr><td>Apple Health (write only)</td><td>Save the moods you choose as State of Mind</td><td>If you turn on Save Moods to Health</td></tr>
         </tbody>
       </table>
+      <p>On-device transcription with SpeechAnalyzer does not need the separate Speech Recognition permission; it uses microphone access only.</p>
 
       <h2>Photo Storage</h2>
       <p>Photos are stored in the app's sandboxed data store, may sync through your personal iCloud account if iCloud Sync is enabled, and are not uploaded to developer servers.</p>
@@ -143,7 +152,7 @@
       </ul>
 
       <h2>Third-Party Services</h2>
-      <p>OffRecord uses Apple Speech, Apple NaturalLanguage, Apple Foundation Models on supported systems, Apple CloudKit for optional iCloud Sync, and Apple WidgetKit. We do not integrate non-Apple third-party SDKs, analytics tools, advertising networks, or third-party AI APIs.</p>
+      <p>OffRecord uses Apple SpeechAnalyzer for on-device transcription, Apple NaturalLanguage, Apple Foundation Models on supported systems, Apple CloudKit for optional iCloud Sync, Apple HealthKit for optional write-only mood samples, and Apple WidgetKit. We do not integrate non-Apple third-party SDKs, analytics tools, advertising networks, or third-party AI APIs.</p>
 
       <h2>App Store Privacy Labels</h2>
       <ul>

@@ -1,6 +1,6 @@
 # OffRecord AI Journal Privacy Policy
 
-**Last Updated: July 28, 2026**
+**Last Updated: October 1, 2026**
 
 ## Our Promise
 
@@ -19,7 +19,7 @@ OffRecord AI Journal processes the following data to provide journaling features
 - **Weekly Reflection Data**: Local weekly reports, report status, saved takeaways, evidence references, source visibility choices, and export preferences
 - **Photos**: Images you attach to diary entries
 - **Apple Watch Captures**: Mood, dictated text, audio manifests, audio files, transfer status, and receipts created by the watchOS companion
-- **Settings**: Preferences such as theme, reminders, Weekly Reflection settings, app lock, iCloud sync, and on-device transcription consent
+- **Settings**: Preferences such as theme, reminders, Weekly Reflection settings, app lock, iCloud sync, Apple Health, and on-device transcription consent
 
 ## On-Device SpeechAnalyzer Transcription
 
@@ -66,6 +66,15 @@ If Weekly Reflection is enabled, OffRecord prepares local weekly reports from st
 - Weekly Reflection exports keep source quotes off by default.
 - Weekly Reflection notifications use static copy and do not include journal text, names, snippets, themes, summaries, or quotes.
 
+### Optional Apple Health
+
+If you turn on Save Moods to Health in Settings, OffRecord saves the moods you choose to Apple Health as State of Mind samples:
+
+- Only the mood and the time are saved. Journal text, transcripts, photos, and recordings are never written to Health.
+- OffRecord asks for permission to write State of Mind data only. It never reads any Health data.
+- Apple Health is off by default. You can turn it off in Settings or manage access in the Health app.
+- Health data you choose to save is stored and protected by Apple Health, not by developer servers.
+
 ### Optional iCloud Sync
 
 If iCloud Sync is enabled, entries and attached photos sync through your personal Apple iCloud account using Apple's CloudKit infrastructure:
@@ -96,19 +105,19 @@ OffRecord's journal intelligence is designed to stay local:
 - **Semantic Memory**: On-device search index and embeddings derived from your journal entries. This index is not synced to iCloud and can be rebuilt or deleted from Settings.
 - **Foundation Models Friday Responder**: Optional on-device Apple Foundation Models phrasing layer on supported systems
 
-Voice transcription is separate from these journal analysis features and may use Apple Speech as described above.
+Voice transcription is separate from these journal analysis features and runs on device with Apple SpeechAnalyzer as described above.
 
 ## Permissions We Request
 
 | Permission | Why We Need It | When It's Used |
 |-----------|---------------|----------------|
 | Microphone | To record voice diary entries | Only while actively recording |
-| Speech Recognition | To transcribe voice to text with Apple Speech | Only when processing a recording or voice search after consent |
 | Face ID / Touch ID | To lock the app for privacy | Only when app lock is enabled |
 | Notifications | To send daily journal reminders and Weekly Reflection reminders | Only if you enable reminders |
 | Photo Library | To attach photos to diary entries | Only when you use the photo picker |
+| Apple Health (write only) | To save the moods you choose as State of Mind | Only if you turn on Save Moods to Health |
 
-All permissions are optional. The app functions without them in text-only mode.
+All permissions are optional. The app functions without them in text-only mode. On-device transcription with SpeechAnalyzer does not need the separate Speech Recognition permission; it uses microphone access only.
 
 ## Photo Storage
 
@@ -142,6 +151,7 @@ OffRecord AI Journal uses the following Apple services and frameworks:
 - Apple NaturalLanguage Framework for local NLP
 - Apple Foundation Models on supported systems for local Friday phrasing
 - Apple CloudKit for optional iCloud Sync
+- Apple HealthKit for optional, write-only State of Mind mood samples
 - Apple WidgetKit for Home Screen widgets
 - Apple WatchConnectivity for Apple Watch Quick Capture sync
 - Apple WidgetKit complications and Smart Stack widgets for privacy-safe watch entry points
@@ -182,4 +192,4 @@ If you have questions about this privacy policy:
 
 ## Summary
 
-OffRecord AI Journal keeps private journaling local by default, uses Apple Speech only with permission for transcription, transfers Apple Watch captures through Apple WatchConnectivity, optionally syncs entries and photos through your personal iCloud, and does not send your journal to developer servers or non-Apple AI services.
+OffRecord AI Journal keeps private journaling local by default, transcribes recordings on device with Apple SpeechAnalyzer, optionally saves moods (never journal text) to Apple Health, transfers Apple Watch captures through Apple WatchConnectivity, optionally syncs entries and photos through your personal iCloud, and does not send your journal to developer servers or non-Apple AI services.
