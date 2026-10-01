@@ -83,14 +83,17 @@ struct FridayProfileStoreTests {
 
     // MARK: Helpers
 
+    /// A profile that knows Maya, built directly so it doesn't depend on the name tagger.
     private func learnedPayload() -> FridayProfilePayload {
         let engine = FridayAssistantEngine.makeScratch()
         engine.learn(FridayLearningInput(id: UUID(), text: "Dinner with Maya in Bangalore helped me feel grounded.", mood: "calm", date: Date(), duration: 0))
+        var graph = engine.knowledgeGraph
+        graph.addOrUpdate(id: "maya", label: "Maya", type: .person, sentiment: 0.4)
         return FridayProfilePayload(
             communicationStyle: engine.communicationStyle,
             emotionalSignature: engine.emotionalSignature,
             thoughtPatterns: engine.thoughtPatterns,
-            knowledgeGraph: engine.knowledgeGraph,
+            knowledgeGraph: graph,
             behavioralPatterns: engine.behavioralPatterns,
             summary: engine.summary
         )

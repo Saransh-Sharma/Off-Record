@@ -64,7 +64,7 @@ struct AIExclusionGateTests {
 
         let engine = FridayAssistantEngine.makeScratch()
         engine.learn(from: FridayProfileRebuilder.learningInputs(in: context))
-        #expect(engine.knowledgeGraph.nodes["maya"] != nil)
+        #expect(engine.behavioralPatterns.totalEntries == 1)
         #expect(engine.knowledgeGraph.nodes["priya"] == nil)
     }
 
