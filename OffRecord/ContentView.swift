@@ -17,9 +17,15 @@ struct ContentView: View {
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @ObservedObject private var navigationRouter = OffRecordNavigationRouter.shared
     @ObservedObject private var capture = CaptureController.shared
+    /// Bumped by Erase All Data so every tab starts fresh, with no deleted entries on screen.
+    @State private var eraseGeneration = 0
 
     var body: some View {
         tabs
+            .id(eraseGeneration)
+            .onReceive(NotificationCenter.default.publisher(for: .offRecordDidEraseAllData)) { _ in
+                eraseGeneration += 1
+            }
             .tabViewStyle(.sidebarAdaptable)
             .tabBarMinimizeBehavior(.onScrollDown)
             .captureAccessory(isHidden: navigationRouter.hidesCaptureAccessory) {

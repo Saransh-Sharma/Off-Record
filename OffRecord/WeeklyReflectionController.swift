@@ -117,6 +117,14 @@ final class WeeklyReflectionController: ObservableObject {
         persist()
     }
 
+    /// Clears every report but keeps the settings. Erase All Data calls this before deleting rows.
+    func resetAfterErase() {
+        reports = []
+        currentReport = nil
+        isPreparing = false
+        persist()
+    }
+
     /// Entries the person left out of Weekly Reflection, which no report may mention.
     private static func leftOutEntryIDs(_ entries: [DiaryEntry]) -> Set<UUID> {
         Set(entries.filter { !$0.journalAIExclusion.permitsReflection }.compactMap(\.id))

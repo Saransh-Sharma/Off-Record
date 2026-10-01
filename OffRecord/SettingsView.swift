@@ -135,7 +135,8 @@ struct SettingsView: View {
                             .init(id: "export", keywords: "export pdf print", view: AnyView(exportSection)),
                             .init(id: "backup", keywords: "backup encrypted json markdown csv import restore", view: AnyView(backupSection)),
                             .init(id: "icloud", keywords: "icloud sync cloud devices", view: AnyView(iCloudSection)),
-                            .init(id: "storage", keywords: "storage space audio photos delete", view: AnyView(storageSection))
+                            .init(id: "storage", keywords: "storage space audio photos delete", view: AnyView(storageSection)),
+                            .init(id: "erase", keywords: EraseAllDataSettingsSection.searchKeywords, view: AnyView(EraseAllDataSettingsSection()))
                         ]
                     )
 
@@ -278,7 +279,7 @@ struct SettingsView: View {
             "siri spotlight system search shortcuts", "export pdf print", "backup encrypted json markdown csv import restore",
             "icloud sync cloud devices", "storage space audio photos delete", "theme appearance dark light color accent",
             "privacy policy data not collected", "about version support",
-            FridaySettingsSection.searchKeywords
+            FridaySettingsSection.searchKeywords, EraseAllDataSettingsSection.searchKeywords
         ]
     }
 
