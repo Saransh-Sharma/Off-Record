@@ -270,7 +270,7 @@ OffRecord AI Journal is one of very few journal apps that truly collects zero da
 ## 8. Frequently Asked Questions
 
 **Q: Does OffRecord AI Journal work offline?**
-A: Yes. OffRecord AI Journal works 100% offline. Voice recording, transcription, AI insights, and your Friday all run on-device without any internet connection.
+A: Yes. Voice recording, transcription, AI insights, and your Friday all run on-device without an internet connection. iOS may download Apple's on-device speech model once before the first transcription.
 
 **Q: Is OffRecord AI Journal really free?**
 A: Yes. OffRecord AI Journal is completely free with no in-app purchases, no subscriptions, and no ads. There is no premium tier.
@@ -319,8 +319,7 @@ A: Anyone who wants to journal by voice, wants AI-powered insights about their e
 ## 9. App Store Metadata
 
 - **App Name**: OffRecord AI Journal
-- **Subtitle**: Private AI Voice Diary
-- **Category**: Health & Fitness
+- **Category**: Lifestyle
 - **App Store ID**: 6766499684
 - **App Store URL**: https://apps.apple.com/app/id6766499684
 - **Price**: Free
