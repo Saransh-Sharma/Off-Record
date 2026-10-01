@@ -25,6 +25,7 @@ GLOBS = ["AppStore/*.md", "AppStore/metadata.json", "AppStore/Deliverfile", "web
 RULES = [
     ("App Store ID of a different app (DailyVox)", re.compile(r"id6760454642")),
     ("placeholder domain", re.compile(r"offrecord\.example\.com")),
+    ("previous developer's contact (credit Saransh Sharma)", re.compile(r"intrepidkarthi|Karthikeyan NG")),
     ("retired product name", re.compile(r"DAILYVOX|DailyVox|AI Voice Diary")),
     ("Speech Recognition permission (SpeechAnalyzer needs microphone only)",
      re.compile(r"<td>Speech Recognition</td>|\|\s*Speech Recognition\s*\|")),
