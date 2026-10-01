@@ -6,7 +6,6 @@ import os.log
 
 private let intentLogger = Logger(subsystem: "com.singularity.offrecord", category: "AppIntents")
 
-@available(iOS 17.0, *)
 private struct JournalIntentPersistenceError: LocalizedError {
     let action: String
     let message: String
@@ -25,14 +24,12 @@ private struct JournalIntentPersistenceError: LocalizedError {
     }
 }
 
-@available(iOS 17.0, *)
 extension JournalMoodIntentValue {
     var mood: Mood {
         Mood(rawValue: rawValue) ?? .none
     }
 }
 
-@available(iOS 17.0, *)
 enum JournalStarState: String, AppEnum {
     case starred
     case unstarred
@@ -46,7 +43,6 @@ enum JournalStarState: String, AppEnum {
     var boolValue: Bool { self == .starred }
 }
 
-@available(iOS 17.0, *)
 struct JournalEntryEntity: AppEntity, IndexedEntity {
     var id: UUID
 
@@ -129,7 +125,6 @@ struct JournalEntryEntity: AppEntity, IndexedEntity {
     }()
 }
 
-@available(iOS 17.0, *)
 struct JournalEntryQuery: EntityQuery, EntityStringQuery {
     func entities(for identifiers: [JournalEntryEntity.ID]) async throws -> [JournalEntryEntity] {
         await DiaryEntryIntentStore.entities(for: identifiers)
@@ -144,7 +139,6 @@ struct JournalEntryQuery: EntityQuery, EntityStringQuery {
     }
 }
 
-@available(iOS 17.0, *)
 struct WriteJournalEntryIntent: AppIntent {
     static var title: LocalizedStringResource = "Write in Journal"
     static var description = IntentDescription("Adds text to today’s entry.")
@@ -172,7 +166,6 @@ struct WriteJournalEntryIntent: AppIntent {
     }
 }
 
-@available(iOS 17.0, *)
 struct OpenTodayIntent: AppIntent {
     static var title: LocalizedStringResource = "Open Today"
     static var description = IntentDescription("Opens Today.")
@@ -185,7 +178,6 @@ struct OpenTodayIntent: AppIntent {
     }
 }
 
-@available(iOS 17.0, *)
 struct SearchJournalIntent: AppIntent {
     static var title: LocalizedStringResource = "Search Journal"
     static var description = IntentDescription("Searches your journal.")
@@ -206,7 +198,6 @@ struct SearchJournalIntent: AppIntent {
     }
 }
 
-@available(iOS 17.0, *)
 struct OpenJournalEntryIntent: AppIntent {
     static var title: LocalizedStringResource = "Open Journal Entry"
     static var description = IntentDescription("Opens an entry.")
@@ -226,7 +217,6 @@ struct OpenJournalEntryIntent: AppIntent {
     }
 }
 
-@available(iOS 17.0, *)
 struct SetTodayMoodIntent: AppIntent {
     static var title: LocalizedStringResource = "Set Today’s Mood"
     static var description = IntentDescription("Sets today’s mood.")
@@ -249,7 +239,6 @@ struct SetTodayMoodIntent: AppIntent {
     }
 }
 
-@available(iOS 17.0, *)
 struct StarJournalEntryIntent: AppIntent {
     static var title: LocalizedStringResource = "Star Journal Entry"
     static var description = IntentDescription("Stars or unstars an entry.")
@@ -281,7 +270,6 @@ struct StarJournalEntryIntent: AppIntent {
     }
 }
 
-@available(iOS 17.0, *)
 struct OpenFridayIntent: AppIntent {
     static var title: LocalizedStringResource = "Open Friday"
     static var description = IntentDescription("Opens Friday.")
@@ -294,7 +282,6 @@ struct OpenFridayIntent: AppIntent {
     }
 }
 
-@available(iOS 17.0, *)
 struct AskFridayIntent: AppIntent {
     static var title: LocalizedStringResource = "Ask Friday"
     static var description = IntentDescription("Asks Friday about your journal.")
@@ -315,7 +302,6 @@ struct AskFridayIntent: AppIntent {
     }
 }
 
-@available(iOS 17.0, *)
 struct OffRecordShortcuts: AppShortcutsProvider {
     static var shortcutTileColor: ShortcutTileColor = .purple
 
@@ -374,7 +360,6 @@ struct OffRecordShortcuts: AppShortcutsProvider {
     }
 }
 
-@available(iOS 17.0, *)
 enum DiaryEntryIntentStore {
     @MainActor
     static func entities(for identifiers: [UUID]) -> [JournalEntryEntity] {

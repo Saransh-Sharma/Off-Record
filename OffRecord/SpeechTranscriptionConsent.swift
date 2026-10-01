@@ -25,10 +25,8 @@ enum SpeechTranscriptionConsent {
     static func revokeAppleSpeechProcessing() {
         UserDefaults.standard.set(false, forKey: appleSpeechProcessingKey)
         #if os(iOS)
-        if #available(iOS 26.0, *) {
-            Task {
-                await TranscriptionAssetManager.shared.releaseReservedModels()
-            }
+        Task {
+            await TranscriptionAssetManager.shared.releaseReservedModels()
         }
         #endif
     }

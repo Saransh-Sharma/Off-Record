@@ -12,7 +12,6 @@
 import AppIntents
 import Foundation
 
-@available(iOS 17.0, *)
 enum JournalMoodIntentValue: String, AppEnum {
     case happy
     case calm
@@ -38,7 +37,6 @@ enum JournalMoodIntentValue: String, AppEnum {
 
 /// Opens OffRecord and starts a voice capture on whichever tab is showing.
 /// Used by Siri, App Shortcuts, the Quick Record widget, and the Control Center control.
-@available(iOS 17.0, *)
 struct RecordJournalIntent: AppIntent {
     static var title: LocalizedStringResource = "Record Entry"
     static var description = IntentDescription("Starts a recording in OffRecord.")
@@ -56,7 +54,6 @@ struct RecordJournalIntent: AppIntent {
 /// Saves a mood on today's entry from the interactive Mood widget.
 /// Conforming to `LiveActivityIntent` makes the system run `perform()` in the
 /// app's process, where the journal store lives, without bringing the app forward.
-@available(iOS 17.0, *)
 struct LogMoodIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Log Mood"
     static var description = IntentDescription("Sets today’s mood.")
@@ -81,7 +78,6 @@ struct LogMoodIntent: LiveActivityIntent {
 }
 
 /// Stops the current capture and saves it. Shown on the capture Live Activity.
-@available(iOS 17.0, *)
 struct StopCaptureIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Stop Recording"
     static var description = IntentDescription("Stops and saves the recording.")
@@ -96,7 +92,6 @@ struct StopCaptureIntent: LiveActivityIntent {
 }
 
 /// Pauses or resumes the current capture. Shown on the capture Live Activity.
-@available(iOS 17.0, *)
 struct ToggleCapturePauseIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Pause or Resume Recording"
     static var description = IntentDescription("Pauses or resumes the recording.")
