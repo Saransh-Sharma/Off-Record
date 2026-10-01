@@ -108,6 +108,8 @@ Core iPhone source files are in `OffRecord/`. Shared watch/iPhone capture models
 | **LocalAIEngine** | `LocalAIEngine.swift` | NLP analysis using NaturalLanguage framework. Sentiment analysis, topic extraction, intent recognition. Maintains a UserProfile for learned patterns. |
 | **InsightsEngine** | `InsightsEngine.swift` | Generates insight cards from journal data. Sentiment trends, topic frequency, journaling patterns. |
 | **FridayAssistantEngine** | `FridayAssistantEngine.swift` | Core personality model with four sub-models (see below). Processes NLTagger output per entry. Serializes to JSON in Core Data (~12 KB). |
+| **FridayProfileRebuilder** | `FridayProfileRebuilder.swift` | Treats Friday's profile as derived data. After any journal store save it compares a fingerprint of started entry IDs and edit times. On a change, it relearns the profile from every entry in a scratch engine and swaps it in. High-risk entries are skipped. |
+| **Safety** | `JournalKit/Sources/JournalFoundation/JournalRiskClassifier.swift`, `GetSupportView.swift` | Every AI surface classifies text and follows `SensitiveDomainPolicy`. Support-only content is never analyzed or quoted; it gets Friday's support line and the Get Support sheet. |
 | **Semantic Memory** | `SemanticMemory.swift` | Local-only chunking, embeddings, hybrid search, index lifecycle, and evidence references. |
 | **Weekly Reflection** | `WeeklyReflectionModels.swift`, `WeeklyReflectionServices.swift`, `WeeklyReflectionController.swift` | Local weekly eligibility, deterministic report generation, safety filtering, AIState persistence, report versioning, export, and local notification scheduling. |
 | **Foundation Models Friday** | `FoundationModelsFridayResponder.swift` | Optional iOS 26 phrasing layer that validates observations against retrieved evidence. |
@@ -218,6 +220,8 @@ System-facing metadata must never include raw journal text, transcript snippets,
 - **Watch privacy** — Watch complications, Smart Stack widgets, notifications, and Recent with previews disabled must not expose journal text, transcript snippets, or audio filenames
 - **Watch import integrity** — Audio watch captures require file delivery before receipt creation; replayed transfers must be idempotent by `captureID`
 - **Evidence-first Friday** — Substantive Friday claims must cite retrieved `EvidenceReference` values or hedge/refuse
+- **Safety gate** — Questions, evidence, Go Deeper, proactive input, weekly reports, and Friday learning all pass `JournalRiskClassifier`. High-risk text is never analyzed, quoted, or asked about.
+- **Derived Friday profile** — The profile is rebuilt from entries when the journal changes and can be rebuilt from Settings; it is never edited in place
 - **Optional Foundation Models** — Availability-gated phrasing only; retrieved journal evidence remains the source of truth
 - **Privacy label** — Apple "Data Not Collected"
 

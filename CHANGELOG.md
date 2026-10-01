@@ -15,6 +15,21 @@ All notable changes to OffRecord AI Journal are documented here.
 - **Settings**: a Privacy card, settings search, and an optional Apple Health State of Mind toggle.
 - **Dark mode** across the app; "System" appearance follows the device.
 
+### Safety
+- **One safety check for every AI surface.** Friday chat, Go Deeper, proactive cards, Smart Prompts, Weekly Reflection, and Friday's profile check text with `JournalRiskClassifier` (JournalKit). It catches direct and indirect references to suicide or self-harm.
+- **Support instead of analysis.** High-risk questions and entries get one supportive line from Friday and a **Get Support** sheet. Friday never retrieves, quotes, or asks about them.
+- **Get Support sheet.** It shows the region's crisis line (US, Canada, UK, Ireland, Australia, New Zealand, India) with Call and Text, the emergency number, Message Someone You Trust, and Find a Helpline. It works offline.
+- **Fewer probing questions on heavy entries.** Hopeless or heavy entries get no Go Deeper question, no follow-up chips, and no proactive cards.
+- **Friday is labeled as an AI.** The chat header reads "AI · On-device", and onboarding adds "Friday is AI".
+- **Safety page.** The website explains how OffRecord handles self-harm content.
+
+### Fixed
+- **Friday's profile is now rebuilt from your entries** whenever the journal changes:
+  - Edits, deletes, imports, Apple Watch captures, and Siri entries now count once.
+  - What Friday learned from a deleted entry is gone.
+  - It counts entries rather than saves.
+  - Settings adds **Rebuild Friday**.
+
 ### Changed
 - **Copy**: every screen, widget, watch face, Siri phrase, and export is rewritten to one standard (see the Voice section of `OffRecord Design.md`): shorter, plain words, one name per thing, privacy stated once where it matters, and Friday speaking in first person. `scripts/copy-lint.sh` checks the mechanical rules.
 - Today has a shorter hero with Record, Write, and another prompt, one contextual card (including On This Day), and a calmer streak strip.
