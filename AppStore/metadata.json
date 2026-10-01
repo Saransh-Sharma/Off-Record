@@ -16,8 +16,8 @@
       "name": "OffRecord AI Journal",
       "subtitle": "Private Journal & Mood Tracker",
       "keywords": "diary,journal,voice,mood tracker,private AI assistant,private,speech to text,mindfulness,encrypted,anxiety",
-      "promotional_text": "NEW: Friday now predicts your mood, topics, and best journaling times. Journal analysis stays on your iPhone.",
-      "whats_new": "New in v1.1:\n\n- Friday Predictions: Friday now predicts your likely mood, topics, and best journaling times based on your patterns\n- Shareable Personality Card: Share a beautiful snapshot of your Friday profile\n- Weekly Insight Cards: Shareable visual summaries of your weekly emotional journey\n- Improved NLP: Better keyword extraction with refined text processing\n- Privacy-first: Friday analysis runs locally; Apple Speech transcription is disclosed and permission-based"
+      "promotional_text": "NEW: Apple Watch Quick Capture for mood, dictation, and audio notes. Saved on watch first, synced privately to iPhone.",
+      "whats_new": "New in v1.4:\n\n- Apple Watch Quick Capture: Save Mood, Speak, and Record captures from your wrist.\n- Private Outbox: Watch captures save locally first and retry later if your iPhone is unreachable.\n- Watch Complication and Smart Stack: Open Quick Capture with generic, privacy-safe status only.\n- Better Audio Notes: Multiple watch recordings can attach to the same daily entry.\n- Safer Sync: Duplicate watch deliveries are ignored, and audio imports require the file before a receipt is created.\n- Still private: No analytics, no tracking, and no developer servers for watch captures."
     }
   },
   "app_privacy": {
@@ -33,7 +33,7 @@
   },
   "review_information": {
     "demo_account_required": false,
-    "notes_for_reviewer": "OffRecord AI Journal is a privacy-first voice diary app. It does not integrate OpenAI, Anthropic, Gemini, analytics SDKs, advertising SDKs, or non-Apple third-party AI services. Voice transcription uses Apple's iOS 26 SpeechAnalyzer framework with SpeechTranscriber and DictationTranscriber. Before transcription begins, the app shows a neutral on-device processing disclosure with a Continue button. Recognition runs entirely on-device; iOS may download a language model from Apple when needed. Unsupported languages preserve the recording and never fall back to server recognition. Friday insights, mood analysis, Semantic Memory, and journal analysis run locally using Apple NaturalLanguage/Foundation Models where available. Optional iCloud Sync uses the user's personal Apple iCloud account for entries/photos; audio recordings stay on the recording device. The app requires microphone access for voice recording and optionally Photo Library access for attaching photos to entries. Encrypted backups use CryptoKit (AES-256-GCM)."
+    "notes_for_reviewer": "OffRecord AI Journal is a privacy-first voice diary app. It does not integrate OpenAI, Anthropic, Gemini, analytics SDKs, advertising SDKs, or non-Apple third-party AI services. Voice transcription uses Apple's iOS 26 SpeechAnalyzer framework with SpeechTranscriber and DictationTranscriber. Before transcription begins, the app shows a neutral on-device processing disclosure with a Continue button. Recognition runs entirely on-device; iOS may download a language model from Apple when needed. Unsupported languages preserve the recording and never fall back to server recognition. Friday insights, mood analysis, Semantic Memory, and journal analysis run locally using Apple NaturalLanguage/Foundation Models where available. Optional iCloud Sync uses the user's personal Apple iCloud account for entries/photos; audio recordings stay on the recording device. The app requires microphone access for voice recording and optionally Photo Library access for attaching photos to entries. Encrypted backups use CryptoKit (AES-256-GCM). Apple Health is optional and off by default: when the user turns on Save Moods to Health, the app writes only State of Mind mood samples (mood and time) and requests no read access. The audio background mode keeps an in-progress recording running when the user leaves the app, so the recording Live Activity's Pause and Stop controls keep working; the app does not play or record audio in the background otherwise. The Apple Watch companion transfers captures to the paired iPhone with WatchConnectivity."
   },
   "screenshots": {
     "iphone_67": {
@@ -43,7 +43,7 @@
         "Voice Journal — Just Talk, We Transcribe",
         "Your AI Friday Learns Your Patterns",
         "Automatic Mood Tracking from Your Words",
-        "9 Emotions Tracked. Zero Manual Input.",
+        "8 Moods Tracked. Zero Manual Input.",
         "Search Across All Your Entries Instantly",
         "100% On-Device. Your Diary Never Leaves Your Phone.",
         "8 Themes. Face ID Lock. Encrypted Backups.",

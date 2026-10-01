@@ -25,10 +25,8 @@
 - [ ] No rounded corners (iOS applies them automatically)
 
 ### Screenshots (Required)
-- [ ] iPhone 6.7" display (1290 x 2796) - at least 3 screenshots
-- [ ] iPhone 6.5" display (1284 x 2778) - at least 3 screenshots
-- [ ] iPhone 5.5" display (1242 x 2208) - at least 3 screenshots
-- [ ] iPad 12.9" display (2048 x 2732) - if supporting iPad
+- [ ] iPhone 6.9" display (1320 x 2868) - at least 3 screenshots (`AppStore/screenshots/iPhone_69/`)
+- [ ] iPad 13" display (2064 x 2752) - required because the app supports iPad (`AppStore/screenshots/iPad_13/`)
 - See `ScreenshotAssets.md` for caption text and layout guide
 
 ### Metadata (Ready in AppStoreMetadata.md)
@@ -80,7 +78,7 @@
 ### App Privacy
 1. Data Collection: "No, we do not collect data from this app"
 2. No data types to declare for developer collection
-3. Review notes explain Apple Speech transcription, optional iCloud Sync, and Apple Watch Quick Capture via WatchConnectivity
+3. Review notes explain on-device SpeechAnalyzer transcription, optional iCloud Sync, optional write-only Apple Health moods, the `audio` background mode (recording Live Activity controls), and Apple Watch Quick Capture via WatchConnectivity
 
 ### Version Information
 1. Upload screenshots for each device size

@@ -87,7 +87,7 @@ class ScreenshotTests: XCTestCase {
     }
 
     // MARK: - Screenshot 4: Friday Emotions
-    // Caption: "9 Emotions Tracked. Zero Manual Input."
+    // Caption: "8 Moods Tracked. Zero Manual Input."
     func test04_FridayEmotions() throws {
         navigateToTab("Friday")
         sleep(1)

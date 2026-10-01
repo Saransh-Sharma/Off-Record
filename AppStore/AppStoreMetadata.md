@@ -81,6 +81,7 @@ SECURITY & PRIVACY
 - Watch captures save locally first and sync to iPhone with Apple WatchConnectivity
 - Watch complications and Smart Stack widgets do not show journal text
 - Optional iCloud sync (encrypted with your Apple ID)
+- Optional Apple Health: saves only the moods you choose, never journal text
 - No accounts required
 - No tracking, no analytics, no ads
 - No developer AI servers or non-Apple third-party AI services
