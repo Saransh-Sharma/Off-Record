@@ -171,7 +171,7 @@ struct WeeklyReflectionHistorySection: View {
     private var reports: [WeeklyReflectionReport] { Array(controller.visibleReports.prefix(7)) }
 
     private var currentWeekReport: WeeklyReflectionReport? {
-        reports.first { $0.period.contains(Date()) }
+        reports.first { $0.period.contains(AppClock.now) }
     }
 
     private var earlierReports: [WeeklyReflectionReport] {
@@ -913,8 +913,9 @@ private struct WeeklyReflectionExportSheet: View {
 private func dateRange(_ report: WeeklyReflectionReport) -> String {
     let end = max(report.periodEnd, report.periodStart)
     let range = report.periodStart..<end
-    let isThisYear = Calendar.current.isDate(report.periodStart, equalTo: Date(), toGranularity: .year)
-        && Calendar.current.isDate(end, equalTo: Date(), toGranularity: .year)
+    let now = AppClock.now
+    let isThisYear = Calendar.current.isDate(report.periodStart, equalTo: now, toGranularity: .year)
+        && Calendar.current.isDate(end, equalTo: now, toGranularity: .year)
     return isThisYear
         ? range.formatted(.interval.month(.abbreviated).day())
         : range.formatted(.interval.month(.abbreviated).day().year())

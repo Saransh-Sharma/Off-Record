@@ -97,7 +97,7 @@ struct UITestDataSeeder {
 
     private static func insertEntry(daysAgo: Int, text: String, context: NSManagedObjectContext) {
         let calendar = Calendar.current
-        let now = Date()
+        let now = AppClock.now
         let date = calendar.date(byAdding: .day, value: -daysAgo, to: now) ?? now
         let entry = DiaryEntry(context: context)
         entry.id = UUID()
@@ -230,8 +230,10 @@ struct UITestDataSeeder {
             ]
         }
 
-        for item in entries {
-            insertEntry(daysAgo: item.daysAgo, text: item.text, mood: item.mood, starred: false, context: context)
+        // Fixtures go on distinct days inside the week under test, which `daysAgo` alone can't
+        // promise early in the week: on a Monday, one and two days ago are last week.
+        for (item, date) in zip(entries, weeklyFixtureDates(count: entries.count)) {
+            insertEntry(on: date, text: item.text, mood: item.mood, starred: false, context: context)
         }
 
         if arguments.contains("-WeeklyReflectionDismissed") {
@@ -263,7 +265,7 @@ struct UITestDataSeeder {
             id: UUID(),
             periodStart: period.start,
             periodEnd: period.end,
-            generatedAt: Date(),
+            generatedAt: AppClock.now,
             versionNumber: 1,
             processingMode: .local,
             status: status,
@@ -286,10 +288,25 @@ struct UITestDataSeeder {
         )
     }
 
+    /// Distinct days inside the Weekly Reflection week that contains `now`, newest first.
+    /// They walk back from today and, when the week has fewer days behind today than
+    /// fixtures (a Monday), continue forward into the same week.
+    static func weeklyFixtureDates(count: Int, now: Date = AppClock.now, calendar: Calendar = .current) -> [Date] {
+        let period = WeeklyReflectionEligibilityService.period(containing: now, calendar: calendar)
+        let daysIntoWeek = calendar.dateComponents([.day], from: period.start, to: calendar.startOfDay(for: now)).day ?? 0
+        return (0..<count).compactMap { index in
+            let offset = index <= daysIntoWeek ? -index : index - daysIntoWeek
+            return calendar.date(byAdding: .day, value: offset, to: now)
+        }
+    }
+
     private static func insertEntry(daysAgo: Int, text: String, mood: String, starred: Bool, context: NSManagedObjectContext) {
-        let calendar = Calendar.current
-        let now = Date()
-        let date = calendar.date(byAdding: .day, value: -daysAgo, to: now) ?? now
+        let now = AppClock.now
+        let date = Calendar.current.date(byAdding: .day, value: -daysAgo, to: now) ?? now
+        insertEntry(on: date, text: text, mood: mood, starred: starred, context: context)
+    }
+
+    private static func insertEntry(on date: Date, text: String, mood: String, starred: Bool, context: NSManagedObjectContext) {
         let entry = DiaryEntry(context: context)
         entry.id = UUID()
         entry.date = date
