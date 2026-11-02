@@ -15,7 +15,7 @@ struct FridayView: View {
     @ObservedObject private var navigationRouter = OffRecordNavigationRouter.shared
     @ObservedObject private var memoryPreferences = FridayMemoryPreferences.shared
     @State private var selectedSection: FridaySection = .overview
-    @State private var selectedMemoryNode: PersonalKnowledgeGraph.KnowledgeNode?
+    @State private var selectedMemoryNode: KnowledgeNodeRoute?
     @State private var noteEntry: DiaryEntry?
     @State private var isShowingPromptNote = false
     @State private var promptNoteContext: String?
@@ -78,10 +78,8 @@ struct FridayView: View {
             applyRoutedFridayQuestion(question)
         }
         .sensoryFeedback(.selection, trigger: selectedSection)
-        .sheet(item: $selectedMemoryNode) { node in
-            FridayMemoryDetailSheet(node: node)
-                .presentationDetents([.medium, .large])
-                .presentationDragIndicator(.visible)
+        .navigationDestination(item: $selectedMemoryNode) { route in
+            KnowledgePageView(nodeID: route.id)
         }
         .navigationDestination(isPresented: $isShowingPromptNote) {
             if let noteEntry {
@@ -797,7 +795,7 @@ struct FridayView: View {
 
                     ForEach(nodes, id: \.id) { node in
                         FridayMemoryRow(node: node) {
-                            selectedMemoryNode = assistant.knowledgeGraph.nodes[node.id]
+                            selectedMemoryNode = KnowledgeNodeRoute(id: node.id)
                         }
                     }
                 }
