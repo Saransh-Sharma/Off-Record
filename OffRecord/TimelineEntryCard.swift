@@ -71,6 +71,8 @@ struct TimelineEntryCard: View {
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityLabel(accessiblePreviewText)
                     .accessibilityIdentifier(evidence == nil ? "timeline.entrySnippet" : "timeline.evidenceSnippet")
+
+                TimelineEntryOrganizationLabels(entry: entry)
             }
             .layoutPriority(1)
 
