@@ -61,15 +61,16 @@ struct PeriodReviewTests {
         return (input, ids)
     }
 
+    /// Eight entries of about 30 words each: a full month (8 entries, over 200 words).
     private let gardenDays: [Seed] = [
-        Seed(day: 2, text: "Spent the morning in the garden with Maya. The tomatoes are finally red and the basil is tall.", mood: .happy, starred: true, seconds: 120),
-        Seed(day: 5, text: "Work was busy, but the garden after dinner helped. Maya brought seedlings from her balcony.", mood: .calm),
-        Seed(day: 9, text: "Quiet day. Read on the porch and watered the garden before the rain came in.", mood: .calm, seconds: 300),
-        Seed(day: 14, text: "Long week at work. The project deadline moved again and the team meeting ran late.", mood: .tired),
-        Seed(day: 18, text: "Planted garlic in the garden for next year. Maya says it will be ready by July.", mood: .grateful),
-        Seed(day: 22, text: "Walked by the river with Sam after work. The garden needs weeding this weekend.", mood: .happy),
-        Seed(day: 26, text: "Harvested the last tomatoes from the garden and made sauce with Maya for the freezer.", mood: .happy, starred: true),
-        Seed(day: 29, text: "Cleaned up the garden beds and wrote down what to plant in spring with Maya.", mood: .calm)
+        Seed(day: 2, text: "Spent the morning in the garden with Maya. The tomatoes are finally red and the basil is tall. We sat on the bench afterward and planned the beds for next spring.", mood: .happy, starred: true, seconds: 120),
+        Seed(day: 5, text: "Work was busy, but the garden after dinner helped. Maya brought seedlings from her balcony, and we planted them in the corner bed before it got dark outside.", mood: .calm),
+        Seed(day: 9, text: "Quiet day. Read on the porch and watered the garden before the rain came in from the west. Made soup and went to bed early with the window open.", mood: .calm, seconds: 300),
+        Seed(day: 14, text: "Long week at work. The project deadline moved again and the team meeting ran late into the evening, so I walked home the long way to clear my head.", mood: .tired),
+        Seed(day: 18, text: "Planted garlic in the garden for next year. Maya says it will be ready by July if the winter stays mild. The soil was soft after the rain this week.", mood: .grateful),
+        Seed(day: 22, text: "Walked by the river with Sam after work. The garden needs weeding this weekend before the leaves start to fall, and the gate needs a new hinge too.", mood: .happy),
+        Seed(day: 26, text: "Harvested the last tomatoes from the garden and made sauce with Maya for the freezer. The kitchen smelled like summer all evening, and we ate on the steps.", mood: .happy, starred: true),
+        Seed(day: 29, text: "Cleaned up the garden beds and wrote down what to plant in spring with Maya over a long cup of tea. It felt good to close out the season properly.", mood: .calm)
     ]
 
     // MARK: Eligibility
@@ -161,7 +162,7 @@ struct PeriodReviewTests {
 
     @Test func distressKeepsTheReviewButAsksNothing() {
         var seeds = gardenDays
-        seeds[3] = Seed(day: 14, text: "Completely overwhelmed by work this week. The project deadline moved again.", mood: .anxious)
+        seeds[3] = Seed(day: 14, text: "Completely overwhelmed by work this week. The project deadline moved again and the team meeting ran late into the evening, so I walked home the long way.", mood: .anxious)
         let (input, _) = makeInput(seeds)
         let review = PeriodReviewGenerator.generate(input)
 

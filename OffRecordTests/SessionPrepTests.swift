@@ -6,8 +6,15 @@ import Testing
 struct SessionPrepTests {
 
     private let calendar = Calendar.current
+    /// Built once per test so entry IDs stay the same across reads.
+    private let entries: [SessionPrepEntry] = SessionPrepTests.sampleEntries()
 
     private func day(_ offset: Int, hour: Int = 20) -> Date {
+        Self.day(offset, hour: hour)
+    }
+
+    private static func day(_ offset: Int, hour: Int = 20) -> Date {
+        let calendar = Calendar.current
         let base = calendar.date(from: DateComponents(year: 2026, month: 9, day: 1, hour: hour))!
         return calendar.date(byAdding: .day, value: offset, to: base)!
     }
@@ -17,6 +24,10 @@ struct SessionPrepTests {
     }
 
     private func entry(_ offset: Int, _ text: String, mood: Mood = .calm, analysisText: String? = nil) -> SessionPrepEntry {
+        Self.entry(offset, text, mood: mood, analysisText: analysisText)
+    }
+
+    private static func entry(_ offset: Int, _ text: String, mood: Mood = .calm, analysisText: String? = nil) -> SessionPrepEntry {
         SessionPrepEntry(
             id: UUID(),
             date: day(offset),
@@ -27,7 +38,7 @@ struct SessionPrepTests {
         )
     }
 
-    private var entries: [SessionPrepEntry] {
+    private static func sampleEntries() -> [SessionPrepEntry] {
         [
             entry(0, "Work was heavy today. The project review with my manager went badly.", mood: .anxious),
             entry(3, "Couldn't sleep after work again. Thinking about the project all night.", mood: .tired),

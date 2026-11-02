@@ -339,7 +339,8 @@ enum PeriodReviewGenerator {
     }
 
     /// Entries that mattered: starred (3 points), cited by weekly reflections (2 per citation),
-    /// and mentions of the period's top people and topics (1 each). Ties go to the longer entry.
+    /// and mentions of the period's top people and topics (1 each, at most 2), so stars and
+    /// citations lead. Ties go to the longer entry.
     static func highlights(
         _ entries: [WeeklyReflectionEntrySnapshot],
         stats: [PeriodReviewStatEntry],
@@ -356,7 +357,7 @@ enum PeriodReviewGenerator {
             if let cited = citations[entry.id], cited > 0 { reasons.append(.cited); score += 2 * cited }
             let mentioned = labels.filter { textContains($0, in: entry.text) }.count
             if mentioned >= 2 { reasons.append(.mentions) }
-            score += mentioned
+            score += min(mentioned, 2)
             guard score >= 2 else { return nil }
             return (PeriodReviewHighlight(
                 entryId: entry.id,
