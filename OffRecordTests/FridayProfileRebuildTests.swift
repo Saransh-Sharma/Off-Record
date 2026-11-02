@@ -20,7 +20,8 @@ struct FridayProfileRebuildTests {
         #expect(engine.behavioralPatterns.totalEntries == 3)
     }
 
-    @Test func editedEntryForgetsTheOldName() {
+    @Test(.enabled(if: NaturalLanguageAssets.tagsNames, "Needs Apple's name-tagging data"))
+    func editedEntryForgetsTheOldName() {
         let id = UUID()
         let before = FridayAssistantEngine.makeScratch()
         before.learn(from: [input("Dinner with Maya in Bangalore helped me feel grounded.", day: 1, id: id)])
@@ -34,7 +35,8 @@ struct FridayProfileRebuildTests {
         #expect(after.behavioralPatterns.totalEntries == 1)
     }
 
-    @Test func deletedEntryLeavesNoTrace() throws {
+    @Test(.enabled(if: NaturalLanguageAssets.tagsNames, "Needs Apple's name-tagging data"))
+    func deletedEntryLeavesNoTrace() throws {
         let context = PersistenceController(inMemory: true).container.viewContext
         let maya = makeEntry("Dinner with Maya in Bangalore helped me feel grounded.", in: context)
         _ = makeEntry("A long walk after work cleared my head.", in: context)

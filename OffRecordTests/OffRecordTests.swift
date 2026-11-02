@@ -1037,7 +1037,8 @@ struct SemanticMemoryTests {
         #expect(VectorMath.cosine(lhs, unrelated) < 0.01)
     }
 
-    @Test func sentenceEmbeddingProviderProducesStableVectors() async throws {
+    @Test(.enabled(if: NaturalLanguageAssets.hasSentenceEmbeddings, "Needs Apple's sentence embeddings"))
+    func sentenceEmbeddingProviderProducesStableVectors() async throws {
         let provider = NLSentenceEmbeddingProvider()
         let embedded = try await provider.embedding(
             for: "Work pressure felt lighter after a long walk.",
@@ -1591,7 +1592,8 @@ struct ProactiveReflectionTests {
         #expect(insights.first?.evidence.contains { $0.role == .baseline } == true)
     }
 
-    @Test func quietEntityUsesBaselineEvidenceOnly() {
+    @Test(.enabled(if: NaturalLanguageAssets.tagsNames, "Needs Apple's name-tagging data"))
+    func quietEntityUsesBaselineEvidenceOnly() {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         let entries = [
             makeReflectionEntry(daysAgo: 1, sentiment: 0.0, text: "A quiet walk helped me settle after work.", now: now),
