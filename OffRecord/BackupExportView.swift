@@ -153,6 +153,26 @@ struct BackupExportView: View {
                 }
                 .buttonStyle(SettingsPrimaryButtonStyle())
                 .disabled(isExporting || filteredEntryCount == 0 || (selectedFormat == .encryptedBackup && (encryptionPassword.isEmpty || encryptionPassword != confirmPassword)))
+
+                SettingsCard(
+                    title: String(localized: "Session Prep"),
+                    subtitle: String(localized: "A summary of a date range to bring to a session."),
+                    systemImage: "list.clipboard",
+                    tint: OffRecordColor.textLavender,
+                    fill: OffRecordColor.surfaceLavender
+                ) {
+                    NavigationLink {
+                        SessionPrepView()
+                    } label: {
+                        SettingsActionRow(
+                            systemImage: "doc.text.magnifyingglass",
+                            title: String(localized: "Prepare", comment: "Opens Session Prep"),
+                            subtitle: String(localized: "PDF, Markdown, or plain text"),
+                            tint: OffRecordColor.textLavender
+                        )
+                    }
+                    .accessibilityIdentifier("export.sessionPrep.open")
+                }
             }
             .frame(maxWidth: 760)
             .frame(maxWidth: .infinity)
