@@ -257,6 +257,8 @@ struct EntryDetailView: View {
 
                     daySummaryCard
 
+                    EntryTagsRow(entry: entry)
+
                     if isComposingTextBlock {
                         newTextBlockComposer
                     }
