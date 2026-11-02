@@ -474,13 +474,13 @@ final class FoundationModelsFridayConversationResponder: FridayConversationRespo
 
     private func makeSessionIfNeeded() -> LanguageModelSession {
         if let session { return session }
-        let created = LanguageModelSession(model: .default, tools: tools, instructions: Self.instructions)
+        let created = LanguageModelSession(model: SystemLanguageModel.default, tools: tools, instructions: Self.instructions)
         session = created
         return created
     }
 
     private func makeSession(transcript: Transcript) -> LanguageModelSession {
-        LanguageModelSession(model: .default, tools: tools, transcript: transcript)
+        LanguageModelSession(model: SystemLanguageModel.default, tools: tools, transcript: transcript)
     }
 
     /// Keeps the rules and the last `keepingTurns` question-and-answer pairs,
@@ -501,9 +501,8 @@ final class FoundationModelsFridayConversationResponder: FridayConversationRespo
                 pairs.append([entry])
             case .response:
                 if !pairs.isEmpty { pairs[pairs.count - 1].append(entry) }
-            case .toolCalls, .toolOutput:
-                continue
-            @unknown default:
+            default:
+                // Tool calls, tool output, and (iOS 27) reasoning are bulky and not needed again.
                 continue
             }
         }
