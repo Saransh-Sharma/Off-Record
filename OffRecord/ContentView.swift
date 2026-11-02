@@ -27,6 +27,10 @@ struct ContentView: View {
                 eraseGeneration += 1
             }
             .tabViewStyle(.sidebarAdaptable)
+            #if targetEnvironment(macCatalyst)
+            // The iPad layout, opening as a sidebar on Mac.
+            .defaultAdaptableTabBarPlacement(.sidebar)
+            #endif
             .tabBarMinimizeBehavior(.onScrollDown)
             .captureAccessory(isHidden: navigationRouter.hidesCaptureAccessory) {
                 navigationRouter.requestTypedNote()
