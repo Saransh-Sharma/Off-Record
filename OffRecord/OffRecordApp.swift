@@ -164,7 +164,7 @@ struct OffRecordApp: App {
         FridayProfileRebuilder.shared.start(container: persistenceController.container)
         RetiredEntryInsightProfile.removeIfPresent(container: persistenceController.container)
         if !PersistenceStoreConfiguration.isUnitTestHost() {
-            CloudSyncMonitor.shared.start(container: persistenceController.container)
+            CloudSyncMonitor.shared.start(session: persistenceController.session)
         }
     }
 

@@ -109,11 +109,14 @@ struct CloudSyncStatusTests {
     @Test func reopeningTheStoreDropsEventsThatWillNeverEnd() {
         var status = CloudSyncStatus(account: .available)
         status.apply(event(.setup, endsAfter: 1))
+        status.apply(event(.export, endsAfter: 2, succeeded: false, error: CKError(.networkUnavailable)))
         status.apply(event(.export))
         status.storeDidReload()
 
         #expect(!status.isSyncing)
         #expect(!status.hasStartedMirroring)
+        #expect(!status.hasCompletedSetup)
+        #expect(status.lastProblem == nil)
     }
 
     // MARK: Errors in plain words
@@ -144,10 +147,20 @@ struct CloudSyncStatusTests {
     @Test func wrappedCloudKitErrorIsFound() {
         let coreDataError = NSError(
             domain: NSCocoaErrorDomain,
-            code: 134_400,
+            code: 134_060,
             userInfo: [NSUnderlyingErrorKey: NSError(domain: CKErrorDomain, code: CKError.networkUnavailable.rawValue)]
         )
         #expect(CloudSyncProblem(error: coreDataError) == .offline)
+    }
+
+    @Test func setupWithoutAnAccountAsksToSignIn() {
+        let noAccount = NSError(domain: NSCocoaErrorDomain, code: CloudSyncProblem.noAccountSetupErrorCode)
+        #expect(CloudSyncProblem(error: noAccount) == .notSignedIn)
+
+        var status = CloudSyncStatus()
+        status.apply(event(.setup, endsAfter: 1, succeeded: false, error: noAccount))
+        #expect(!status.hasCompletedSetup)
+        #expect(status.summary(isEnabled: true) == .signInRequired)
     }
 
     @Test func problemMessagesFitTheErrorBudget() {
@@ -170,6 +183,31 @@ struct CloudSyncStatusTests {
 
         let relaunched = CloudSyncMonitor(defaults: defaults)
         #expect(relaunched.status.lastSuccessfulSync == start.addingTimeInterval(3))
+    }
+
+    /// `CKContainer` traps without the iCloud entitlement, so the monitor asks
+    /// for the account only once mirroring finished setup.
+    @Test func monitorAsksForTheAccountOnlyAfterSetup() async throws {
+        let defaults = try #require(UserDefaults(suiteName: "CloudSyncStatusTests-\(UUID().uuidString)"))
+        let asked = AsyncCounter()
+        let monitor = CloudSyncMonitor(defaults: defaults) {
+            await asked.increment()
+            return .available
+        }
+
+        monitor.refreshAccountStatus()
+        let setupID = UUID()
+        monitor.record(event(.setup, id: setupID))
+        try await Task.sleep(for: .milliseconds(50))
+        #expect(await asked.value == 0)
+        #expect(monitor.status.account == .unknown)
+
+        monitor.record(event(.setup, id: setupID, endsAfter: 1))
+        for _ in 0..<50 where monitor.status.account != .available {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+        #expect(await asked.value == 1)
+        #expect(monitor.status.account == .available)
     }
 
     @Test func monitorRemembersWhetherAnAccountWasAvailable() throws {
@@ -209,4 +247,9 @@ struct CloudSyncStatusTests {
         #expect(monitor.takeScrollTarget() == "icloud")
         #expect(monitor.takeScrollTarget() == nil)
     }
+}
+
+private actor AsyncCounter {
+    private(set) var value = 0
+    func increment() { value += 1 }
 }

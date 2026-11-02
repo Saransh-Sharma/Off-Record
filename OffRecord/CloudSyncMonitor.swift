@@ -29,23 +29,34 @@ final class CloudSyncMonitor: ObservableObject {
     /// Settings scrolls back to the iCloud card after the switch rebuilds it.
     private(set) var pendingScrollTarget: String?
 
+    typealias AccountStatusProvider = @Sendable () async throws -> CKAccountStatus
+
     private let defaults: UserDefaults
+    private let accountStatusProvider: AccountStatusProvider
+    private weak var session: PersistenceStoreSession?
     private var observers: [NSObjectProtocol] = []
     private var accountTask: Task<Void, Never>?
     private var isStarted = false
 
-    init(defaults: UserDefaults = .standard) {
+    init(
+        defaults: UserDefaults = .standard,
+        accountStatusProvider: @escaping AccountStatusProvider = {
+            try await CKContainer(identifier: PersistenceController.cloudKitContainerIdentifier).accountStatus()
+        }
+    ) {
         self.defaults = defaults
+        self.accountStatusProvider = accountStatusProvider
         status = CloudSyncStatus(lastSuccessfulSync: defaults.object(forKey: Self.lastSuccessfulSyncKey) as? Date)
     }
 
-    func start(container: NSPersistentCloudKitContainer) {
+    func start(session: PersistenceStoreSession) {
         guard !isStarted else { return }
         isStarted = true
+        self.session = session
         let center = NotificationCenter.default
         observers.append(center.addObserver(
             forName: NSPersistentCloudKitContainer.eventChangedNotification,
-            object: container,
+            object: session.container,
             queue: .main
         ) { [weak self] note in
             guard let raw = note.userInfo?[NSPersistentCloudKitContainer.eventNotificationUserInfoKey] as? NSPersistentCloudKitContainer.Event,
@@ -61,14 +72,25 @@ final class CloudSyncMonitor: ObservableObject {
         refreshAccountStatus()
     }
 
-    /// Asks CloudKit for the account status. CloudKit is the source of truth;
-    /// `ubiquityIdentityToken` only reflects iCloud Drive.
+    /// Asks CloudKit for the account status. CloudKit is the source of truth
+    /// (`ubiquityIdentityToken` only reflects iCloud Drive), but `CKContainer`
+    /// traps in a build without the iCloud entitlement, such as an unsigned
+    /// test build. Mirroring that finished setup proves the entitlement, so
+    /// CloudKit is asked only after that. Until then, no iCloud identity while
+    /// the store isn't mirroring reads as not signed in.
     func refreshAccountStatus() {
         accountTask?.cancel()
+        guard status.hasCompletedSetup else {
+            if session?.mirrorsToCloudKit == false, FileManager.default.ubiquityIdentityToken == nil {
+                status.apply(account: .noAccount)
+            }
+            return
+        }
+        let provider = accountStatusProvider
         accountTask = Task { [weak self] in
             let state: CloudAccountState
             do {
-                state = CloudAccountState(try await CKContainer(identifier: PersistenceController.cloudKitContainerIdentifier).accountStatus())
+                state = CloudAccountState(try await provider())
             } catch {
                 syncMonitorLogger.warning("iCloud account status unavailable: \(error.localizedDescription, privacy: .public)")
                 state = .unknown
@@ -79,7 +101,11 @@ final class CloudSyncMonitor: ObservableObject {
     }
 
     func record(_ event: CloudSyncEvent) {
+        let hadCompletedSetup = status.hasCompletedSetup
         status.apply(event)
+        if status.hasCompletedSetup && !hadCompletedSetup {
+            refreshAccountStatus()
+        }
         if status.hasStartedMirroring {
             mirroringStartRequestedAt = nil
         }

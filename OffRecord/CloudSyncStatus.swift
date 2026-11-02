@@ -83,6 +83,9 @@ enum CloudSyncProblem: Equatable {
     case iCloudBusy
     case other
 
+    /// "Unable to initialize without an iCloud account", from NSPersistentCloudKitContainer setup.
+    static let noAccountSetupErrorCode = 134_400
+
     init(error: Error?) {
         guard let error else {
             self = .other
@@ -110,6 +113,11 @@ enum CloudSyncProblem: Equatable {
             default:
                 self = .other
             }
+            return
+        }
+        // Mirroring setup reports a missing account as Core Data error 134400.
+        if nsError.domain == NSCocoaErrorDomain, nsError.code == Self.noAccountSetupErrorCode {
+            self = .notSignedIn
             return
         }
         if let underlying = nsError.userInfo[NSUnderlyingErrorKey] as? Error {
@@ -145,6 +153,9 @@ struct CloudSyncStatus: Equatable {
     var lastProblem: CloudSyncProblem?
     /// Whether this process has seen mirroring start (a setup event).
     var hasStartedMirroring = false
+    /// Whether mirroring finished setup without an error, which proves the
+    /// build has the iCloud entitlement.
+    var hasCompletedSetup = false
     /// Events that started and haven't finished.
     private(set) var runningEventIDs: Set<UUID> = []
 
@@ -165,7 +176,9 @@ struct CloudSyncStatus: Equatable {
         }
         runningEventIDs.remove(event.id)
         if event.succeeded {
-            if event.kind != .setup {
+            if event.kind == .setup {
+                hasCompletedSetup = true
+            } else {
                 lastSuccessfulSync = max(lastSuccessfulSync ?? .distantPast, endDate)
             }
             lastProblem = nil
@@ -181,10 +194,12 @@ struct CloudSyncStatus: Equatable {
         }
     }
 
-    /// Clears running events when the store reopens; the old store's events never finish.
+    /// Starts over when the store reopens; the old store's events never finish.
     mutating func storeDidReload() {
         runningEventIDs.removeAll()
         hasStartedMirroring = false
+        hasCompletedSetup = false
+        lastProblem = nil
     }
 
     /// What the card's subtitle and status rows say.
@@ -205,6 +220,7 @@ struct CloudSyncStatus: Equatable {
         case .restricted: return .accountRestricted
         default: break
         }
+        if lastProblem == .notSignedIn { return .signInRequired }
         if isSyncing { return .syncing }
         if let lastProblem { return .problem(lastProblem) }
         if let lastSuccessfulSync { return .synced(lastSuccessfulSync) }
