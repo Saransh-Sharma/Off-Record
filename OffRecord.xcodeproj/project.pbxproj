@@ -9,7 +9,7 @@
 /* Begin PBXBuildFile section */
 		A10000000000000000000007 /* OffRecord/Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A10000000000000000000004 /* OffRecord/Assets.xcassets */; };
 		A10000000000000000000008 /* OffRecordWatchWidget.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = A10000000000000000000006 /* OffRecordWatchWidget.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		A1000000000000000000001D /* OffRecordWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = A10000000000000000000005 /* OffRecordWatch.app */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		A1000000000000000000001D /* OffRecordWatch.app in Embed Watch Content */ = {isa = PBXBuildFile; fileRef = A10000000000000000000005 /* OffRecordWatch.app */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		A20000000000000000000002 /* TranscriptionKit in Frameworks */ = {isa = PBXBuildFile; productRef = A20000000000000000000001 /* TranscriptionKit */; };
 		A20000000000000000000004 /* JournalFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = A20000000000000000000003 /* JournalFoundation */; };
 		A20000000000000000000006 /* MoodDialKit in Frameworks */ = {isa = PBXBuildFile; productRef = A20000000000000000000005 /* MoodDialKit */; };
@@ -20,7 +20,7 @@
 		A20000000000000000000010 /* WatchCaptureKit in Frameworks */ = {isa = PBXBuildFile; productRef = A2000000000000000000000F /* WatchCaptureKit */; };
 		A20000000000000000000012 /* JournalSecurityKit in Frameworks */ = {isa = PBXBuildFile; productRef = A20000000000000000000011 /* JournalSecurityKit */; };
 		A20000000000000000000014 /* WatchCaptureKit in Frameworks */ = {isa = PBXBuildFile; productRef = A20000000000000000000013 /* WatchCaptureKit */; };
-		A30000000000000000000005 /* OffRecordWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A30000000000000000000004 /* OffRecordWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		A30000000000000000000005 /* OffRecordWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = A30000000000000000000004 /* OffRecordWidgetExtension.appex */; platformFilter = ios; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -597,6 +597,7 @@
 		A1000000000000000000001C /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			name = OffRecordWatch;
+			platformFilter = ios;
 			target = A10000000000000000000012 /* OffRecordWatch */;
 			targetProxy = A1000000000000000000001B /* PBXContainerItemProxy */;
 		};
@@ -613,6 +614,7 @@
 		A30000000000000000000008 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			name = OffRecordWidgetExtension;
+			platformFilter = ios;
 			target = A30000000000000000000009 /* OffRecordWidgetExtension */;
 			targetProxy = A30000000000000000000007 /* PBXContainerItemProxy */;
 		};
@@ -934,9 +936,11 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = OffRecord/OffRecord.entitlements;
+				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "OffRecord/OffRecord-macCatalyst.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 14;
+				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = NO;
 				DEVELOPMENT_ASSET_PATHS = "\"OffRecord/Preview Content\"";
 				DEVELOPMENT_TEAM = CJ43UNM3AR;
 				ENABLE_APP_SANDBOX = YES;
@@ -976,6 +980,7 @@
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -988,9 +993,11 @@
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
 				CODE_SIGN_ENTITLEMENTS = OffRecord/OffRecord.entitlements;
+				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "OffRecord/OffRecord-macCatalyst.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 14;
+				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = NO;
 				DEVELOPMENT_ASSET_PATHS = "\"OffRecord/Preview Content\"";
 				DEVELOPMENT_TEAM = CJ43UNM3AR;
 				ENABLE_APP_SANDBOX = YES;
@@ -1030,6 +1037,7 @@
 				REGISTER_APP_GROUPS = YES;
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -1050,6 +1058,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = YES;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -1070,6 +1079,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = YES;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -1090,6 +1100,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = YES;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
@@ -1110,6 +1121,7 @@
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = YES;
 				SWIFT_EMIT_LOC_STRINGS = NO;
 				SWIFT_VERSION = 5.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
