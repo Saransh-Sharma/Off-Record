@@ -110,6 +110,7 @@ struct SettingsView: View {
                         columns: columns,
                         items: [
                             .init(id: "goal", keywords: "weekly goal journaling target habit", view: AnyView(journalingGoalSection)),
+                            .init(id: "streak", keywords: "streak daily weekly rest day grace missed habit", view: AnyView(StreakSettingsSection())),
                             .init(id: "reminder", keywords: "daily reminder notification time", view: AnyView(dailyReminderSection)),
                             .init(id: "weekly", keywords: "weekly reflection report notification", view: AnyView(weeklyReflectionSection))
                         ]
