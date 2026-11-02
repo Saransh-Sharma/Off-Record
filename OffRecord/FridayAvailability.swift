@@ -51,5 +51,7 @@ enum FridayAvailability {
         FridayChatHistoryStore.clear()
         FridayMemoryPreferences.shared.reset()
         ProactiveReflectionController.shared.clearDerivedState()
+        // Every Friday file lives in FridayLocal, including caches added later.
+        try? FileManager.default.removeItem(at: FridayLocalDirectory.url)
     }
 }

@@ -45,6 +45,7 @@ struct FridayAvailabilityTests {
         #expect(!FileManager.default.fileExists(atPath: profileURL.path))
         #expect(!FileManager.default.fileExists(atPath: chatURL.path))
         #expect(!FileManager.default.fileExists(atPath: preferencesURL.path))
+        #expect(!FileManager.default.fileExists(atPath: directory.path))
         #expect(FridayAssistantEngine.shared.knowledgeGraph.nodes.isEmpty)
         #expect(FridayAssistantEngine.shared.behavioralPatterns.totalEntries == 0)
         #expect(FridayMemoryPreferences.shared.aliases.isEmpty)
