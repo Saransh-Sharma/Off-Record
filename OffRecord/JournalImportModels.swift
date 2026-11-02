@@ -120,8 +120,8 @@ enum JournalImportError: Error, Equatable {
 
     var message: String {
         switch self {
-        case .unrecognizedFormat: return String(localized: "This doesn’t look like that kind of export. Check the format and try again.")
-        case .unreadable: return String(localized: "Couldn’t open that file. Try exporting it again.")
+        case .unrecognizedFormat: return String(localized: "Choose an export that matches the format you picked.")
+        case .unreadable: return String(localized: "Try exporting the file again.")
         case .missingColumns: return String(localized: "Add Date and Text columns to the CSV and try again.")
         }
     }

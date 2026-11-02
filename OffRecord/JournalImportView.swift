@@ -266,7 +266,7 @@ struct JournalImportView: View {
         case .success(let (source, parsed)):
             let preview = JournalImportService.makePreview(format: format, source: source, parsed: parsed, context: viewContext)
             if preview.newDrafts.isEmpty, preview.duplicateCount == 0 {
-                errorMessage = String(localized: "No entries with a date were found in that file.")
+                errorMessage = String(localized: "Choose a file with dated entries.")
                 phase = .choosing
             } else {
                 phase = .preview(preview)
@@ -293,7 +293,7 @@ struct JournalImportView: View {
                 importViewLogger.error("Import failed: \(error.localizedDescription, privacy: .public)")
                 viewContext.rollback()
                 // Saved batches stay; importing again skips them.
-                errorMessage = String(localized: "Couldn’t finish importing. Try again to add the rest.")
+                errorMessage = String(localized: "Try again to add the remaining entries.")
                 phase = .preview(preview)
                 HapticManager.shared.error()
             }
