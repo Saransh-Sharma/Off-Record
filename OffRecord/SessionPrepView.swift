@@ -82,6 +82,11 @@ struct SessionPrepView: View {
     @State private var exportURL: URL?
     @State private var exportError: String?
     @State private var showAllQuotes = false
+    /// Entries, summary, and preview for the current range, rebuilt only when the range,
+    /// the entries, or the names choice change (not on every keystroke).
+    @State private var entries: [SessionPrepEntry] = []
+    @State private var summary = SessionPrepSummary()
+    @State private var previewSections: [SessionPrepDocument.Section] = []
 
     private var rangeStart: Date { Calendar.current.startOfDay(for: min(start, end)) }
     private var rangeEnd: Date {
@@ -89,13 +94,13 @@ struct SessionPrepView: View {
         return Calendar.current.date(byAdding: DateComponents(day: 1, second: -1), to: day) ?? max(start, end)
     }
 
-    private var entries: [SessionPrepEntry] {
-        fetchedEntries
-            .filter { entry in
-                guard let date = entry.date ?? entry.createdAt else { return false }
-                return date >= rangeStart && date <= rangeEnd
-            }
-            .compactMap(SessionPrepEntry.init(entry:))
+    private var refreshKey: String {
+        var hasher = Hasher()
+        for entry in fetchedEntries {
+            hasher.combine(entry.objectID)
+            hasher.combine(entry.updatedAt)
+        }
+        return "\(rangeStart.timeIntervalSince1970)-\(rangeEnd.timeIntervalSince1970)-\(replaceNames)-\(hasher.finalize())"
     }
 
     private var options: SessionPrepOptions {
@@ -103,8 +108,6 @@ struct SessionPrepView: View {
     }
 
     var body: some View {
-        let entries = entries
-        let summary = SessionPrepBuilder.summary(for: entries, start: rangeStart, end: rangeEnd)
         let candidates = SessionPrepBuilder.quoteCandidates(entries)
         ScrollView {
             VStack(alignment: .leading, spacing: OffRecordSpacing.lg) {
@@ -127,8 +130,7 @@ struct SessionPrepView: View {
         .navigationTitle("Session Prep")
         .navigationBarTitleDisplayMode(.inline)
         .accessibilityIdentifier("sessionPrep.view")
-        .onChange(of: rangeStart) { _, _ in pruneSelection() }
-        .onChange(of: rangeEnd) { _, _ in pruneSelection() }
+        .task(id: refreshKey) { refresh() }
         .sheet(item: Binding(
             get: { exportURL.map { IdentifiableURL(url: $0) } },
             set: { if $0 == nil { exportURL = nil } }
@@ -179,12 +181,7 @@ struct SessionPrepView: View {
     }
 
     private func summaryCard(_ summary: SessionPrepSummary) -> some View {
-        let preview = SessionPrepBuilder.document(
-            entries: entries,
-            options: SessionPrepOptions(start: rangeStart, end: rangeEnd, replaceNames: replaceNames),
-            knownNames: replaceNames ? SessionPrepExport.knownNames() : []
-        )
-        let summarySections = preview.sections.filter { $0.style == .bullets }
+        let summarySections = previewSections.filter { $0.style == .bullets }
         return SettingsCard(
             title: String(localized: "Summary", comment: "Session Prep: the generated summary"),
             systemImage: "text.alignleft",
@@ -308,9 +305,21 @@ struct SessionPrepView: View {
 
     // MARK: - Actions
 
-    private func pruneSelection() {
-        let ids = Set(entries.map(\.id))
-        selectedQuoteIDs.formIntersection(ids)
+    private func refresh() {
+        entries = fetchedEntries
+            .filter { entry in
+                guard let date = entry.date ?? entry.createdAt else { return false }
+                return date >= rangeStart && date <= rangeEnd
+            }
+            .compactMap(SessionPrepEntry.init(entry:))
+        summary = SessionPrepBuilder.summary(for: entries, start: rangeStart, end: rangeEnd)
+        previewSections = SessionPrepBuilder.document(
+            entries: entries,
+            options: SessionPrepOptions(start: rangeStart, end: rangeEnd, replaceNames: replaceNames),
+            knownNames: replaceNames ? SessionPrepExport.knownNames() : []
+        ).sections
+        // Quotes outside the new range drop out of the selection.
+        selectedQuoteIDs.formIntersection(Set(entries.map(\.id)))
     }
 
     private func export() {
