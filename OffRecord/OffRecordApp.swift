@@ -160,6 +160,9 @@ struct OffRecordApp: App {
         WidgetSnapshotExporter.shared.start(container: persistenceController.container)
         FridayProfileRebuilder.shared.start(container: persistenceController.container)
         RetiredEntryInsightProfile.removeIfPresent(container: persistenceController.container)
+        if !PersistenceStoreConfiguration.isUnitTestHost() {
+            CloudSyncMonitor.shared.start(container: persistenceController.container)
+        }
     }
 
     /// After the iCloud switch or Try Again reopened the store: start what waited
