@@ -38,6 +38,7 @@ struct TimelineView: View {
     @State private var selectedMoodFilter: Mood? = nil
     @State private var startDate: Date? = nil
     @State private var endDate: Date? = nil
+    @State private var journalScope: JournalScope = .all
     @State private var isListening: Bool = false
     @State private var searchSuggestions: [FridayAssistantEngine.SearchSuggestion] = []
     @State private var semanticResults: [UUID: EvidenceReference] = [:]
@@ -85,6 +86,7 @@ struct TimelineView: View {
             selectedMoodFilter?.rawValue ?? "",
             String(startDate?.timeIntervalSinceReferenceDate ?? 0),
             String(endDate?.timeIntervalSinceReferenceDate ?? 0),
+            journalScope.signature,
             semanticSearchQuery,
             isSemanticSearching.description,
             semanticSearchAvailable.description,
@@ -275,6 +277,7 @@ struct TimelineView: View {
                     #endif
 
                     if !entries.isEmpty {
+                        TimelineJournalPicker(scope: $journalScope)
                         lensPicker
                     }
 
@@ -325,9 +328,9 @@ struct TimelineView: View {
         !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    /// Entries not waiting on an undoable delete.
+    /// Entries in the chosen journals that aren't waiting on an undoable delete.
     private var visibleEntries: [DiaryEntry] {
-        entries.startedEntries.filter { $0.objectID != pendingDeletion?.objectID }
+        entries.startedEntries.filter { $0.objectID != pendingDeletion?.objectID && journalScope.includes($0) }
     }
 
     private var summaryTitle: String {
@@ -1086,6 +1089,7 @@ struct TimelineView: View {
             guard let entryDate = entry.date else { return false }
 
             if showStarredOnly && !entry.isStarred { return false }
+            if !journalScope.includes(entry) { return false }
 
             if let moodFilter = selectedMoodFilter {
                 let entryMood = entry.value(forKey: "mood") as? String ?? ""
