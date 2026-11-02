@@ -229,17 +229,12 @@ struct TimelineView: View {
             }
             refreshTimelineCache()
         }
-        .background(timelineKeyboardShortcuts)
-    }
-
-    private var timelineKeyboardShortcuts: some View {
-        Button("Search") {
+        // Search Entries (⌘F) lives in the menu bar; it lands here.
+        .onChange(of: navigationRouter.wantsTimelineSearchFocus, initial: true) { _, wantsFocus in
+            guard wantsFocus else { return }
+            navigationRouter.wantsTimelineSearchFocus = false
             isSearchFocused = true
         }
-        .keyboardShortcut("f", modifiers: .command)
-        .frame(width: 0, height: 0)
-        .opacity(0)
-        .accessibilityHidden(true)
     }
 
     private func timelineList(

@@ -49,6 +49,8 @@ final class OffRecordNavigationRouter: ObservableObject {
     @Published var hidesCaptureAccessory = false
     /// Set when Write is tapped outside Today; Today opens the editor and clears it.
     @Published var pendingTypedNote: TypedNoteRequest?
+    /// Set by Search Entries (⌘F); Timeline focuses its search field and clears it.
+    @Published var wantsTimelineSearchFocus = false
 
     private var deferredRoute: OffRecordRoute?
 
@@ -154,6 +156,11 @@ final class OffRecordNavigationRouter: ObservableObject {
     func requestTypedNote(promptContext: String? = nil) {
         selectedTab = .today
         pendingTypedNote = TypedNoteRequest(promptContext: promptContext)
+    }
+
+    func requestTimelineSearch() {
+        selectedTab = .timeline
+        wantsTimelineSearchFocus = true
     }
 
     nonisolated static func storePendingRoute(_ route: OffRecordRoute) {

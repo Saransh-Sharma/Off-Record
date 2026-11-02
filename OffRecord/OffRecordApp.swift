@@ -143,6 +143,9 @@ struct OffRecordApp: App {
                 }
             }
         }
+        .commands {
+            OffRecordCommands(canNavigate: canNavigateToPrivateContent, router: navigationRouter, capture: CaptureController.shared)
+        }
     }
 
     private var canNavigateToPrivateContent: Bool {
