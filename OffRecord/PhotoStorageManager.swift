@@ -16,6 +16,9 @@ import UIKit
 final class PhotoStorageManager {
     static let shared = PhotoStorageManager()
 
+    /// Most photos one import adds to an entry, matching the photo picker's selection limit.
+    static let maximumPhotosPerImport = 5
+
     private let photosDirectoryName = "Photos"
 
     private var photosDirectory: URL {

@@ -35,7 +35,7 @@ final class ReviewManager {
 
         Task {
             try? await Task.sleep(for: .seconds(2))
-            await requestReview()
+            requestReview()
         }
     }
 
@@ -44,7 +44,7 @@ final class ReviewManager {
         logger.info("Requesting app review")
 
         if let scene = currentWindowScene {
-            SKStoreReviewController.requestReview(in: scene)
+            AppStore.requestReview(in: scene)
         }
     }
 

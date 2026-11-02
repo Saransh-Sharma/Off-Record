@@ -23,11 +23,7 @@ struct OffRecordGlassControlGroup<Content: View>: View {
     }
 
     var body: some View {
-        if #available(iOS 26.0, *) {
-            GlassEffectContainer(spacing: spacing) {
-                content()
-            }
-        } else {
+        GlassEffectContainer(spacing: spacing) {
             content()
         }
     }
@@ -55,7 +51,7 @@ private struct OffRecordClearGlassModifier<S: Shape>: ViewModifier {
                         .overlay {
                             shape.stroke(stroke.opacity(0.9), lineWidth: lineWidth)
                         }
-                } else if #available(iOS 26.0, *) {
+                } else {
                     shape
                         .fill(.clear)
                         .glassEffect(.clear, in: shape)
@@ -64,19 +60,6 @@ private struct OffRecordClearGlassModifier<S: Shape>: ViewModifier {
                         }
                         .overlay {
                             shape.fill(Color.black.opacity(dimmingOpacity))
-                        }
-                        .overlay {
-                            shape.stroke(stroke, lineWidth: lineWidth)
-                        }
-                        .shadow(color: shadowColor, radius: shadowRadius, x: 0, y: shadowY)
-                } else {
-                    shape
-                        .fill(.ultraThinMaterial)
-                        .overlay {
-                            shape.fill(clearFill)
-                        }
-                        .overlay {
-                            shape.fill(Color.black.opacity(dimmingOpacity * 0.8))
                         }
                         .overlay {
                             shape.stroke(stroke, lineWidth: lineWidth)

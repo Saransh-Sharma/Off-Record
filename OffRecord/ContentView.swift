@@ -83,6 +83,7 @@ struct ContentView: View {
             }
         }
         .background(tabKeyboardShortcuts)
+        .sheet(isPresented: $navigationRouter.presentsSupport) { GetSupportView() }
     }
 
     /// ⌘1–⌘5 switch tabs; ⌘R starts or stops a recording.

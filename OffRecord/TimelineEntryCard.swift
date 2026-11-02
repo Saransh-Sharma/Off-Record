@@ -113,6 +113,7 @@ struct TimelineEntryCard: View {
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("timeline.entryRow")
         .onAppear { entryTitles.requestTitle(for: entry) }
+        .onScreenJournalEntry(entry.id)
     }
 
     @ViewBuilder

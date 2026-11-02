@@ -45,7 +45,7 @@ final class WeeklyReflectionController: ObservableObject {
         WeeklyReflectionNotificationScheduler.reconcile(settings: next)
     }
 
-    func refreshIfNeeded(entries: [DiaryEntry], now: Date = Date(), force: Bool = false) {
+    func refreshIfNeeded(entries: [DiaryEntry], now: Date = AppClock.now, force: Bool = false) {
         guard settings.isEnabled else {
             currentReport = nil
             return
@@ -67,7 +67,7 @@ final class WeeklyReflectionController: ObservableObject {
         prepareReport(entries: snapshots, period: period, hiddenEntryIds: hidden, previousVersion: currentVisibleReport(for: period), leftOutEntryIds: Self.leftOutEntryIDs(entries), now: now)
     }
 
-    func openCurrentReport(entries: [DiaryEntry], now: Date = Date()) -> WeeklyReflectionReport? {
+    func openCurrentReport(entries: [DiaryEntry], now: Date = AppClock.now) -> WeeklyReflectionReport? {
         refreshIfNeeded(entries: entries, now: now, force: false)
         let period = WeeklyReflectionEligibilityService.period(containing: now)
         return currentVisibleReport(for: period) ?? currentReport
@@ -96,7 +96,7 @@ final class WeeklyReflectionController: ObservableObject {
         update(reportID: report.id) { $0.savedTakeaway = trimmed.isEmpty ? nil : trimmed }
     }
 
-    func regenerate(report: WeeklyReflectionReport, hiding entryIds: [UUID], entries: [DiaryEntry], now: Date = Date()) {
+    func regenerate(report: WeeklyReflectionReport, hiding entryIds: [UUID], entries: [DiaryEntry], now: Date = AppClock.now) {
         let snapshots = entries.compactMap(WeeklyReflectionEntrySnapshot.init(entry:))
         let hidden = Array(Set(entryIds))
         prepareReport(entries: snapshots, period: report.period, hiddenEntryIds: hidden, previousVersion: report, leftOutEntryIds: Self.leftOutEntryIDs(entries), now: now)

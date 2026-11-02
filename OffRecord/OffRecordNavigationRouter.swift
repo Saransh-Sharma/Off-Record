@@ -14,6 +14,15 @@ enum OffRecordRoute: Equatable {
     case monthInReview(year: Int, month: Int)
     /// `offrecord://review/year/2026`
     case yearInReview(Int)
+
+    /// The Get Support sheet, as after a high-risk question in Siri.
+    case support
+
+    /// Routes that show no journal content, so they open even while the app is locked
+    /// or before onboarding finishes. Crisis resources should never wait on a passcode.
+    var isAvailableWithoutUnlocking: Bool {
+        self == .support
+    }
 }
 
 /// A Month in Review or Year in Review to open on Insights.
@@ -44,6 +53,8 @@ final class OffRecordNavigationRouter: ObservableObject {
     @Published var shouldOpenCurrentWeeklyReflection = false
     @Published var routedReview: PeriodReviewRoute?
     @Published var shouldStartRecording = false
+    /// Shows the Get Support sheet over whatever is on screen.
+    @Published var presentsSupport = false
     /// True while a screen with its own composer (Friday chat) is showing, so the
     /// Record bar doesn't sit on top of it or ride up over it with the keyboard.
     @Published var hidesCaptureAccessory = false
@@ -55,7 +66,7 @@ final class OffRecordNavigationRouter: ObservableObject {
     private init() {}
 
     func route(_ route: OffRecordRoute, canNavigate: Bool) {
-        guard canNavigate else {
+        guard canNavigate || route.isAvailableWithoutUnlocking else {
             deferredRoute = route
             return
         }
@@ -74,7 +85,7 @@ final class OffRecordNavigationRouter: ObservableObject {
               let route = Self.route(from: url) else {
             return
         }
-        if canNavigate {
+        if canNavigate || route.isAvailableWithoutUnlocking {
             self.route(route, canNavigate: true)
             UserDefaults.standard.removeObject(forKey: Self.pendingRouteDefaultsKey)
         } else {
@@ -148,6 +159,8 @@ final class OffRecordNavigationRouter: ObservableObject {
         case .yearInReview(let year):
             selectedTab = .insights
             routedReview = PeriodReviewRoute(kind: .year, year: year, month: nil)
+        case .support:
+            presentsSupport = true
         }
     }
 
@@ -182,6 +195,8 @@ final class OffRecordNavigationRouter: ObservableObject {
             return .entry(id)
         case "friday":
             return .friday(question: question)
+        case "support":
+            return .support
         case "weekly-reflection":
             if pathComponents.first?.lowercased() == "current" {
                 return .weeklyReflectionCurrent
@@ -252,6 +267,8 @@ final class OffRecordNavigationRouter: ObservableObject {
         case .yearInReview(let year):
             components.host = "review"
             components.path = String(format: "/year/%04d", year)
+        case .support:
+            components.host = "support"
         }
 
         return components.url

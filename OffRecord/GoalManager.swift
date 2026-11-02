@@ -2,7 +2,9 @@
 //  GoalManager.swift
 //  OffRecord
 //
-//  Manages journaling goals and milestone tracking.
+//  Manages journaling goals, streak settings, and milestone tracking.
+//  The streak rules themselves live in `JournalStreak` (OffRecordSystemShared)
+//  so the widgets count streaks exactly like the app.
 //
 
 import Foundation
@@ -17,14 +19,64 @@ final class GoalManager: ObservableObject {
     private let goalNotifyKey = "dvx_goal_notify"
     private let lastMilestoneKey = "dvx_last_milestone"
 
+    static let streakCadenceKey = "offrecord_streak_cadence"
+    static let streakGraceDayKey = "offrecord_streak_grace_day"
+
     @Published var isEnabled: Bool {
-        didSet { UserDefaults.standard.set(isEnabled, forKey: goalEnabledKey) }
+        didSet {
+            UserDefaults.standard.set(isEnabled, forKey: goalEnabledKey)
+            streakRulesDidChange()
+        }
     }
 
     @Published var weeklyTarget: Int {
         didSet {
             UserDefaults.standard.set(weeklyTarget, forKey: goalTargetKey)
+            streakRulesDidChange()
         }
+    }
+
+    /// Daily or weekly streaks.
+    @Published var streakCadence: StreakCadence {
+        didSet {
+            UserDefaults.standard.set(streakCadence.rawValue, forKey: Self.streakCadenceKey)
+            streakRulesDidChange()
+        }
+    }
+
+    /// Daily streaks only: one missed day in any 7 days keeps the streak (a "rest day").
+    @Published var allowsStreakGraceDay: Bool {
+        didSet {
+            UserDefaults.standard.set(allowsStreakGraceDay, forKey: Self.streakGraceDayKey)
+            streakRulesDidChange()
+        }
+    }
+
+    /// The rules every streak in the app and the widgets follows.
+    var streakRules: StreakRules {
+        Self.streakRules(
+            cadence: streakCadence,
+            allowsGraceDay: allowsStreakGraceDay,
+            goalEnabled: isEnabled,
+            weeklyTarget: weeklyTarget
+        )
+    }
+
+    /// The saved streak rules, readable off the main thread (analytics, widget export).
+    static func storedStreakRules(defaults: UserDefaults = .standard) -> StreakRules {
+        let savedTarget = defaults.integer(forKey: "dvx_goal_target")
+        return streakRules(
+            cadence: defaults.string(forKey: streakCadenceKey).flatMap(StreakCadence.init(rawValue:)) ?? .daily,
+            allowsGraceDay: defaults.object(forKey: streakGraceDayKey) as? Bool ?? true,
+            goalEnabled: defaults.bool(forKey: "dvx_goal_enabled"),
+            weeklyTarget: savedTarget > 0 ? savedTarget : 3
+        )
+    }
+
+    /// A weekly streak counts weeks that meet the Weekly Goal while it's on, and weeks
+    /// with any entry while it's off.
+    static func streakRules(cadence: StreakCadence, allowsGraceDay: Bool, goalEnabled: Bool, weeklyTarget: Int) -> StreakRules {
+        StreakRules(cadence: cadence, allowsGraceDay: allowsGraceDay, weeklyTarget: goalEnabled ? weeklyTarget : 1)
     }
 
     @Published var notifyOnGoal: Bool {
@@ -40,6 +92,16 @@ final class GoalManager: ObservableObject {
         let savedTarget = UserDefaults.standard.integer(forKey: goalTargetKey)
         self.weeklyTarget = savedTarget > 0 ? savedTarget : 3
         self.notifyOnGoal = UserDefaults.standard.bool(forKey: goalNotifyKey)
+        let storedRules = Self.storedStreakRules()
+        self.streakCadence = storedRules.cadence
+        self.allowsStreakGraceDay = storedRules.allowsGraceDay
+    }
+
+    /// Widgets read the rules from their snapshot, so a change rewrites it.
+    private func streakRulesDidChange() {
+        Task { @MainActor in
+            WidgetSnapshotExporter.shared.scheduleExport(after: .milliseconds(300))
+        }
     }
 
     // MARK: - Weekly Progress
@@ -71,7 +133,9 @@ final class GoalManager: ObservableObject {
 
     // MARK: - Milestone Tracking
 
+    /// Milestones are counted in days, so weekly streaks don't celebrate them.
     func checkMilestone(currentStreak: Int) -> Int? {
+        guard streakCadence == .daily else { return nil }
         let lastMilestone = UserDefaults.standard.integer(forKey: lastMilestoneKey)
 
         for milestone in Self.milestones {

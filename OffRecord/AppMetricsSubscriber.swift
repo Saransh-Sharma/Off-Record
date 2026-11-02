@@ -33,7 +33,7 @@ final class AppMetricsSubscriber: NSObject, MXMetricManagerSubscriber {
                 metricsLogger.info("MetricKit memory peakMB=\(peakMB, privacy: .public) averageSuspended=\(suspendedDescription, privacy: .public)")
             }
 
-            if #available(iOS 14.0, *), let exits = payload.applicationExitMetrics {
+            if let exits = payload.applicationExitMetrics {
                 logBackgroundExitData(exits.backgroundExitData)
                 logForegroundExitData(exits.foregroundExitData)
             }
@@ -44,14 +44,12 @@ final class AppMetricsSubscriber: NSObject, MXMetricManagerSubscriber {
         metricsLogger.info("MetricKit diagnostics payloads=\(payloads.count, privacy: .public)")
     }
 
-    @available(iOS 14.0, *)
     private func logBackgroundExitData(_ data: MXBackgroundExitData) {
         metricsLogger.info(
             "MetricKit exits scope=background normal=\(data.cumulativeNormalAppExitCount, privacy: .public) memoryLimit=\(data.cumulativeMemoryResourceLimitExitCount, privacy: .public) memoryPressure=\(data.cumulativeMemoryPressureExitCount, privacy: .public) watchdog=\(data.cumulativeAppWatchdogExitCount, privacy: .public) lockedFile=\(data.cumulativeSuspendedWithLockedFileExitCount, privacy: .public) cpuLimit=\(data.cumulativeCPUResourceLimitExitCount, privacy: .public) taskTimeout=\(data.cumulativeBackgroundTaskAssertionTimeoutExitCount, privacy: .public)"
         )
     }
 
-    @available(iOS 14.0, *)
     private func logForegroundExitData(_ data: MXForegroundExitData) {
         metricsLogger.info(
             "MetricKit exits scope=foreground normal=\(data.cumulativeNormalAppExitCount, privacy: .public) memoryLimit=\(data.cumulativeMemoryResourceLimitExitCount, privacy: .public) watchdog=\(data.cumulativeAppWatchdogExitCount, privacy: .public) badAccess=\(data.cumulativeBadAccessExitCount, privacy: .public) illegalInstruction=\(data.cumulativeIllegalInstructionExitCount, privacy: .public) abnormal=\(data.cumulativeAbnormalExitCount, privacy: .public)"

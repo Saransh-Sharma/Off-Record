@@ -21,7 +21,7 @@ enum WeeklyReflectionEligibilityService {
         return calendar
     }
 
-    static func period(containing date: Date = Date(), calendar baseCalendar: Calendar = .current) -> WeeklyReflectionPeriod {
+    static func period(containing date: Date = AppClock.now, calendar baseCalendar: Calendar = .current) -> WeeklyReflectionPeriod {
         let calendar = calendar(from: baseCalendar)
         let components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: date)
         let start = calendar.date(from: components).map { calendar.startOfDay(for: $0) } ?? calendar.startOfDay(for: date)
@@ -93,7 +93,7 @@ enum WeeklyReflectionGenerationService {
         hiddenEntryIds: [UUID] = [],
         previousVersion: WeeklyReflectionReport? = nil,
         leftOutEntryIds: Set<UUID> = [],
-        now: Date = Date()
+        now: Date = AppClock.now
     ) -> WeeklyReflectionReport {
         let hiddenSet = Set(hiddenEntryIds)
         let periodEntries = allEntries
