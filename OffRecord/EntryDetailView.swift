@@ -290,6 +290,7 @@ struct EntryDetailView: View {
         .navigationBarBackButtonHidden(true)
         .toolbar(showsDismissButton ? .hidden : .visible, for: .navigationBar)
         .toolbar(.hidden, for: .tabBar)
+        .onScreenJournalEntry(entry.isStartedEntry ? entry.id : nil)
         .confirmationDialog(
             blockDeletionTitle(for: pendingBlockDeletion?.kind),
             isPresented: Binding(

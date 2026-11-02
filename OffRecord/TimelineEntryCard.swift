@@ -102,6 +102,7 @@ struct TimelineEntryCard: View {
         .offRecordPointerLift()
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("timeline.entryRow")
+        .onScreenJournalEntry(entry.id)
     }
 
     @ViewBuilder
