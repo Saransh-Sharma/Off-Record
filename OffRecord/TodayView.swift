@@ -178,10 +178,13 @@ struct TodayView: View {
                             TodayProgressStrip(stats: todayStats, hasEntryToday: effectiveLatestEntry != nil)
                         }
 
+                        #if !targetEnvironment(macCatalyst)
+                        // Siri tips don't exist on Mac.
                         if metrics.mode.supportsSupplementaryPanels {
                             SiriTipView(intent: RecordJournalIntent(), isVisible: $showRecordSiriTip)
                                 .siriTipViewStyle(.automatic)
                         }
+                        #endif
                     }
                     .padding(.horizontal, metrics.pageHorizontalPadding)
                     .padding(.top, OffRecordSpacing.xxl)

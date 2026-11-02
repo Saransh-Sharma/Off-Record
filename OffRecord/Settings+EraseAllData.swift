@@ -18,8 +18,8 @@ struct EraseAllDataSettingsSection: View {
     @State private var isErasing = false
     @State private var showsError = false
 
-    /// Whether the open store mirrors to iCloud right now. A sync change in
-    /// Settings only applies after a relaunch, so the store is what counts.
+    /// Whether the open store mirrors to iCloud right now. The iCloud switch
+    /// reopens the store, so the open store is what counts.
     private var syncsWithICloud: Bool {
         PersistenceController.shared.container.persistentStoreDescriptions.contains { $0.cloudKitContainerOptions != nil }
     }

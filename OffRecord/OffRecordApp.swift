@@ -27,6 +27,7 @@ struct OffRecordApp: App {
     @ObservedObject private var lockManager = AppLockManager.shared
     @ObservedObject private var themeManager = ThemeManager.shared
     @ObservedObject private var navigationRouter = OffRecordNavigationRouter.shared
+    @ObservedObject private var storeSession = PersistenceController.shared.session
     @Environment(\.scenePhase) private var scenePhase
     @AppStorage("hasCompletedOnboarding") private var hasCompletedOnboarding = false
     @State private var isShowingSplash = true
@@ -35,13 +36,12 @@ struct OffRecordApp: App {
         MemoryFootprintManager.shared.configure(viewContext: persistenceController.container.viewContext)
         AppMetricsSubscriber.shared.start()
         UNUserNotificationCenter.current().delegate = OffRecordNotificationDelegate.shared
-        ScreenshotDataSeeder.seedIfNeeded(context: persistenceController.container.viewContext)
-        UITestDataSeeder.seedIfNeeded(context: persistenceController.container.viewContext)
+        if persistenceController.session.isLoaded {
+            ScreenshotDataSeeder.seedIfNeeded(context: persistenceController.container.viewContext)
+            UITestDataSeeder.seedIfNeeded(context: persistenceController.container.viewContext)
+        }
         ReminderManager.shared.reconcileScheduleIfNeeded()
-        WatchCaptureImporter.shared.start(context: persistenceController.container.viewContext)
-        WidgetSnapshotExporter.shared.start(container: persistenceController.container)
-        FridayProfileRebuilder.shared.start(container: persistenceController.container)
-        RetiredEntryInsightProfile.removeIfPresent(container: persistenceController.container)
+        Self.startStoreServicesIfLoaded(persistenceController)
         // A fresh process is never mid-capture, so any capture Live Activity is a leftover.
         Task { await CaptureLiveActivityManager.shared.endOrphanedActivities() }
     }
@@ -50,11 +50,18 @@ struct OffRecordApp: App {
         WindowGroup {
             ZStack {
                 Group {
-                    if !hasCompletedOnboarding {
+                    if !hasCompletedOnboarding && storeSession.loadFailure == nil {
                         OnboardingView(hasCompletedOnboarding: $hasCompletedOnboarding)
                     } else {
                         ZStack {
-                            ContentView()
+                            if storeSession.loadFailure != nil {
+                                // The store didn't open: recovery replaces the app, behind Lock.
+                                StoreRecoveryView(session: storeSession)
+                            } else {
+                                // A new identity after each store reopen, so no screen keeps stale objects.
+                                ContentView()
+                                    .id(storeSession.generation)
+                            }
 
                             // Show lock screen if app lock is enabled and not unlocked
                             if lockManager.isEnabled && !lockManager.isUnlocked {
@@ -109,6 +116,9 @@ struct OffRecordApp: App {
             .onChange(of: lockManager.isUnlocked) { _, _ in
                 resumeDeferredRoutesIfPossible()
             }
+            .onReceive(NotificationCenter.default.publisher(for: .offRecordStoreDidReload)) { _ in
+                storeDidReload()
+            }
             .onReceive(NotificationCenter.default.publisher(for: .offRecordPendingRouteStored)) { _ in
                 consumeLegacyAndStoredRoutes()
                 resumeDeferredRoutesIfPossible()
@@ -133,10 +143,39 @@ struct OffRecordApp: App {
                 }
             }
         }
+        .commands {
+            OffRecordCommands(canNavigate: canNavigateToPrivateContent, router: navigationRouter, capture: CaptureController.shared)
+        }
     }
 
     private var canNavigateToPrivateContent: Bool {
-        hasCompletedOnboarding && (!lockManager.isEnabled || lockManager.isUnlocked)
+        hasCompletedOnboarding && storeSession.loadFailure == nil && (!lockManager.isEnabled || lockManager.isUnlocked)
+    }
+
+    /// Services that read or write the store. They start once, when it first opens,
+    /// which is at launch or after Try Again on the recovery screen.
+    private static var storeServicesStarted = false
+
+    private static func startStoreServicesIfLoaded(_ persistenceController: PersistenceController) {
+        guard persistenceController.session.isLoaded, !storeServicesStarted else { return }
+        storeServicesStarted = true
+        WatchCaptureImporter.shared.start(context: persistenceController.container.viewContext)
+        WidgetSnapshotExporter.shared.start(container: persistenceController.container)
+        FridayProfileRebuilder.shared.start(container: persistenceController.container)
+        RetiredEntryInsightProfile.removeIfPresent(container: persistenceController.container)
+        if !PersistenceStoreConfiguration.isUnitTestHost() {
+            CloudSyncMonitor.shared.start(session: persistenceController.session)
+        }
+    }
+
+    /// After the iCloud switch or Try Again reopened the store: start what waited
+    /// for it, then refresh what mirrors the journal outside the app.
+    private func storeDidReload() {
+        Self.startStoreServicesIfLoaded(persistenceController)
+        JournalSpotlightIndexer.shared.rebuild(entries: startedEntriesForIndexing())
+        WidgetSnapshotExporter.shared.scheduleExport(after: .milliseconds(300))
+        WidgetCenter.shared.reloadAllTimelines()
+        resumeDeferredRoutesIfPossible()
     }
 
     private func consumeLegacyAndStoredRoutes() {

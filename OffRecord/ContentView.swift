@@ -27,6 +27,10 @@ struct ContentView: View {
                 eraseGeneration += 1
             }
             .tabViewStyle(.sidebarAdaptable)
+            #if targetEnvironment(macCatalyst)
+            // The iPad layout, opening as a sidebar on Mac.
+            .defaultAdaptableTabBarPlacement(.sidebar)
+            #endif
             .tabBarMinimizeBehavior(.onScrollDown)
             .captureAccessory(isHidden: navigationRouter.hidesCaptureAccessory) {
                 navigationRouter.requestTypedNote()
@@ -86,15 +90,13 @@ struct ContentView: View {
         .sheet(isPresented: $navigationRouter.presentsSupport) { GetSupportView() }
     }
 
-    /// ⌘1–⌘5 switch tabs; ⌘R starts or stops a recording.
+    /// ⌘1–⌘5 switch tabs. Write, Record, and Search are menu commands (OffRecordCommands).
     private var tabKeyboardShortcuts: some View {
         ZStack {
             ForEach(Array(OffRecordTab.allCases.enumerated()), id: \.element) { index, tab in
                 Button(tab.title) { navigationRouter.selectedTab = tab }
                     .keyboardShortcut(KeyEquivalent(Character("\(index + 1)")), modifiers: .command)
             }
-            Button(String(localized: "Record", comment: "Keyboard shortcut (⌘R) that starts or stops a voice recording")) { capture.toggleRecording() }
-                .keyboardShortcut("r", modifiers: .command)
         }
         .frame(width: 0, height: 0)
         .opacity(0)

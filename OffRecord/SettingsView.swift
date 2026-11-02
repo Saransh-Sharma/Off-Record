@@ -30,7 +30,6 @@ struct SettingsView: View {
 
     @State private var showPermissionDeniedAlert = false
     @State private var showWeeklyNotificationPermissionDeniedAlert = false
-    @State private var showCloudSyncRestartAlert = false
     @State private var showDeleteSemanticIndexConfirm = false
 
     // Export states
@@ -136,7 +135,7 @@ struct SettingsView: View {
                             .init(id: "export", keywords: "export pdf print", view: AnyView(exportSection)),
                             .init(id: "backup", keywords: "backup encrypted json markdown csv import restore", view: AnyView(backupSection)),
                             .init(id: "import", keywords: "import day one apple journal markdown text csv", view: AnyView(importSection)),
-                            .init(id: "icloud", keywords: "icloud sync cloud devices", view: AnyView(iCloudSection)),
+                            .init(id: "icloud", keywords: SyncSettingsSection.searchKeywords, view: AnyView(SyncSettingsSection())),
                             .init(id: "storage", keywords: "storage space audio photos delete", view: AnyView(storageSection)),
                             .init(id: "erase", keywords: EraseAllDataSettingsSection.searchKeywords, view: AnyView(EraseAllDataSettingsSection()))
                         ]
@@ -167,6 +166,12 @@ struct SettingsView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, metrics.pageHorizontalPadding)
                 .padding(.vertical, OffRecordSpacing.screenY)
+            }
+            .task {
+                // The iCloud switch rebuilds every screen; land back on its card.
+                if let target = CloudSyncMonitor.shared.takeScrollTarget() {
+                    scrollProxy.scrollTo(target, anchor: .top)
+                }
             }
             }
         }
@@ -212,11 +217,6 @@ struct SettingsView: View {
             Button("OK", role: .cancel) { }
         } message: {
             Text(exportError ?? "")
-        }
-        .alert("Restart OffRecord", isPresented: $showCloudSyncRestartAlert) {
-            Button("OK", role: .cancel) { }
-        } message: {
-            Text("Close and reopen OffRecord to apply the iCloud change.")
         }
         .alert("Delete Search Index?", isPresented: $showDeleteSemanticIndexConfirm) {
             Button("Delete Index", role: .destructive) {
@@ -279,7 +279,7 @@ struct SettingsView: View {
             "lock face id touch id passcode privacy security", "on-device ai transcription speech offline privacy",
             "apple health state of mind mood sync", "search index meaning friday rebuild delete",
             "siri spotlight system search shortcuts", "export pdf print", "backup encrypted json markdown csv import restore",
-            "icloud sync cloud devices", "storage space audio photos delete", "theme appearance dark light color accent",
+            SyncSettingsSection.searchKeywords, "storage space audio photos delete", "theme appearance dark light color accent",
             "privacy policy data not collected", "about version support",
             FridaySettingsSection.searchKeywords, EraseAllDataSettingsSection.searchKeywords
         ]
@@ -663,11 +663,14 @@ struct SettingsView: View {
                 .foregroundColor(OffRecordColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
+            #if !targetEnvironment(macCatalyst)
+            // Siri tips don't exist on Mac.
             ShortcutsLink()
                 .accessibilityIdentifier("settings.systemSearch.shortcutsLink")
 
             SiriTipView(intent: SearchJournalIntent(), isVisible: $showSearchSiriTip)
                 .siriTipViewStyle(.automatic)
+            #endif
 
             Button {
                 JournalSpotlightIndexer.shared.rebuild(entries: startedEntries)
@@ -797,50 +800,6 @@ struct SettingsView: View {
                 }
             }
         }
-    }
-
-    @ViewBuilder
-    private var iCloudSection: some View {
-        SettingsCard(
-            title: String(localized: "iCloud Sync"),
-            subtitle: syncStatusText,
-            footer: iCloudSyncEnabled ? String(localized: "Recordings stay on this \(DeviceNoun.current) and don’t sync.") : nil,
-            systemImage: iCloudSyncEnabled && PersistenceController.isCloudAvailable ? "icloud.fill" : "icloud.slash",
-            tint: iCloudSyncEnabled && PersistenceController.isCloudAvailable ? OffRecordColor.textSky : OffRecordColor.textTertiary,
-            fill: OffRecordColor.surfaceBlue
-        ) {
-            Toggle(isOn: $iCloudSyncEnabled) {
-                Text("iCloud Sync")
-            }
-            .onChange(of: iCloudSyncEnabled) { _, newValue in
-                PersistenceController.shared.setCloudSyncEnabled(newValue)
-                showCloudSyncRestartAlert = true
-            }
-
-            if iCloudSyncEnabled && !PersistenceController.isCloudAvailable {
-                HStack(spacing: 8) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundColor(OffRecordColor.textPeach)
-                        .font(OffRecordTypography.metadata)
-                        .accessibilityHidden(true)
-                    Text("Sign in to iCloud in Settings to sync.")
-                        .font(OffRecordTypography.metadata)
-                        .foregroundColor(OffRecordColor.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(.vertical, 4)
-            }
-        }
-    }
-
-    private var syncStatusText: String {
-        if !iCloudSyncEnabled {
-            return String(localized: "Off", comment: "iCloud Sync status: turned off")
-        }
-        if PersistenceController.isCloudAvailable {
-            return String(localized: "On", comment: "iCloud Sync status: turned on")
-        }
-        return String(localized: "Not Signed In", comment: "iCloud Sync status: no iCloud account")
     }
 
     @ViewBuilder

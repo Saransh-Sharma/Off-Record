@@ -187,6 +187,10 @@ struct JournalEraser {
     /// posts `offRecordDidEraseAllData` so the tabs rebuild on a fresh Today.
     static func eraseEverything(container: NSPersistentContainer = PersistenceController.shared.container) async throws {
         let eraser = JournalEraser(container: container, locations: .live)
+        // The iCloud switch can't reopen the store while background deletes run.
+        let session = PersistenceController.shared.session
+        session.holdReloads("erase")
+        defer { session.releaseReloads("erase") }
 
         // In-memory state first, so nothing re-saves old content while rows go.
         WeeklyReflectionController.shared.resetAfterErase()
