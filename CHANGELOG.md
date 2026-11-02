@@ -42,6 +42,24 @@ All notable changes to OffRecord AI Journal are documented here.
 - **Friday switch** in Settings. Turning Friday off deletes what she learned, her chat, and generated titles and questions.
 - **Erase All Data** in Settings. It deletes the journal, files, indexes, and Friday's data. When iCloud sync is on, the deletion reaches iCloud too, and the confirmation says so.
 - **Tags and journals data model** (model version 3). See the organizing features below.
+- **Siri and Apple Intelligence:**
+  - Create Entry, Create Audio Entry, and Search adopt Apple's journal schemas. The entry entity carries no journal text.
+  - Ask Friday answers inside Siri with a summary only, never quotes. Heavy questions open Get Support (`offrecord://support`, which opens even while locked).
+  - Siri knows which entry is on screen.
+- **Journaling Suggestions** (iPhone): start an entry from Apple's suggestions. Photos attach, up to 5.
+- **Forgiving streaks:**
+  - Daily streaks allow one rest day in any 7 days.
+  - Weekly streaks are available.
+  - Widgets show the same number as the app.
+  - No loss framing.
+- **iCloud Sync status:** the last sync, whether it's syncing now, the last error in plain words, and whether you're signed in to iCloud.
+- **iCloud Sync applies right away**; no relaunch.
+- **Store recovery screen:** if the journal can't open, you get Try Again, Export a Copy, and Contact Support. Nothing is deleted automatically.
+- **Recordings from another device** say where they were made, how long they are, and where to play them.
+- **Mac app** (Mac Catalyst):
+  - Sidebar, menu commands, and shortcuts (⌘N Write, ⇧⌘R Record, ⌘F Search, ⌘, Settings).
+  - No Live Activities, widgets, watch app, Siri tips, or Apple Health on Mac.
+  - On iPad, Record moves from ⌘R to ⇧⌘R.
 
 ### Safety
 - **One safety check for every AI surface.** Friday chat, Go Deeper, proactive cards, Smart Prompts, Weekly Reflection, and Friday's profile check text with `JournalRiskClassifier` (JournalKit). It catches direct and indirect references to suicide or self-harm.
@@ -59,6 +77,10 @@ All notable changes to OffRecord AI Journal are documented here.
   - Settings adds **Rebuild Friday**.
 
 ### Changed
+- **Requests for App Store reviews** use `AppStore.requestReview(in:)`.
+- **One color palette** shared by the app and widgets.
+- **Dead code removed:** 27 availability checks below iOS 26.
+- **Unit tests use a temporary store** and never write test data to iCloud.
 - **Friday's profile no longer syncs through iCloud.** It is rebuilt on each device from your entries and kept in a protected local file.
 - **One sentiment and name engine.** It replaces five older copies; `LocalAIEngine` is gone. Sentiment now weighs every paragraph, not just the first.
 - **Heavy entries no longer get a question in From Friday.**
