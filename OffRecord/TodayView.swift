@@ -22,6 +22,7 @@ struct TodayView: View {
     @ObservedObject private var weeklyReflection = WeeklyReflectionController.shared
     @ObservedObject private var navigationRouter = OffRecordNavigationRouter.shared
     @ObservedObject private var capture = CaptureController.shared
+    @ObservedObject private var goalManager = GoalManager.shared
 
     @State private var noteEntry: DiaryEntry?
     @State private var isShowingNoteEditor = false
@@ -237,6 +238,9 @@ struct TodayView: View {
         }
         .task(id: todayEntriesSignature) {
             await refreshHistoricalEntryCache(recordHeroExposure: true)
+        }
+        .onChange(of: goalManager.streakRules) { _, _ in
+            Task { await refreshHistoricalEntryCache(recordHeroExposure: false) }
         }
         .background(todayKeyboardShortcuts)
     }
@@ -528,6 +532,7 @@ struct OnThisDayCard: View {
 // MARK: - Progress strip
 
 /// Gentle, self-referential progress: no loss framing, a warm welcome back after gaps.
+/// The streak follows the rules in Streak settings (`stats.streakRules`).
 struct TodayProgressStrip: View {
     let stats: JournalStatsSnapshot
     let hasEntryToday: Bool
@@ -536,9 +541,16 @@ struct TodayProgressStrip: View {
         stats.last7Days.filter { $0.hasEntry }.count
     }
 
+    private var cadence: StreakCadence { stats.streakRules.cadence }
+
+    /// A daily streak shows from 2 days; a weekly one from its first week.
+    private var showsStreak: Bool {
+        stats.currentStreak >= (cadence == .daily ? 2 : 1)
+    }
+
     private var headline: String {
-        if stats.currentStreak >= 2 {
-            return String(localized: "\(stats.currentStreak)-day streak")
+        if showsStreak {
+            return StreakCopy.label(count: stats.currentStreak, cadence: cadence)
         }
         if stats.entryCount > 0 && !hasEntryToday && stats.currentStreak == 0 {
             return String(localized: "Welcome back")
@@ -547,8 +559,16 @@ struct TodayProgressStrip: View {
     }
 
     private var subtitle: String {
-        if stats.currentStreak >= 2 {
-            return hasEntryToday ? String(localized: "Today’s entry keeps it going.") : String(localized: "Add today’s entry to keep it going.")
+        if showsStreak {
+            switch cadence {
+            case .daily:
+                return hasEntryToday ? String(localized: "Today’s entry keeps it going.") : String(localized: "Today is still open.")
+            case .weekly:
+                let target = stats.streakRules.weeklyTarget
+                return target > 1
+                    ? String(localized: "\(stats.goal.count) of \(target) days this week")
+                    : String(AttributedString(localized: "^[\(stats.goal.count) day](inflect: true) this week").characters)
+            }
         }
         if stats.entryCount > 0 && !hasEntryToday && stats.currentStreak == 0 {
             return String(localized: "Start with today.")
@@ -558,7 +578,7 @@ struct TodayProgressStrip: View {
 
     var body: some View {
         HStack(spacing: OffRecordSpacing.md) {
-            let isActive = stats.currentStreak >= 2 || hasEntryToday
+            let isActive = showsStreak || hasEntryToday
             StreakFireArtworkView(
                 imageName: isActive ? "StreakFire" : "StreakFireInactive",
                 size: 44,

@@ -143,6 +143,8 @@ struct JournalStatsSnapshot: Equatable, Sendable {
     let weeklySummary: String
     let goal: JournalGoalProgress
     let availableYears: [Int]
+    /// The rules `currentStreak` and `longestStreak` were counted with.
+    var streakRules: StreakRules = .standard
 
     var isEmpty: Bool { entryCount == 0 }
 
@@ -174,7 +176,8 @@ actor JournalAnalyticsWorker {
         from entries: [JournalEntrySnapshot],
         now: Date,
         weeklyTarget: Int,
-        goalEnabled: Bool
+        goalEnabled: Bool,
+        streakRules: StreakRules = GoalManager.storedStreakRules()
     ) -> JournalStatsSnapshot {
         let token = PerformanceSignposts.begin("JournalStatsAnalytics")
         defer { PerformanceSignposts.end(token) }
@@ -200,8 +203,8 @@ actor JournalAnalyticsWorker {
 
         return JournalStatsSnapshot(
             entryCount: sortedEntries.count,
-            currentStreak: currentStreak(days: days, calendar: calendar, today: today),
-            longestStreak: longestStreak(days: days, calendar: calendar),
+            currentStreak: JournalStreak.current(entryDates: days, now: now, rules: streakRules, calendar: calendar).count,
+            longestStreak: JournalStreak.longest(entryDates: days, rules: streakRules, calendar: calendar),
             entriesThisMonth: currentMonthEntries.count,
             entriesThisYear: currentYearEntries.count,
             daysRecordedThisYear: days.filter { calendar.component(.year, from: $0) == currentYear }.count,
@@ -212,7 +215,7 @@ actor JournalAnalyticsWorker {
             avgWordsPerEntry: sortedEntries.isEmpty ? 0 : totalWords / sortedEntries.count,
             starredCount: sortedEntries.filter(\.isStarred).count,
             audioCount: sortedEntries.filter(\.hasAudio).count,
-            insights: makeInsights(from: sortedEntries, calendar: calendar, now: now),
+            insights: makeInsights(from: sortedEntries, calendar: calendar, now: now, streakRules: streakRules),
             weeklySummary: weeklySummary(from: sortedEntries, calendar: calendar, now: now),
             goal: JournalGoalProgress(
                 isEnabled: goalEnabled,
@@ -224,41 +227,9 @@ actor JournalAnalyticsWorker {
             availableYears: Array(Set(sortedEntries.compactMap { entry -> Int? in
                 guard let date = entry.date else { return nil }
                 return calendar.component(.year, from: date)
-            })).sorted()
+            })).sorted(),
+            streakRules: streakRules
         )
-    }
-
-    private func currentStreak(days: Set<Date>, calendar: Calendar, today: Date) -> Int {
-        var checkDate = today
-        if !days.contains(checkDate) {
-            checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate) ?? checkDate
-            guard days.contains(checkDate) else { return 0 }
-        }
-
-        var streak = 0
-        while days.contains(checkDate) {
-            streak += 1
-            checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate) ?? checkDate
-        }
-        return streak
-    }
-
-    private func longestStreak(days: Set<Date>, calendar: Calendar) -> Int {
-        let sortedDays = days.sorted(by: >)
-        guard !sortedDays.isEmpty else { return 0 }
-        var longest = 1
-        var current = 1
-
-        for index in 1..<sortedDays.count {
-            let diff = calendar.dateComponents([.day], from: sortedDays[index], to: sortedDays[index - 1]).day ?? 0
-            if diff == 1 {
-                current += 1
-                longest = max(longest, current)
-            } else {
-                current = 1
-            }
-        }
-        return longest
     }
 
     private func last7Days(days: Set<Date>, calendar: Calendar, today: Date) -> [JournalDayActivity] {
@@ -304,8 +275,8 @@ actor JournalAnalyticsWorker {
         8 - calendar.component(.weekday, from: now)
     }
 
-    private func makeInsights(from entries: [JournalEntrySnapshot], calendar: Calendar, now: Date) -> [JournalInsightSummary] {
-        InsightsEngine.makeInsights(from: entries, calendar: calendar, now: now)
+    private func makeInsights(from entries: [JournalEntrySnapshot], calendar: Calendar, now: Date, streakRules: StreakRules) -> [JournalInsightSummary] {
+        InsightsEngine.makeInsights(from: entries, calendar: calendar, now: now, streakRules: streakRules)
     }
 
     private func weeklySummary(from entries: [JournalEntrySnapshot], calendar: Calendar, now: Date) -> String {

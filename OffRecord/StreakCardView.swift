@@ -13,6 +13,8 @@ struct StreakCardView: View {
     let entriesThisMonth: Int
     let totalEntries: Int
     let isIPad: Bool
+    /// Daily or weekly, from Streak settings; the counts above follow the same rules.
+    var cadence: StreakCadence = GoalManager.shared.streakCadence
 
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @ScaledMetric(relativeTo: .title2) private var fireBaseSize: CGFloat = 118
@@ -39,7 +41,11 @@ struct StreakCardView: View {
 
     /// Nothing to say while a streak is running; at 0 it invites a first entry.
     private var statusMessage: String? {
-        isActive ? nil : String(localized: "Write today to start a streak.")
+        guard !isActive else { return nil }
+        switch cadence {
+        case .daily: return String(localized: "Write today to start a streak.")
+        case .weekly: return String(localized: "Write this week to start a streak.")
+        }
     }
 
     private var fireSize: CGFloat {
@@ -51,12 +57,10 @@ struct StreakCardView: View {
     }
 
     private var dayLabel: String {
-        currentStreak == 1
-            ? String(localized: "day", comment: "Unit shown after a streak count of 1")
-            : String(localized: "days", comment: "Unit shown after a streak count other than 1")
+        StreakCopy.unit(count: currentStreak, cadence: cadence)
     }
 
-    private var longestValue: String { Self.inflected("^[\(longestStreak) day](inflect: true)") }
+    private var longestValue: String { StreakCopy.duration(count: longestStreak, cadence: cadence) }
     private var thisMonthValue: String { Self.inflected("^[\(entriesThisMonth) entry](inflect: true)") }
     private var totalValue: String { Self.inflected("^[\(totalEntries) entry](inflect: true)") }
 
@@ -65,7 +69,7 @@ struct StreakCardView: View {
     }
 
     private var accessibilitySummary: String {
-        var summary = String(localized: "\(currentStreak) \(dayLabel).", comment: "Streak count and unit, e.g. \"7 days.\"")
+        var summary = String(localized: "\(currentStreak) \(dayLabel).", comment: "Streak count and unit, e.g. \"7 days.\" or \"2 weeks.\"")
         if let statusMessage { summary += " \(statusMessage)" }
         return summary + " " + String(localized: "Longest \(longestValue), \(thisMonthValue) this month, \(totalValue) total.")
     }

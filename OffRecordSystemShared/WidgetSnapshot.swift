@@ -26,6 +26,9 @@ struct WidgetSnapshot: Codable, Equatable {
     var todayKey: String?
     var todayWordCount: Int
     var todayHasVoice: Bool
+    /// The streak rules chosen in Settings, so widgets count streaks like the app.
+    /// Absent in snapshots written before streak settings existed.
+    var streakRules: StreakRules? = nil
 
     static let empty = WidgetSnapshot(days: [:], totalEntries: 0, todayKey: nil, todayWordCount: 0, todayHasVoice: false)
 
@@ -39,20 +42,22 @@ struct WidgetSnapshot: Codable, Equatable {
         return raw
     }
 
-    /// Consecutive journaling days ending today, or yesterday when today is still open.
+    /// The rules streaks follow: the app's choice, or the default for older snapshots.
+    var effectiveStreakRules: StreakRules { streakRules ?? .standard }
+
+    /// The current streak as of `date`, counted with the same rules as the app (see `JournalStreak`).
     func streak(asOf date: Date, calendar: Calendar = .current) -> Int {
-        var day = calendar.startOfDay(for: date)
-        if !hasEntry(on: day, calendar: calendar) {
-            guard let yesterday = calendar.date(byAdding: .day, value: -1, to: day) else { return 0 }
-            day = yesterday
+        JournalStreak.current(entryDates: entryDates(calendar: calendar), now: date, rules: effectiveStreakRules, calendar: calendar).count
+    }
+
+    /// Local noon of every day with an entry. Noon keeps each day clear of
+    /// daylight-saving transitions when it is turned back into a calendar day.
+    func entryDates(calendar: Calendar = .current) -> [Date] {
+        days.keys.compactMap { key in
+            let parts = key.split(separator: "-").compactMap { Int($0) }
+            guard parts.count == 3 else { return nil }
+            return calendar.date(from: DateComponents(year: parts[0], month: parts[1], day: parts[2], hour: 12))
         }
-        var streak = 0
-        while hasEntry(on: day, calendar: calendar) {
-            streak += 1
-            guard let previous = calendar.date(byAdding: .day, value: -1, to: day) else { break }
-            day = previous
-        }
-        return streak
     }
 
     /// Mood counts over the seven days ending on `date`.

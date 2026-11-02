@@ -35,7 +35,10 @@ struct JournalWidgetEntry: TimelineEntry {
     let snapshot: WidgetSnapshot
 
     var hasEntryToday: Bool { snapshot.hasEntry(on: date) }
+    /// Counted with the app's streak rules, carried in the snapshot.
     var streak: Int { snapshot.streak(asOf: date) }
+    var streakCadence: StreakCadence { snapshot.effectiveStreakRules.cadence }
+    var streakLabel: String { StreakCopy.label(count: streak, cadence: streakCadence) }
     var totalEntries: Int { snapshot.totalEntries }
     var todayWordCount: Int { snapshot.todayWordCount(asOf: date) }
     var todayHasVoice: Bool { snapshot.todayHasVoice(asOf: date) }
@@ -230,18 +233,19 @@ struct RecordGlyph: View {
 
 struct StreakBadge: View {
     let streak: Int
+    var cadence: StreakCadence = .daily
 
     var body: some View {
         HStack(spacing: 3) {
             Image(systemName: "flame.fill")
                 .foregroundStyle(streak > 0 ? OffRecordColor.textWarm : OffRecordColor.textSecondary)
                 .widgetAccentable()
-            Text("^[\(streak) day](inflect: true)")
+            Text(StreakCopy.duration(count: streak, cadence: cadence))
                 .foregroundStyle(OffRecordColor.textSecondary)
         }
         .font(OffRecordWidgetTypography.micro)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(streak)-day streak")
+        .accessibilityLabel(StreakCopy.label(count: streak, cadence: cadence))
     }
 }
 
@@ -313,7 +317,7 @@ struct TodaySmallView: View {
             }
 
             Spacer(minLength: 0)
-            StreakBadge(streak: entry.streak)
+            StreakBadge(streak: entry.streak, cadence: entry.streakCadence)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .leading)
     }
@@ -363,7 +367,7 @@ struct TodayMediumView: View {
                 Spacer(minLength: 0)
 
                 HStack(spacing: 10) {
-                    StreakBadge(streak: entry.streak)
+                    StreakBadge(streak: entry.streak, cadence: entry.streakCadence)
                     WeekDots(days: entry.lastSevenDays)
                 }
             }
@@ -422,7 +426,7 @@ struct TodayCircularView: View {
                     .font(OffRecordWidgetTypography.micro.monospacedDigit())
             }
         }
-        .accessibilityLabel(entry.hasEntryToday ? "Journaled today, \(entry.streak)-day streak" : "Record today’s entry")
+        .accessibilityLabel(entry.hasEntryToday ? "Journaled today, \(entry.streakLabel)" : "Record today’s entry")
     }
 }
 
@@ -437,7 +441,7 @@ struct TodayRectangularView: View {
             Text(entry.hasEntryToday ? "Journaled today" : "Not yet today")
                 .font(OffRecordWidgetTypography.cardTitle)
                 .lineLimit(1)
-            Text("\(entry.streak)-day streak")
+            Text(entry.streakLabel)
                 .font(OffRecordWidgetTypography.metadata)
                 .foregroundStyle(.secondary)
         }
@@ -450,7 +454,7 @@ struct TodayInlineView: View {
 
     var body: some View {
         if entry.hasEntryToday {
-            Label("Journaled · \(entry.streak)-day streak", systemImage: "checkmark.circle")
+            Label("Journaled · \(entry.streakLabel)", systemImage: "checkmark.circle")
         } else {
             Label("Record today’s entry", systemImage: "mic")
         }
@@ -492,9 +496,9 @@ struct StreakWidgetView: View {
                         .minimumScaleFactor(0.6)
                 }
             }
-            .accessibilityLabel("\(entry.streak)-day streak")
+            .accessibilityLabel(entry.streakLabel)
         case .accessoryInline:
-            Label("\(entry.streak)-day streak", systemImage: "flame")
+            Label(entry.streakLabel, systemImage: "flame")
         default:
             SmallStreakView(entry: entry)
         }
@@ -524,7 +528,7 @@ struct SmallStreakView: View {
                 .font(OffRecordWidgetTypography.numberLarge)
                 .foregroundStyle(OffRecordColor.textHeading)
                 .contentTransition(.numericText())
-            Text("day streak")
+            Text(entry.streakCadence == .daily ? "day streak" : "week streak")
                 .font(OffRecordWidgetTypography.metadata)
                 .foregroundStyle(OffRecordColor.textSecondary)
 
@@ -556,7 +560,7 @@ struct StreakWidget: Widget {
                 .widgetURL(entry.hasEntryToday ? OffRecordWidgetRoute.timeline : OffRecordWidgetRoute.record)
         }
         .configurationDisplayName("Streak")
-        .description("See how many days in a row you’ve journaled.")
+        .description("See your journaling streak.")
         .supportedFamilies([.systemSmall, .accessoryCircular, .accessoryInline])
     }
 }

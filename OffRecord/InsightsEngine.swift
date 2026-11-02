@@ -23,10 +23,11 @@ enum InsightsEngine {
     static func makeInsights(
         from entries: [JournalEntrySnapshot],
         calendar: Calendar = .current,
-        now: Date = Date()
+        now: Date = Date(),
+        streakRules: StreakRules = .standard
     ) -> [JournalInsightSummary] {
         var insights: [JournalInsightSummary] = []
-        if let insight = streakInsight(entries: entries, calendar: calendar, now: now) { insights.append(insight) }
+        if let insight = streakInsight(entries: entries, calendar: calendar, now: now, rules: streakRules) { insights.append(insight) }
         if let insight = moodInsight(entries: entries, calendar: calendar, now: now) { insights.append(insight) }
         if let insight = writingPatternInsight(entries: entries, calendar: calendar) { insights.append(insight) }
         if let insight = productivityInsight(entries: entries, calendar: calendar, now: now) { insights.append(insight) }
@@ -37,49 +38,35 @@ enum InsightsEngine {
 
     // MARK: - Streak
 
-    static func currentStreak(days: Set<Date>, calendar: Calendar, today: Date) -> Int {
-        var checkDate = today
-        if !days.contains(checkDate) {
-            checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate) ?? checkDate
-            guard days.contains(checkDate) else { return 0 }
-        }
+    private static func streakInsight(entries: [JournalEntrySnapshot], calendar: Calendar, now: Date, rules: StreakRules) -> JournalInsightSummary? {
+        let entryDates = entries.compactMap(\.date)
+        let status = JournalStreak.current(entryDates: entryDates, now: now, rules: rules, calendar: calendar)
+        let streak = status.count
+        let hasToday = entryDates.contains { calendar.isDate($0, inSameDayAs: now) }
 
-        var streak = 0
-        while days.contains(checkDate) {
-            streak += 1
-            checkDate = calendar.date(byAdding: .day, value: -1, to: checkDate) ?? checkDate
-        }
-        return streak
-    }
-
-    private static func streakInsight(entries: [JournalEntrySnapshot], calendar: Calendar, now: Date) -> JournalInsightSummary? {
-        let today = calendar.startOfDay(for: now)
-        let days = Set(entries.compactMap { $0.date.map { calendar.startOfDay(for: $0) } })
-        let streak = currentStreak(days: days, calendar: calendar, today: today)
-        let hasToday = days.contains(today)
-
-        let streakStart = calendar.date(byAdding: .day, value: -(streak + (hasToday ? 0 : 1)), to: today) ?? today
         let streakEntries = entries.filter { entry in
-            guard let date = entry.date else { return false }
-            return date >= streakStart
+            guard let date = entry.date, let runStart = status.runStart else { return false }
+            return date >= runStart
         }
-        let rationale = String(localized: "Days in a row with at least one entry.")
+        let rationale = StreakCopy.rationale(for: rules)
+        // A week takes longer to earn than a day, so weekly streaks reach each step sooner.
+        let (onAStreak, buildingHabit) = rules.cadence == .daily ? (7, 3) : (4, 2)
 
-        if streak >= 7 {
+        if streak >= onAStreak {
             return JournalInsightSummary(
                 id: "streak-7",
                 title: String(localized: "On a streak"),
-                description: String(localized: "\(streak) days in a row."),
+                description: StreakCopy.sentence(count: streak, cadence: rules.cadence),
                 icon: "flame.fill",
                 colorName: "orange",
                 rationale: rationale,
                 supportingEntryIDs: evidenceIDs(streakEntries)
             )
-        } else if streak >= 3 {
+        } else if streak >= buildingHabit {
             return JournalInsightSummary(
                 id: "streak-3",
                 title: String(localized: "Building a habit"),
-                description: String(localized: "\(streak) days in a row so far."),
+                description: StreakCopy.soFar(count: streak, cadence: rules.cadence),
                 icon: "arrow.up.right",
                 colorName: "green",
                 rationale: rationale,

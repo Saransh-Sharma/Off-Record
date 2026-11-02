@@ -53,7 +53,7 @@ struct MilestoneCelebrationView: View {
         VStack(spacing: OffRecordSpacing.lg) {
             badge
 
-            Text("\(days) Days in a Row")
+            Text("\(days)-Day Streak", comment: "Milestone title, e.g. “30-Day Streak”")
                 .font(OffRecordTypography.titleLarge)
                 .foregroundStyle(OffRecordColor.textHeading)
                 .multilineTextAlignment(.center)
