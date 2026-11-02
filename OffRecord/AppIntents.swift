@@ -2,6 +2,7 @@ import AppIntents
 import CoreData
 import CoreSpotlight
 import Foundation
+import GeoToolbox
 import os.log
 
 private let intentLogger = Logger(subsystem: "com.singularity.offrecord", category: "AppIntents")
@@ -43,8 +44,25 @@ enum JournalStarState: String, AppEnum {
     var boolValue: Bool { self == .starred }
 }
 
-struct JournalEntryEntity: AppEntity, IndexedEntity {
+/// A journal entry as Siri, Shortcuts, and Spotlight see it: metadata only.
+///
+/// It adopts the journal entry schema (`.journal.entry`) because the Create Entry
+/// schema intent must return one. The schema's content properties stay empty on
+/// purpose: `message` is always nil and `mediaItems` always empty, so no entry text
+/// or photo leaves the app through system entities or the Spotlight index (the
+/// schema maps `message` to `textContent`). `title` is the date-based name, never
+/// text from the entry, and `location` is nil because OffRecord stores none.
+@AppEntity(schema: .journal.entry)
+struct JournalEntryEntity: IndexedEntity {
     var id: UUID
+
+    var title: String?
+    /// Always nil. See the type comment before ever filling it.
+    var message: AttributedString?
+    /// Always empty. See the type comment.
+    var mediaItems: [IntentFile]
+    var entryDate: Date?
+    var location: PlaceDescriptor?
 
     @Property(title: "Date")
     var date: Date
@@ -67,19 +85,23 @@ struct JournalEntryEntity: AppEntity, IndexedEntity {
     @Property(title: "Has Photos")
     var hasPhotos: Bool
 
-    static var typeDisplayRepresentation: TypeDisplayRepresentation = "Journal Entry"
+    // The schema names the type "Journal Entry"; schema entities don't override it.
     static var defaultQuery = JournalEntryQuery()
 
     var displayRepresentation: DisplayRepresentation {
         DisplayRepresentation(
-            title: "\(title)",
+            title: "\(displayTitle)",
             subtitle: "\(subtitle)",
             image: .init(systemName: isStarred ? "star.fill" : "book.pages.fill")
         )
     }
 
-    var title: String {
-        String(localized: "Journal Entry, \(Self.shortDateFormatter.string(from: date))")
+    var displayTitle: String {
+        Self.displayTitle(for: date)
+    }
+
+    static func displayTitle(for date: Date) -> String {
+        String(localized: "Journal Entry, \(shortDateFormatter.string(from: date))")
     }
 
     var subtitle: String {
@@ -109,6 +131,11 @@ struct JournalEntryEntity: AppEntity, IndexedEntity {
 
     init(metadata: JournalSpotlightMetadata) {
         self.id = metadata.id
+        self.title = Self.displayTitle(for: metadata.date)
+        self.message = nil
+        self.mediaItems = []
+        self.entryDate = metadata.date
+        self.location = nil
         self.date = metadata.date
         self.updatedAt = metadata.updatedAt ?? metadata.date
         self.mood = metadata.mood
@@ -389,7 +416,7 @@ enum DiaryEntryIntentStore {
 
         return allEntities().filter { entity in
             [
-                entity.title,
+                entity.displayTitle,
                 entity.subtitle,
                 entity.mood ?? "",
                 entity.isStarred ? "starred favorite" : "",
@@ -419,6 +446,26 @@ enum DiaryEntryIntentStore {
         try save(context)
         EntryLearningPipeline.upsertSemanticEntry(entry)
         JournalSpotlightIndexer.shared.upsert(entry: entry)
+    }
+
+    /// Adds text and photos to the entry for `day` and returns its metadata-only entity.
+    @MainActor
+    static func addToEntry(text: String, photoData: [Data], on day: Date) async throws -> JournalEntryEntity {
+        let context = PersistenceController.shared.container.viewContext
+        let entry = try DiaryEntryDailyStore.getOrCreateEntry(on: day, in: context)
+        if !text.isEmpty {
+            JournalBlockTimelineStore.appendTextBlock(text: text, createdAt: day, to: entry, in: context)
+        }
+        try save(context)
+        if !photoData.isEmpty {
+            await JournalPhotoImport.attach(photoData, to: entry, capturedAt: day, in: context)
+        }
+        EntryLearningPipeline.upsertSemanticEntry(entry)
+        JournalSpotlightIndexer.shared.upsert(entry: entry)
+        guard let metadata = JournalSpotlightMetadataBuilder.metadata(for: entry) else {
+            throw CocoaError(.validationMissingMandatoryProperty)
+        }
+        return JournalEntryEntity(metadata: metadata)
     }
 
     @MainActor

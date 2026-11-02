@@ -176,7 +176,7 @@ struct SystemDiscoverabilityTests {
 
         let entity = JournalEntryEntity(metadata: metadata)
 
-        #expect(entity.title.contains("Journal Entry"))
+        #expect(entity.displayTitle.contains("Journal Entry"))
         #expect(entity.subtitle.contains("Happy mood"))
         #expect(entity.subtitle.contains("42 words"))
         #expect(entity.subtitle.contains("recording"))
