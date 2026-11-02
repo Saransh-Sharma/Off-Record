@@ -109,6 +109,7 @@ struct SettingsView: View {
                         title: String(localized: "Journal & Reminders"),
                         columns: columns,
                         items: [
+                            .init(id: "journals", keywords: JournalsSettingsSection.searchKeywords, view: AnyView(JournalsSettingsSection())),
                             .init(id: "goal", keywords: "weekly goal journaling target habit", view: AnyView(journalingGoalSection)),
                             .init(id: "reminder", keywords: "daily reminder notification time", view: AnyView(dailyReminderSection)),
                             .init(id: "weekly", keywords: "weekly reflection report notification", view: AnyView(weeklyReflectionSection))
@@ -279,6 +280,7 @@ struct SettingsView: View {
             "siri spotlight system search shortcuts", "export pdf print", "backup encrypted json markdown csv import restore",
             "icloud sync cloud devices", "storage space audio photos delete", "theme appearance dark light color accent",
             "privacy policy data not collected", "about version support",
+            JournalsSettingsSection.searchKeywords,
             FridaySettingsSection.searchKeywords, EraseAllDataSettingsSection.searchKeywords
         ]
     }
