@@ -10,6 +10,19 @@ enum OffRecordRoute: Equatable {
     case friday(question: String?)
     case weeklyReflectionCurrent
     case weeklyReflection(UUID)
+    /// `offrecord://review/month/2026-09`
+    case monthInReview(year: Int, month: Int)
+    /// `offrecord://review/year/2026`
+    case yearInReview(Int)
+}
+
+/// A Month in Review or Year in Review to open on Insights.
+struct PeriodReviewRoute: Hashable, Identifiable {
+    let kind: ReflectionPeriodKind
+    let year: Int
+    let month: Int?
+
+    var id: String { month.map { "\(year)-\($0)" } ?? "\(year)" }
 }
 
 struct TypedNoteRequest: Equatable {
@@ -29,6 +42,7 @@ final class OffRecordNavigationRouter: ObservableObject {
     @Published var fridayQuestion: String?
     @Published var routedWeeklyReflectionID: UUID?
     @Published var shouldOpenCurrentWeeklyReflection = false
+    @Published var routedReview: PeriodReviewRoute?
     @Published var shouldStartRecording = false
     /// True while a screen with its own composer (Friday chat) is showing, so the
     /// Record bar doesn't sit on top of it or ride up over it with the keyboard.
@@ -127,6 +141,12 @@ final class OffRecordNavigationRouter: ObservableObject {
             selectedTab = .insights
             shouldOpenCurrentWeeklyReflection = false
             routedWeeklyReflectionID = id
+        case .monthInReview(let year, let month):
+            selectedTab = .insights
+            routedReview = PeriodReviewRoute(kind: .month, year: year, month: month)
+        case .yearInReview(let year):
+            selectedTab = .insights
+            routedReview = PeriodReviewRoute(kind: .year, year: year, month: nil)
         }
     }
 
@@ -169,6 +189,29 @@ final class OffRecordNavigationRouter: ObservableObject {
                 return nil
             }
             return .weeklyReflection(id)
+        case "review":
+            return reviewRoute(pathComponents)
+        default:
+            return nil
+        }
+    }
+
+    /// `year/2026` or `month/2026-09`. Years run 1–9999 and months 1–12.
+    nonisolated private static func reviewRoute(_ components: [String]) -> OffRecordRoute? {
+        guard components.count == 2 else { return nil }
+        let value = components[1]
+        let isDigit: (Character) -> Bool = { $0.isASCII && $0.isNumber }
+        switch components[0].lowercased() {
+        case "year":
+            guard value.count == 4, value.allSatisfy(isDigit), let year = Int(value), year >= 1 else { return nil }
+            return .yearInReview(year)
+        case "month":
+            let parts = value.split(separator: "-", omittingEmptySubsequences: false)
+            guard parts.count == 2, parts[0].count == 4, (1...2).contains(parts[1].count),
+                  parts.allSatisfy({ $0.allSatisfy(isDigit) }),
+                  let year = Int(parts[0]), let month = Int(parts[1]),
+                  year >= 1, (1...12).contains(month) else { return nil }
+            return .monthInReview(year: year, month: month)
         default:
             return nil
         }
@@ -202,6 +245,12 @@ final class OffRecordNavigationRouter: ObservableObject {
         case .weeklyReflection(let id):
             components.host = "weekly-reflection"
             components.path = "/\(id.uuidString)"
+        case .monthInReview(let year, let month):
+            components.host = "review"
+            components.path = String(format: "/month/%04d-%02d", year, month)
+        case .yearInReview(let year):
+            components.host = "review"
+            components.path = String(format: "/year/%04d", year)
         }
 
         return components.url
