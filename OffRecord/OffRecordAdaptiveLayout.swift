@@ -186,10 +186,12 @@ extension View {
     }
 }
 
-/// The device named in copy ("iPhone" or "iPad"), so text says where the journal lives.
+/// The device named in copy ("iPhone", "iPad", or "Mac"), so text says where the journal lives.
 @MainActor
 enum DeviceNoun {
     static var current: String {
-        UIDevice.current.userInterfaceIdiom == .pad ? "iPad" : "iPhone"
+        // The Mac app runs scaled to match iPad, so its idiom says iPad.
+        if ProcessInfo.processInfo.isMacCatalystApp || ProcessInfo.processInfo.isiOSAppOnMac { return "Mac" }
+        return UIDevice.current.userInterfaceIdiom == .pad ? "iPad" : "iPhone"
     }
 }
