@@ -450,7 +450,7 @@ enum WeeklyReflectionGenerationService {
         return Array(questions.prefix(eligibility == .full ? 3 : 2))
     }
 
-    private static func topTopics(in entries: [WeeklyReflectionEntrySnapshot], limit: Int) -> [String] {
+    static func topTopics(in entries: [WeeklyReflectionEntrySnapshot], limit: Int) -> [String] {
         let stopWords: Set<String> = [
             "about", "after", "again", "also", "and", "because", "been", "but", "could", "from",
             "have", "into", "just", "like", "more", "much", "that", "the", "this", "was", "were",

@@ -26,7 +26,9 @@ SKIP_LINE = re.compile(r"[Ll]ogger\.|Logger\(|print\(|os_log|privacy: \.public|a
 PRIVACY_FILES = {"OnboardingView.swift", "HomePrivacyExplanationView.swift", "SettingsView.swift",
                  "OffRecordSettingsComponents.swift", "SpeechTranscriptionConsent.swift",
                  "ShareableInsightCardView.swift", "BackupExportView.swift",
-                 "FridayActiveChatHeader.swift"}
+                 "FridayActiveChatHeader.swift",
+                 # Export and share moments: Session Prep's file and footer, the Year in Review image.
+                 "SessionPrepBuilder.swift", "SessionPrepView.swift", "YearInReviewShareCard.swift"}
 
 RULES = [
     ("em dash", re.compile(r"—|\\u\{2014\}")),

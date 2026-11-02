@@ -10,6 +10,7 @@
 //
 
 #if os(iOS)
+import CoreText
 import Foundation
 import UIKit
 
@@ -352,6 +353,103 @@ struct PDFExportService {
             at: CGPoint(x: (pageRect.width - footerSize.width) / 2, y: footerY),
             withAttributes: footerAttrs
         )
+    }
+
+    // MARK: - Sectioned documents (Session Prep)
+
+    /// Renders a short document of headed sections: bullets, paragraphs, or quotes. Text that
+    /// runs past a page continues on the next one.
+    static func generateDocumentPDF(
+        _ document: SessionPrepDocument,
+        paperSize: PDFPaperSize = .a4,
+        fileName: String
+    ) throws -> URL {
+        let pageRect = paperSize.pageRect
+        let renderer = UIGraphicsPDFRenderer(bounds: pageRect, format: UIGraphicsPDFRendererFormat())
+        let width = pageRect.width - margin * 2
+        let contentBottom = pageRect.height - margin - footerHeight
+
+        let titleAttrs: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 24, weight: .bold), .foregroundColor: PDFExportPalette.textPrimary]
+        let subtitleAttrs: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 12, weight: .medium), .foregroundColor: PDFExportPalette.textSecondary]
+        let headingAttrs: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 14, weight: .semibold), .foregroundColor: PDFExportPalette.textPrimary]
+        let bodyAttrs: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 11.5), .foregroundColor: PDFExportPalette.textPrimary]
+        let quoteAttrs: [NSAttributedString.Key: Any] = [.font: UIFont.italicSystemFont(ofSize: 11.5), .foregroundColor: PDFExportPalette.textPrimary]
+        let noteAttrs: [NSAttributedString.Key: Any] = [.font: UIFont.systemFont(ofSize: 9.5), .foregroundColor: PDFExportPalette.textSecondary]
+
+        let data = renderer.pdfData { context in
+            var y = margin
+
+            func newPage() {
+                context.beginPage()
+                drawFooter(context: context, pageRect: pageRect)
+                y = margin
+            }
+
+            /// Draws `text` at `x` across `textWidth`, splitting it over pages by line.
+            func draw(_ text: String, attributes: [NSAttributedString.Key: Any], x: CGFloat = margin, textWidth: CGFloat = width, spacingAfter: CGFloat = 6) {
+                for chunk in splitTextIntoChunks(text, maxLength: maxChunkSize) {
+                    let attributed = NSAttributedString(string: chunk, attributes: attributes)
+                    let framesetter = CTFramesetterCreateWithAttributedString(attributed)
+                    var start = 0
+                    while start < attributed.length {
+                        if contentBottom - y < 24 { newPage() }
+                        let available = CGSize(width: textWidth, height: contentBottom - y)
+                        var fitRange = CFRange()
+                        let size = CTFramesetterSuggestFrameSizeWithConstraints(framesetter, CFRange(location: start, length: 0), nil, available, &fitRange)
+                        guard fitRange.length > 0 else { newPage(); continue }
+                        let piece = attributed.attributedSubstring(from: NSRange(location: start, length: fitRange.length))
+                        piece.draw(with: CGRect(x: x, y: y, width: textWidth, height: ceil(size.height) + 1), options: [.usesLineFragmentOrigin, .usesFontLeading], context: nil)
+                        y += ceil(size.height)
+                        start += fitRange.length
+                        if start < attributed.length { newPage() }
+                    }
+                }
+                y += spacingAfter
+            }
+
+            newPage()
+            draw(document.title, attributes: titleAttrs, spacingAfter: 2)
+            draw(document.dateRange, attributes: subtitleAttrs, spacingAfter: 18)
+
+            for section in document.sections {
+                if contentBottom - y < 60 { newPage() }
+                draw(section.heading, attributes: headingAttrs, spacingAfter: 6)
+                for item in section.items {
+                    switch section.style {
+                    case .bullets:
+                        draw("\u{2022}  " + item, attributes: bodyAttrs, x: margin + 4, textWidth: width - 4, spacingAfter: 4)
+                    case .paragraph:
+                        draw(item, attributes: bodyAttrs, spacingAfter: 6)
+                    case .quotes:
+                        let top = y
+                        draw(item, attributes: quoteAttrs, x: margin + 14, textWidth: width - 14, spacingAfter: 0)
+                        let bar = UIBezierPath(rect: CGRect(x: margin + 2, y: top, width: 2, height: max(0, y - top)))
+                        PDFExportPalette.borderSoft.setFill()
+                        bar.fill()
+                        y += 10
+                    }
+                }
+                y += 12
+            }
+
+            if !document.footnotes.isEmpty {
+                if contentBottom - y < 40 { newPage() }
+                let line = UIBezierPath()
+                line.move(to: CGPoint(x: margin, y: y))
+                line.addLine(to: CGPoint(x: pageRect.width - margin, y: y))
+                PDFExportPalette.borderSoft.setStroke()
+                line.lineWidth = 0.5
+                line.stroke()
+                y += 8
+                for note in document.footnotes {
+                    draw(note, attributes: noteAttrs, spacingAfter: 2)
+                }
+            }
+        }
+
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(fileName)
+        try data.write(to: url, options: .atomic)
+        return url
     }
 
     /// Splits text into chunks to avoid memory issues with very long strings
