@@ -13,7 +13,6 @@ struct SyncSettingsSection: View {
     static let searchKeywords = "icloud sync cloud devices status account"
 
     @ObservedObject private var monitor = CloudSyncMonitor.shared
-    @ObservedObject private var session = PersistenceController.shared.session
     @ObservedObject private var capture = CaptureController.shared
     @AppStorage(PersistenceStoreConfiguration.syncPreferenceKey) private var isEnabled = true
     @State private var isSwitching = false
@@ -137,6 +136,11 @@ struct SyncSettingsSection: View {
         // Let the switch animate before the screens rebuild around it.
         Task { @MainActor in
             try? await Task.sleep(for: .milliseconds(250))
+            guard !capture.phase.isCapturing, capture.savedCapture == nil else {
+                isSwitching = false
+                alert = .finishRecording
+                return
+            }
             let outcome = PersistenceController.shared.setCloudSyncEnabled(enabled)
             // A reopen rebuilds every screen, so what happens next is kept in the monitor.
             isSwitching = false
