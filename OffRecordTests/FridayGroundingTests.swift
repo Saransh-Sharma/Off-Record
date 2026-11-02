@@ -9,95 +9,20 @@ import Testing
 @MainActor
 @Suite(.serialized)
 struct FridayGroundingTests {
-    private let lunch = "Lunch with Maya by the lake. We talked about her new job in Lisbon and the move in spring."
-    private let deadline = "The project deadline moved again and my manager wants the review by Friday."
+    // MARK: Go Deeper and titles
 
-    /// Topic checks need the part-of-speech model, which some simulators lack.
-    private var hasPartOfSpeechModel: Bool {
-        !EntityExtractor.nouns(in: "The project deadline moved again.").isEmpty
+    /// Every golden case in `FridayGroundingGoldens`, the same set the iOS 27 evaluation runs.
+    @Test(arguments: FridayGroundingGoldens.questions + FridayGroundingGoldens.titles)
+    func goldenCase(_ golden: GroundingGolden) {
+        guard !golden.needsPartOfSpeechModel || FridayGroundingGoldens.hasPartOfSpeechModel else { return }
+        #expect(golden.validate() == golden.shown, "\(golden.kind.rawValue): \(golden.note): \(golden.raw)")
     }
 
-    // MARK: Go Deeper
-
-    @Test func groundedQuestionsPass() {
-        let accepted: [(entry: String, raw: String, shown: String)] = [
-            (lunch, "What did Maya say about the job in Lisbon?", "What did Maya say about the job in Lisbon?"),
-            (lunch, "\"What did Maya's news about Lisbon change for you?\"", "What did Maya’s news about Lisbon change for you?"),
-            (lunch, "  What would the move to Lisbon change?  ", "What would the move to Lisbon change?"),
-            (deadline, "What would make the review with your manager easier?", "What would make the review with your manager easier?"),
-            (deadline, "What does the deadline change for your Friday?", "What does the deadline change for your Friday?"),
-        ]
-        for item in accepted {
-            let context = EntryGenerationContext(text: item.entry, mood: .calm)
-            #expect(GoDeeperQuestionValidator.validated(item.raw, context: context) == item.shown, "\(item.raw)")
-        }
-    }
-
-    @Test func ungroundedOrOffVoiceQuestionsFail() {
-        let context = EntryGenerationContext(text: lunch, mood: .calm)
-        let rejected = [
-            "What did Priya say about the job?",                      // invented name
-            "What Did Maya Say About Lisbon?",                        // Title Case
-            "What did Maya say? How was the lake?",                   // two questions
-            "What did Maya say about Lisbon",                         // no question mark
-            "What did I notice about Maya and Lisbon?",               // Friday talking about herself
-            "What does your journey with Maya mean now?",             // banned word
-            "Is there a diagnosis for how Maya made you feel?",       // clinical
-            "What did Maya say about the new job in Lisbon this spring?", // 12 words
-            "Why does Lisbon matter so much!",                        // exclamation
-            "What do you need right now?",                            // not about the entry
-            "Why?",                                                   // too short
-            "What did Maya say about Lisbon — and why?",              // em dash
-        ]
-        for raw in rejected {
-            #expect(GoDeeperQuestionValidator.validated(raw, context: context) == nil, "\(raw)")
-        }
-    }
-
-    @Test func inventedTopicsFailWhenTheTaggerCanTell() {
-        guard hasPartOfSpeechModel else { return }
-        let context = EntryGenerationContext(text: lunch, mood: .calm)
-        #expect(GoDeeperQuestionValidator.validated("How did the beach trip with Maya feel?", context: context) == nil)
-        #expect(GoDeeperQuestionValidator.validated("What did Maya say about her wedding plans?", context: context) == nil)
-    }
-
-    @Test func assessmentPhrasesFail() {
-        let context = EntryGenerationContext(text: deadline, mood: .anxious)
-        #expect(GoDeeperQuestionValidator.validated("Why do you think you are anxious about the deadline?", context: context) == nil)
-        #expect(GoDeeperQuestionValidator.validated("What do you need to change about the review?", context: context) == nil)
-        #expect(GoDeeperQuestionValidator.validated("What would you change about the review?", context: context) != nil)
-    }
-
-    // MARK: Titles
-
-    @Test func groundedTitlesPass() {
-        let context = EntryGenerationContext(text: lunch, mood: .happy)
-        let accepted: [(raw: String, shown: String)] = [
-            ("Lunch with Maya by the lake", "Lunch with Maya by the lake"),
-            ("Maya's new job in Lisbon", "Maya’s new job in Lisbon"),
-            ("Lunch with Maya.", "Lunch with Maya"),
-            ("\"A move to Lisbon\"", "A move to Lisbon"),
-        ]
-        for item in accepted {
-            #expect(EntryTitleValidator.validated(item.raw, context: context) == item.shown, "\(item.raw)")
-        }
-    }
-
-    @Test func offVoiceTitlesFail() {
-        let context = EntryGenerationContext(text: lunch, mood: .happy)
-        let rejected = [
-            "Lunch With Maya",                                        // Title Case
-            "A long lunch with Maya and her new job by the lake",     // too long
-            "Lunch with Priya",                                       // invented name
-            "My lunch with Maya",                                     // pronoun
-            "Lunch with Maya!",                                       // exclamation
-            "Healing journey with Maya",                              // banned
-            "Maya",                                                   // one word
-            "Lunch with Maya: Lisbon",                                // inner punctuation
-            "Clinical notes on Maya",                                 // clinical
-        ]
-        for raw in rejected {
-            #expect(EntryTitleValidator.validated(raw, context: context) == nil, "\(raw)")
+    @Test func goldensCoverBothVerdictsForEachKind() {
+        for kind in [GroundingGolden.Kind.question, .title] {
+            let cases = (FridayGroundingGoldens.questions + FridayGroundingGoldens.titles).filter { $0.kind == kind }
+            #expect(cases.contains { $0.shown != nil })
+            #expect(cases.contains { $0.shown == nil })
         }
     }
 
