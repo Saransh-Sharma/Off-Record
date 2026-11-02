@@ -40,6 +40,7 @@ struct SettingsView: View {
     @State private var selectedExportPeriod: ExportPeriod = .yearly
     @State private var selectedPaperSize: PDFPaperSize = .a4
     @State private var starredOnly: Bool = false
+    @State private var exportJournalScope: JournalScope = .all
     @State private var isExporting = false
     @State private var exportURL: URL?
     @State private var exportError: String?
@@ -445,6 +446,8 @@ struct SettingsView: View {
                         }
 
                         Toggle("Starred Only", isOn: $starredOnly)
+
+                        ExportJournalPicker(scope: $exportJournalScope)
                     }
                     .padding(.top, OffRecordSpacing.sm)
                 } label: {
@@ -1062,7 +1065,7 @@ struct SettingsView: View {
 
         Task {
             do {
-                let exportEntries = startedEntries
+                let exportEntries = exportJournalScope.filter(startedEntries)
                 let baseEntries: [DiaryEntry]
                 if starredOnly {
                     baseEntries = exportEntries.filter { $0.isStarred }
