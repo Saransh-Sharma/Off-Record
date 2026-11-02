@@ -8,16 +8,19 @@
 //  in AppIntents.swift, which keep their parameters and phrases so saved
 //  shortcuts keep working.
 //
-//  Adopted: `.journal.createEntry`, `.journal.createAudioEntry`, `.journal.search`.
+//  Adopted: `.journal.createEntry`, `.journal.createAudioEntry`, `.journal.search`,
+//  and `.journal.entry` on `JournalEntryEntity` (AppIntents.swift).
 //
-//  Not adopted, on purpose:
-//  - `.journal.entry` (the JournalEntity schema). Its `message` property is the
-//    entry's text and carries the `textContent` Spotlight indexing key, so
-//    adopting it would hand journal text to system surfaces. `JournalEntryEntity`
-//    stays a plain entity with metadata only (date, mood, starred, word count,
-//    recording and photo presence).
-//  - `.journal.updateEntry` and `.journal.deleteEntry`. Both take JournalEntity
-//    values, and deleting entries by voice is destructive.
+//  The entry schema is adopted only because `.journal.createEntry` must return a
+//  schema entity. Its content properties stay empty on purpose: `message` (which
+//  the schema maps to the `textContent` Spotlight key) is always nil and
+//  `mediaItems` is always empty, so no journal text or photo reaches Siri, Apple
+//  Intelligence, or the Spotlight index. The entity carries metadata only (date,
+//  mood, starred, word count, recording and photo presence); see its type comment.
+//
+//  Not adopted, on purpose: `.journal.updateEntry` and `.journal.deleteEntry`.
+//  Editing or deleting entries by voice is destructive, and the text they would
+//  hand back isn't something Siri should hold.
 //
 //  Every intent here requires device authentication. None returns entry text.
 //
