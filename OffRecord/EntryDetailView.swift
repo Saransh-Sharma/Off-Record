@@ -338,12 +338,14 @@ struct EntryDetailView: View {
             let capture = CaptureController.shared
             if !capture.phase.isCapturing {
                 capture.captureDate = Date()
+                capture.resetCaptureJournal()
             }
         }
         .onAppear {
             // While a day is open, the capture accessory records into that day.
             if let date = entry.date, !CaptureController.shared.phase.isCapturing {
                 CaptureController.shared.captureDate = date
+                CaptureController.shared.captureJournalID = entry.journal?.id
             }
             loadPhotos()
             loadBlocks(backfill: true)
@@ -542,6 +544,8 @@ struct EntryDetailView: View {
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: OffRecordSpacing.sm) {
                     moodHeaderButton
+
+                    EntryJournalMenu(entry: entry)
 
                     metadataChip(
                         systemImage: "text.word.spacing",

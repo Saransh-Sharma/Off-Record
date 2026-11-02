@@ -925,7 +925,7 @@ struct FridayView: View {
     private func getOrCreateTodayEntry() -> DiaryEntry? {
         let now = Date()
         do {
-            let entry = try DiaryEntryDailyStore.getOrCreateEntry(on: now, in: viewContext)
+            let entry = try DiaryEntryDailyStore.getOrCreateEntry(on: now, journal: CaptureController.shared.captureJournal, in: viewContext)
             try viewContext.save()
             return entry
         } catch {

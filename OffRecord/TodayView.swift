@@ -321,7 +321,7 @@ struct TodayView: View {
             return
         }
         let capturedAt = capture.captureTimestamp()
-        let hadEntry = (try? DiaryEntryDailyStore.entries(on: capturedAt, in: viewContext).first)?.isStartedEntry == true
+        let hadEntry = (try? DiaryEntryDailyStore.entries(on: capturedAt, journal: capture.captureJournal, in: viewContext).first)?.isStartedEntry == true
         guard let entry = capture.getOrCreateEntry(capturedAt: capturedAt) else {
             capture.alert = .entryCreationFailed
             return

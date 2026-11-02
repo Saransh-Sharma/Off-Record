@@ -401,6 +401,8 @@ private struct CaptureRecordingView: View {
                     .presentationCompactAdaptation(.popover)
             }
 
+            CaptureJournalMenu()
+
             Spacer(minLength: 0)
 
             if capture.isLiveTranscriptActive || SpeechTranscriptionConsent.hasGrantedAppleSpeechProcessing {
