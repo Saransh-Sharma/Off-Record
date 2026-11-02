@@ -8,6 +8,10 @@
 	<true/>
 	<key>com.apple.developer.healthkit.access</key>
 	<array/>
+	<key>com.apple.developer.journal.allow</key>
+	<array>
+		<string>suggestions</string>
+	</array>
 	<key>com.apple.developer.icloud-container-identifiers</key>
 	<array>
 		<string>iCloud.com.singularity.offrecord</string>

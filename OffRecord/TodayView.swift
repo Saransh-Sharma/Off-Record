@@ -172,6 +172,8 @@ struct TodayView: View {
                             onSpeak: { prompt in capture.startRecording(prompt: prompt.detail) }
                         )
 
+                        JournalingSuggestionsButton()
+
                         if !isFirstRun {
                             TodayProgressStrip(stats: todayStats, hasEntryToday: effectiveLatestEntry != nil)
                         }

@@ -62,3 +62,22 @@ struct JournalSchemaIntentTests {
         #expect(!JournalPhotoImport.isImportablePhoto(type: .mpeg4Audio))
     }
 }
+
+/// A picked Journaling Suggestion becomes a prompt and at most the import limit of photos.
+struct JournalingSuggestionDraftTests {
+    @Test func reflectionPromptWinsOverTheTitle() {
+        let draft = JournalingSuggestionDraft(title: "Morning Walk", reflectionPrompts: ["  ", "What stood out today?"], photoURLs: [])
+        #expect(draft.prompt == "What stood out today?")
+    }
+
+    @Test func titleIsThePromptWithoutAReflection() {
+        #expect(JournalingSuggestionDraft(title: " Time with Maya ", reflectionPrompts: [], photoURLs: []).prompt == "Time with Maya")
+        #expect(JournalingSuggestionDraft(title: "", reflectionPrompts: [], photoURLs: []).prompt == nil)
+    }
+
+    @Test func photosKeepThePickerLimit() {
+        let urls = (1...8).map { URL(fileURLWithPath: "/tmp/photo-\($0).jpg") }
+        let draft = JournalingSuggestionDraft(title: "Saturday", reflectionPrompts: [], photoURLs: urls)
+        #expect(draft.photosToImport == Array(urls.prefix(5)))
+    }
+}
