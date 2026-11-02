@@ -1135,6 +1135,7 @@ struct EntryDetailView: View {
         .offRecordContentCard(cornerRadius: 18, fill: OffRecordColor.surfaceBlue)
         .accessibilityElement(children: .combine)
         .accessibilityLabel(item.accessibilityLabel)
+        .accessibilityValue(item.recordingElsewhereAccessibilityValue)
     }
 
     @ViewBuilder
@@ -1142,12 +1143,10 @@ struct EntryDetailView: View {
         if let url = item.audioURL, item.audioExists {
             AudioPlayerView(audioURL: url)
         } else {
-            HStack(spacing: 6) {
-                Image(systemName: "icloud")
-                Text("Recording on another device")
-            }
-            .font(OffRecordTypography.metadata)
-            .foregroundColor(OffRecordColor.textSecondary)
+            RecordingElsewhereNote(
+                origin: item.recordingElsewhereOrigin ?? .anotherDevice,
+                duration: item.duration
+            )
         }
     }
 
