@@ -110,15 +110,17 @@ enum JournalBlockTimelineStore {
         return blocks.sorted(by: isEarlierBlock)
     }
 
+    /// Adds text to the day's entry in `journal`; nil, the default, is the main journal.
     @discardableResult
     static func appendTextBlock(
         text: String,
         createdAt: Date,
         on date: Date? = nil,
+        journal: Journal? = nil,
         in context: NSManagedObjectContext,
         sourceCaptureID: UUID? = nil
     ) throws -> DiaryEntry {
-        let entry = try DiaryEntryDailyStore.getOrCreateEntry(on: date ?? createdAt, in: context)
+        let entry = try DiaryEntryDailyStore.getOrCreateEntry(on: date ?? createdAt, journal: journal, in: context)
         appendTextBlock(text: text, createdAt: createdAt, to: entry, in: context, sourceCaptureID: sourceCaptureID)
         return entry
     }
@@ -181,14 +183,16 @@ enum JournalBlockTimelineStore {
         return block
     }
 
+    /// Adds a mood to the day's entry in `journal`; nil, the default, is the main journal.
     @discardableResult
     static func appendMoodBlock(
         mood: Mood,
         createdAt: Date,
         on date: Date? = nil,
+        journal: Journal? = nil,
         in context: NSManagedObjectContext
     ) throws -> DiaryEntry {
-        let entry = try DiaryEntryDailyStore.getOrCreateEntry(on: date ?? createdAt, in: context)
+        let entry = try DiaryEntryDailyStore.getOrCreateEntry(on: date ?? createdAt, journal: journal, in: context)
         appendMoodBlock(mood: mood, createdAt: createdAt, to: entry, in: context)
         return entry
     }

@@ -1,6 +1,10 @@
 import CoreData
 import Foundation
+import JournalFoundation
 
+/// One entry per day per journal. A day's identity is (day, journal), where a
+/// nil journal is the main journal, so every lookup, create, and merge here
+/// stays inside one journal and a merge never moves content across journals.
 @MainActor
 enum DiaryEntryDailyStore {
     private static let textSeparator = "\n\n"
@@ -8,12 +12,13 @@ enum DiaryEntryDailyStore {
     @discardableResult
     static func getOrCreateEntry(
         on date: Date = Date(),
+        journal: Journal? = nil,
         in context: NSManagedObjectContext,
         calendar: Calendar = .current
     ) throws -> DiaryEntry {
-        let entries = try entries(on: date, in: context, calendar: calendar)
+        let entries = try entries(on: date, journal: journal, in: context, calendar: calendar)
         if entries.isEmpty {
-            return makeEntry(on: date, in: context)
+            return makeEntry(on: date, journal: journal, in: context)
         }
         return try merge(entries, in: context)
     }
@@ -22,10 +27,11 @@ enum DiaryEntryDailyStore {
     static func appendText(
         _ text: String,
         on date: Date = Date(),
+        journal: Journal? = nil,
         in context: NSManagedObjectContext,
         calendar: Calendar = .current
     ) throws -> DiaryEntry {
-        let entry = try getOrCreateEntry(on: date, in: context, calendar: calendar)
+        let entry = try getOrCreateEntry(on: date, journal: journal, in: context, calendar: calendar)
         JournalBlockTimelineStore.appendTextBlock(text: text, createdAt: date, to: entry, in: context)
         entry.updatedAt = Date()
         return entry
@@ -60,7 +66,7 @@ enum DiaryEntryDailyStore {
 
         let entries = try context.fetch(request).filter { !$0.isDeleted }
         let groupedEntries = Dictionary(grouping: entries) { entry in
-            calendar.startOfDay(for: entry.date ?? .distantPast)
+            DayIdentity(day: calendar.startOfDay(for: entry.date ?? .distantPast), journal: entry.journal?.objectID)
         }
 
         return try groupedEntries.values.compactMap { sameDayEntries in
@@ -72,16 +78,19 @@ enum DiaryEntryDailyStore {
     @discardableResult
     static func normalizeDuplicateEntries(
         on date: Date,
+        journal: Journal? = nil,
         in context: NSManagedObjectContext,
         calendar: Calendar = .current
     ) throws -> DiaryEntry? {
-        let sameDayEntries = try entries(on: date, in: context, calendar: calendar)
+        let sameDayEntries = try entries(on: date, journal: journal, in: context, calendar: calendar)
         guard sameDayEntries.count > 1 else { return sameDayEntries.first }
         return try merge(sameDayEntries, in: context)
     }
 
+    /// The day's entries in `journal` (nil is the main journal), most recently updated first.
     static func entries(
         on date: Date,
+        journal: Journal? = nil,
         in context: NSManagedObjectContext,
         calendar: Calendar = .current
     ) throws -> [DiaryEntry] {
@@ -89,7 +98,9 @@ enum DiaryEntryDailyStore {
         let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay) ?? date
 
         let request: NSFetchRequest<DiaryEntry> = DiaryEntry.fetchRequest()
-        request.predicate = NSPredicate(format: "date >= %@ AND date < %@", startOfDay as NSDate, endOfDay as NSDate)
+        let dayPredicate = NSPredicate(format: "date >= %@ AND date < %@", startOfDay as NSDate, endOfDay as NSDate)
+        let journalPredicate = journal.map { NSPredicate(format: "journal == %@", $0) } ?? NSPredicate(format: "journal == nil")
+        request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: [dayPredicate, journalPredicate])
         request.sortDescriptors = [
             NSSortDescriptor(keyPath: \DiaryEntry.updatedAt, ascending: false),
             NSSortDescriptor(keyPath: \DiaryEntry.date, ascending: false)
@@ -98,7 +109,13 @@ enum DiaryEntryDailyStore {
         return try context.fetch(request).filter { !$0.isDeleted }
     }
 
-    private static func makeEntry(on date: Date, in context: NSManagedObjectContext) -> DiaryEntry {
+    private struct DayIdentity: Hashable {
+        let day: Date
+        /// Nil is the main journal.
+        let journal: NSManagedObjectID?
+    }
+
+    private static func makeEntry(on date: Date, journal: Journal?, in context: NSManagedObjectContext) -> DiaryEntry {
         let entry = DiaryEntry(context: context)
         entry.id = UUID()
         entry.date = date
@@ -106,6 +123,7 @@ enum DiaryEntryDailyStore {
         entry.updatedAt = date
         entry.text = ""
         entry.isStarred = false
+        entry.journal = journal
         return entry
     }
 
@@ -124,6 +142,9 @@ enum DiaryEntryDailyStore {
         let chronologicalEntries = activeEntries.sorted(by: isEarlierForTextMerge)
         primary.isStarred = activeEntries.contains { $0.isStarred }
         primary.duration = activeEntries.reduce(0) { $0 + max(0, $1.duration) }
+        // The strictest "Keep Out of Friday" level wins, so merged text never reaches Friday
+        // when any part of it was kept out.
+        primary.journalAIExclusion = activeEntries.map(\.journalAIExclusion).max(by: isLessRestrictive) ?? .included
 
         if normalizedAudioFileName(primary).isEmpty,
            let audioFileName = chronologicalEntries.map(normalizedAudioFileName).first(where: { !$0.isEmpty }) {
@@ -159,12 +180,27 @@ enum DiaryEntryDailyStore {
             for block in blocks {
                 block.diaryEntry = primary
             }
+            for tag in (duplicate.tags as? Set<JournalTag>) ?? [] where !tag.isDeleted {
+                primary.addToTags(tag)
+            }
             context.delete(duplicate)
         }
 
         JournalBlockTimelineStore.recomposeLegacyFields(for: primary, touchUpdatedAt: false)
         primary.updatedAt = latestUpdatedAt
         return primary
+    }
+
+    private static func isLessRestrictive(_ lhs: JournalAIExclusion, _ rhs: JournalAIExclusion) -> Bool {
+        restriction(lhs) < restriction(rhs)
+    }
+
+    private static func restriction(_ exclusion: JournalAIExclusion) -> Int {
+        switch exclusion {
+        case .included: return 0
+        case .excludedFromAI: return 1
+        case .excludedFromAIAndReflection: return 2
+        }
     }
 
     private static func isOlderForPrimarySelection(_ lhs: DiaryEntry, _ rhs: DiaryEntry) -> Bool {
