@@ -309,10 +309,11 @@ struct OpenFridayIntent: AppIntent {
     }
 }
 
+/// Answers inside Siri after device authentication. Siri shows and says the
+/// summary only; see `AskFridaySiri` for the safety and privacy rules.
 struct AskFridayIntent: AppIntent {
     static var title: LocalizedStringResource = "Ask Friday"
-    static var description = IntentDescription("Asks Friday about your journal.")
-    static var openAppWhenRun: Bool = true
+    static var description = IntentDescription("Answers a question from your journal.")
     static var authenticationPolicy: IntentAuthenticationPolicy = .requiresLocalDeviceAuthentication
 
     @Parameter(title: "Question", requestValueDialog: "What do you want to ask?")
@@ -323,9 +324,69 @@ struct AskFridayIntent: AppIntent {
     }
 
     func perform() async throws -> some IntentResult & ProvidesDialog {
+        let asked = question?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        let reply = await AskFridaySiri.reply(to: asked, fridayEnabled: AskFridaySiri.isFridayEnabled) { @MainActor question in
+            await EvidenceFridayEngine.answer(question: question, entries: AskFridaySiri.journalEntries())
+        }
+
+        switch reply {
+        case .needsQuestion:
+            throw $question.needsValueError("What do you want to ask?")
+        case .support(let line):
+            return .result(opensIntent: OpenGetSupportIntent(), dialog: IntentDialog("\(line)"))
+        case .fridayOff:
+            return .result(dialog: "Friday is turned off in Settings.")
+        case .answer(let summary):
+            return .result(actionButtonIntent: OpenFridayQuestionIntent(question: asked), dialog: IntentDialog("\(summary)"))
+        case .needsMoreTime:
+            return .result(actionButtonIntent: OpenFridayQuestionIntent(question: asked), dialog: "Friday needs more time for this one.")
+        }
+    }
+}
+
+/// The Open in Friday button on an Ask Friday answer: asks the same question in the app.
+struct OpenFridayQuestionIntent: AppIntent {
+    static var title: LocalizedStringResource = "Open in Friday"
+    static var description = IntentDescription("Opens the question in Friday.")
+    static var openAppWhenRun: Bool = true
+    static var isDiscoverable: Bool = false
+    static var authenticationPolicy: IntentAuthenticationPolicy = .requiresLocalDeviceAuthentication
+
+    @Parameter(title: "Question")
+    var question: String?
+
+    init() {}
+
+    init(question: String) {
+        self.question = question
+    }
+
+    func perform() async throws -> some IntentResult {
         let trimmed = question?.trimmingCharacters(in: .whitespacesAndNewlines)
         OffRecordNavigationRouter.storePendingRoute(.friday(question: trimmed?.isEmpty == false ? trimmed : nil))
-        return .result(dialog: "Opening Friday.")
+        await MainActor.run {
+            NotificationCenter.default.post(name: .offRecordPendingRouteStored, object: nil)
+        }
+        return .result()
+    }
+}
+
+/// Opens OffRecord to the Get Support sheet after a high-risk question in Siri.
+/// The sheet holds no journal content, so it needs no authentication and opens
+/// even while the app is locked.
+struct OpenGetSupportIntent: AppIntent {
+    static var title: LocalizedStringResource = "Get Support"
+    static var description = IntentDescription("Opens crisis lines and support options.")
+    static var openAppWhenRun: Bool = true
+    static var isDiscoverable: Bool = false
+    static var authenticationPolicy: IntentAuthenticationPolicy = .alwaysAllowed
+
+    func perform() async throws -> some IntentResult {
+        OffRecordNavigationRouter.storePendingRoute(.support)
+        await MainActor.run {
+            NotificationCenter.default.post(name: .offRecordPendingRouteStored, object: nil)
+        }
+        return .result()
     }
 }
 
