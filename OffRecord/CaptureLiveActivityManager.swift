@@ -7,9 +7,24 @@
 //  transcripts never leave the app.
 //
 
-import ActivityKit
 import Foundation
 import os.log
+
+#if targetEnvironment(macCatalyst)
+/// Live Activities don't exist on Mac. The Mac app keeps the same calls so
+/// CaptureController stays platform-neutral; both do nothing.
+@MainActor
+final class CaptureLiveActivityManager {
+    static let shared = CaptureLiveActivityManager()
+
+    private init() {}
+
+    func captureDidChange(from oldPhase: CapturePhase, to newPhase: CapturePhase) {}
+
+    func endOrphanedActivities() async {}
+}
+#else
+import ActivityKit
 
 private let liveActivityLogger = Logger(subsystem: "com.singularity.offrecord", category: "CaptureLiveActivity")
 
@@ -109,3 +124,4 @@ final class CaptureLiveActivityManager {
         }
     }
 }
+#endif

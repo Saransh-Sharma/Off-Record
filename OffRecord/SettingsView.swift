@@ -662,11 +662,14 @@ struct SettingsView: View {
                 .foregroundColor(OffRecordColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
+            #if !targetEnvironment(macCatalyst)
+            // Siri tips don't exist on Mac.
             ShortcutsLink()
                 .accessibilityIdentifier("settings.systemSearch.shortcutsLink")
 
             SiriTipView(intent: SearchJournalIntent(), isVisible: $showSearchSiriTip)
                 .siriTipViewStyle(.automatic)
+            #endif
 
             Button {
                 JournalSpotlightIndexer.shared.rebuild(entries: startedEntries)
