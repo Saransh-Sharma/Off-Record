@@ -12,6 +12,9 @@ import Foundation
 struct UITestDataSeeder {
     static func seedIfNeeded(context: NSManagedObjectContext) {
         let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("-UITesting") {
+            resetFridayStateForUITesting()
+        }
         guard arguments.contains("-HeroNudgeUITest")
                 || arguments.contains("-OnboardingUITest")
                 || arguments.contains("-SemanticMemoryUITest")
@@ -63,6 +66,24 @@ struct UITestDataSeeder {
         }
 
         try? context.save()
+    }
+
+    /// Friday on/off key and Friday's local folder, by name. A UI test that stops midway
+    /// can leave Friday off or her files behind, which would break the next Friday test.
+    static let fridayEnabledDefaultsKey = "offrecord_friday_enabled"
+    static let fridayLocalDirectoryName = "FridayLocal"
+
+    /// Every -UITesting launch starts with Friday on and no leftover Friday files.
+    static func resetFridayStateForUITesting(
+        defaults: UserDefaults = .standard,
+        applicationSupport: URL? = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+    ) {
+        defaults.removeObject(forKey: fridayEnabledDefaultsKey)
+        guard let applicationSupport else { return }
+        let directory = applicationSupport.appendingPathComponent(fridayLocalDirectoryName, isDirectory: true)
+        if FileManager.default.fileExists(atPath: directory.path) {
+            try? FileManager.default.removeItem(at: directory)
+        }
     }
 
     static func seedPendingRouteIfNeeded(arguments: [String]) {

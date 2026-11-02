@@ -57,3 +57,33 @@ struct AppClockTests {
         #expect(dates.map { calendar.component(.weekday, from: $0) } == [4, 3, 2])
     }
 }
+
+/// UI-test launches start with Friday on and without Friday's leftover files.
+@MainActor
+struct UITestFridayResetTests {
+    @Test func resetTurnsFridayBackOnAndRemovesHerFolder() throws {
+        let suite = "UITestFridayResetTests-\(UUID().uuidString)"
+        let defaults = try #require(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let support = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        let fridayLocal = support.appendingPathComponent(UITestDataSeeder.fridayLocalDirectoryName, isDirectory: true)
+        try FileManager.default.createDirectory(at: fridayLocal, withIntermediateDirectories: true)
+        try Data("chat".utf8).write(to: fridayLocal.appendingPathComponent("history.json"))
+        let other = support.appendingPathComponent("OffRecordIndex", isDirectory: true)
+        try FileManager.default.createDirectory(at: other, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: support) }
+        defaults.set(false, forKey: UITestDataSeeder.fridayEnabledDefaultsKey)
+
+        UITestDataSeeder.resetFridayStateForUITesting(defaults: defaults, applicationSupport: support)
+
+        #expect(defaults.object(forKey: "offrecord_friday_enabled") == nil)
+        #expect(!FileManager.default.fileExists(atPath: fridayLocal.path))
+        #expect(FileManager.default.fileExists(atPath: other.path))
+    }
+
+    @Test func resetIsHarmlessWithNothingToClear() {
+        let support = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        UITestDataSeeder.resetFridayStateForUITesting(defaults: UserDefaults(suiteName: "UITestFridayResetEmpty")!, applicationSupport: support)
+        #expect(!FileManager.default.fileExists(atPath: support.path))
+    }
+}
