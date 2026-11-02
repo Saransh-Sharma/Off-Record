@@ -9,7 +9,7 @@ Microphone → AudioRecorder (AAC 44.1kHz)
     ↓
 TranscriptionKit (SpeechAnalyzer + SpeechTranscriber/DictationTranscriber)
     ↓
-LocalAIEngine + InsightsEngine (NLTagger analysis)
+SentimentScorer + EntityExtractor (SemanticMemoryKit) → InsightsEngine / EntryInsightAnalyzer
     ↓
 FridayAssistantEngine (personality modeling)
     ↓
@@ -105,7 +105,12 @@ Core iPhone source files are in `OffRecord/`. Shared watch/iPhone capture models
 |---|---|---|
 | **AudioRecorder** | `AudioRecorder.swift` | AVAudioRecorder wrapper. Records AAC at 44.1kHz, provides real-time audio levels. Stores recordings in the app sandbox. |
 | **TranscriptionKit** | `Packages/JournalKit/Sources/TranscriptionKit` | iOS 26+ speech-to-text through Apple SpeechAnalyzer. SpeechTranscriber is preferred, DictationTranscriber expands locale coverage, and system-managed models run entirely on-device. |
-| **LocalAIEngine** | `LocalAIEngine.swift` | NLP analysis using NaturalLanguage framework. Sentiment analysis, topic extraction, intent recognition. Maintains a UserProfile for learned patterns. |
+| **Text analysis** | `Packages/JournalKit/Sources/SemanticMemoryKit/TextAnalysis.swift` | The only NLP: `SentimentScorer` (every paragraph, length-weighted) and `EntityExtractor` (names with repeats, nouns, tagged words). `TextSignals` and `ReflectionSentiment` delegate to it. `EntryInsightAnalyzer` writes the entry's From Friday notes. |
+| **On-device model** | `FridayLanguageModel.swift`, `FridayOutputValidator.swift`, `FridayConversation.swift`, `FridayConversationTools.swift`, `GoDeeperQuestionProvider`, `FridayEntryTitles.swift`, `WeeklyReflectionNarrator.swift` | `FridayLanguageModel` gates availability. It is off under UI tests and screenshots unless `-EnableOnDeviceModel` is passed. The pipeline: deterministic risk gate → retrieval → `SystemLanguageModel` with tools (`searchJournal`, `moodStats`, `person`) → `FridayOutputValidator` (Voice, clinical terms, risk, grounding) → fallback to the deterministic text. Generated text lives in `FridayGeneratedTextCache` under `FridayLocal/`, never in Core Data. |
+| **Reviews** | `Packages/JournalKit/Sources/ReflectionKit/ReflectionPeriodKind.swift`, `PeriodReviewModels.swift`, `PeriodReviewGenerator.swift`, `PeriodReviewController.swift` | Week, month, and year periods share the weekly pipeline and safety filter. Month and year reviews are stored in their own `period_reviews` AIState row; the weekly format is unchanged. |
+| **Session Prep** | `SessionPrepBuilder.swift`, `SessionPrepView.swift`, `PDFExportService.generateDocumentPDF` | Deterministic summary of a range, quotes chosen by the user, name replacement, and PDF, Markdown, or text output. |
+| **Importers** | `ZipArchive*.swift`, `JournalImport*.swift` | A read-only ZIP reader with no third-party code, plus parsers for Day One, Apple Journal, Markdown/text, and CSV. `JournalImportService` merges same-day entries as text blocks and dedupes through `JournalBlock.sourceCaptureID`. |
+| **Privacy controls** | `DiaryEntry+AIExclusion.swift`, `FridayAvailability.swift`, `FridayProfileStore`, `FridayLocalDirectory`, `JournalEraser.swift` | Per-entry `aiExclusion` is enforced at the index, evidence, Weekly, Friday learning, proactive, and saved-chat gates. `FridayAvailability` (key `offrecord_friday_enabled`) is the global switch. Friday's files live under `FridayLocal/`. `JournalEraser` posts `.offRecordDidEraseAllData` so `ContentView` rebuilds its tabs. |
 | **InsightsEngine** | `InsightsEngine.swift` | Generates insight cards from journal data. Sentiment trends, topic frequency, journaling patterns. |
 | **FridayAssistantEngine** | `FridayAssistantEngine.swift` | Core personality model with four sub-models (see below). Processes NLTagger output per entry. Serializes to JSON in Core Data (~12 KB). |
 | **FridayProfileRebuilder** | `FridayProfileRebuilder.swift` | Treats Friday's profile as derived data. After any journal store save it compares a fingerprint of started entry IDs and edit times. On a change, it relearns the profile from every entry in a scratch engine and swaps it in. High-risk entries are skipped. |
@@ -113,7 +118,7 @@ Core iPhone source files are in `OffRecord/`. Shared watch/iPhone capture models
 | **Semantic Memory** | `SemanticMemory.swift` | Local-only chunking, embeddings, hybrid search, index lifecycle, and evidence references. |
 | **Weekly Reflection** | `WeeklyReflectionModels.swift`, `WeeklyReflectionServices.swift`, `WeeklyReflectionController.swift` | Local weekly eligibility, deterministic report generation, safety filtering, AIState persistence, report versioning, export, and local notification scheduling. |
 | **Foundation Models Friday** | `FoundationModelsFridayResponder.swift` | Optional iOS 26 phrasing layer that validates observations against retrieved evidence. |
-| **Persistence** | `Persistence.swift` | Core Data with NSPersistentCloudKitContainer. Stores entries, synced photo attachments, audio metadata, and AI state. App Group for WidgetKit data sharing. |
+| **Persistence** | `Persistence.swift` | Core Data with NSPersistentCloudKitContainer, model version "OffRecord 3": `DiaryEntry.aiExclusion`, a `Tag` entity (Swift class `JournalTag`) many-to-many with entries, and a `Journal` entity (nil means the main journal). Stores entries, synced photo attachments, audio metadata, and AI state. App Group for WidgetKit data sharing. Deploy the CloudKit schema to production before shipping a model change. |
 | **System Discoverability** | `AppIntents.swift`, `JournalSpotlightIndexer.swift`, `OffRecordNavigationRouter.swift` | App Shortcuts, privacy-safe `JournalEntryEntity`, Core Spotlight metadata indexing, NSUserActivity prediction/search donation, and `offrecord://` route handling. |
 | **Watch Capture Import** | `WatchCaptureImporter.swift`, `AudioAttachmentStore.swift` | WatchConnectivity receiver, daily-entry import, local-only receipts, multi-audio attachment storage, and duplicate replay protection. |
 | **Watch Shared Models** | `OffRecordShared/WatchCaptureModels.swift` | `WatchCaptureEnvelope`, `WatchCaptureKind`, `WatchSyncState`, `WatchAudioManifest`, `WatchCaptureSourceSurface`, and queue policy types shared by iPhone tests and watch code. |

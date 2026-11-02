@@ -446,6 +446,14 @@ Copy should be short, specific, and calm. It should read like a well-made Apple 
 | **streak**, **days in a row** | rhythm |
 | **Lock** | Privacy Lock |
 | **OffRecord** (in the app) | OffRecord AI Journal (App Store and marketing only), AI Voice Diary |
+| **Keep Out of Friday** (per entry; a fixed 4-word term) | Private, Hide, Exclude |
+| **Skip Weekly Reflection** | Hide from report |
+| **Turn On Friday** / **Turn Off Friday** | Enable, Disable |
+| **Erase All Data** | Reset, Wipe |
+| **Month in Review**, **Year in Review** | Recap, Wrapped |
+| **Session Prep** | therapy, therapy prep, session notes |
+| **Entries That Mattered** | highlights, best entries |
+| **Year in Pixels** | mood grid |
 | **iPhone** / **iPad** (via `DeviceNoun`) | this device, your device, locally |
 
 #### Length
@@ -487,7 +495,7 @@ Copy should be short, specific, and calm. It should read like a well-made Apple 
 2. The privacy sheet on Today.
 3. The Privacy card in Settings.
 4. Permission strings.
-5. Moments where data would leave the app: share cards, export, the Apple Health toggle, the iCloud toggle, transcription consent, and the Spotlight toggle.
+5. Moments where data would leave the app: share cards, export (including Session Prep and the Year in Review card), the Apple Health toggle, the iCloud toggle, transcription consent, the Spotlight toggle, and the Erase All Data alert (the one place that says data is removed from iCloud).
 6. One small “AI · On-device” label in the Friday chat header.
 
 Everywhere else, leave it out.
