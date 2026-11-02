@@ -10,6 +10,7 @@ struct TimelineEntryCard: View {
     let metrics: TimelineEntryPresentation?
     let searchText: String
     let evidence: EvidenceReference?
+    @ObservedObject private var entryTitles = EntryTitleStore.shared
 
     private var mood: Mood {
         guard let moodString = entry.value(forKey: "mood") as? String,
@@ -63,6 +64,15 @@ struct TimelineEntryCard: View {
                     }
                 }
 
+                // Search results lead with the matching text, so the title only shows outside search.
+                if evidence == nil, searchText.isEmpty, let title = entryTitles.title(for: entry) {
+                    Text(title)
+                        .font(OffRecordTypography.labelMedium)
+                        .foregroundStyle(OffRecordColor.textHeading)
+                        .lineLimit(1)
+                        .accessibilityIdentifier("timeline.entryTitle")
+                }
+
                 highlightedText(previewText)
                     .font(OffRecordTypography.bodySmall)
                     .foregroundStyle(OffRecordColor.textPrimary)
@@ -102,6 +112,7 @@ struct TimelineEntryCard: View {
         .offRecordPointerLift()
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier("timeline.entryRow")
+        .onAppear { entryTitles.requestTitle(for: entry) }
     }
 
     @ViewBuilder

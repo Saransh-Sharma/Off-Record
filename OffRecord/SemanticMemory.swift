@@ -143,7 +143,12 @@ final class SemanticMemoryIndexController: ObservableObject {
     }
 
     func search(query: String, entries: [DiaryEntry], limit: Int = 18) async -> SemanticMemorySearchResult {
-        let records = Self.records(from: entries)
+        await search(query: query, records: Self.records(from: entries), limit: limit)
+    }
+
+    /// The same search over records captured earlier, for callers off the main actor
+    /// (Friday's chat tools) that can't hold `DiaryEntry` objects.
+    func search(query: String, records: [IndexableEntry], limit: Int = 18) async -> SemanticMemorySearchResult {
         if isBuilding {
             let state: SemanticMemorySearchResult = .building(progress: progress, message: statusMessage)
             lastSearchState = state
@@ -242,7 +247,7 @@ final class SemanticMemoryIndexController: ObservableObject {
             : message
     }
 
-    private static func records(from entries: [DiaryEntry]) -> [IndexableEntry] {
+    static func records(from entries: [DiaryEntry]) -> [IndexableEntry] {
         entries.compactMap(IndexableEntry.init(entry:))
     }
 }
@@ -341,9 +346,38 @@ enum EvidenceFridayEngine {
     }
 
     static func answer(question: String, evidence retrieved: [EvidenceReference], profileSummary: String? = nil) async -> EvidenceBackedFridayAnswer {
+        let deterministic = deterministicAnswer(question: question, evidence: retrieved, profileSummary: profileSummary)
+
+        #if canImport(FoundationModels)
+        if profileSummary == nil, !deterministic.phraseableEvidence.isEmpty {
+            if #available(iOS 26.0, *),
+               let generatedAnswer = try? await FoundationModelsFridayResponder.answer(
+                question: question,
+                evidence: deterministic.phraseableEvidence,
+                fallback: deterministic.answer
+               ) {
+                return generatedAnswer.withResponseMode(deterministic.answer.responseMode)
+            }
+        }
+        #endif
+
+        return deterministic.answer
+    }
+
+    /// The model-free answer, plus the evidence a model may phrase (empty when
+    /// the answer is support copy, a refusal, or a profile fallback).
+    struct DeterministicAnswer {
+        let answer: EvidenceBackedFridayAnswer
+        let phraseableEvidence: [EvidenceReference]
+    }
+
+    /// Everything `answer(question:evidence:profileSummary:)` decides without a
+    /// model: the risk gate, high-risk withholding, strong-evidence selection,
+    /// and the deterministic wording. Friday's chat session runs it first too.
+    static func deterministicAnswer(question: String, evidence retrieved: [EvidenceReference], profileSummary: String? = nil) -> DeterministicAnswer {
         let questionMode = JournalRiskClassifier.responseMode(for: question)
         if questionMode == .supportOnly {
-            return .supportOnly(persona: .friday)
+            return DeterministicAnswer(answer: .supportOnly(persona: .friday), phraseableEvidence: [])
         }
         // High-risk passages are never quoted or analyzed. If every strong
         // match was one, reply with support copy instead of a thin answer;
@@ -354,7 +388,7 @@ enum EvidenceFridayEngine {
             let strongRetrieved = strongEvidence(from: retrieved)
             if !strongRetrieved.isEmpty, strongRetrieved.allSatisfy(isHighRisk) {
                 semanticMemoryLogger.notice("Friday withheld high-risk evidence and replied with support copy.")
-                return .supportOnly(persona: .friday)
+                return DeterministicAnswer(answer: .supportOnly(persona: .friday), phraseableEvidence: [])
             }
         }
         let strongEvidence = strongEvidence(from: evidence)
@@ -368,16 +402,16 @@ enum EvidenceFridayEngine {
                 limitation: String(localized: "I couldn’t find supporting entries for this.")
             ) {
                 semanticMemoryLogger.notice("Friday using suggested profile fallback because evidence was weak.")
-                return fallback
+                return DeterministicAnswer(answer: fallback, phraseableEvidence: [])
             }
-            return EvidenceBackedFridayAnswer(
+            return DeterministicAnswer(answer: EvidenceBackedFridayAnswer(
                 summary: String(localized: "I do not have enough journal evidence to answer that yet."),
                 observations: [EvidenceObservation(text: String(localized: "Try asking about a person, topic, mood, or time you’ve written about."), evidenceIDs: [])],
                 evidence: [],
                 confidence: 0,
                 followUpPrompt: nil,
                 limitations: String(localized: "I only answer from journal evidence I can find.")
-            )
+            ), phraseableEvidence: [])
         }
 
         let topEvidence = Array(strongEvidence.prefix(4))
@@ -394,24 +428,11 @@ enum EvidenceFridayEngine {
             limitations: confidence < 0.65 ? String(localized: "I’m not sure. Only a few entries match.") : nil,
             responseMode: questionMode
         )
-
-        #if canImport(FoundationModels)
-        if profileSummary == nil {
-            if #available(iOS 26.0, *),
-               let generatedAnswer = try? await FoundationModelsFridayResponder.answer(
-                question: question,
-                evidence: topEvidence,
-                fallback: deterministicAnswer
-               ) {
-                return generatedAnswer.withResponseMode(questionMode)
-            }
-        }
-        #endif
-
-        return deterministicAnswer
+        return DeterministicAnswer(answer: deterministicAnswer, phraseableEvidence: topEvidence)
     }
 
-    private static func strongEvidence(from evidence: [EvidenceReference]) -> [EvidenceReference] {
+    /// Matches strong enough to answer from; weak meaning-only matches are dropped.
+    static func strongEvidence(from evidence: [EvidenceReference]) -> [EvidenceReference] {
         guard let top = evidence.first else { return [] }
         let hasLexicalSupport = evidence.contains { $0.matchReason == .exact || $0.matchReason == .entity }
         let hasMultipleMatches = evidence.count >= 2 && (evidence.dropFirst().first?.score ?? 0) >= 0.014

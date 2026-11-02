@@ -42,7 +42,6 @@ struct UITestDataSeeder {
         if arguments.contains("-SemanticMemoryUITest") {
             resetSemanticMemorySidecar()
             FridayAssistantEngine.shared.resetForUITesting()
-            LocalAIEngine.shared.userProfile = UserProfile()
             if !arguments.contains("-SemanticMemoryEmptyJournal") {
                 seedSemanticMemoryEntries(in: context)
             }
@@ -50,7 +49,6 @@ struct UITestDataSeeder {
             seedWeeklyReflectionState(arguments: arguments, context: context)
         } else if arguments.contains("-ProactiveReflectionUITest") {
             FridayAssistantEngine.shared.resetForUITesting()
-            LocalAIEngine.shared.userProfile = UserProfile()
             seedProactiveReflectionEntries(in: context)
             // Today shows one contextual card; keep the weekly card out of the way of the prompt under test.
             WeeklyReflectionController.shared.updateSettings { $0.showHomeCard = false }

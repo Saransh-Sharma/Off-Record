@@ -24,6 +24,7 @@
 import Foundation
 import NaturalLanguage
 import CoreData
+import SemanticMemoryKit
 @_exported import KnowledgeGraphKit
 
 // Profile and knowledge-graph types now live in KnowledgeGraphKit.
@@ -99,9 +100,7 @@ final class FridayAssistantEngine: ObservableObject {
     @Published var behavioralPatterns = BehavioralPatterns()
     @Published var summary = FridaySummary()
 
-    // NLP
-    private let sentimentTagger = NLTagger(tagSchemes: [.sentimentScore])
-    private let entityTagger = NLTagger(tagSchemes: [.nameType, .lexicalClass])
+    // NLP (sentiment and entities come from SemanticMemoryKit's shared scorer and extractor)
     private let tokenizer = NLTokenizer(unit: .word)
     private let sentenceTokenizer = NLTokenizer(unit: .sentence)
 
@@ -179,21 +178,6 @@ final class FridayAssistantEngine: ObservableObject {
         save()
     }
 
-    /// Extract named entities from text
-    private func extractNamedEntities(from text: String) -> [String] {
-        guard !text.isEmpty else { return [] }
-        var entities: [String] = []
-        entityTagger.string = text
-        entityTagger.enumerateTags(in: text.startIndex..<text.endIndex, unit: .word, scheme: .nameType, options: [.omitWhitespace, .joinNames]) { tag, range in
-            let entity = String(text[range])
-            if entity.count > 1, tag == .personalName || tag == .placeName || tag == .organizationName {
-                entities.append(entity)
-            }
-            return true
-        }
-        return entities
-    }
-
     // MARK: - Communication Style Analysis
 
     private func analyzeCommunicationStyle(_ text: String) {
@@ -252,7 +236,7 @@ final class FridayAssistantEngine: ObservableObject {
         communicationStyle.directness = lerp(communicationStyle.directness, directnessScore, alpha)
 
         // Track signature words (filter stopwords and common words)
-        let significantWords = words.filter { $0.count > 3 && !Self.commonWords.contains($0.lowercased()) }
+        let significantWords = words.filter { $0.count > 3 && !EntityExtractor.commonWords.contains($0.lowercased()) }
         for word in significantWords {
             communicationStyle.signatureWords[word.lowercased(), default: 0] += 1
         }
@@ -272,9 +256,7 @@ final class FridayAssistantEngine: ObservableObject {
         let alpha = 1.0 / n
 
         // Sentiment
-        sentimentTagger.string = text
-        let (tag, _) = sentimentTagger.tag(at: text.startIndex, unit: .paragraph, scheme: .sentimentScore)
-        let sentiment = Double(tag?.rawValue ?? "0") ?? 0
+        let sentiment = SentimentScorer.score(text)
 
         // Update baseline
         emotionalSignature.baselineValence = lerp(emotionalSignature.baselineValence, sentiment, alpha)
@@ -446,18 +428,15 @@ final class FridayAssistantEngine: ObservableObject {
     private func updateKnowledgeGraph(_ text: String, date: Date) {
         let sentiment = getSentiment(text)
 
-        // Extract entities
-        entityTagger.string = text
+        // Extract entities (every mention counts, so repeats are kept)
         var extractedPeople: [String] = []
         var extractedPlaces: [String] = []
         var extractedTopics: [String] = []
 
-        entityTagger.enumerateTags(in: text.startIndex..<text.endIndex, unit: .word, scheme: .nameType, options: [.omitWhitespace, .joinNames]) { tag, range in
-            let entity = String(text[range])
-            guard entity.count > 1 else { return true }
-
-            switch tag {
-            case .personalName:
+        for occurrence in EntityExtractor.nameOccurrences(in: text) {
+            let entity = occurrence.text
+            switch occurrence.kind {
+            case .person:
                 // Validate: filter out places, festivals, objects mis-tagged as people
                 if isLikelyNotPerson(entity) {
                     // Re-classify as place or topic based on suffix
@@ -475,16 +454,13 @@ final class FridayAssistantEngine: ObservableObject {
                     extractedPeople.append(entity)
                     knowledgeGraph.addOrUpdate(id: entity, label: entity, type: .person, sentiment: sentiment)
                 }
-            case .placeName:
+            case .place:
                 extractedPlaces.append(entity)
                 knowledgeGraph.addOrUpdate(id: entity, label: entity, type: .place, sentiment: sentiment)
-            case .organizationName:
+            case .organization:
                 knowledgeGraph.addOrUpdate(id: entity, label: entity, type: .topic, sentiment: sentiment)
                 extractedTopics.append(entity)
-            default:
-                break
             }
-            return true
         }
 
         // Extract topic words
@@ -751,24 +727,11 @@ final class FridayAssistantEngine: ObservableObject {
     }
 
     private func extractTopicWords(_ text: String) -> [String] {
-        var topics: [String] = []
-        entityTagger.string = text
-        entityTagger.enumerateTags(in: text.startIndex..<text.endIndex, unit: .word, scheme: .lexicalClass, options: [.omitWhitespace, .omitPunctuation]) { tag, range in
-            if tag == .noun {
-                let word = String(text[range]).lowercased()
-                if word.count > 3 && !Self.commonWords.contains(word) {
-                    topics.append(word)
-                }
-            }
-            return true
-        }
-        return topics
+        EntityExtractor.nouns(in: text, minimumLength: 4, excluding: EntityExtractor.commonWords)
     }
 
     private func getSentiment(_ text: String) -> Double {
-        sentimentTagger.string = text
-        let (tag, _) = sentimentTagger.tag(at: text.startIndex, unit: .paragraph, scheme: .sentimentScore)
-        return Double(tag?.rawValue ?? "0") ?? 0
+        SentimentScorer.score(text)
     }
 
     private func lerp(_ from: Double, _ to: Double, _ t: Double) -> Double {
@@ -835,20 +798,4 @@ final class FridayAssistantEngine: ObservableObject {
         f.dateFormat = "yyyy-'W'ww"
         return f
     }()
-
-    private static let commonWords: Set<String> = [
-        "the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for",
-        "of", "with", "by", "from", "as", "is", "was", "are", "were", "been",
-        "be", "have", "has", "had", "do", "does", "did", "will", "would",
-        "could", "should", "may", "might", "must", "shall", "can", "need",
-        "this", "that", "these", "those", "i", "you", "he", "she", "it",
-        "we", "they", "what", "which", "who", "when", "where", "why", "how",
-        "all", "each", "every", "both", "few", "more", "most", "other",
-        "some", "such", "no", "nor", "not", "only", "own", "same", "so",
-        "than", "too", "very", "just", "also", "now", "here", "there",
-        "about", "like", "really", "much", "still", "well", "back", "even",
-        "then", "thing", "things", "know", "think", "want", "get", "got",
-        "going", "make", "made", "come", "came", "take", "took", "give",
-        "gave", "tell", "told", "say", "said", "good", "time", "day"
-    ]
 }

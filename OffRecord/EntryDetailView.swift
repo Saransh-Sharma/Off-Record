@@ -166,6 +166,7 @@ extension JournalBlockTimelineItem {
 /// Allows viewing, editing text, setting mood, playing back audio, and attaching photos.
 struct EntryDetailView: View {
     @ObservedObject var entry: DiaryEntry
+    @ObservedObject private var entryTitles = EntryTitleStore.shared
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @Environment(\.scenePhase) private var scenePhase
@@ -178,7 +179,7 @@ struct EntryDetailView: View {
     @State private var showMoodPicker = false
     @State private var hasEditedText = false
     @State private var showAIInsights = false
-    @State private var aiAnalysis: AIAnalysisResult?
+    @State private var aiAnalysis: EntryInsight?
     @State private var journalBlocks: [JournalBlock] = []
     @State private var timelineItems: [JournalBlockTimelineItem] = []
     @State private var editingBlockObjectID: NSManagedObjectID?
@@ -190,6 +191,7 @@ struct EntryDetailView: View {
     @State private var showDeleteDayConfirm = false
     @State private var pendingBlockDeletion: JournalBlockTimelineItem?
     @State private var deeperQuestion: String?
+    @State private var isFetchingDeeperQuestion = false
     @State private var composerPrompt: String?
     @State private var isDeletingDay = false
     @AppStorage(FridayAvailability.defaultsKey) private var isFridayEnabled = true
@@ -349,6 +351,7 @@ struct EntryDetailView: View {
             loadBlocks(backfill: true)
             startEntryActivity()
             syncTextFromEntry(reason: "appear")
+            entryTitles.requestTitle(for: entry)
         }
         .onChange(of: scenePhase) { _, newPhase in
             switch newPhase {
@@ -369,6 +372,7 @@ struct EntryDetailView: View {
         .onChange(of: entry.updatedAt) { _, _ in
             syncTextFromEntry(reason: "updatedAtChanged")
             loadBlocks(backfill: false)
+            entryTitles.requestTitle(for: entry)
         }
         .onChange(of: entry.entryTranscriptionStatus) { _, _ in
             syncTextFromEntry(reason: "transcriptionStatusChanged")
@@ -496,6 +500,18 @@ struct EntryDetailView: View {
                 .foregroundStyle(OffRecordColor.textHeading)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: .infinity)
+
+            // A generated title only when one passed validation; otherwise the date stands alone.
+            if let title = entryTitles.title(for: entry) {
+                Text(title)
+                    .font(OffRecordTypography.bodyLarge)
+                    .foregroundStyle(OffRecordColor.textSecondary)
+                    .multilineTextAlignment(.center)
+                    .lineLimit(2)
+                    .frame(maxWidth: .infinity)
+                    .transition(.opacity)
+                    .accessibilityIdentifier("entryDetail.title")
+            }
 
             HStack(spacing: 8) {
                 Rectangle()
@@ -782,23 +798,22 @@ struct EntryDetailView: View {
                     .font(OffRecordTypography.labelLarge)
                     .foregroundStyle(OffRecordColor.textHeading)
                 Spacer(minLength: 0)
-                Button {
-                    withOffRecordAnimation(OffRecordMotion.gentle) {
-                        deeperQuestion = EntryFollowUpQuestion.make(
-                            text: text,
-                            mood: selectedMood,
-                            excluding: deeperQuestion
-                        )
+                Button(action: showDeeperQuestion) {
+                    Group {
+                        if isFetchingDeeperQuestion {
+                            ProgressView()
+                                .tint(OffRecordColor.textLavender)
+                        } else {
+                            Image(systemName: deeperQuestion == nil ? "questionmark.bubble" : "arrow.triangle.2.circlepath")
+                                .font(OffRecordTypography.labelLarge)
+                                .foregroundStyle(OffRecordColor.textLavender)
+                                .contentTransition(.symbolEffect(.replace))
+                        }
                     }
-                    HapticManager.shared.selectionChanged()
-                } label: {
-                    Image(systemName: deeperQuestion == nil ? "questionmark.bubble" : "arrow.triangle.2.circlepath")
-                        .font(OffRecordTypography.labelLarge)
-                        .foregroundStyle(OffRecordColor.textLavender)
-                        .frame(width: OffRecordLayout.minimumTapTarget, height: OffRecordLayout.minimumTapTarget)
-                        .contentTransition(.symbolEffect(.replace))
+                    .frame(width: OffRecordLayout.minimumTapTarget, height: OffRecordLayout.minimumTapTarget)
                 }
                 .buttonStyle(.plain)
+                .disabled(isFetchingDeeperQuestion)
                 .accessibilityLabel(deeperQuestion == nil ? "Get a Question" : "Another Question")
                 .accessibilityIdentifier("entryDetail.goDeeper")
             }
@@ -840,6 +855,31 @@ struct EntryDetailView: View {
         }
         .padding(OffRecordSpacing.lg)
         .offRecordCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceLavender.opacity(0.7), shadow: false)
+    }
+
+    /// The first tap asks for the entry's question (the model's, when it passes
+    /// validation); later taps cycle through the templates.
+    private func showDeeperQuestion() {
+        let provider = GoDeeperQuestionProvider.shared
+        guard deeperQuestion != nil else {
+            let entryText = text
+            let mood = selectedMood
+            let allowsModel = FridayEntryIntelligence.isEligible(entry)
+            isFetchingDeeperQuestion = true
+            Task { @MainActor in
+                let question = await provider.firstQuestion(text: entryText, mood: mood, allowsModel: allowsModel)
+                isFetchingDeeperQuestion = false
+                withOffRecordAnimation(OffRecordMotion.gentle) {
+                    deeperQuestion = question
+                }
+                HapticManager.shared.selectionChanged()
+            }
+            return
+        }
+        withOffRecordAnimation(OffRecordMotion.gentle) {
+            deeperQuestion = provider.nextQuestion(text: text, mood: selectedMood, excluding: deeperQuestion) ?? deeperQuestion
+        }
+        HapticManager.shared.selectionChanged()
     }
 
     private var addToDaySection: some View {
@@ -1273,8 +1313,13 @@ struct EntryDetailView: View {
             Button(action: {
                 withOffRecordAnimation(OffRecordMotion.snappy) {
                     showAIInsights.toggle()
-                    if showAIInsights && aiAnalysis == nil {
-                        aiAnalysis = LocalAIEngine.shared.analyze(text: text)
+                    if showAIInsights {
+                        // Read fresh each time it opens, so an edit never shows stale notes.
+                        aiAnalysis = EntryInsightAnalyzer.analyze(
+                            text: text,
+                            responseMode: entryResponseMode,
+                            recurringTopic: recurringTopicName(for:)
+                        )
                     }
                 }
             }) {
@@ -1394,7 +1439,7 @@ struct EntryDetailView: View {
                                 .font(OffRecordTypography.metadata)
                         }
                         .foregroundColor(OffRecordColor.textSecondary)
-                        Text(analysis.suggestedResponse)
+                        Text(analysis.fridayLine)
                             .font(OffRecordTypography.metadata)
                             .foregroundColor(OffRecordColor.textPrimary)
                             .italic()
@@ -1410,6 +1455,16 @@ struct EntryDetailView: View {
             }
         }
         .padding(.bottom, 8)
+    }
+
+    /// The name Friday uses for `topic` when it comes up often, honoring Forget and Rename.
+    private func recurringTopicName(for topic: String) -> String? {
+        guard let node = FridayAssistantEngine.shared.knowledgeGraph.nodes[topic.lowercased()],
+              node.type == .topic || node.type == .place,
+              node.mentions > 3 else { return nil }
+        let preferences = FridayMemoryPreferences.shared
+        guard !preferences.isForgotten(node) else { return nil }
+        return preferences.displayName(for: node)
     }
 
     private func loadPhotos() {

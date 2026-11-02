@@ -1,6 +1,6 @@
 import CoreData
 import Foundation
-import NaturalLanguage
+import SemanticMemoryKit
 import JournalFoundation
 import os.log
 import UserNotifications
@@ -45,11 +45,18 @@ enum WeeklyReflectionEligibilityService {
 }
 
 enum WeeklyReflectionSafetyFilter {
-    private static let forbiddenOutputTerms = [
+    /// Phrases no reflection or other generated text may contain.
+    static let forbiddenOutputTerms = [
         "you are depressed", "you have depression", "you are anxious", "you have anxiety",
         "burnout diagnosis", "treatment plan", "stop taking medication",
         "you are burned out", "you have burnout"
     ]
+
+    /// The forbidden phrases found in `text`, for checking model output.
+    static func forbiddenTermViolations(in text: String) -> [String] {
+        let lowered = text.lowercased()
+        return forbiddenOutputTerms.filter(lowered.contains)
+    }
 
     static func isHighRisk(_ entry: WeeklyReflectionEntrySnapshot) -> Bool {
         JournalRiskClassifier.level(for: entry.text) == .highRiskExcluded
@@ -225,6 +232,12 @@ enum WeeklyReflectionGenerationService {
             safetyLevel: safetyLevel,
             privateEntryCount: privateEntryCount
         )
+    }
+
+    /// `report` with its cover line and summary phrased on-device when the week
+    /// allows it (see `WeeklyReflectionNarrator`); the facts stay deterministic.
+    static func narrated(_ report: WeeklyReflectionReport, entries: [WeeklyReflectionEntrySnapshot]) async -> WeeklyReflectionReport {
+        await WeeklyReflectionNarrator.narrated(report, entries: entries)
     }
 
     static func validate(_ report: WeeklyReflectionReport) -> Bool {
@@ -475,35 +488,26 @@ enum WeeklyReflectionGenerationService {
         var names: [String: String] = [:]
         // Themes are things people write about, so only nouns count; verbs like "gave" and
         // "feels" otherwise top the list and read as nonsense ("mostly about feels").
-        let tagger = NLTagger(tagSchemes: [.lexicalClass, .nameType])
-        let options: NLTagger.Options = [.omitWhitespace, .omitPunctuation]
-        let nameTags: Set<NLTag> = [.personalName, .placeName, .organizationName]
         for entry in entries {
-            let text = entry.text
-            tagger.string = text
-            if let language = NLLanguageRecognizer.dominantLanguage(for: text) {
-                tagger.setLanguage(language, range: text.startIndex..<text.endIndex)
-            }
-            tagger.enumerateTags(in: text.startIndex..<text.endIndex, unit: .word, scheme: .lexicalClass, options: options) { tag, range in
-                let original = String(text[range]).trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+            for word in EntityExtractor.words(in: entry.text) {
+                let original = word.text
                 let token = original.lowercased()
                 guard token.count >= 4, !stopWords.contains(token), token.rangeOfCharacter(from: .decimalDigits) == nil else {
-                    return true
+                    continue
                 }
-                if tag != nil { sawLexicalClass = true }
-                let isMidSentenceName = original.first?.isUppercase == true && Self.isMidSentence(range.lowerBound, in: text)
+                if word.lexicalKind != nil { sawLexicalClass = true }
+                let isMidSentenceName = original.first?.isUppercase == true && word.isMidSentence
                 let looksLikeVerb = token.count >= 5 && (token.hasSuffix("ed") || token.hasSuffix("ing"))
                 if !fallbackStopWords.contains(token), isMidSentenceName || !looksLikeVerb {
                     fallbackCounts[token, default: 0] += 1
                     if isMidSentenceName { fallbackNames[token] = original }
                 }
-                guard tag == .noun else { return true }
+                guard word.lexicalKind == .noun else { continue }
                 counts[token, default: 0] += 1
                 // Keep names capitalized ("Sarah"), but not ordinary nouns that start a sentence.
-                if let nameTag = tagger.tag(at: range.lowerBound, unit: .word, scheme: .nameType).0, nameTags.contains(nameTag) {
+                if word.nameKind != nil {
                     names[token] = original
                 }
-                return true
             }
         }
         // Without a part-of-speech model (some simulators), fall back to plain words minus common verbs.
@@ -517,18 +521,6 @@ enum WeeklyReflectionGenerationService {
         }
         .prefix(limit)
         .map { names[$0.key] ?? $0.key }
-    }
-
-    /// Whether a word sits inside a sentence rather than starting one, so a capital marks a name.
-    private static func isMidSentence(_ index: String.Index, in text: String) -> Bool {
-        var cursor = index
-        while cursor > text.startIndex {
-            cursor = text.index(before: cursor)
-            let character = text[cursor]
-            if character.isWhitespace { continue }
-            return !".!?\"“”".contains(character)
-        }
-        return false
     }
 }
 
