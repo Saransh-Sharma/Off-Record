@@ -70,6 +70,11 @@ final class EntryTitleStore: ObservableObject {
     /// Bumped when a title arrives, so cards re-read.
     @Published private(set) var revision = 0
 
+    /// Redraws titles on screen after the cache was cleared (Friday off, Erase All Data).
+    func didForgetTitles() {
+        revision += 1
+    }
+
     private struct Pending {
         let key: String
         let entryID: UUID

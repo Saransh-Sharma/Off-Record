@@ -12,16 +12,15 @@ import JournalFoundation
 import SemanticMemoryKit
 
 enum FridayEntryIntelligence {
-    /// The global Friday switch. Read straight from its stored key so this file
-    /// doesn't depend on the settings type; missing means on.
+    /// The global Friday switch in Settings.
     static var isFridayEnabled: Bool {
-        UserDefaults.standard.object(forKey: "offrecord_friday_enabled") as? Bool ?? true
+        FridayAvailability.isEnabled
     }
 
-    /// Whether this entry may be searched, cited, or written about by Friday.
-    /// Per-entry "Keep out of Friday" plugs in here.
+    /// Whether this entry may be searched, cited, or written about by Friday
+    /// ("Keep Out of Friday" on the entry).
     static func permitsAssistantEvidence(_ entry: DiaryEntry) -> Bool {
-        true
+        entry.journalAIExclusion.permitsAssistantEvidence
     }
 
     /// Friday is on and the entry isn't kept out of Friday.
