@@ -39,6 +39,7 @@ struct SettingsView: View {
     @State private var selectedExportPeriod: ExportPeriod = .yearly
     @State private var selectedPaperSize: PDFPaperSize = .a4
     @State private var starredOnly: Bool = false
+    @State private var exportJournalScope: JournalScope = .all
     @State private var isExporting = false
     @State private var exportURL: URL?
     @State private var exportError: String?
@@ -108,6 +109,8 @@ struct SettingsView: View {
                         title: String(localized: "Journal & Reminders"),
                         columns: columns,
                         items: [
+                            .init(id: "journals", keywords: JournalsSettingsSection.searchKeywords, view: AnyView(JournalsSettingsSection())),
+                            .init(id: "tags", keywords: TagsSettingsSection.searchKeywords, view: AnyView(TagsSettingsSection())),
                             .init(id: "goal", keywords: "weekly goal journaling target habit", view: AnyView(journalingGoalSection)),
                             .init(id: "streak", keywords: "streak daily weekly rest day grace missed habit", view: AnyView(StreakSettingsSection())),
                             .init(id: "reminder", keywords: "daily reminder notification time", view: AnyView(dailyReminderSection)),
@@ -281,6 +284,7 @@ struct SettingsView: View {
             "siri spotlight system search shortcuts", "export pdf print", "backup encrypted json markdown csv import restore",
             SyncSettingsSection.searchKeywords, "storage space audio photos delete", "theme appearance dark light color accent",
             "privacy policy data not collected", "about version support",
+            JournalsSettingsSection.searchKeywords, TagsSettingsSection.searchKeywords,
             FridaySettingsSection.searchKeywords, EraseAllDataSettingsSection.searchKeywords
         ]
     }
@@ -445,6 +449,8 @@ struct SettingsView: View {
                         }
 
                         Toggle("Starred Only", isOn: $starredOnly)
+
+                        ExportJournalPicker(scope: $exportJournalScope)
                     }
                     .padding(.top, OffRecordSpacing.sm)
                 } label: {
@@ -1021,7 +1027,7 @@ struct SettingsView: View {
 
         Task {
             do {
-                let exportEntries = startedEntries
+                let exportEntries = exportJournalScope.filter(startedEntries)
                 let baseEntries: [DiaryEntry]
                 if starredOnly {
                     baseEntries = exportEntries.filter { $0.isStarred }

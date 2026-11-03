@@ -59,13 +59,14 @@ struct TimelineCalendarView: View {
 
     private let calendar = Calendar.current
 
-    /// One entry per day (the daily store keeps a single entry per day).
+    /// One entry per day. The daily store keeps one entry per day in each journal;
+    /// when several journals are shown, the main journal's entry stands for the day.
     private var entriesByDay: [Date: DiaryEntry] {
         var result: [Date: DiaryEntry] = [:]
         for entry in entries {
             guard let date = entry.date else { continue }
             let day = calendar.startOfDay(for: date)
-            if result[day] == nil { result[day] = entry }
+            if result[day] == nil || (result[day]?.journal != nil && entry.journal == nil) { result[day] = entry }
         }
         return result
     }

@@ -83,7 +83,8 @@ final class WatchCaptureImporter: NSObject {
             throw WatchCaptureImportError.pendingAudioFile(envelope.captureID)
         }
 
-        let entry = try DiaryEntryDailyStore.getOrCreateEntry(on: envelope.createdAtUTC, in: context)
+        // Watch captures always go to the main journal.
+        let entry = try DiaryEntryDailyStore.getOrCreateEntry(on: envelope.createdAtUTC, journal: nil, in: context)
         var importedAudioURL: URL?
         switch envelope.kind {
         case .mood:

@@ -63,7 +63,9 @@ struct JournalStore {
         try context.save()
     }
 
-    /// Deletes the journal. Its entries move back to the main journal.
+    /// Deletes the journal. Its entries move back to the main journal as they are, so a
+    /// day can end up with two main entries; the journals UI uses `delete(_:choice:)`,
+    /// which merges those days or deletes the entries.
     func delete(_ journal: Journal) throws {
         context.delete(journal)
         try context.save()

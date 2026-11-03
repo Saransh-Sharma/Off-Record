@@ -18,7 +18,7 @@ enum JournalOrganizationError: Error, Equatable {
 @MainActor
 struct TagStore {
     /// Longest tag name kept; longer names are cut.
-    static let maximumNameLength = 40
+    nonisolated static let maximumNameLength = 40
 
     let context: NSManagedObjectContext
 
@@ -90,7 +90,14 @@ struct TagStore {
             .sorted { ($0.name ?? "").localizedCaseInsensitiveCompare($1.name ?? "") == .orderedAscending }
     }
 
-    static func normalizedName(_ name: String) -> String {
-        String(name.trimmingCharacters(in: .whitespacesAndNewlines).prefix(maximumNameLength))
+    /// Trims spaces and leading "#", folds inner runs of spaces into one, and cuts long names.
+    nonisolated static func normalizedName(_ name: String) -> String {
+        var trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        while trimmed.hasPrefix("#") {
+            trimmed = String(trimmed.dropFirst()).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+        let words = trimmed.split(whereSeparator: \.isWhitespace)
+        return String(words.joined(separator: " ").prefix(maximumNameLength))
+            .trimmingCharacters(in: .whitespaces)
     }
 }
