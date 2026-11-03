@@ -40,11 +40,39 @@
     "%@ You can still listen or add text." : {
 
     },
+    "%@ came up in the first half, not the second." : {
+
+    },
     "%@ came up more than once." : {
+
+    },
+    "%@ came up only in the second half." : {
 
     },
     "%@ comes up a lot for you." : {
 
+    },
+    "%@ from %@ match." : {
+      "comment" : "Siri answer built from dates only, e.g. “2 entries from May 2 match.”",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ from %2$@ match."
+          }
+        }
+      }
+    },
+    "%@ from %@ matches." : {
+      "comment" : "Siri answer built from dates only, e.g. “1 entry from May 2 matches.”",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ from %2$@ matches."
+          }
+        }
+      }
     },
     "%@ from %@ mention %@." : {
       "comment" : "The first argument is a count like “3 entries”; the second is a date, a date range, or “your journal”; the third is the words asked about.",
@@ -90,8 +118,30 @@
         }
       }
     },
+    "%@ from %@ to %@ match." : {
+      "comment" : "Siri answer built from dates only, e.g. “3 entries from May 2 to May 9 match.”",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ from %2$@ to %3$@ match."
+          }
+        }
+      }
+    },
     "%@ home" : {
 
+    },
+    "%@ in %lld of %lld entries with a mood." : {
+      "comment" : "My World mood summary. The first argument is a mood name.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ in %2$lld of %3$lld entries with a mood."
+          }
+        }
+      }
     },
     "%@ is when you journal most." : {
       "comment" : "The placeholder is a weekday name, e.g. Sunday"
@@ -138,8 +188,58 @@
         }
       }
     },
+    "%@ was mostly about %@, and it got heavier as it went." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ was mostly about %2$@, and it got heavier as it went."
+          }
+        }
+      }
+    },
+    "%@ was mostly about %@, and it got lighter as it went." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ was mostly about %2$@, and it got lighter as it went."
+          }
+        }
+      }
+    },
+    "%@ was mostly about %@, and it stayed steady." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ was mostly about %2$@, and it stayed steady."
+          }
+        }
+      }
+    },
+    "%@ was mostly about %@." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ was mostly about %2$@."
+          }
+        }
+      }
+    },
     "%@ wasn’t turned on. You can turn it on in Settings." : {
 
+    },
+    "%@ words · %@ minutes recorded" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ words · %2$@ minutes recorded"
+          }
+        }
+      }
     },
     "%@ · %@" : {
       "comment" : "When a block was added: a part of the day, then the time. For example, “Evening · 6:42 PM”.",
@@ -152,6 +252,26 @@
         }
       },
       "shouldTranslate" : false
+    },
+    "%@ · %lld" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · %2$lld"
+          }
+        }
+      }
+    },
+    "%@ · ^[%lld entry](inflect: true)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@ · ^[%2$lld entry](inflect: true)"
+          }
+        }
+      }
     },
     "%@ · mostly %@" : {
       "comment" : "Calendar summary. The first argument is like “12 days in September”; the second is the most common mood.",
@@ -218,6 +338,16 @@
         }
       }
     },
+    "%@, ^[%lld entry](inflect: true)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$@, ^[%2$lld entry](inflect: true)"
+          }
+        }
+      }
+    },
     "%@, entry" : {
       "comment" : "VoiceOver label for a calendar day with an entry. The argument is the date."
     },
@@ -277,7 +407,7 @@
       "shouldTranslate" : false
     },
     "%lld %@." : {
-      "comment" : "Streak count and unit, e.g. \"7 days.\"",
+      "comment" : "Streak count and unit, e.g. \"7 days.\" or \"2 weeks.\"",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -287,15 +417,6 @@
         }
       },
       "shouldTranslate" : false
-    },
-    "%lld Days in a Row" : {
-
-    },
-    "%lld days in a row so far." : {
-
-    },
-    "%lld days in a row." : {
-
     },
     "%lld entries" : {
 
@@ -316,6 +437,9 @@
     "%lld moods" : {
 
     },
+    "%lld more" : {
+
+    },
     "%lld of %lld" : {
       "comment" : "Onboarding progress, e.g. “2 of 6”",
       "localizations" : {
@@ -333,6 +457,16 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "%1$lld of %2$lld days"
+          }
+        }
+      }
+    },
+    "%lld of %lld days this week" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "%1$lld of %2$lld days this week"
           }
         }
       }
@@ -455,8 +589,26 @@
     "%lld%% of your sentences start with “I.”" : {
 
     },
+    "%lld-Day Streak" : {
+      "comment" : "Milestone title, e.g. “30-Day Streak”"
+    },
     "%lld-day streak" : {
 
+    },
+    "%lld-day streak so far." : {
+
+    },
+    "%lld-day streak." : {
+      "comment" : "Insight description, e.g. “7-day streak.”"
+    },
+    "%lld-week streak" : {
+
+    },
+    "%lld-week streak so far." : {
+
+    },
+    "%lld-week streak." : {
+      "comment" : "Insight description, e.g. “4-week streak.”"
     },
     "%lld/%lld" : {
       "localizations" : {
@@ -532,13 +684,31 @@
     "3M" : {
       "comment" : "Segmented control: 3 months"
     },
+    "A daily streak allows one missed day a week." : {
+
+    },
+    "A daily streak counts days in a row with an entry." : {
+
+    },
+    "A few things stood out in %@." : {
+
+    },
     "A few things stood out this week." : {
+
+    },
+    "A folder or ZIP of .md or .txt files." : {
+
+    },
+    "A friend, family member, or doctor" : {
 
     },
     "A good week" : {
 
     },
     "A harder week" : {
+
+    },
+    "A restriction on this %@ turns off iCloud." : {
 
     },
     "A sentence counts." : {
@@ -550,10 +720,28 @@
     "A set time each day can make it easier." : {
 
     },
+    "A short look back at %@." : {
+
+    },
     "A short look back at your week." : {
 
     },
+    "A summary of a date range to bring to a session." : {
+
+    },
+    "A week counts when it has at least one entry." : {
+
+    },
+    "A week counts when it meets your weekly goal of %lld days." : {
+
+    },
     "AI & Transcription" : {
+
+    },
+    "AI · On-device" : {
+
+    },
+    "AI, on-device" : {
 
     },
     "About" : {
@@ -574,10 +762,19 @@
     "Add" : {
       "comment" : "Section header above the Add Text and Add Photos buttons."
     },
+    "Add %@" : {
+      "comment" : "VoiceOver: adds an existing tag to the entry"
+    },
+    "Add Date and Text columns to the CSV and try again." : {
+
+    },
     "Add Mood" : {
 
     },
     "Add Photos" : {
+
+    },
+    "Add Tag" : {
 
     },
     "Add Text" : {
@@ -592,10 +789,16 @@
     "Add moods to entries to see them here." : {
 
     },
+    "Add tags from an entry." : {
+
+    },
     "Add text, a photo, or a mood." : {
 
     },
-    "Add today’s entry to keep it going." : {
+    "Add “%@”" : {
+      "comment" : "Creates a tag with the typed name"
+    },
+    "Added to the entry for %@." : {
 
     },
     "Added to today’s entry." : {
@@ -616,6 +819,9 @@
     "Aft" : {
       "comment" : "Short chart column label for afternoon"
     },
+    "After %lld entries in a month, I’ll put a review here." : {
+
+    },
     "After %lld entries this week, I’ll put a reflection here." : {
 
     },
@@ -634,8 +840,17 @@
     "All Entries" : {
 
     },
+    "All Journals" : {
+      "comment" : "Picker option that shows entries from every journal"
+    },
+    "All Tags" : {
+      "comment" : "Tags not yet on this entry"
+    },
     "Allow OffRecord in the Health app to turn this on." : {
 
+    },
+    "Allow a Rest Day" : {
+      "comment" : "Settings toggle: one missed day a week keeps a daily streak"
     },
     "Analytical" : {
       "comment" : "High end of the “Processing” scale\nHigh end of the “Thinking” scale\nWhere the user leans on the “Thinking” scale"
@@ -650,6 +865,9 @@
 
     },
     "Another app might be using the microphone." : {
+
+    },
+    "Answers a question from your journal." : {
 
     },
     "Anxious" : {
@@ -667,6 +885,21 @@
     "Apple Health isn’t available on this %@." : {
 
     },
+    "Apple Intelligence is off, so I answer with short summaries of your entries." : {
+      "comment" : "Friday chat note."
+    },
+    "Apple Intelligence is still getting ready, so I answer with short summaries for now." : {
+      "comment" : "Friday chat note."
+    },
+    "Apple Journal" : {
+      "comment" : "Import source: Apple's Journal app. Product name."
+    },
+    "Archive" : {
+
+    },
+    "Archived" : {
+      "comment" : "Group of archived journals in the Timeline journal picker\nSettings: archived journals"
+    },
     "Ask Friday" : {
 
     },
@@ -680,9 +913,6 @@
 
     },
     "Ask me about your moods, people, and patterns." : {
-
-    },
-    "Asks Friday about your journal." : {
 
     },
     "BY FRIDAY" : {
@@ -733,6 +963,9 @@
     "Based on question marks in this week’s entries." : {
 
     },
+    "Based on stars, Weekly Reflection citations, and top topics." : {
+
+    },
     "Based on the tone of entries that mention this person." : {
 
     },
@@ -749,6 +982,9 @@
 
     },
     "Based on words like “should” and “want” in this week’s entries." : {
+
+    },
+    "Based on your entries from %@." : {
 
     },
     "Based on your last %lld entries." : {
@@ -789,7 +1025,7 @@
 
     },
     "CSV" : {
-
+      "comment" : "Import source: a spreadsheet file"
     },
     "Calculating…" : {
 
@@ -799,6 +1035,12 @@
     },
     "Calendar Scale" : {
 
+    },
+    "Call" : {
+      "comment" : "Calls a crisis helpline"
+    },
+    "Call %@" : {
+      "comment" : "Calls the local emergency number, e.g. Call 911"
     },
     "Calm" : {
 
@@ -827,13 +1069,28 @@
     "Changes the entry date." : {
 
     },
+    "Changes the journal." : {
+      "comment" : "VoiceOver hint for the capture journal picker"
+    },
     "Check-in" : {
       "comment" : "Short label above a writing prompt on the Today screen"
+    },
+    "Choose Another File" : {
+
     },
     "Choose Backup File" : {
 
     },
     "Choose a backup file exported from OffRecord." : {
+
+    },
+    "Choose a file with dated entries." : {
+
+    },
+    "Choose a name no other journal uses." : {
+
+    },
+    "Choose an export that matches the format you picked." : {
 
     },
     "Choose any." : {
@@ -860,8 +1117,8 @@
     "Close" : {
 
     },
-    "Close and reopen OffRecord to apply the iCloud change." : {
-
+    "Code: %@" : {
+      "comment" : "Store recovery: the error code, for support"
     },
     "Comes up a lot" : {
 
@@ -884,8 +1141,14 @@
     "Confirm Password" : {
 
     },
-    "Continue" : {
+    "Connect to the internet to sync." : {
+      "comment" : "iCloud Sync error"
+    },
+    "Contact Support" : {
 
+    },
+    "Continue" : {
+      "comment" : "First step of Erase All Data"
     },
     "Copy" : {
       "comment" : "Copies Friday’s message"
@@ -893,10 +1156,19 @@
     "Copy Text" : {
 
     },
+    "Couldn’t Erase Everything" : {
+
+    },
     "Couldn’t Export" : {
 
     },
+    "Couldn’t Import" : {
+
+    },
     "Couldn’t Make This Reflection" : {
+
+    },
+    "Couldn’t Move Entry" : {
 
     },
     "Couldn’t Open Entry" : {
@@ -905,11 +1177,23 @@
     "Couldn’t Open Today’s Entry" : {
 
     },
+    "Couldn’t Open Your Entries" : {
+
+    },
     "Couldn’t Restore" : {
+
+    },
+    "Couldn’t Save Journal" : {
+
+    },
+    "Couldn’t Save Tag" : {
 
     },
     "Couldn’t Start Recording" : {
 
+    },
+    "Couldn’t Sync" : {
+      "comment" : "iCloud Sync status: the last sync failed"
     },
     "Couldn’t access storage." : {
 
@@ -923,6 +1207,9 @@
     "Couldn’t be made" : {
       "comment" : "Weekly reflection history row: the reflection failed to generate"
     },
+    "Couldn’t be read" : {
+      "comment" : "Why an imported file or row was skipped"
+    },
     "Couldn’t load the recording." : {
 
     },
@@ -933,6 +1220,9 @@
 
     },
     "Couldn’t restore. Check the password and try again." : {
+
+    },
+    "Couldn’t save the entry. Try again in OffRecord." : {
 
     },
     "Couldn’t save today’s mood. Try again in OffRecord." : {
@@ -953,8 +1243,17 @@
     "Couldn’t update" : {
 
     },
+    "Count" : {
+      "comment" : "Settings picker: count the streak daily or weekly"
+    },
+    "Create" : {
+
+    },
     "Creative Dreamer" : {
 
+    },
+    "Daily" : {
+      "comment" : "Streak counted in days"
     },
     "Daily Reminder" : {
 
@@ -980,13 +1279,28 @@
     "Date, %@" : {
 
     },
+    "Dates" : {
+      "comment" : "Session Prep: date range section"
+    },
     "Dates and moods only" : {
 
     },
     "Day" : {
       "comment" : "Chart axis title: day of the week"
     },
+    "Day One" : {
+      "comment" : "Import source: the Day One journal app. Product name."
+    },
+    "Day One, Apple Journal, Markdown, CSV" : {
+
+    },
+    "Days" : {
+      "comment" : "Review stat label: days with an entry"
+    },
     "Days in a row with at least one entry." : {
+
+    },
+    "Days with an entry, allowing one rest day a week." : {
 
     },
     "Decision" : {
@@ -998,10 +1312,22 @@
     "Delete" : {
       "comment" : "Action that deletes an entry.\nMenu action that deletes a block from the entry."
     },
+    "Delete %@?" : {
+      "comment" : "Confirmation title. The argument is a journal name.\nDelete tag title. The argument is a tag name."
+    },
+    "Delete Entries" : {
+
+    },
     "Delete Entry" : {
 
     },
     "Delete Index" : {
+
+    },
+    "Delete Journal" : {
+
+    },
+    "Delete Journal?" : {
 
     },
     "Delete Photo?" : {
@@ -1019,6 +1345,12 @@
     "Delete Search Index?" : {
 
     },
+    "Delete Tag" : {
+
+    },
+    "Delete Tag?" : {
+
+    },
     "Delete Text?" : {
 
     },
@@ -1030,6 +1362,9 @@
     },
     "Deleted" : {
       "comment" : "Search index status: the index was deleted."
+    },
+    "Deletes all entries, recordings, photos, and Friday’s memory." : {
+
     },
     "Deletes this recording." : {
 
@@ -1067,10 +1402,16 @@
     "END OF EXPORT" : {
       "comment" : "Plain-text export closing line, in capitals"
     },
+    "Each day holds up to %lld photos." : {
+
+    },
     "Earlier" : {
       "comment" : "Tag on an entry cited as earlier, comparison evidence for a Friday insight"
     },
     "Earlier Entries" : {
+
+    },
+    "Earlier Months" : {
 
     },
     "Earlier Weeks" : {
@@ -1082,8 +1423,14 @@
     "Edit" : {
       "comment" : "Menu action that edits a text block."
     },
+    "Edits this entry’s tags." : {
+      "comment" : "VoiceOver hint for a tag chip"
+    },
     "Elapsed time" : {
 
+    },
+    "Emergency Services" : {
+      "comment" : "Get Support row for calling the local emergency number"
     },
     "Emotions" : {
       "comment" : "Friday screen section tab"
@@ -1101,12 +1448,35 @@
 
     },
     "Entries" : {
-      "comment" : "About row: number of journal entries\nChart axis title: number of journal entries\nExport filter section: which entries to include\nLabel under the number of entries this month (plural).\nNumber of journal entries\nStorage row: space used by journal entries"
+      "comment" : "About row: number of journal entries\nChart axis title: number of journal entries\nExport filter section: which entries to include\nHeading above the entries that mention a remembered name\nLabel under the number of entries this month (plural).\nNumber of journal entries\nReview stat label\nStorage row: space used by journal entries"
+    },
+    "Entries That Mattered" : {
+
+    },
+    "Entries on a day you already wrote are added to that day." : {
+
     },
     "Entries per day" : {
 
     },
+    "Entries per month" : {
+
+    },
+    "Entries tagged %@ will be tagged %@ instead." : {
+      "comment" : "Merge tags message. The arguments are tag names.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Entries tagged %1$@ will be tagged %2$@ instead."
+          }
+        }
+      }
+    },
     "Entries you already have are skipped." : {
+
+    },
+    "Entries you’ve already imported are skipped." : {
 
     },
     "Entries:" : {
@@ -1129,6 +1499,7 @@
       }
     },
     "Entry from %@. %@" : {
+      "comment" : "VoiceOver: an entry that mentions a remembered name",
       "localizations" : {
         "en" : {
           "stringUnit" : {
@@ -1137,6 +1508,15 @@
           }
         }
       }
+    },
+    "Erase All Data" : {
+
+    },
+    "Erase All Data?" : {
+
+    },
+    "Erasing…" : {
+      "comment" : "Progress text while Erase All Data runs"
     },
     "Estimated from the wording of your last ^[%lld entry](inflect: true)." : {
 
@@ -1148,6 +1528,12 @@
       "comment" : "Part of the day, 5 to 9 PM."
     },
     "Evening writer" : {
+
+    },
+    "Every entry, recording, and photo on this %@ will be deleted. Copies already in iCloud stay." : {
+
+    },
+    "Every entry, recording, and photo will be deleted from this %@ and from iCloud." : {
 
     },
     "Evolving" : {
@@ -1167,6 +1553,12 @@
     },
     "Export ^[%lld Entry](inflect: true)" : {
 
+    },
+    "Export a Copy" : {
+
+    },
+    "Export a copy, then contact support." : {
+      "comment" : "Store recovery: Try Again didn't help"
     },
     "Exported on %@" : {
       "comment" : "PDF export cover: date the PDF was made"
@@ -1189,7 +1581,19 @@
     "Expressiveness" : {
 
     },
+    "File" : {
+      "comment" : "Session Prep: export options"
+    },
     "Filters" : {
+
+    },
+    "Find a Helpline" : {
+
+    },
+    "Finish Recording First" : {
+
+    },
+    "First Mentioned" : {
 
     },
     "Fixed" : {
@@ -1223,7 +1627,7 @@
 
     },
     "Forget %@?" : {
-
+      "comment" : "Confirmation title. The argument is a remembered name."
     },
     "Formal" : {
       "comment" : "High end of the “Formality” scale"
@@ -1234,6 +1638,15 @@
     "Format" : {
       "comment" : "Export section: file format"
     },
+    "Free helplines in other countries" : {
+
+    },
+    "Free up iCloud storage to keep syncing." : {
+      "comment" : "iCloud Sync error: iCloud storage is full"
+    },
+    "Free · 24/7" : {
+      "comment" : "Crisis helpline availability"
+    },
     "Frequent" : {
       "comment" : "High end of the “Gratitude” scale"
     },
@@ -1241,12 +1654,33 @@
       "comment" : "Short label above a writing prompt on the Today screen"
     },
     "Friday" : {
-      "comment" : "Name of the in-app assistant\nName of the in-app assistant, not the weekday.\nName of the in-app assistant, shown as the reminder notification title\nTab name; Friday is the AI companion, not the weekday"
+      "comment" : "Name of the in-app assistant\nName of the in-app assistant, not the weekday.\nName of the in-app assistant, shown as the reminder notification title\nSettings section for the AI companion\nSettings toggle that turns the AI companion on or off\nTab name; Friday is the AI companion, not the weekday"
+    },
+    "Friday Is Off" : {
+      "comment" : "Title shown on the Friday tab when Friday is turned off in Settings"
+    },
+    "Friday and Weekly Reflection won’t use this entry." : {
+
+    },
+    "Friday answers questions about your entries and suggests prompts." : {
+
+    },
+    "Friday doesn’t read your entries while she’s off." : {
+
+    },
+    "Friday is AI" : {
+
     },
     "Friday is thinking" : {
 
     },
+    "Friday is turned off in Settings." : {
+
+    },
     "Friday listening" : {
+
+    },
+    "Friday needs more time for this one." : {
 
     },
     "Friday thinking" : {
@@ -1256,6 +1690,9 @@
 
     },
     "Friday waving" : {
+
+    },
+    "Friday won’t read or quote this entry." : {
 
     },
     "Friday, search, and transcription run on this %@ and work offline." : {
@@ -1270,8 +1707,14 @@
     "From %@" : {
       "comment" : "Active filter chip. The argument is the start date."
     },
+    "From Another App" : {
+      "comment" : "Settings row that opens the importer"
+    },
     "From Friday" : {
       "comment" : "Header for the assistant’s notes on this entry. Friday is the assistant’s name, not the weekday."
+    },
+    "From My Entries" : {
+      "comment" : "Session Prep section: quotes the person picked"
     },
     "From ^[%lld entry](inflect: true)" : {
 
@@ -1290,6 +1733,9 @@
     },
     "General" : {
       "comment" : "What an entry is about, when no clear theme stands out."
+    },
+    "Get Support" : {
+
     },
     "Get a Question" : {
 
@@ -1435,6 +1881,9 @@
     "I couldn’t find supporting entries for this." : {
 
     },
+    "I couldn’t put this review together." : {
+
+    },
     "I couldn’t put this week together." : {
 
     },
@@ -1455,6 +1904,9 @@
     },
     "I don’t know you yet." : {
 
+    },
+    "I don’t remember this anymore." : {
+      "comment" : "Friday, when a My World item is gone"
     },
     "I have a question for you tonight." : {
 
@@ -1480,10 +1932,33 @@
     "I need 3 entries before I can spot patterns." : {
 
     },
+    "I need at least %lld words for a review. %@ has %lld." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "I need at least %1$lld words for a review. %2$@ has %3$lld."
+          }
+        }
+      }
+    },
+    "I need at least ^[%lld entry](inflect: true) for a review. %@ has %lld." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "I need at least ^[%1$lld entry](inflect: true) for a review. %2$@ has %3$lld."
+          }
+        }
+      }
+    },
     "I only answer from journal evidence I can find." : {
 
     },
     "I only answer from your entries." : {
+
+    },
+    "I only counted the ^[%lld entry](inflect: true) you kept out of Friday." : {
 
     },
     "I spotted a pattern worth a look." : {
@@ -1492,8 +1967,35 @@
     "If %@ went the way you hoped, what would change?" : {
 
     },
+    "If you’re in danger now" : {
+
+    },
+    "If you’re thinking about hurting yourself, talk to someone now." : {
+
+    },
+    "Import" : {
+      "comment" : "Settings section: bring entries in from other apps"
+    },
+    "Import Complete" : {
+
+    },
+    "Import From" : {
+      "comment" : "Import screen: list of apps to import from"
+    },
+    "Import More" : {
+
+    },
+    "Import ^[%lld Entry](inflect: true)" : {
+
+    },
     "Importance" : {
 
+    },
+    "Importing…" : {
+
+    },
+    "In Weekly Reflection" : {
+      "comment" : "Why an entry is in Entries That Mattered"
     },
     "Include" : {
 
@@ -1526,6 +2028,12 @@
 
     },
     "It used to come up often." : {
+
+    },
+    "Its ^[%lld entry](inflect: true) can move to Main or be deleted." : {
+      "comment" : "Delete journal message"
+    },
+    "Its entries stay. Only the tag is removed." : {
 
     },
     "Its text, recordings, photos, and moods will be deleted. This can’t be undone." : {
@@ -1584,12 +2092,9 @@
 
     },
     "Journal" : {
-      "comment" : "PDF export cover title, above the period (e.g. 2026)"
+      "comment" : "Export option: which journal to export\nPDF export cover title, above the period (e.g. 2026)\nPicker for the journal a recording goes into\nPicker for which journal Timeline shows"
     },
     "Journal & Reminders" : {
-
-    },
-    "Journal Entry" : {
 
     },
     "Journal Entry, %@" : {
@@ -1604,7 +2109,19 @@
     "Journal entry" : {
 
     },
+    "Journal, %@" : {
+      "comment" : "VoiceOver: the journal a recording goes into\nVoiceOver: the journal of a Timeline entry\nVoiceOver: the journal this entry is in\nVoiceOver: which journal Timeline shows"
+    },
+    "Journals" : {
+
+    },
+    "Keep Out of Friday" : {
+
+    },
     "Keep Recording" : {
+
+    },
+    "Keep work or travel entries apart from your main journal." : {
 
     },
     "Kindness" : {
@@ -1615,6 +2132,9 @@
     },
     "Last Mentioned" : {
 
+    },
+    "Last Synced" : {
+      "comment" : "iCloud Sync row: when sync last finished"
     },
     "Last Thought" : {
       "comment" : "Short label above a writing prompt on the Today screen"
@@ -1635,6 +2155,9 @@
       "comment" : "How well Friday knows the user: second level"
     },
     "Leaves only when you export or turn on iCloud" : {
+
+    },
+    "Leaves this entry out of Weekly Reflection too." : {
 
     },
     "Let Go" : {
@@ -1695,6 +2218,9 @@
         }
       }
     },
+    "Looking Ahead" : {
+
+    },
     "Looking for advice" : {
 
     },
@@ -1707,16 +2233,31 @@
     "MY WORDS" : {
 
     },
+    "Made by OffRecord on your %@. Not medical advice." : {
+      "comment" : "Session Prep export footer. The argument is iPhone or iPad."
+    },
     "Made by OffRecord on your device. Not medical advice." : {
 
     },
     "Made with OffRecord" : {
       "comment" : "PDF export page footer"
     },
+    "Main" : {
+      "comment" : "Name of the main journal, the one entries go to unless another journal is picked"
+    },
+    "Main and ^[%lld more](inflect: true)" : {
+      "comment" : "Settings: the main journal plus a count of other journals"
+    },
     "Make Weekly Reflections" : {
 
     },
     "Make it a habit" : {
+
+    },
+    "Manage Journals" : {
+
+    },
+    "Manage Tags" : {
 
     },
     "Mark as Done" : {
@@ -1725,17 +2266,26 @@
     "Markdown" : {
 
     },
+    "Markdown or Text" : {
+      "comment" : "Import source: a folder of Markdown or plain-text files"
+    },
     "Measured" : {
       "comment" : "Where the user leans on the “Directness” scale"
     },
-    "Mention" : {
-      "comment" : "Label under a count of 1"
-    },
-    "Mentions" : {
-      "comment" : "Label under a count other than 1"
-    },
     "Mentions this." : {
       "comment" : "Why an entry is cited as evidence for a weekly reflection theme"
+    },
+    "Merge" : {
+
+    },
+    "Merge Into %@?" : {
+      "comment" : "Merge tags title. The argument is the tag that stays."
+    },
+    "Merge Tags?" : {
+
+    },
+    "Message" : {
+
     },
     "Message Friday" : {
 
@@ -1746,6 +2296,9 @@
     "Mindset" : {
       "comment" : "Personality card trait"
     },
+    "Minutes Recorded" : {
+
+    },
     "Mixed" : {
       "comment" : "Overall feeling of entries that mention a remembered person, place, or topic"
     },
@@ -1753,7 +2306,10 @@
       "comment" : "How much the user’s mood varies"
     },
     "Month" : {
-      "comment" : "Calendar scale showing one month"
+      "comment" : "Calendar scale showing one month\nChart axis title"
+    },
+    "Month in Review" : {
+
     },
     "Monthly" : {
       "comment" : "PDF export period"
@@ -1764,7 +2320,16 @@
     "Mood Over Time" : {
 
     },
+    "Mood When Mentioned" : {
+
+    },
+    "Mood by Month" : {
+
+    },
     "Mood by Time of Day" : {
+
+    },
+    "Mood by Week" : {
 
     },
     "Mood set to %@." : {
@@ -1787,7 +2352,23 @@
     "Mood:" : {
       "comment" : "Export label, followed by the entry's mood"
     },
+    "Moods logged on ^[%lld day](inflect: true): %@" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Moods logged on ^[%1$lld day](inflect: true): %2$@"
+          }
+        }
+      }
+    },
     "Moods only" : {
+
+    },
+    "Moods were heavier in the second half." : {
+
+    },
+    "Moods were lighter in the second half." : {
 
     },
     "More" : {
@@ -1830,6 +2411,9 @@
     "Most Common Moods" : {
 
     },
+    "Most mentions were in %@." : {
+      "comment" : "My World chart summary. The argument is a month and year."
+    },
     "Most were tagged %@." : {
       "comment" : "The argument is a mood name."
     },
@@ -1838,6 +2422,15 @@
     },
     "Mostly positive" : {
       "comment" : "Overall feeling of entries that mention a remembered person, place, or topic"
+    },
+    "Move Entries to Main" : {
+
+    },
+    "Move to Journal" : {
+      "comment" : "Menu that moves an entry to another journal"
+    },
+    "Moves the entry to another journal." : {
+      "comment" : "VoiceOver hint for the entry journal menu"
     },
     "My Personality Card" : {
 
@@ -1857,11 +2450,17 @@
     "Names are replaced with “someone.”" : {
 
     },
+    "Names will be visible in the file." : {
+
+    },
     "Names will be visible in the image." : {
 
     },
     "Needs" : {
       "comment" : "Short label above a writing prompt on the Today screen"
+    },
+    "Needs Date and Text columns." : {
+
     },
     "Neutral" : {
       "comment" : "How the user usually feels at this time\nTone of an entry: neither positive nor negative.\nTop mood when there isn’t enough mood data"
@@ -1873,6 +2472,12 @@
 
     },
     "New Entry" : {
+
+    },
+    "New Journal" : {
+
+    },
+    "New recordings and writing go to the journal you last picked." : {
 
     },
     "New text" : {
@@ -1893,6 +2498,9 @@
     "No Insights Yet" : {
 
     },
+    "No Month in Review" : {
+
+    },
     "No OffRecord servers" : {
 
     },
@@ -1902,7 +2510,13 @@
     "No Results" : {
 
     },
+    "No Tags" : {
+
+    },
     "No Transcript" : {
+
+    },
+    "No Year in Review" : {
 
     },
     "No account" : {
@@ -1914,10 +2528,19 @@
     "No clear topics yet. I’ll see more after a few entries." : {
 
     },
+    "No date found" : {
+      "comment" : "Why an imported file or row was skipped"
+    },
     "No entries" : {
 
     },
     "No entries in the last 7 days." : {
+
+    },
+    "No entries in this range." : {
+
+    },
+    "No entries match that yet." : {
 
     },
     "No entries this week." : {
@@ -1925,6 +2548,9 @@
     },
     "No entries to export yet." : {
 
+    },
+    "No entries to show for %@ yet." : {
+      "comment" : "My World page with no readable entries. The argument is a name."
     },
     "No entries yet" : {
 
@@ -1938,13 +2564,25 @@
     "No moods logged this week." : {
 
     },
+    "No moods logged." : {
+
+    },
     "No speech detected. The recording is saved." : {
 
+    },
+    "No tags yet" : {
+      "comment" : "Settings: no tags exist"
     },
     "No text" : {
 
     },
+    "No text or photos" : {
+      "comment" : "Why an imported file or row was skipped"
+    },
     "No text." : {
+
+    },
+    "None are included unless you pick them." : {
 
     },
     "Not Enough Yet" : {
@@ -1952,6 +2590,9 @@
     },
     "Not Now" : {
 
+    },
+    "Not Remembered" : {
+      "comment" : "Title when a My World item no longer exists"
     },
     "Not Signed In" : {
       "comment" : "iCloud Sync status: no iCloud account"
@@ -1968,8 +2609,14 @@
     "Not enough entries yet" : {
 
     },
+    "Not enough to look back on yet." : {
+
+    },
     "Not ready yet" : {
 
+    },
+    "Notable Changes" : {
+      "comment" : "Session Prep section"
     },
     "Nothing Here Yet" : {
 
@@ -1981,6 +2628,9 @@
 
     },
     "Nothing stands out as a stressor yet." : {
+
+    },
+    "Nothing stood out as hard in %@." : {
 
     },
     "Nothing stood out as hard this week." : {
@@ -2037,8 +2687,20 @@
     "OffRecord collects no data." : {
 
     },
+    "OffRecord isn’t an emergency service." : {
+
+    },
     "OffRecord uses Apple’s on-device speech recognition. Your audio is never sent to a server. iOS may download a language file first." : {
 
+    },
+    "OffRecord will start fresh." : {
+
+    },
+    "OffRecord will try again soon." : {
+      "comment" : "iCloud Sync error with no specific cause"
+    },
+    "OffRecord will try again when iCloud responds." : {
+      "comment" : "iCloud Sync error: iCloud servers are busy"
     },
     "OffRecord will use your passcode." : {
 
@@ -2047,6 +2709,12 @@
       "comment" : "Privacy status: feature is on\niCloud Sync status: turned on"
     },
     "On This Day" : {
+
+    },
+    "On This Entry" : {
+      "comment" : "Tags on the open entry"
+    },
+    "On ^[%lld day](inflect: true)" : {
 
     },
     "On a streak" : {
@@ -2064,6 +2732,12 @@
     "One last thought before bed?" : {
 
     },
+    "Only ^[%lld entry](inflect: true) so far." : {
+      "comment" : "Thin evidence on a My World page"
+    },
+    "Only the main journal" : {
+      "comment" : "Settings: no journals besides the main one"
+    },
     "Only the mood and time are saved. OffRecord never reads Health data." : {
 
     },
@@ -2071,6 +2745,9 @@
 
     },
     "Only this image is shared." : {
+
+    },
+    "Only what you see here goes in the file." : {
 
     },
     "Open" : {
@@ -2094,6 +2771,9 @@
     "Open Today" : {
 
     },
+    "Open in Friday" : {
+
+    },
     "Open the app and start." : {
 
     },
@@ -2112,10 +2792,16 @@
     "Opens Friday." : {
 
     },
+    "Opens Journaling Suggestions to start an entry." : {
+
+    },
     "Opens Today." : {
 
     },
     "Opens an entry." : {
+
+    },
+    "Opens crisis lines and support options." : {
 
     },
     "Opens recording controls." : {
@@ -2127,6 +2813,9 @@
     "Opens the mood dial." : {
 
     },
+    "Opens the question in Friday." : {
+
+    },
     "Optional. You can change these in Settings." : {
 
     },
@@ -2136,8 +2825,14 @@
     "Other %@ days" : {
       "comment" : "Follow-up chip; the placeholder is a mood, like happy"
     },
+    "Other Helplines" : {
+      "comment" : "Get Support row linking to an international helpline directory"
+    },
     "Others" : {
       "comment" : "Low end of the “Perspective” scale"
+    },
+    "Over Time" : {
+      "comment" : "Chart of mentions by month"
     },
     "Over the last 90 days, you’re most often %@ %@." : {
       "localizations" : {
@@ -2159,7 +2854,7 @@
 
     },
     "Overview" : {
-      "comment" : "Friday screen section tab"
+      "comment" : "Friday screen section tab\nSession Prep section"
     },
     "PDF" : {
 
@@ -2167,10 +2862,19 @@
     "PDF Export" : {
 
     },
+    "PDF, Markdown, or plain text" : {
+
+    },
     "Paper Size" : {
 
     },
+    "Parts of the month were heavier." : {
+
+    },
     "Parts of the week were heavier." : {
+
+    },
+    "Parts of the year were heavier." : {
 
     },
     "Passcode" : {
@@ -2215,7 +2919,13 @@
     "People & Topics" : {
 
     },
+    "People and Topics" : {
+
+    },
     "People and places you mention will show up here." : {
+
+    },
+    "People: %@" : {
 
     },
     "People: %@." : {
@@ -2239,6 +2949,9 @@
     "Photo from %@" : {
 
     },
+    "Photo not in the export" : {
+      "comment" : "Why an imported photo was skipped"
+    },
     "Photo · %@" : {
       "comment" : "Source row: a photo entry and its word count"
     },
@@ -2253,6 +2966,9 @@
     },
     "Photos you add to entries show up here." : {
 
+    },
+    "Pick a Suggestion" : {
+      "comment" : "Button that opens Apple’s Journaling Suggestions"
     },
     "Places" : {
 
@@ -2274,6 +2990,9 @@
     },
     "Practical Analyst" : {
 
+    },
+    "Prepare" : {
+      "comment" : "Opens Session Prep"
     },
     "Preparing voice search…" : {
 
@@ -2378,8 +3097,14 @@
         }
       }
     },
+    "Questions for Next Month" : {
+
+    },
     "Questions for Next Week" : {
 
+    },
+    "Quotes" : {
+      "comment" : "Session Prep: choose entry excerpts to include"
     },
     "Quotes from Entries" : {
 
@@ -2390,10 +3115,16 @@
     "Readable anywhere." : {
 
     },
+    "Reading…" : {
+
+    },
     "Ready" : {
       "comment" : "Search index status: ready to use."
     },
     "Ready (basic mode)" : {
+
+    },
+    "Rebuild Friday" : {
 
     },
     "Rebuild Index" : {
@@ -2409,13 +3140,19 @@
 
     },
     "Record" : {
-      "comment" : "Button that answers the question by recording audio.\nButton that starts a voice recording\nButton that starts a voice recording.\nKeyboard shortcut (⌘R) that starts or stops a voice recording"
+      "comment" : "Button that answers the question by recording audio.\nButton that starts a voice recording\nButton that starts a voice recording.\nMenu command (⇧⌘R) that starts a voice recording"
     },
     "Record Entry" : {
 
     },
     "Record: %@" : {
 
+    },
+    "Recorded on Another Device" : {
+      "comment" : "Entry: a recording whose audio is on another device"
+    },
+    "Recorded on Apple Watch" : {
+      "comment" : "Entry: a recording whose audio is on another device"
     },
     "Recording" : {
       "comment" : "Placeholder snippet for an entry with only a voice recording\nRecording status while recording\nStands in for an On This Day entry that has a voice recording but no text"
@@ -2460,8 +3197,17 @@
     "Recordings" : {
 
     },
-    "Recordings stay on this %@ and don’t sync." : {
+    "Recordings don’t sync, so play it on the device that recorded it." : {
 
+    },
+    "Recordings don’t sync, so play it on the iPhone that saved it." : {
+
+    },
+    "Recordings stay on this %@ and don’t sync. Turning sync off leaves entries here and in iCloud." : {
+
+    },
+    "Recurring Themes" : {
+      "comment" : "Session Prep section"
     },
     "Reflective" : {
       "comment" : "Where the user leans on the “Time Focus” scale"
@@ -2470,6 +3216,9 @@
 
     },
     "Refresh storage" : {
+
+    },
+    "Relearns Friday’s patterns from your entries." : {
 
     },
     "Remember" : {
@@ -2488,9 +3237,12 @@
 
     },
     "Remove %@" : {
-
+      "comment" : "VoiceOver: removes a tag from the entry"
     },
     "Remove Mood?" : {
+
+    },
+    "Remove Tag" : {
 
     },
     "Rename" : {
@@ -2499,7 +3251,22 @@
     "Rename %@" : {
 
     },
+    "Rename Journal" : {
+
+    },
+    "Rename Tag" : {
+
+    },
     "Rename anything, or ask me to forget it." : {
+
+    },
+    "Renames the journal." : {
+
+    },
+    "Renames the tag." : {
+
+    },
+    "Replace Names" : {
 
     },
     "Replay" : {
@@ -2523,7 +3290,10 @@
     "Reset Name" : {
 
     },
-    "Restart OffRecord" : {
+    "Restart OffRecord to finish turning on iCloud Sync." : {
+
+    },
+    "Restart OffRecord, then try again." : {
 
     },
     "Restore" : {
@@ -2541,6 +3311,9 @@
     "Restoring…" : {
 
     },
+    "Restricted" : {
+      "comment" : "iCloud Sync status: iCloud is limited by a restriction"
+    },
     "Results will improve when it’s done." : {
 
     },
@@ -2549,6 +3322,9 @@
     },
     "Rose" : {
       "comment" : "Theme name: rose pink accent"
+    },
+    "Row %lld" : {
+      "comment" : "A row in an imported spreadsheet"
     },
     "Running in basic mode. Rebuild to fix." : {
 
@@ -2586,6 +3362,9 @@
     "Search" : {
 
     },
+    "Search Entries" : {
+      "comment" : "Menu command (⌘F) that opens Timeline search"
+    },
     "Search Index" : {
 
     },
@@ -2593,6 +3372,9 @@
 
     },
     "Search OffRecord Timeline" : {
+
+    },
+    "Search Timeline with # and a tag name." : {
 
     },
     "Search entries" : {
@@ -2628,6 +3410,9 @@
     "Send" : {
 
     },
+    "Session Prep" : {
+
+    },
     "Set ${entry} to ${state}" : {
 
     },
@@ -2644,7 +3429,7 @@
 
     },
     "Settings" : {
-      "comment" : "Tab name"
+      "comment" : "Mac app menu command (⌘,) that opens the Settings tab\nTab name"
     },
     "Share" : {
       "comment" : "Button that shares the personality card\nShares Friday’s message"
@@ -2658,10 +3443,13 @@
     "Share Personality Card" : {
 
     },
+    "Share Year" : {
+
+    },
     "Shares the card as a tall or wide image." : {
 
     },
-    "Show Entries" : {
+    "She can be wrong, and she isn’t a therapist." : {
 
     },
     "Show Names" : {
@@ -2670,7 +3458,13 @@
     "Show Transcript" : {
 
     },
+    "Show ^[%lld More Entry](inflect: true)" : {
+
+    },
     "Show in Spotlight" : {
+
+    },
+    "Show in Timeline" : {
 
     },
     "Show on Today" : {
@@ -2694,14 +3488,17 @@
     "Shows this setting." : {
 
     },
-    "Sign in to iCloud in Settings to sync." : {
-
+    "Sign in to iCloud to sync." : {
+      "comment" : "iCloud Sync error"
     },
     "Siri & Search" : {
 
     },
     "Skip" : {
       "comment" : "Button that skips an onboarding step"
+    },
+    "Skip Weekly Reflection" : {
+
     },
     "Small Win" : {
       "comment" : "Short label above a writing prompt on the Today screen"
@@ -2721,7 +3518,13 @@
     "Some Photos Weren’t Added" : {
 
     },
+    "Some entries behind this answer are kept out of Friday." : {
+
+    },
     "Some entries behind this answer were deleted." : {
+
+    },
+    "Some entries in this range were heavier than usual, so the summary leaves them out. If you need support, reach out to someone you trust. OffRecord isn’t an emergency service." : {
 
     },
     "Some entries this week were heavier than usual, so I’ve kept this short and didn’t quote them." : {
@@ -2733,7 +3536,16 @@
     "Some entries were heavier than usual." : {
 
     },
+    "Some entries were heavier than usual. If you need support, reach out to someone you trust. OffRecord isn’t an emergency service." : {
+
+    },
+    "Some entries were heavy, so I left them out." : {
+
+    },
     "Some entries were heavy, so I’ve kept this brief." : {
+
+    },
+    "Some entries were heavy, so I’ve kept this short and didn’t quote them." : {
 
     },
     "Some entries were upbeat or grateful." : {
@@ -2744,6 +3556,9 @@
     },
     "Some evidence, based on %@" : {
 
+    },
+    "Someone You Trust" : {
+      "comment" : "Get Support row for messaging a friend or family member"
     },
     "Something Went Wrong" : {
 
@@ -2794,7 +3609,7 @@
 
     },
     "Starred" : {
-      "comment" : "Accessibility label for the toolbar button that shows only starred entries.\nActive filter chip: showing only starred entries.\nExport: marks a starred entry after its date\nStat label: number of starred entries"
+      "comment" : "Accessibility label for the toolbar button that shows only starred entries.\nActive filter chip: showing only starred entries.\nExport: marks a starred entry after its date\nStat label: number of starred entries\nWhy an entry is in Entries That Mattered"
     },
     "Starred Only" : {
 
@@ -2845,13 +3660,16 @@
 
     },
     "Stop Recording" : {
-
+      "comment" : "Menu command (⇧⌘R) that ends the current recording"
     },
     "Stop and Save" : {
 
     },
     "Stopped" : {
       "comment" : "Search index status: the rebuild was cancelled."
+    },
+    "Stops Friday from reading or quoting this entry." : {
+
     },
     "Stops and saves the recording." : {
 
@@ -2863,7 +3681,7 @@
 
     },
     "Streak" : {
-      "comment" : "Insights card title for the journaling streak"
+      "comment" : "Insights card title for the journaling streak\nSettings section: journaling streak"
     },
     "Strong evidence · %@" : {
       "comment" : "The placeholder is an entry count, like “4 entries”"
@@ -2877,17 +3695,38 @@
     "Subtitle (optional)" : {
 
     },
+    "Suggestions" : {
+      "comment" : "Existing tags that match what was typed"
+    },
     "Summary" : {
-      "comment" : "Export heading for the weekly reflection summary\nWeekly reflection section title"
+      "comment" : "Export heading for the weekly reflection summary\nReview section title\nSession Prep: the generated summary\nWeekly reflection section title"
     },
     "Support" : {
       "comment" : "Weekly reflection section title: emotional support resources"
+    },
+    "Syncing…" : {
+      "comment" : "iCloud Sync row: sync in progress\niCloud Sync status: sync in progress"
     },
     "System" : {
       "comment" : "Theme name: follow the device appearance"
     },
     "System matches your %@’s appearance." : {
 
+    },
+    "Tag" : {
+      "comment" : "Label before the row of tag filters."
+    },
+    "Tag name" : {
+
+    },
+    "Tag, %@" : {
+      "comment" : "VoiceOver: a tag on this entry"
+    },
+    "Tags" : {
+
+    },
+    "Tags, %@" : {
+      "comment" : "VoiceOver: the tags of a Timeline entry"
     },
     "Takeaway" : {
       "comment" : "Weekly reflection section title: one thing to remember"
@@ -2908,7 +3747,7 @@
       "comment" : "No final period: the app may add “, <first name>” and then a period"
     },
     "Text" : {
-
+      "comment" : "Texts a crisis helpline"
     },
     "Text can’t be empty. Delete it instead?" : {
 
@@ -2937,13 +3776,25 @@
     "That’s a lot to work through." : {
 
     },
+    "The ZIP from a JSON export." : {
+
+    },
     "The audio and transcript will be deleted." : {
 
     },
     "The clearest example: “%@”" : {
       "comment" : "The argument is a quote from one of the person’s entries."
     },
+    "The entries behind this answer are kept out of Friday." : {
+
+    },
     "The entries behind this answer were deleted." : {
+
+    },
+    "The exported folder or its ZIP." : {
+
+    },
+    "The file that holds your entries didn’t open. Nothing was deleted." : {
 
     },
     "The transcript couldn’t be added." : {
@@ -2955,13 +3806,25 @@
     "Themes" : {
       "comment" : "Export heading for weekly reflection themes\nWeekly reflection section title: recurring topics"
     },
+    "There are no entries for that time." : {
+
+    },
     "These entries were deleted." : {
+
+    },
+    "Things to talk about" : {
 
     },
     "Thinking" : {
       "comment" : "Personality card trait"
     },
     "Thinking it through" : {
+
+    },
+    "This %@ can’t run Apple Intelligence, so I answer with short summaries of your entries." : {
+      "comment" : "Friday chat note. The argument is iPhone or iPad."
+    },
+    "This Can’t Be Undone" : {
 
     },
     "This Entry" : {
@@ -2979,7 +3842,16 @@
     "This conversation will be cleared. Your journal won’t change." : {
 
     },
+    "This journal has no entries." : {
+
+    },
+    "This was a heavy month." : {
+
+    },
     "This was a heavy week." : {
+
+    },
+    "This was a heavy year." : {
 
     },
     "This week was mostly about %@, and %@." : {
@@ -3001,6 +3873,9 @@
           }
         }
       }
+    },
+    "This year’s review opens on December 1." : {
+
     },
     "Those entries are usually upbeat." : {
 
@@ -3053,6 +3928,9 @@
     "Today I…" : {
 
     },
+    "Today is still open." : {
+
+    },
     "Today with Friday" : {
 
     },
@@ -3077,7 +3955,13 @@
     "Top Results" : {
 
     },
+    "Top people and topics" : {
+      "comment" : "Why an entry is in Entries That Mattered"
+    },
     "Topics" : {
+
+    },
+    "Topics: %@" : {
 
     },
     "Topics: %@." : {
@@ -3128,22 +4012,43 @@
     "Try Again" : {
 
     },
+    "Try Again in a Moment" : {
+
+    },
     "Try Asking" : {
 
     },
     "Try again in a moment." : {
 
     },
-    "Try again." : {
+    "Try again to add the remaining entries." : {
 
     },
+    "Try again to erase what’s left." : {
+
+    },
+    "Try again." : {
+      "comment" : "Message when a tag change fails to save\nMessage when moving an entry to another journal fails"
+    },
     "Try asking about a person, topic, mood, or time you’ve written about." : {
+
+    },
+    "Try exporting the file again." : {
 
     },
     "Try recording again." : {
 
     },
+    "Turn Off" : {
+      "comment" : "Confirms turning Friday off"
+    },
+    "Turn Off Friday?" : {
+
+    },
     "Turn On" : {
+
+    },
+    "Turn On Friday" : {
 
     },
     "Turn it on to get text from recordings." : {
@@ -3162,6 +4067,12 @@
 
     },
     "Turn on transcription in Settings to search by voice." : {
+
+    },
+    "Turning sync on copies entries on this %@ to your iCloud. Recordings don’t sync." : {
+
+    },
+    "Unarchive" : {
 
     },
     "Undo" : {
@@ -3186,6 +4097,9 @@
 
     },
     "Unstarred." : {
+
+    },
+    "Up to %lld per day" : {
 
     },
     "Up to date" : {
@@ -3217,6 +4131,9 @@
     "Updating Search" : {
 
     },
+    "Updating…" : {
+      "comment" : "iCloud Sync row while the switch applies"
+    },
     "Use %@" : {
 
     },
@@ -3241,6 +4158,9 @@
     "Warm" : {
       "comment" : "Theme name: warm peach accent"
     },
+    "Week" : {
+
+    },
     "Weekday" : {
 
     },
@@ -3261,7 +4181,7 @@
 
     },
     "Weekly" : {
-      "comment" : "Insight category badge"
+      "comment" : "Insight category badge\nStreak counted in weeks"
     },
     "Weekly Goal" : {
 
@@ -3275,6 +4195,12 @@
     "Weeks have dips." : {
 
     },
+    "Weeks in a row that met your weekly goal." : {
+
+    },
+    "Weeks in a row with at least one entry." : {
+
+    },
     "Weighs on You" : {
 
     },
@@ -3284,8 +4210,14 @@
     "What Affects Your Mood" : {
 
     },
+    "What Friday remembers and your chat with her will be deleted. Your entries stay." : {
+
+    },
     "What I Remember" : {
 
+    },
+    "What I Want to Bring Up" : {
+      "comment" : "Session Prep section; written in the person's voice"
     },
     "What Was Hard" : {
 
@@ -3338,6 +4270,12 @@
     "What do you want from tomorrow?" : {
 
     },
+    "What do you want more of in %@?" : {
+
+    },
+    "What do you want more of next month?" : {
+
+    },
     "What do you want more of today?" : {
 
     },
@@ -3360,6 +4298,9 @@
 
     },
     "What do you want to remember?" : {
+
+    },
+    "What do you want to write?" : {
 
     },
     "What do you wish %@ knew about how this felt?" : {
@@ -3573,7 +4514,7 @@
 
     },
     "Write" : {
-      "comment" : "Button that answers the question by writing.\nButton that starts a typed journal entry"
+      "comment" : "Button that answers the question by writing.\nButton that starts a typed journal entry\nMenu command (⌘N) that starts a typed entry"
     },
     "Write ${text} in my journal" : {
 
@@ -3608,6 +4549,9 @@
     "Write something first." : {
 
     },
+    "Write this week to start a streak." : {
+
+    },
     "Write today to start a streak." : {
 
     },
@@ -3636,11 +4580,37 @@
         }
       }
     },
+    "Wrote less often in the second half: %lld entries, down from %lld." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Wrote less often in the second half: %1$lld entries, down from %2$lld."
+          }
+        }
+      }
+    },
+    "Wrote more often in the second half: %lld entries, up from %lld." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "Wrote more often in the second half: %1$lld entries, up from %2$lld."
+          }
+        }
+      }
+    },
     "YOUR WORDS" : {
 
     },
     "Year" : {
       "comment" : "Calendar scale showing the whole year"
+    },
+    "Year in Pixels" : {
+
+    },
+    "Year in Review" : {
+
     },
     "Yearly" : {
       "comment" : "PDF export period"
@@ -3691,7 +4661,13 @@
     "You keep your feelings understated." : {
 
     },
+    "You kept writing through a hard month." : {
+
+    },
     "You kept writing through a hard week." : {
+
+    },
+    "You kept writing through a hard year." : {
 
     },
     "You mention %@ most, %@ so far." : {
@@ -3710,6 +4686,17 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "You mentioned %1$@ %2$lld times this week."
+          }
+        }
+      }
+    },
+    "You mentioned %@ in ^[%lld entry](inflect: true)." : {
+      "comment" : "My World page lead. The first argument is a name.",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "You mentioned %1$@ in ^[%2$lld entry](inflect: true)."
           }
         }
       }
@@ -3788,7 +4775,7 @@
 
     },
     "You wrote most about %@." : {
-
+      "comment" : "Review summary; the argument is a list of topics"
     },
     "You wrote on ^[%lld day](inflect: true)." : {
 
@@ -3842,7 +4829,19 @@
     "Your entries got a little heavier as the week went on." : {
 
     },
+    "Your entries got heavier in the second half of the year." : {
+
+    },
+    "Your entries got heavier toward the end of the month." : {
+
+    },
     "Your entries got heavier toward the end of the week." : {
+
+    },
+    "Your entries got lighter in the second half of the year." : {
+
+    },
+    "Your entries got lighter toward the end of the month." : {
 
     },
     "Your entries got lighter toward the end of the week." : {
@@ -3903,7 +4902,13 @@
     "Your mood lifts when you write about %@." : {
 
     },
+    "Your mood stayed about the same all month." : {
+
+    },
     "Your mood stayed about the same all week." : {
+
+    },
+    "Your mood stayed about the same all year." : {
 
     },
     "Your mood stays about the same through the day." : {
@@ -4006,11 +5011,56 @@
         }
       }
     },
+    "^[%lld day](inflect: true) this week" : {
+
+    },
     "^[%lld entry](inflect: true)" : {
+
+    },
+    "^[%lld entry](inflect: true) added" : {
 
     },
     "^[%lld entry](inflect: true) added." : {
 
+    },
+    "^[%lld entry](inflect: true) already imported" : {
+
+    },
+    "^[%lld entry](inflect: true) in this range" : {
+
+    },
+    "^[%lld entry](inflect: true) left out of the summary." : {
+
+    },
+    "^[%lld entry](inflect: true) on ^[%lld day](inflect: true)" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "^[%1$lld entry](inflect: true) on ^[%2$lld day](inflect: true)"
+          }
+        }
+      }
+    },
+    "^[%lld entry](inflect: true) on ^[%lld day](inflect: true) · %@ words" : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "^[%1$lld entry](inflect: true) on ^[%2$lld day](inflect: true) · %3$@ words"
+          }
+        }
+      }
+    },
+    "^[%lld entry](inflect: true) on ^[%lld day](inflect: true), about %lld words." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "^[%1$lld entry](inflect: true) on ^[%2$lld day](inflect: true), about %3$lld words."
+          }
+        }
+      }
     },
     "^[%lld entry](inflect: true) so far. You write %@." : {
       "localizations" : {
@@ -4038,16 +5088,34 @@
     "^[%lld hidden item](inflect: true)" : {
 
     },
+    "^[%lld item](inflect: true) skipped" : {
+
+    },
     "^[%lld mention](inflect: true)" : {
 
     },
     "^[%lld photo](inflect: true)" : {
 
     },
+    "^[%lld photo](inflect: true) added" : {
+
+    },
     "^[%lld photo](inflect: true) couldn’t be added. Try choosing again." : {
 
     },
+    "^[%lld photo](inflect: true) couldn’t be read" : {
+
+    },
+    "^[%lld photo](inflect: true) left out" : {
+
+    },
+    "^[%lld tag](inflect: true)" : {
+
+    },
     "^[%lld time](inflect: true)" : {
+
+    },
+    "^[%lld week](inflect: true)" : {
 
     },
     "^[%lld word](inflect: true)" : {
@@ -4123,6 +5191,15 @@
       "comment" : "Fills “Your mood is … and …”: mood trend"
     },
     "iCloud Sync" : {
+
+    },
+    "iCloud Sync Didn’t Change" : {
+
+    },
+    "iCloud Sync can change once OffRecord finishes saving." : {
+
+    },
+    "iCloud Sync can change once the recording is saved." : {
 
     },
     "iCloud Sync uses your own iCloud account." : {
@@ -4217,8 +5294,14 @@
     "starred" : {
       "comment" : "Entry subtitle part: the entry is starred"
     },
+    "this month" : {
+      "comment" : "Period phrase inside a mood summary sentence"
+    },
     "this week" : {
       "comment" : "Period phrase inside a mood summary sentence, e.g. \"This week, your moods were mixed.\""
+    },
+    "this year" : {
+      "comment" : "Period phrase inside a mood summary sentence"
     },
     "thoughtful" : {
       "comment" : "Personality trait, listed in “You come across as …”"
@@ -4239,6 +5322,12 @@
           }
         }
       }
+    },
+    "week" : {
+      "comment" : "Unit shown after a weekly streak count of 1"
+    },
+    "weeks" : {
+      "comment" : "Unit shown after a weekly streak count other than 1"
     },
     "with feeling" : {
       "comment" : "Fills “You write … and …”: the user's tone"
