@@ -32,16 +32,9 @@ final class WidgetSnapshotExporter {
         guard self.container == nil else { return }
         self.container = container
 
-        let coordinator = container.persistentStoreCoordinator
-        let center = NotificationCenter.default
-        observers.append(center.addObserver(forName: .NSManagedObjectContextDidSave, object: nil, queue: .main) { [weak self] note in
-            guard let context = note.object as? NSManagedObjectContext,
-                  context.persistentStoreCoordinator === coordinator else { return }
-            MainActor.assumeIsolated { self?.scheduleExport() }
-        })
-        observers.append(center.addObserver(forName: .NSPersistentStoreRemoteChange, object: coordinator, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.scheduleExport() }
-        })
+        observers += StoreChangeObservation.observe(container.persistentStoreCoordinator) { [weak self] in
+            self?.scheduleExport()
+        }
 
         scheduleExport(after: .seconds(2))
     }

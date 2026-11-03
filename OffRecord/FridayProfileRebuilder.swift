@@ -101,16 +101,9 @@ final class FridayProfileRebuilder {
         guard !arguments.contains("-UITesting"), !arguments.contains("-ScreenshotMode") else { return }
         self.container = container
 
-        let coordinator = container.persistentStoreCoordinator
-        let center = NotificationCenter.default
-        observers.append(center.addObserver(forName: .NSManagedObjectContextDidSave, object: nil, queue: .main) { [weak self] note in
-            guard let context = note.object as? NSManagedObjectContext,
-                  context.persistentStoreCoordinator === coordinator else { return }
-            MainActor.assumeIsolated { self?.scheduleRefresh() }
-        })
-        observers.append(center.addObserver(forName: .NSPersistentStoreRemoteChange, object: coordinator, queue: .main) { [weak self] _ in
-            MainActor.assumeIsolated { self?.scheduleRefresh() }
-        })
+        observers += StoreChangeObservation.observe(container.persistentStoreCoordinator) { [weak self] in
+            self?.scheduleRefresh()
+        }
 
         scheduleRefresh(after: .seconds(3))
     }
