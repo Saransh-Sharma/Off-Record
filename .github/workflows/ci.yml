@@ -14,6 +14,10 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+# The app and JournalKit need the iOS 27 SDK, so the macOS jobs run on the
+# `xcode-27` image (macOS 27, Xcode 27.x) and select Xcode 27.1. The `macos-26`
+# image only has Xcode 26.
+
 jobs:
   lint:
     name: Copy and claims lint
@@ -33,30 +37,64 @@ jobs:
 
   journalkit:
     name: JournalKit tests
-    runs-on: macos-26
+    runs-on: xcode-27
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Select Xcode 27.1
+        run: |
+          xcode=/Applications/Xcode_27.1.app
+          if [ ! -d "$xcode" ]; then
+            # Fall back to the newest released Xcode 27, then to any Xcode 27.
+            candidates=$(ls -d /Applications/Xcode_27*.app 2>/dev/null || true)
+            xcode=$(printf '%s\n' "$candidates" | grep -viE 'beta|release_candidate' | sort -V | tail -n 1 || true)
+            [ -n "$xcode" ] || xcode=$(printf '%s\n' "$candidates" | sort -V | tail -n 1 || true)
+          fi
+          if [ -z "$xcode" ]; then
+            echo "::error::No Xcode 27 in /Applications. The project needs the iOS 27 SDK."
+            ls -d /Applications/Xcode*.app || true
+            exit 1
+          fi
+          echo "Selecting $xcode"
+          sudo xcode-select -s "$xcode"
+          xcodebuild -version
+
       - name: Show toolchain
-        run: xcodebuild -version && swift --version
+        run: swift --version
 
       - name: Run package tests
         working-directory: Packages/JournalKit
         run: swift test
 
   app-unit-tests:
-    name: App unit tests
-    runs-on: macos-26
+    name: App unit tests (iOS Simulator)
+    runs-on: xcode-27
     timeout-minutes: 45
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Show toolchain and simulators
+      - name: Select Xcode 27.1
         run: |
+          xcode=/Applications/Xcode_27.1.app
+          if [ ! -d "$xcode" ]; then
+            # Fall back to the newest released Xcode 27, then to any Xcode 27.
+            candidates=$(ls -d /Applications/Xcode_27*.app 2>/dev/null || true)
+            xcode=$(printf '%s\n' "$candidates" | grep -viE 'beta|release_candidate' | sort -V | tail -n 1 || true)
+            [ -n "$xcode" ] || xcode=$(printf '%s\n' "$candidates" | sort -V | tail -n 1 || true)
+          fi
+          if [ -z "$xcode" ]; then
+            echo "::error::No Xcode 27 in /Applications. The project needs the iOS 27 SDK."
+            ls -d /Applications/Xcode*.app || true
+            exit 1
+          fi
+          echo "Selecting $xcode"
+          sudo xcode-select -s "$xcode"
           xcodebuild -version
-          xcrun simctl list runtimes
+
+      - name: Show simulators
+        run: xcrun simctl list runtimes
 
       # The OffRecord scheme embeds the watch app, so even an iOS simulator
       # build needs the watchOS platform. Download it only when the image lacks it.
@@ -66,15 +104,25 @@ jobs:
             xcodebuild -downloadPlatform watchOS
           fi
 
+      # Prefer an iPhone on the iOS 27.0 runtime (the 27.1 runtime may only
+      # offer newer device types), then the newest iOS runtime with an iPhone.
       - name: Pick an iPhone simulator
         id: simulator
         run: |
           udid=$(xcrun simctl list devices available --json | python3 -c '
           import json, sys
           runtimes = json.load(sys.stdin)["devices"]
-          devices = [d for r, ds in sorted(runtimes.items(), reverse=True) if ".iOS-" in r for d in ds]
-          iphones = [d for d in devices if d["name"].startswith("iPhone")]
-          print((iphones or devices)[0]["udid"])
+          ios = sorted((r for r in runtimes if ".iOS-" in r), reverse=True)
+          ordered = [r for r in ios if r.endswith(".iOS-27-0")] + ios
+          for runtime in ordered:
+              iphones = [d for d in runtimes[runtime] if d["name"].startswith("iPhone")]
+              if iphones:
+                  print(iphones[0]["name"] + " on " + runtime, file=sys.stderr)
+                  print(iphones[0]["udid"])
+                  break
+          else:
+              devices = [d for r in ios for d in runtimes[r]]
+              print(devices[0]["udid"])
           ')
           echo "Using simulator $udid"
           echo "udid=$udid" >> "$GITHUB_OUTPUT"
@@ -86,6 +134,7 @@ jobs:
             -scheme OffRecord \
             -destination "platform=iOS Simulator,id=${{ steps.simulator.outputs.udid }}" \
             -only-testing:OffRecordTests \
+            -parallel-testing-enabled NO \
             -derivedDataPath DerivedData \
             -resultBundlePath TestResults.xcresult \
             ARCHS=arm64 ONLY_ACTIVE_ARCH=YES COMPILER_INDEX_STORE_ENABLE=NO \
@@ -97,4 +146,53 @@ jobs:
         with:
           name: OffRecordTests-results
           path: TestResults.xcresult
+          retention-days: 7
+
+  app-unit-tests-mac-catalyst:
+    name: App unit tests (Mac Catalyst)
+    runs-on: xcode-27
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Select Xcode 27.1
+        run: |
+          xcode=/Applications/Xcode_27.1.app
+          if [ ! -d "$xcode" ]; then
+            # Fall back to the newest released Xcode 27, then to any Xcode 27.
+            candidates=$(ls -d /Applications/Xcode_27*.app 2>/dev/null || true)
+            xcode=$(printf '%s\n' "$candidates" | grep -viE 'beta|release_candidate' | sort -V | tail -n 1 || true)
+            [ -n "$xcode" ] || xcode=$(printf '%s\n' "$candidates" | sort -V | tail -n 1 || true)
+          fi
+          if [ -z "$xcode" ]; then
+            echo "::error::No Xcode 27 in /Applications. The project needs the iOS 27 SDK."
+            ls -d /Applications/Xcode*.app || true
+            exit 1
+          fi
+          echo "Selecting $xcode"
+          sudo xcode-select -s "$xcode"
+          xcodebuild -version
+
+      # No simulator: the tests run in the Mac Catalyst app. The watch app and
+      # widget extension are filtered out of the Mac build.
+      - name: Run OffRecordTests on Mac Catalyst
+        run: |
+          xcodebuild test \
+            -project OffRecord.xcodeproj \
+            -scheme OffRecord \
+            -destination 'platform=macOS,variant=Mac Catalyst' \
+            -only-testing:OffRecordTests \
+            -parallel-testing-enabled NO \
+            -derivedDataPath DerivedData \
+            -resultBundlePath TestResults-MacCatalyst.xcresult \
+            ARCHS=arm64 COMPILER_INDEX_STORE_ENABLE=NO \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Upload test results
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: OffRecordTests-MacCatalyst-results
+          path: TestResults-MacCatalyst.xcresult
           retention-days: 7
