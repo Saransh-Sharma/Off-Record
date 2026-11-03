@@ -57,9 +57,9 @@ struct EntryDetailView: View {
     // Photo state
     @State var selectedPhotos: [PhotosPickerItem] = []
     @State var photoAttachments: [PhotoAttachment] = []
-    @State private var photoAttachmentByID: [UUID: PhotoAttachment] = [:]
+    @State var photoAttachmentByID: [UUID: PhotoAttachment] = [:]
     #if canImport(UIKit)
-    @State private var photoImages: [UIImage] = []
+    @State var photoImages: [UIImage] = []
     @State var photoThumbnailByID: [UUID: UIImage] = [:]
     #endif
 
@@ -256,28 +256,7 @@ struct EntryDetailView: View {
         }
     }
 
-    private func loadPhotos() {
-        if PhotoStorageManager.shared.migrateLegacyPhotos(for: entry, in: viewContext) {
-            try? viewContext.save()
-        }
-        photoAttachments = PhotoStorageManager.shared.attachments(for: entry)
-        photoAttachmentByID = Dictionary(uniqueKeysWithValues: photoAttachments.compactMap { attachment in
-            guard let id = attachment.id else { return nil }
-            return (id, attachment)
-        })
-        #if canImport(UIKit)
-        photoImages = PhotoStorageManager.shared.thumbnailImages(for: entry)
-        var thumbnails: [UUID: UIImage] = [:]
-        for attachment in photoAttachments {
-            guard let id = attachment.id,
-                  let image = PhotoStorageManager.shared.thumbnailImage(for: attachment, maxPixelDimension: 720) else { continue }
-            thumbnails[id] = image
-        }
-        photoThumbnailByID = thumbnails
-        #endif
-    }
-
-    private func loadBlocks(backfill: Bool) {
+    func loadBlocks(backfill: Bool) {
         if backfill, JournalBlockTimelineStore.backfillBlocksIfNeeded(for: entry, in: viewContext) {
             try? viewContext.save()
         }
@@ -324,63 +303,6 @@ struct EntryDetailView: View {
                 photoAttachmentID: block.photoAttachmentIDValue
             )
         }
-    }
-
-    private func clearPhotoThumbnails() {
-        #if canImport(UIKit)
-        photoImages = []
-        photoThumbnailByID = [:]
-        #endif
-    }
-
-    private func handlePhotoSelection(_ items: [PhotosPickerItem]) {
-        #if canImport(UIKit)
-        let entryObjectID = entry.objectID
-        for item in items {
-            let token = PerformanceSignposts.begin("PhotoImport")
-            item.loadTransferable(type: Data.self) { result in
-                guard case .success(let data) = result, let data else {
-                    PerformanceSignposts.end(token)
-                    return
-                }
-
-                Task { @MainActor in
-                    guard let jpegData = await PhotoAttachmentProcessor.shared.preparedJPEGData(from: data),
-                          let image = PhotoStorageManager.thumbnailImage(from: jpegData) else {
-                        PerformanceSignposts.end(token)
-                        return
-                    }
-
-                    guard let entry = try? viewContext.existingObject(with: entryObjectID) as? DiaryEntry else {
-                        PerformanceSignposts.end(token)
-                        return
-                    }
-
-                    if let attachment = PhotoStorageManager.shared.addPhotoData(jpegData, to: entry, in: viewContext) {
-                        JournalBlockTimelineStore.appendPhotoBlock(
-                            attachment: attachment,
-                            createdAt: entryTimestampNow(),
-                            to: entry,
-                            in: viewContext
-                        )
-                        photoAttachments.append(attachment)
-                        photoImages.append(image)
-                        savePhotos()
-                    }
-                    PerformanceSignposts.end(token)
-                }
-            }
-        }
-        selectedPhotos = []
-        #endif
-    }
-
-    private func savePhotos() {
-        entry.updatedAt = Date()
-        try? viewContext.save()
-        photoAttachments = PhotoStorageManager.shared.attachments(for: entry)
-        loadBlocks(backfill: false)
-        JournalSpotlightIndexer.shared.upsert(entry: entry)
     }
 
     // MARK: - Computed Properties
@@ -448,11 +370,6 @@ struct EntryDetailView: View {
             return try? AudioAttachmentStore.destinationURL(for: legacyFileName)
         }
         return nil
-    }
-
-    private func photoAttachment(for block: NSManagedObject) -> PhotoAttachment? {
-        guard let id = block.value(forKey: "photoAttachmentID") as? UUID else { return nil }
-        return PhotoStorageManager.shared.attachments(for: entry).first { $0.id == id }
     }
 
     func block(for item: JournalBlockTimelineItem) -> JournalBlock? {
@@ -742,7 +659,7 @@ struct EntryDetailView: View {
         currentActivity?.becomeCurrent()
     }
 
-    private func entryTimestampNow(clock: Date = Date()) -> Date {
+    func entryTimestampNow(clock: Date = Date()) -> Date {
         let calendar = Calendar.current
         let base = entry.date ?? clock
         let day = calendar.dateComponents([.year, .month, .day], from: base)
