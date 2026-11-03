@@ -269,6 +269,10 @@ Since OffRecord does not collect your data on developer servers, control stays i
 
 We may update this privacy policy from time to time. We will notify you of changes by updating the "Last Updated" date at the top of this policy.
 
+## This Website
+
+Parts of the OffRecord website, such as the articles and guides, use Google Analytics to count page visits. Analytics never runs in the app, and the app sends nothing to Google or to us.
+
 ## Contact Us
 
 If you have questions about this privacy policy:
