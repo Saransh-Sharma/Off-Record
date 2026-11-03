@@ -69,7 +69,7 @@ final class CaptureFlowUITests: XCTestCase {
         XCTAssertTrue(app.alerts["Transcribe Recordings?"].waitForExistence(timeout: 8))
         XCTAssertTrue(app.alerts.buttons["Transcribe"].exists)
         XCTAssertTrue(app.alerts.buttons["Not Now"].exists)
-        app.alerts.buttons["Not Now"].tap()
+        app.alerts.buttons["Not Now"].firstMatch.tap()
 
         // The recording is still saved even without transcription.
         XCTAssertTrue(app.descendants(matching: .any)["capture.saved"].firstMatch.waitForExistence(timeout: 4))
@@ -81,7 +81,7 @@ final class CaptureFlowUITests: XCTestCase {
         XCTAssertTrue(app.buttons["capture.save"].firstMatch.waitForExistence(timeout: 8))
         app.buttons["capture.save"].firstMatch.tap()
         if app.alerts["Transcribe Recordings?"].waitForExistence(timeout: 4) {
-            app.alerts.buttons["Not Now"].tap()
+            app.alerts.buttons["Not Now"].firstMatch.tap()
         }
 
         let calm = app.buttons["capture.mood.calm"].firstMatch

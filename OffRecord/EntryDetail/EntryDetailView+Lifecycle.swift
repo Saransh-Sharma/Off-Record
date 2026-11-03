@@ -33,7 +33,7 @@ extension EntryDetailView {
         if moodChanged, selectedMood != .none {
             JournalBlockTimelineStore.appendMoodBlock(
                 mood: selectedMood,
-                createdAt: entryTimestampNow(),
+                createdAt: JournalBlockTimelineStore.moodTimestamp(proposed: entryTimestampNow(), for: entry),
                 to: entry,
                 in: viewContext
             )
@@ -52,7 +52,7 @@ extension EntryDetailView {
     func saveMood() {
         JournalBlockTimelineStore.appendMoodBlock(
             mood: selectedMood,
-            createdAt: entryTimestampNow(),
+            createdAt: JournalBlockTimelineStore.moodTimestamp(proposed: entryTimestampNow(), for: entry),
             to: entry,
             in: viewContext
         )

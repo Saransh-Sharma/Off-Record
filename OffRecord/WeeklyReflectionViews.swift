@@ -351,6 +351,7 @@ struct WeeklyReflectionReportView: View {
     @ObservedObject private var controller = WeeklyReflectionController.shared
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var takeawayText: String = ""
     @State private var showSources = false
     @State private var showExport = false
@@ -499,21 +500,23 @@ struct WeeklyReflectionReportView: View {
                 .italic()
                 .fixedSize(horizontal: false, vertical: true)
 
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: OffRecordSpacing.md) {
-                    trustLabel
-                    Spacer(minLength: 0)
-                    sourcesButton
-                }
-                VStack(alignment: .leading, spacing: OffRecordSpacing.sm) {
-                    trustLabel
-                    sourcesButton
-                }
+            // One layout that changes axis keeps the same views as text grows; swapping views
+            // (as ViewThatFits does) leaves the accessibility audit measuring a view that never scales.
+            trustRowLayout {
+                trustLabel
+                    .frame(maxWidth: dynamicTypeSize.isAccessibilitySize ? nil : .infinity, alignment: .leading)
+                sourcesButton
             }
         }
         .padding(OffRecordSpacing.xl)
         .frame(maxWidth: .infinity, alignment: .leading)
         .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceMint)
+    }
+
+    private var trustRowLayout: AnyLayout {
+        dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: OffRecordSpacing.sm))
+            : AnyLayout(HStackLayout(spacing: OffRecordSpacing.md))
     }
 
     private var trustLabel: some View {
@@ -529,7 +532,7 @@ struct WeeklyReflectionReportView: View {
             showSources = true
         } label: {
             Label("Sources", systemImage: "doc.text.magnifyingglass")
-                .lineLimit(1)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .buttonStyle(OffRecordSoftButtonStyle(tint: OffRecordColor.textSage, fill: OffRecordColor.surfacePrimary.opacity(0.85)))
         .accessibilityIdentifier("weeklyReflection.sources.openSheet")

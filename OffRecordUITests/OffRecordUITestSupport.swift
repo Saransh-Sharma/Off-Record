@@ -1,5 +1,13 @@
 import XCTest
 
+/// Launch arguments that pin the app clock, so the Weekly Reflection fixture's seeded week is the
+/// same whatever day the suite runs. A Wednesday by default; set `OFFRECORD_UI_TEST_NOW` (through
+/// `TEST_RUNNER_OFFRECORD_UI_TEST_NOW` on the xcodebuild command line) to try another day, such as a Monday.
+let weeklyReflectionClockArguments = [
+    "-UITestNow",
+    ProcessInfo.processInfo.environment["OFFRECORD_UI_TEST_NOW"] ?? "2026-05-27T12:00:00Z"
+]
+
 @MainActor
 func launchOffRecord(arguments: [String]) -> XCUIApplication {
     let app = XCUIApplication()

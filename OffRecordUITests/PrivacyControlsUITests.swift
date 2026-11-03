@@ -42,7 +42,7 @@ final class PrivacyControlsUITests: XCTestCase {
 
         let alert = app.alerts["Turn Off Friday?"]
         XCTAssertTrue(alert.waitForExistence(timeout: 5))
-        alert.buttons["Turn Off"].tap()
+        alert.buttons["Turn Off"].firstMatch.tap()
         XCTAssertTrue(waitForElement(toggle, matching: NSPredicate(format: "value == '0'")))
 
         tapOffRecordTab("friday", in: app)
@@ -80,11 +80,11 @@ final class PrivacyControlsUITests: XCTestCase {
         let first = app.alerts["Erase All Data?"]
         XCTAssertTrue(first.waitForExistence(timeout: 5))
         XCTAssertTrue(first.staticTexts.containingLabel("Every entry, recording, and photo").firstMatch.exists)
-        first.buttons["Continue"].tap()
+        first.buttons["Continue"].firstMatch.tap()
 
         let second = app.alerts["This Can’t Be Undone"]
         XCTAssertTrue(second.waitForExistence(timeout: 5))
-        second.buttons["Erase All Data"].tap()
+        second.buttons["Erase All Data"].firstMatch.tap()
 
         XCTAssertTrue(app.descendants(matching: .any)["today.firstEntry"].firstMatch.waitForExistence(timeout: 15))
         tapOffRecordTab("timeline", in: app)
@@ -139,7 +139,7 @@ final class PrivacyControlsUITests: XCTestCase {
         if !on {
             let alert = app.alerts["Turn Off Friday?"]
             XCTAssertTrue(alert.waitForExistence(timeout: 5))
-            alert.buttons["Turn Off"].tap()
+            alert.buttons["Turn Off"].firstMatch.tap()
         }
         XCTAssertTrue(waitForElement(toggle, matching: NSPredicate(format: "value == %@", on ? "1" : "0")))
     }
