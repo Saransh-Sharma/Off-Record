@@ -893,7 +893,7 @@
           <span class="pip"></span>
           technical paper
           <span style="opacity:0.35">·</span>
-          v1.1.0 · on-device
+          v1.5.0 · on-device
         </div>
         <h1>
           How OffRecord AI Journal<br>
@@ -958,7 +958,7 @@
 <span class="node">SwiftUI</span> <span class="arrow">─▶</span> <span class="node">WidgetKit</span> <span class="arrow">│</span> <span class="node">AppIntents · Siri</span></div>
         </div>
 
-        <p>The key constraint: <strong>data never leaves the device for processing.</strong> Transcription runs on the Neural Engine. NLP runs locally. Friday is computed and stored in Core Data. The only optional network path is Apple's encrypted iCloud sync — which the user can disable.</p>
+        <p>The key constraint: <strong>data never leaves the device for processing.</strong> Transcription runs on the Neural Engine. NLP runs locally. Friday is computed on the device and kept in a local folder that never syncs. The language model is Apple's on-device <code>SystemLanguageModel</code>, never Private Cloud Compute. The only optional network path is Apple's iCloud sync, which the user can turn off.</p>
       </section>
 
       <!-- §02 Stack -->
@@ -981,7 +981,7 @@
             <div class="st-fw">Speech.framework</div>
             <p>The production transcription stack. SpeechTranscriber handles the primary accuracy path and DictationTranscriber extends locale coverage with the same on-device analyzer.</p>
             <ul>
-              <li><code>requiresOnDeviceRecognition = true</code> ensures zero network transmission</li>
+              <li>On-device models only, with no fallback to server recognition</li>
               <li>Input: AAC audio at 44.1 kHz via AVAudioEngine</li>
               <li>60+ languages with on-device models</li>
               <li>Real-time partial results for live feedback</li>
@@ -991,18 +991,16 @@
 
           <div class="st-card">
             <div class="st-head">
-              <div class="st-glyph">Sa</div>
-              <span class="st-pill st-pill-next">NEXT · v2.0</span>
+              <div class="st-glyph">Js</div>
+              <span class="st-pill st-pill-shipped">SHIPPED</span>
             </div>
-            <h3>SpeechAnalyzer</h3>
-            <div class="st-fw">Speech.framework · iOS 26</div>
-            <p>Apple's next-generation speech analysis framework, now used for saved recordings and live voice search.</p>
+            <h3>Journaling Suggestions</h3>
+            <div class="st-fw">JournalingSuggestions · iPhone</div>
+            <p>Apple's picker offers moments from your recent days. OffRecord gets only the suggestion you pick.</p>
             <ul>
-              <li>Significantly faster recognition, lower latency</li>
-              <li>Native long-form audio without session timeouts</li>
-              <li>No user setup required (no permission prompts for on-device)</li>
-              <li>Volatile results for instant partial feedback</li>
-              <li>Built for sustained recording — ideal for journaling</li>
+              <li>The picker is system UI; OffRecord sees nothing until you pick</li>
+              <li>Keeps the suggestion's prompt and attaches up to 5 of its photos</li>
+              <li>iPhone only</li>
             </ul>
           </div>
 
@@ -1026,35 +1024,34 @@
           <div class="st-card">
             <div class="st-head">
               <div class="st-glyph">Ne</div>
-              <span class="st-pill st-pill-next">NEXT · v1.3</span>
+              <span class="st-pill st-pill-shipped">SHIPPED</span>
             </div>
             <h3>NLEmbedding</h3>
-            <div class="st-fw">512-dim word / sentence vectors</div>
-            <p>Generates dense vector representations of journal entries for semantic search and clustering.</p>
+            <div class="st-fw">sentence vectors · SQLite FTS5</div>
+            <p>Sentence vectors for search by meaning, combined with word matching, and the retrieval layer behind Friday's citations.</p>
             <ul>
-              <li>512-dim sentence embeddings per entry</li>
-              <li>Cosine similarity for semantic search</li>
-              <li>K-means clustering for hidden thematic groupings</li>
-              <li>Foundation for v2.0's RAG retrieval layer</li>
-              <li>Vectors persisted in Core Data alongside entry text</li>
+              <li>Sentence embeddings per passage of an entry</li>
+              <li>Cosine similarity plus SQLite FTS5 word matching</li>
+              <li>Feeds Friday's evidence retrieval and citations</li>
+              <li>Index kept on the device, never synced, rebuildable from Settings</li>
+              <li>Entries kept out of Friday are never indexed</li>
             </ul>
           </div>
 
           <div class="st-card">
             <div class="st-head">
               <div class="st-glyph">Fm</div>
-              <span class="st-pill st-pill-next">NEXT · v2.0</span>
+              <span class="st-pill st-pill-shipped">SHIPPED</span>
             </div>
             <h3>Foundation Models</h3>
-            <div class="st-fw">iOS 26 · 3B on-device LLM</div>
-            <p>Apple's on-device large language model, enabling conversational Friday interactions in v2.0.</p>
+            <div class="st-fw">SystemLanguageModel · on-device only</div>
+            <p>Apple's on-device language model phrases Friday's chat, entry titles, Go Deeper questions, and Weekly Reflection wording when Apple Intelligence is available.</p>
             <ul>
-              <li><code>LanguageModelSession</code> — multi-turn conversation with transcript memory</li>
-              <li><strong>Tool calling</strong> — Friday autonomously queries Core Data via custom Tool protocol</li>
-              <li><code>@Generable</code> — type-safe structured outputs (mood reports as Swift structs)</li>
-              <li><code>streamResponse()</code> — real-time streaming chat UI</li>
-              <li>Dynamic instructions from FridayAssistantEngine for tone matching</li>
-              <li>Requires iPhone 15 Pro+. Entire pipeline on-device.</li>
+              <li><code>LanguageModelSession</code>: one session per chat, keeping a window of recent turns</li>
+              <li><strong>Tool calling</strong>: three journal tools (<code>searchJournal</code>, <code>moodStats</code>, <code>person</code>); Friday cites only entries they returned</li>
+              <li><code>@Generable</code> structured output</li>
+              <li>Every answer passes a validator (voice, clinical terms, risk, grounding) before it shows, so answers aren't streamed</li>
+              <li>Never Private Cloud Compute; deterministic wording when the model isn't available</li>
             </ul>
           </div>
 
@@ -1069,7 +1066,8 @@
             <ul>
               <li>SQLite wrapped by NSPersistentCloudKitContainer</li>
               <li>Local-first: app works fully offline</li>
-              <li>AIState entity stores Friday as Codable JSON</li>
+              <li>Model version 3 adds tags, journals, and Keep Out of Friday</li>
+              <li>Friday's profile lives in a local file, not Core Data, and never syncs</li>
               <li>iCloud sync uses Apple's encrypted infrastructure</li>
               <li>Sync is optional — user can disable entirely</li>
             </ul>
@@ -1118,6 +1116,8 @@
               <li>Mood and streak widgets</li>
               <li>Hands-free voice entry via Siri</li>
               <li>AppIntents make Siri aware of OffRecord AI Journal operations</li>
+              <li>Apple's journal schemas for Create Entry, Create Audio Entry, and Search; the entry entity carries no text</li>
+              <li>Ask Friday in Siri answers with a summary only</li>
             </ul>
           </div>
 
@@ -1131,7 +1131,7 @@
           <h2 class="sec-title">The <em>Friday Engine</em>.</h2>
           <span class="sec-tag">model card</span>
         </div>
-        <p>The <code>FridayAssistantEngine</code> is a custom personality-modeling system that builds a multi-dimensional profile of the user from their voice journal entries. It uses no external models or APIs. The entire model is computed from NLTagger output and stored as serialized JSON in Core Data's <code>AIState</code> entity.</p>
+        <p>The <code>FridayAssistantEngine</code> is a custom personality-modeling system that builds a multi-dimensional profile of the user from their voice journal entries. It uses no external models or APIs. The entire model is computed from NLTagger output and saved as JSON in a protected local file that never syncs.</p>
 
         <div class="model-card">
           <div class="model-card-head">
@@ -1139,7 +1139,7 @@
               FridayAssistantEngine <span class="mc-chip">v1.1 · SHIPPED</span>
             </div>
             <div class="mc-meta">
-              storage: Core Data / AIState · size: ~12 KB · network: 0 rpc
+              storage: local file, never synced · network: 0 rpc
             </div>
           </div>
           <div class="model-card-body">
@@ -1150,8 +1150,8 @@
             </div>
             <div class="mc-field">
               <div class="mc-field-lbl">Update cadence</div>
-              <div class="mc-field-val">per entry · online</div>
-              <div class="mc-field-desc">Every voice entry updates Friday incrementally. No batch jobs.</div>
+              <div class="mc-field-val">rebuilt on change</div>
+              <div class="mc-field-desc">When the journal changes, the profile is relearned from every entry, so edits and deletes count.</div>
             </div>
             <div class="mc-field">
               <div class="mc-field-lbl">Inputs</div>
@@ -1234,7 +1234,7 @@
         </div>
 
         <div class="callout">
-          <strong>Storage model:</strong> all four sub-models are Swift <code>Codable</code> structs serialized to JSON and stored in a single Core Data entity (<code>AIState</code>). The entire personality model can be loaded in one fetch, updated incrementally, and synced across devices as a single atomic object. No external database. No vector store until v1.3. Just Core Data.
+          <strong>Storage model:</strong> all four sub-models are Swift <code>Codable</code> structs saved as one JSON file in <code>Application Support/FridayLocal</code>, written with complete file protection and excluded from device backups. The file never syncs; each device rebuilds the profile from your entries. Turning Friday off, or Erase All Data, deletes the folder.
         </div>
       </section>
 
@@ -1248,7 +1248,7 @@
         <p>Privacy is not a feature of OffRecord AI Journal. It is the architectural constraint every technical decision is built around. The system is designed so that private data <strong>physically cannot</strong> leave the device for processing.</p>
 
         <h3 style="font-family: var(--display); font-size: 18px; font-weight: 600; color: var(--paper); margin: 28px 0 10px; letter-spacing: -0.02em;">Zero network processing</h3>
-        <p>Every AI operation runs on the device's Neural Engine. Transcription uses <code>requiresOnDeviceRecognition = true</code>. NLTagger runs locally. Friday is computed and stored in Core Data. There are no API calls, no cloud functions, no telemetry on journal content.</p>
+        <p>Every AI operation runs on the device. Transcription uses SpeechAnalyzer's on-device models. NLTagger runs locally. Friday's profile is computed on the device and kept in a local file that never syncs. The language model is Apple's on-device <code>SystemLanguageModel</code>, never Private Cloud Compute. There are no API calls, no cloud functions, no telemetry on journal content.</p>
 
         <h3 style="font-family: var(--display); font-size: 18px; font-weight: 600; color: var(--paper); margin: 28px 0 10px; letter-spacing: -0.02em;">No third-party SDKs</h3>
         <p>OffRecord AI Journal contains zero third-party dependencies for core functionality. No analytics SDKs. No crash reporting that sends journal content. No ad networks. The only external code is Google Analytics on this website (not in the app) and Apple's own frameworks.</p>
@@ -1309,25 +1309,25 @@
             </div>
           </div>
           <div class="rd-item">
-            <div class="rd-dot rd-now">→</div>
+            <div class="rd-dot rd-done">✓</div>
             <div class="rd-body">
-              <div class="rd-tag rd-now-txt">Building now · v1.2</div>
+              <div class="rd-tag rd-done-txt">Shipped · v1.2</div>
               <h3>Talk to Friday + social sharing</h3>
               <p>FridayChatView with pattern-matched query system. ShareablePersonalityCardView renders at 3× for Instagram Stories and X. Review prompts via SKStoreReviewController at milestone entries.</p>
               <div class="rd-tags"><span>FridayChatView</span><span>ShareablePersonalityCardView</span><span>SKStoreReviewController</span><span>UIActivityViewController</span><span>ImageRenderer</span></div>
             </div>
           </div>
           <div class="rd-item">
-            <div class="rd-dot rd-next">○</div>
+            <div class="rd-dot rd-done">✓</div>
             <div class="rd-body">
-              <div class="rd-tag rd-next-txt">Next · v1.3</div>
-              <h3>Semantic search + proactive insights</h3>
-              <p>NLEmbedding for 512-dim sentence embeddings. Cosine similarity vector search. Z-score anomaly detection. K-means clustering. Foundation for v2.0 RAG.</p>
-              <div class="rd-tags"><span>NLEmbedding</span><span>Cosine Similarity</span><span>Anomaly Detection</span><span>K-Means</span></div>
+              <div class="rd-tag rd-done-txt">Shipped · v1.3</div>
+              <h3>Search by meaning + evidence-based Friday</h3>
+              <p>NLEmbedding sentence vectors with SQLite FTS5 word matching. Friday retrieves entries before answering and cites them, or says the journal doesn't support an answer.</p>
+              <div class="rd-tags"><span>NLEmbedding</span><span>Cosine Similarity</span><span>FTS5</span><span>Citations</span></div>
             </div>
           </div>
           <div class="rd-item">
-            <div class="rd-dot rd-done">○</div>
+            <div class="rd-dot rd-done">✓</div>
             <div class="rd-body">
               <div class="rd-tag rd-done-txt">Shipped · v1.4</div>
               <h3>Apple Watch Quick Capture</h3>
@@ -1336,30 +1336,30 @@
             </div>
           </div>
           <div class="rd-item">
-            <div class="rd-dot rd-next">○</div>
+            <div class="rd-dot rd-done">✓</div>
             <div class="rd-body">
-              <div class="rd-tag rd-next-txt">v2.0 · Conversational Friday (iOS 26)</div>
-              <h3>Foundation Models + tool calling + SpeechAnalyzer</h3>
-              <p>On-device 3B Foundation Model. Tool calling lets Friday autonomously query Core Data. <code>@Generable</code> for structured output. <code>streamResponse()</code> for streaming. Requires iPhone 15 Pro+. Zero network calls.</p>
-              <div class="rd-tags"><span>Foundation Models</span><span>LanguageModelSession</span><span>Tool Calling</span><span>@Generable</span><span>streamResponse()</span><span>SpeechAnalyzer</span></div>
+              <div class="rd-tag rd-done-txt">Shipped · v1.5</div>
+              <h3>Friday on-device, privacy controls, and the Mac</h3>
+              <p>Apple's on-device model with three journal tools, generated titles, Go Deeper questions, and Weekly Reflection wording, all checked before they show. Keep Out of Friday, the Friday switch, and Erase All Data. Month and Year in Review, Session Prep, tags, journals, people pages, importers, Siri journal schemas, Journaling Suggestions, sync status, and a Mac app through Mac Catalyst.</p>
+              <div class="rd-tags"><span>Foundation Models</span><span>Tool Calling</span><span>@Generable</span><span>App Intents journal schemas</span><span>JournalingSuggestions</span><span>Mac Catalyst</span></div>
+            </div>
+          </div>
+          <div class="rd-item">
+            <div class="rd-dot rd-now">→</div>
+            <div class="rd-body">
+              <div class="rd-tag rd-now-txt">Next</div>
+              <h3>Device QA, then open ideas</h3>
+              <p>Siri, Journaling Suggestions, live iCloud sync, the Mac app, and on-device model quality checked on real hardware. After that: monthly “You tend to…” lines with sources, how moods and themes change across months, and an open export of what Friday learned.</p>
+              <div class="rd-tags"><span>Device QA</span><span>Month in Review</span><span>Open export</span></div>
             </div>
           </div>
           <div class="rd-item">
             <div class="rd-dot rd-next">○</div>
             <div class="rd-body">
-              <div class="rd-tag rd-next-txt">v2.5 · Train Friday</div>
-              <h3>LoRA fine-tuning — Friday learns your tone</h3>
-              <p>Apple's Foundation Models Adapter Training toolkit for Low-Rank Adaptation. Export 100–1,000 entries as JSONL. Train a personal adapter on Mac. ~160 MB adapter delivered via Background Assets. Loaded via <code>SystemLanguageModel(adapter:)</code>. Training data never leaves your Mac.</p>
-              <div class="rd-tags"><span>LoRA Adapters</span><span>Adapter Training</span><span>JSONL Export</span><span>Background Assets</span><span>~160 MB adapter</span></div>
-            </div>
-          </div>
-          <div class="rd-item">
-            <div class="rd-dot rd-next">○</div>
-            <div class="rd-body">
-              <div class="rd-tag rd-next-txt">v3.0 · The vision</div>
-              <h3>A private assistant with memory</h3>
-              <p>The end state: an on-device AI assistant grounded in years of entries. Full RAG. Personal LoRA adapter. Tool calling for autonomous data access. Context condensation over long conversations. Encrypted. On your device. Exportable only by you.</p>
-              <div class="rd-tags"><span>Full RAG</span><span>Personal LoRA</span><span>Vector Retrieval</span><span>Context Condensation</span><span>Secure Enclave</span><span>Private Assistant Archive</span></div>
+              <div class="rd-tag rd-next-txt">Not planned</div>
+              <h3>LoRA fine-tuning, Friday in your voice, and personality scores</h3>
+              <p>A personal adapter would mean exporting journal text for training, and the on-device model with journal tools already grounds Friday in your entries. Friday stays a labeled AI rather than speaking in your voice, doesn't predict how you'd react, and doesn't score Big Five traits.</p>
+              <div class="rd-tags"><span>No LoRA</span><span>No Personal Voice</span><span>No Big Five</span></div>
             </div>
           </div>
         </div>
@@ -1380,7 +1380,7 @@
             <span class="cit-year">2026</span>
             <div class="cit-body">
               <div class="cit-title">Memory-Efficient Structured Backpropagation for On-Device LLM Fine-Tuning</div>
-              <div class="cit-desc">Efficient fine-tuning under mobile memory constraints — directly relevant to v2.5 LoRA adapter training.</div>
+              <div class="cit-desc">Efficient fine-tuning under mobile memory constraints. Background only: OffRecord doesn't fine-tune models.</div>
             </div>
           </li>
           <li class="citation">
@@ -1396,7 +1396,7 @@
             <span class="cit-year">2024</span>
             <div class="cit-body">
               <div class="cit-title">PocketLLM: On-Device Fine-Tuning for Personalized LLMs</div>
-              <div class="cit-desc">Personal model adaptation on mobile hardware — foundational for v2.5's personal adapter.</div>
+              <div class="cit-desc">Personal model adaptation on mobile hardware. Background only: OffRecord doesn't train personal adapters.</div>
             </div>
           </li>
           <li class="citation">
@@ -1427,7 +1427,7 @@
         <div class="oss">
           <div class="oss-body">
             <h3>Build with us.</h3>
-            <p>OffRecord AI Journal is open source and contributions are welcome — improving Friday engine, adding language support, building the Foundation Models integration.</p>
+            <p>OffRecord AI Journal is open source and contributions are welcome — improving the Friday engine, the Foundation Models integration, and translations.</p>
           </div>
           <a href="https://github.com/Saransh-Sharma/Off-Record" class="btn-github" target="_blank" rel="noopener">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z"/></svg>

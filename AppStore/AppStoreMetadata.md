@@ -7,7 +7,7 @@ OffRecord AI Journal
 Private Journal & Mood Tracker
 
 ## Promotional Text (170 characters max)
-NEW: Apple Watch Quick Capture for mood, dictation, and audio notes. Saved on watch first, synced privately to iPhone.
+Now on Mac. Friday runs on Apple's on-device model, plus Month and Year in Review, tags, journals, and imports from Day One and Apple Journal.
 
 ## Description (4000 characters max)
 
@@ -35,7 +35,7 @@ This is what makes OffRecord AI Journal different. As you journal, OffRecord AI 
 - Writing Patterns: When you journal, how much you write, your streaks and consistency
 - Top Themes: The subjects that come up most in your entries, ranked by importance
 
-Your assistant grows with every entry, giving you a clearer picture of your journaling journey over time.
+Your assistant grows with every entry, giving you a clearer picture of your journaling over time.
 
 SMART INSIGHTS
 OffRecord AI Journal uses Apple's on-device NLP to surface patterns you might not notice:
@@ -46,7 +46,7 @@ OffRecord AI Journal uses Apple's on-device NLP to surface patterns you might no
 - Friday insights, mood analysis, Semantic Memory, and journal analysis run on your device
 
 BEAUTIFUL INSIGHTS
-Track your emotional journey with:
+Track your moods over time with:
 - Writing streaks and consistency scores
 - Mood trends with interactive charts
 - Weekly activity patterns
@@ -112,6 +112,22 @@ https://saransh-sharma.github.io/Off-Record/support.html
 
 ## Privacy Policy URL
 https://saransh-sharma.github.io/Off-Record/privacy.html
+
+## What's New (Version 1.5)
+New in v1.5:
+
+- OffRecord on Mac, with menu commands and keyboard shortcuts.
+- Friday on Apple's on-device model: with Apple Intelligence, she keeps a conversation going, looks things up in your journal, and cites the entries she used. Entries can get short titles.
+- Month in Review and Year in Review.
+- Session Prep: a summary of a date range for a session with a therapist or coach.
+- Tags, multiple journals, and a page for each person, place, and topic.
+- Import from Day One, Apple Journal, Markdown or text files, and CSV.
+- Siri can add to your journal, search it, and ask Friday. Siri gets a summary only, never quotes.
+- Journaling Suggestions on iPhone.
+- Keep Out of Friday on any entry, a switch to turn Friday off, and Erase All Data.
+- Streaks allow one rest day in any 7 days, or switch to weekly streaks.
+- iCloud sync status in Settings, and a recovery screen if your journal can't open.
+- Get Support shows your region's crisis line and works offline.
 
 ## What's New (Version 1.4)
 New in v1.4:
