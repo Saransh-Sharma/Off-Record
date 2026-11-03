@@ -166,12 +166,14 @@ final class WeeklyReflectionUITests: XCTestCase {
         XCTAssertTrue(app.pickers["weeklyReflection.export.format"].firstMatch.exists || app.buttons["weeklyReflection.export.format"].firstMatch.exists)
     }
 
+    /// The app clock is pinned (see `weeklyReflectionClockArguments`) so the seeded week is the
+    /// same whatever day the suite runs.
     private func launchWeeklyReflectionApp(_ extraArguments: String...) -> XCUIApplication {
         let app = XCUIApplication()
         app.launchArguments = [
             "-UITesting",
             "-WeeklyReflectionUITest"
-        ] + extraArguments
+        ] + weeklyReflectionClockArguments + extraArguments
         app.launch()
         XCTAssertTrue(offRecordTabButton("today", in: app).firstMatch.waitForExistence(timeout: 10))
         return app

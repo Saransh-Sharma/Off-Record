@@ -1,6 +1,6 @@
 # OffRecord AI Journal: An On-Device Framework for Privacy-Preserving Personality Modeling from Voice Diaries
 
-**Authors:** Karthikeyan NG
+**Authors:** Saransh Sharma
 **Target Venues:** ACM MobiSys, ACM CHI, ACM UIST
 **Status:** Draft Outline with Full Abstract
 
@@ -160,7 +160,7 @@ No existing work combines: (a) voice journaling as the primary data source, (b) 
 
 - **Core Data** as the persistence layer. All diary entries, AI state (user profile, assistant models), and metadata stored in the app's sandboxed container.
 - **AIState entity** stores serialized model data (JSON-encoded via `Codable`) with type identifiers and timestamps. Enables atomic updates and migration.
-- **AES-256-GCM encryption** via Apple's CryptoKit for backup exports. Custom file format ("DVX1" magic bytes + 32-byte salt + nonce + ciphertext + authentication tag). Password-based key derivation using HKDF-SHA256.
+- **AES-256-GCM encryption** via Apple's CryptoKit for backup exports. Custom file format ("DVX2" magic bytes + PBKDF2 iteration count + 32-byte salt + nonce + ciphertext + authentication tag). Password-based key derivation using PBKDF2-SHA256 with 100,000 iterations; legacy DVX1 backups still decrypt.
 - **Zero network permissions.** The app's `Info.plist` declares no network entitlements. No `NSAppTransportSecurity` exceptions. No analytics SDKs, no crash reporting services, no telemetry.
 - **No third-party dependencies** for core functionality. Speech, NaturalLanguage, CoreML, CryptoKit, CoreData—all Apple first-party frameworks.
 
@@ -213,14 +213,14 @@ No existing work combines: (a) voice journaling as the primary data source, (b) 
 ### 5.1 Zero-Cloud Design
 
 - **Architecture principle:** The app contains no networking code in its core functionality. No URLSession calls, no WebSocket connections, no background network tasks.
-- **Network monitor for transcription quality only:** `NWPathMonitor` detects connectivity status solely to decide between on-device transcription (offline, no punctuation) and Apple's server-assisted transcription (online, better punctuation). This is the only network-aware component, and its purpose is to degrade gracefully offline—not to transmit user data.
+- **On-device transcription only:** Transcription uses Apple's iOS 26 SpeechAnalyzer stack (`SpeechTranscriber`, with `DictationTranscriber` for wider locale coverage). Recognition runs on device and there is no server-recognition fallback; iOS may download the speech model once.
 - **No analytics, no telemetry:** No Firebase, no Mixpanel, no Amplitude, no crash reporting SDK. The developer receives zero data about how the app is used.
-- **iCloud sync (optional):** Core Data CloudKit sync is available as a user-enabled option for multi-device access. When enabled, data transits through the user's own iCloud account (end-to-end encrypted by Apple), not through developer-controlled servers.
+- **iCloud sync (optional):** Core Data CloudKit sync is available as a user-enabled option for multi-device access. When enabled, data transits through the user's own iCloud account under Apple's iCloud protections (end-to-end encrypted only when the user enables Advanced Data Protection), not through developer-controlled servers.
 
 ### 5.2 Encryption
 
 - **At-rest:** iOS Data Protection (hardware-bound encryption) protects the app's sandbox when the device is locked.
-- **Export encryption:** User-initiated backups are encrypted with AES-256-GCM using a user-provided password. Key derivation uses HKDF-SHA256 with a 32-byte random salt. Custom file format includes magic bytes ("DVX1") for format validation.
+- **Export encryption:** User-initiated backups are encrypted with AES-256-GCM using a user-provided password. Key derivation uses PBKDF2-SHA256 (100,000 iterations) with a 32-byte random salt. Custom file format includes magic bytes ("DVX2") and the iteration count for format validation.
 - **Authentication tag:** GCM mode provides authenticated encryption, ensuring both confidentiality and integrity. Tampered backups are detected and rejected.
 - **No key escrow:** Encryption keys are derived from user-provided passwords. The developer cannot decrypt backups. If the user forgets their password, the data is irrecoverable by design.
 

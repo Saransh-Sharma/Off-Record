@@ -128,6 +128,8 @@ final class CaptureController: ObservableObject {
     }
     @Published var isPanelPresented = false
     @Published var captureDate = Date()
+    /// The journal recordings, photos, and writing go into; nil is the main journal.
+    @Published var captureJournalID: UUID? = JournalSelectionPreference.lastUsedJournalID
     /// The prompt the person chose to answer, shown in the panel while they speak.
     @Published private(set) var activePrompt: String?
     @Published private(set) var liveTranscript = ""
@@ -174,6 +176,18 @@ final class CaptureController: ObservableObject {
 
     var isCaptureDateToday: Bool {
         Calendar.current.isDateInToday(captureDate)
+    }
+
+    /// The journal new captures go into, or nil for the main journal (also when the
+    /// chosen one was deleted or archived since).
+    var captureJournal: Journal? {
+        JournalSelectionPreference.usableJournal(withID: captureJournalID, in: viewContext)
+    }
+
+    /// Back to the last journal the person picked, once no entry is open.
+    func resetCaptureJournal() {
+        guard !phase.isCapturing else { return }
+        captureJournalID = JournalSelectionPreference.lastUsedJournalID
     }
 
     // MARK: - Recording
@@ -357,9 +371,10 @@ final class CaptureController: ObservableObject {
     private func save(audioURL: URL, duration: TimeInterval, livePreview: String) {
         let now = captureTimestamp()
         let context = viewContext
+        let journal = captureJournal
         let entry: DiaryEntry
         do {
-            entry = try DiaryEntryDailyStore.getOrCreateEntry(on: now, in: context)
+            entry = try DiaryEntryDailyStore.getOrCreateEntry(on: now, journal: journal, in: context)
         } catch {
             entry = DiaryEntry(context: context)
             entry.id = UUID()
@@ -367,6 +382,7 @@ final class CaptureController: ObservableObject {
             entry.createdAt = now
             entry.text = ""
             entry.isStarred = false
+            entry.journal = journal
         }
         let entryWasEmpty = !entry.isStartedEntry
 
@@ -732,13 +748,14 @@ final class CaptureController: ObservableObject {
 
     func getOrCreateEntry(capturedAt: Date? = nil) -> DiaryEntry? {
         let now = capturedAt ?? captureTimestamp()
+        let journal = captureJournal
         do {
-            let entry = try DiaryEntryDailyStore.getOrCreateEntry(on: now, in: viewContext)
+            let entry = try DiaryEntryDailyStore.getOrCreateEntry(on: now, journal: journal, in: viewContext)
             try viewContext.save()
             return entry
         } catch {
             viewContext.rollback()
-            return (try? DiaryEntryDailyStore.entries(on: now, in: viewContext).first)
+            return (try? DiaryEntryDailyStore.entries(on: now, journal: journal, in: viewContext).first)
         }
     }
 

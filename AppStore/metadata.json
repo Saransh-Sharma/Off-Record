@@ -3,7 +3,7 @@
     "app_name": "OffRecord AI Journal",
     "subtitle": "Private Journal & Mood Tracker",
     "bundle_id": "com.singularity.offrecord",
-    "primary_category": "HEALTH_AND_FITNESS",
+    "primary_category": "LIFESTYLE",
     "secondary_category": "PRODUCTIVITY",
     "age_rating": "FOUR_PLUS",
     "copyright": "2026 OffRecord AI Journal",
@@ -16,8 +16,8 @@
       "name": "OffRecord AI Journal",
       "subtitle": "Private Journal & Mood Tracker",
       "keywords": "diary,journal,voice,mood tracker,private AI assistant,private,speech to text,mindfulness,encrypted,anxiety",
-      "promotional_text": "NEW: Friday now predicts your mood, topics, and best journaling times. Journal analysis stays on your iPhone.",
-      "whats_new": "New in v1.1:\n\n- Friday Predictions: Friday now predicts your likely mood, topics, and best journaling times based on your patterns\n- Shareable Personality Card: Share a beautiful snapshot of your Friday profile\n- Weekly Insight Cards: Shareable visual summaries of your weekly emotional journey\n- Improved NLP: Better keyword extraction with refined text processing\n- Privacy-first: Friday analysis runs locally; Apple Speech transcription is disclosed and permission-based"
+      "promotional_text": "Now on Mac. Friday runs on Apple's on-device model, plus Month and Year in Review, tags, journals, and imports from Day One and Apple Journal.",
+      "whats_new": "New in v1.5:\n\n- OffRecord on Mac, with menu commands and keyboard shortcuts.\n- Friday on Apple's on-device model: with Apple Intelligence, she keeps a conversation going, looks things up in your journal, and cites the entries she used. Entries can get short titles.\n- Month in Review and Year in Review.\n- Session Prep: a summary of a date range for a session with a therapist or coach.\n- Tags, multiple journals, and a page for each person, place, and topic.\n- Import from Day One, Apple Journal, Markdown or text files, and CSV.\n- Siri can add to your journal, search it, and ask Friday. Siri gets a summary only, never quotes.\n- Journaling Suggestions on iPhone.\n- Keep Out of Friday on any entry, a switch to turn Friday off, and Erase All Data.\n- Streaks allow one rest day in any 7 days, or switch to weekly streaks.\n- iCloud sync status in Settings, and a recovery screen if your journal can't open.\n- Get Support shows your region's crisis line and works offline."
     }
   },
   "app_privacy": {
@@ -33,34 +33,46 @@
   },
   "review_information": {
     "demo_account_required": false,
-    "notes_for_reviewer": "OffRecord AI Journal is a privacy-first voice diary app. It does not integrate OpenAI, Anthropic, Gemini, analytics SDKs, advertising SDKs, or non-Apple third-party AI services. Voice transcription uses Apple's iOS 26 SpeechAnalyzer framework with SpeechTranscriber and DictationTranscriber. Before transcription begins, the app shows a neutral on-device processing disclosure with a Continue button. Recognition runs entirely on-device; iOS may download a language model from Apple when needed. Unsupported languages preserve the recording and never fall back to server recognition. Friday insights, mood analysis, Semantic Memory, and journal analysis run locally using Apple NaturalLanguage/Foundation Models where available. Optional iCloud Sync uses the user's personal Apple iCloud account for entries/photos; audio recordings stay on the recording device. The app requires microphone access for voice recording and optionally Photo Library access for attaching photos to entries. Encrypted backups use CryptoKit (AES-256-GCM)."
+    "notes_for_reviewer": "OffRecord AI Journal is a privacy-first voice diary app. It does not integrate OpenAI, Anthropic, Gemini, analytics SDKs, advertising SDKs, or non-Apple third-party AI services. Voice transcription uses Apple's iOS 26 SpeechAnalyzer framework with SpeechTranscriber and DictationTranscriber. Before transcription begins, the app shows a neutral on-device processing disclosure with a Continue button. Recognition runs entirely on-device; iOS may download a language model from Apple when needed. Unsupported languages preserve the recording and never fall back to server recognition. Friday insights, mood analysis, Semantic Memory, and journal analysis run locally using Apple NaturalLanguage/Foundation Models where available. Optional iCloud Sync uses the user's personal Apple iCloud account for entries/photos; audio recordings stay on the recording device. The app requires microphone access for voice recording and optionally Photo Library access for attaching photos to entries. Encrypted backups use CryptoKit (AES-256-GCM). Apple Health is optional and off by default: when the user turns on Save Moods to Health, the app writes only State of Mind mood samples (mood and time) and requests no read access. The audio background mode keeps an in-progress recording running when the user leaves the app, so the recording Live Activity's Pause and Stop controls keep working; the app does not play or record audio in the background otherwise. The Apple Watch companion transfers captures to the paired iPhone with WatchConnectivity. Version 1.5 adds a Mac app built with Mac Catalyst (same bundle ID; no HealthKit, widgets, or watch app on Mac). On devices with Apple Intelligence, Friday uses Apple's on-device SystemLanguageModel only, never Private Cloud Compute. Journaling Suggestions (iPhone only) use Apple's picker, and the app receives only the suggestion the user picks. Importing entries reads only the files the user chooses in the system file picker, on device."
   },
   "screenshots": {
-    "iphone_67": {
-      "resolution": "1290x2796",
-      "count": 8,
+    "iphone_69": {
+      "resolution": "1320x2868",
+      "count": 12,
+      "folder": "AppStore/screenshots/iPhone_69/{light,dark}",
       "captions": [
-        "Voice Journal — Just Talk, We Transcribe",
-        "Your AI Friday Learns Your Patterns",
-        "Automatic Mood Tracking from Your Words",
-        "9 Emotions Tracked. Zero Manual Input.",
-        "Search Across All Your Entries Instantly",
-        "100% On-Device. Your Diary Never Leaves Your Phone.",
-        "8 Themes. Face ID Lock. Encrypted Backups.",
-        "People, Places & Topics — Your Knowledge Graph"
+        "Record or write. It stays on your iPhone.",
+        "Talk, and it's transcribed on your iPhone",
+        "Every entry by day, mood, and photo",
+        "Search by meaning, not just words",
+        "Text, recordings, photos, and mood in one entry",
+        "Photos stay with the day they belong to",
+        "See your moods and streaks over time",
+        "A private look back at your week",
+        "Friday learns your patterns on your iPhone",
+        "Ask Friday. Answers cite your entries.",
+        "The people, places, and topics you mention",
+        "No account. No tracking. Your settings."
       ]
     },
-    "iphone_65": {
-      "resolution": "1284x2778",
-      "count": 8
-    },
-    "iphone_55": {
-      "resolution": "1242x2208",
-      "count": 8
-    },
-    "ipad_129": {
-      "resolution": "2048x2732",
-      "count": 8
+    "ipad_13": {
+      "resolution": "2064x2752",
+      "count": 12,
+      "folder": "AppStore/screenshots/iPad_13/{light,dark}",
+      "captions": [
+        "Record or write. It stays on your iPhone.",
+        "Talk, and it's transcribed on your iPhone",
+        "Every entry by day, mood, and photo",
+        "Search by meaning, not just words",
+        "Text, recordings, photos, and mood in one entry",
+        "Photos stay with the day they belong to",
+        "See your moods and streaks over time",
+        "A private look back at your week",
+        "Friday learns your patterns on your iPhone",
+        "Ask Friday. Answers cite your entries.",
+        "The people, places, and topics you mention",
+        "No account. No tracking. Your settings."
+      ]
     }
   }
 }

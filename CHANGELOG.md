@@ -14,8 +14,98 @@ All notable changes to OffRecord AI Journal are documented here.
 - **Widgets and system surfaces**: the iOS widgets now ship in their own extension. New Year in Pixels and tappable mood widgets, a Record control for Control Center and the Lock Screen, and a Live Activity while recording.
 - **Settings**: a Privacy card, settings search, and an optional Apple Health State of Mind toggle.
 - **Dark mode** across the app; "System" appearance follows the device.
+- **Friday on the on-device model:**
+  - When Apple Intelligence is available, Friday keeps the chat going across turns.
+  - She looks things up in your journal with three tools (search, mood counts, people) and cites only entries those tools returned.
+  - Go Deeper can ask a question written for the entry.
+  - Entries can get short generated titles, in the entry and on Timeline.
+  - Weekly Reflection can rephrase its cover line and summary from the week's facts.
+  - All generated text must pass the Voice and safety rules or falls back to the deterministic wording.
+  - Without Apple Intelligence, Friday says once that she answers from summaries.
+- **Month in Review and Year in Review:**
+  - Month in Review appears on Insights, with history.
+  - Year in Review opens from December 1 for this year and anytime for past years. It covers counts, Year in Pixels, mood by month, people and topics, and entries that mattered.
+  - Its share card replaces names with "someone" unless you turn names on.
+  - Links: `offrecord://review/month/2026-09` and `offrecord://review/year/2026`.
+- **Session Prep:**
+  - Summarizes a date range to bring to a session with a therapist or coach.
+  - You choose which quotes to include (none by default) and add "What I Want to Bring Up". Names are replaced unless you turn them on.
+  - Exports as PDF, Markdown, or plain text.
+- **Import from another app** (Day One JSON, Apple Journal, Markdown or text files, CSV):
+  - Shows a preview first.
+  - Same-day entries become one day's page.
+  - Re-importing doesn't duplicate.
+- **Keep Out of Friday:**
+  - Per entry, with an optional **Skip Weekly Reflection**.
+  - Kept-out entries are never indexed for search by meaning, cited, learned from, or quoted.
+  - Weekly Reflection still counts them unless they're skipped too.
+- **Friday switch** in Settings. Turning Friday off deletes what she learned, her chat, and generated titles and questions.
+- **Erase All Data** in Settings. It deletes the journal, files, indexes, and Friday's data. When iCloud sync is on, the deletion reaches iCloud too, and the confirmation says so.
+- **Tags:**
+  - Add or remove tags on an entry, with suggestions.
+  - Tags show on the entry and on Timeline cards.
+  - Timeline filters by tag; search with "#tag" or the tag's name.
+  - Rename, merge, and delete tags in Settings.
+  - Imported Day One and Markdown tags carry over.
+- **Journals:**
+  - Create, rename, archive, and delete journals in Settings. Deleting asks whether to move entries to the main journal or delete them.
+  - Each journal has its own page for the day.
+  - Record and Write let you pick the journal.
+  - Timeline shows all journals, the main journal, or one journal.
+  - Export one journal as a PDF.
+  - Friday, Insights, Weekly Reflection, and search cover all journals.
+  - Apple Watch captures go to the main journal.
+- **Spanish:**
+  - The app, widgets, Apple Watch app, and Siri phrases are translated. Needs native review before release.
+  - Get Support has no Spain or Latin America helplines yet. Spanish-region users see their emergency number and Find a Helpline.
+- **The safety check understands Spanish**, including indirect wording, and ignores missing accents.
+- **Pages for people, places, and topics:**
+  - In Friday's My World, each one opens a page: mentions over time, mood when mentioned, the entries that mention it, Rename, and Forget.
+  - Entries kept out of Friday and high-risk entries are never cited.
+- **Siri and Apple Intelligence:**
+  - Create Entry, Create Audio Entry, and Search adopt Apple's journal schemas. The entry entity carries no journal text.
+  - Ask Friday answers inside Siri with a summary only, never quotes. Heavy questions open Get Support (`offrecord://support`, which opens even while locked).
+  - Siri knows which entry is on screen.
+- **Journaling Suggestions** (iPhone): start an entry from Apple's suggestions. Photos attach, up to 5.
+- **Forgiving streaks:**
+  - Daily streaks allow one rest day in any 7 days.
+  - Weekly streaks are available.
+  - Widgets show the same number as the app.
+  - No loss framing.
+- **iCloud Sync status:** the last sync, whether it's syncing now, the last error in plain words, and whether you're signed in to iCloud.
+- **iCloud Sync applies right away**; no relaunch.
+- **Store recovery screen:** if the journal can't open, you get Try Again, Export a Copy, and Contact Support. Nothing is deleted automatically.
+- **Recordings from another device** say where they were made, how long they are, and where to play them.
+- **Mac app** (Mac Catalyst):
+  - Sidebar, menu commands, and shortcuts (⌘N Write, ⇧⌘R Record, ⌘F Search, ⌘, Settings).
+  - No Live Activities, widgets, watch app, Siri tips, or Apple Health on Mac.
+  - On iPad, Record moves from ⌘R to ⇧⌘R.
+
+### Safety
+- **One safety check for every AI surface.** Friday chat, Go Deeper, proactive cards, Smart Prompts, Weekly Reflection, and Friday's profile check text with `JournalRiskClassifier` (JournalKit). It catches direct and indirect references to suicide or self-harm.
+- **Support instead of analysis.** High-risk questions and entries get one supportive line from Friday and a **Get Support** sheet. Friday never retrieves, quotes, or asks about them.
+- **Get Support sheet.** It shows the region's crisis line (US, Canada, UK, Ireland, Australia, New Zealand, India) with Call and Text, the emergency number, Message Someone You Trust, and Find a Helpline. It works offline.
+- **Fewer probing questions on heavy entries.** Hopeless or heavy entries get no Go Deeper question, no follow-up chips, and no proactive cards.
+- **Friday is labeled as an AI.** The chat header reads "AI · On-device", and onboarding adds "Friday is AI".
+- **Safety page.** The website explains how OffRecord handles self-harm content.
+
+### Fixed
+- **Friday's profile is now rebuilt from your entries** whenever the journal changes:
+  - Edits, deletes, imports, Apple Watch captures, and Siri entries now count once.
+  - What Friday learned from a deleted entry is gone.
+  - It counts entries rather than saves.
+  - Settings adds **Rebuild Friday**.
 
 ### Changed
+- **String catalogs are synced with the code**; retired strings are removed.
+- **Requests for App Store reviews** use `AppStore.requestReview(in:)`.
+- **One color palette** shared by the app and widgets.
+- **Dead code removed:** 27 availability checks below iOS 26.
+- **Unit tests use a temporary store** and never write test data to iCloud.
+- **Friday's profile no longer syncs through iCloud.** It is rebuilt on each device from your entries and kept in a protected local file.
+- **One sentiment and name engine.** It replaces five older copies; `LocalAIEngine` is gone. Sentiment now weighs every paragraph, not just the first.
+- **Heavy entries no longer get a question in From Friday.**
+- **Backups** keep Keep Out of Friday, tags, and journal membership. Older backups still import.
 - **Copy**: every screen, widget, watch face, Siri phrase, and export is rewritten to one standard (see the Voice section of `OffRecord Design.md`): shorter, plain words, one name per thing, privacy stated once where it matters, and Friday speaking in first person. `scripts/copy-lint.sh` checks the mechanical rules.
 - Today has a shorter hero with Record, Write, and another prompt, one contextual card (including On This Day), and a calmer streak strip.
 - Onboarding is six steps instead of eight; Friday's focus is picked on the intent step.

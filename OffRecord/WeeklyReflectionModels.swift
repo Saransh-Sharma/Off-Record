@@ -10,8 +10,11 @@ import Foundation
 @_exported import ReflectionKit
 
 extension WeeklyReflectionEntrySnapshot {
+    /// Nil for entries left out of Weekly Reflection. Entries kept out of Friday
+    /// come back without text, so they count toward totals but are never quoted.
     init?(entry: DiaryEntry) {
-        guard let id = entry.id else { return nil }
+        let exclusion = entry.journalAIExclusion
+        guard let id = entry.id, exclusion.permitsReflection else { return nil }
         let text = (entry.text ?? "").trimmingCharacters(in: .whitespacesAndNewlines)
         let date = entry.date ?? entry.createdAt ?? Date()
         let sourceType: WeeklyReflectionSourceType
@@ -28,7 +31,8 @@ extension WeeklyReflectionEntrySnapshot {
             updatedAt: entry.updatedAt ?? date,
             mood: entry.value(forKey: "mood") as? String,
             text: text,
-            sourceType: sourceType
+            sourceType: sourceType,
+            aiExclusion: exclusion
         )
     }
 }

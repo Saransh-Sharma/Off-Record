@@ -19,6 +19,9 @@ public struct EvidenceBackedAnswer: Identifiable, Equatable, Sendable {
     public let confidence: Double
     public let followUpPrompt: String?
     public let limitations: String?
+    /// `.supportOnly` marks a reply that replaced analysis with the persona's
+    /// support copy; hosts show their crisis resources next to it.
+    public let responseMode: SensitiveResponseMode
 
     public init(
         summary: String,
@@ -26,7 +29,8 @@ public struct EvidenceBackedAnswer: Identifiable, Equatable, Sendable {
         evidence: [EvidenceReference],
         confidence: Double,
         followUpPrompt: String?,
-        limitations: String?
+        limitations: String?,
+        responseMode: SensitiveResponseMode = .normal
     ) {
         self.summary = summary
         self.observations = observations
@@ -34,6 +38,34 @@ public struct EvidenceBackedAnswer: Identifiable, Equatable, Sendable {
         self.confidence = confidence
         self.followUpPrompt = followUpPrompt
         self.limitations = limitations
+        self.responseMode = responseMode
+    }
+
+    /// The same answer marked with `mode`, for wrapping a model-phrased reply.
+    public func withResponseMode(_ mode: SensitiveResponseMode) -> EvidenceBackedAnswer {
+        EvidenceBackedAnswer(
+            summary: summary,
+            observations: observations,
+            evidence: evidence,
+            confidence: confidence,
+            followUpPrompt: mode == .normal ? followUpPrompt : nil,
+            limitations: limitations,
+            responseMode: mode
+        )
+    }
+
+    /// The reply for a question or evidence that must not be analyzed:
+    /// support copy only, no evidence, no follow-up.
+    public static func supportOnly(persona: AssistantPersona) -> EvidenceBackedAnswer {
+        EvidenceBackedAnswer(
+            summary: persona.copy.riskSafeSupport,
+            observations: [],
+            evidence: [],
+            confidence: 0,
+            followUpPrompt: nil,
+            limitations: nil,
+            responseMode: .supportOnly
+        )
     }
 }
 

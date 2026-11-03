@@ -1,6 +1,12 @@
 # OffRecord AI Journal Roadmap
 
-This roadmap outlines the planned evolution of OffRecord AI Journal. Contributions are welcome for any upcoming version — check [open issues]() or propose your own.
+What has shipped, what is left, and what is not planned. Contributions are welcome: check [open issues](https://github.com/Saransh-Sharma/Off-Record/issues) or propose your own.
+
+Three rules hold for everything below:
+
+- Journal text, embeddings, Friday prompts, and retrieved evidence never go to a server. The language model is Apple's on-device `SystemLanguageModel`, never Private Cloud Compute.
+- Friday makes no claim without entries to cite, and says so when the journal doesn't support an answer.
+- High-risk content gets support, never analysis or quotes.
 
 ## Shipped
 
@@ -26,104 +32,100 @@ This roadmap outlines the planned evolution of OffRecord AI Journal. Contributio
 - Shareable Personality Cards (Instagram Stories + Twitter/X formats)
 - Smarter App Store review prompts
 
-### v1.3 — Semantic Memory Search + Evidence-Based Friday
-- Timeline semantic search using local Apple NaturalLanguage embeddings and lexical matching
+### v1.3 — Search by Meaning + Evidence-Based Friday
+- Timeline search by meaning using Apple NaturalLanguage embeddings and word matching on the device
 - Hybrid ranking for meaning matches, exact people/places/topics, recency, starred entries, mood filters, and date filters
 - Evidence-Based Friday answers that retrieve journal evidence first and cite source entries
 - Deterministic Friday fallback that hedges or refuses when evidence is missing, weak, contradictory, unavailable, or still indexing
-- Local-only semantic index sidecar with Settings controls for rebuild and delete
+- A search index kept on the device, with Settings controls for rebuild and delete
 - Background index lifecycle for first build, incremental entry updates, deletes, and CloudKit reconciliation
-- Optional iOS 26 Foundation Models phrasing layer where available; retrieved evidence remains the source of truth
-- Privacy-safe system discoverability through App Shortcuts, Siri, Spotlight metadata, Action Button-ready shortcuts, widgets links, `NSUserActivity`, and `offrecord://` deep links
+- Optional Foundation Models phrasing layer where available; retrieved evidence remains the source of truth
+- Privacy-safe system discoverability through App Shortcuts, Siri, Spotlight metadata, Action Button-ready shortcuts, widget links, `NSUserActivity`, and `offrecord://` deep links
 - “Siri & System Search” Settings controls for Spotlight metadata visibility and rebuilds
-- Automated and manual QA coverage for chunking, ranking, typed states, index lifecycle, and Friday citation behavior
 
-### v1.4 — Weekly Reflection + Apple Watch Quick Capture *(current)*
-- Proactive Weekly Reflection with Home card, report detail, Insights history, saved takeaways, source controls, regeneration, export, Settings controls, and local notifications
-- Local deterministic weekly reports from started entries, mood, sentiment, source type, topics, and snippets
-- Report-level source hiding and re-inclusion with versioned regeneration; no global entry privacy/exclude controls
+### v1.4 — Weekly Reflection + Apple Watch Quick Capture
+- Weekly Reflection with Home card, report detail, Insights history, saved takeaways, source controls, regeneration, export, Settings controls, and local notifications
+- Deterministic weekly reports from started entries, mood, sentiment, source type, topics, and snippets
+- Report-level source hiding and re-inclusion with versioned regeneration
 - High-risk entries count for eligibility/source management but stay out of generated insights, quotes, and exports
-- Deep links for `offrecord://weekly-reflection/current` and `offrecord://weekly-reflection/{reportID}`
-- watchOS 26+ companion focused on quick capture, not journal browsing
-- Mood, Speak, Record, and Recent outbox flows on Apple Watch
-- Privacy-safe complication and Smart Stack entry points for Quick Capture
-- Durable WatchConnectivity sync with metadata transfer, audio file transfer, retry/backoff state, and iPhone receipts
-- iPhone-side daily-entry import for mood/text and multi-audio `AudioAttachment` records
-- Local-only `WatchImportReceipt` idempotency so replayed watch transfers do not duplicate content
-- JSON and encrypted backup support for multiple audio attachments
-- Build caveat: full watch builds require the watchOS 26.2 platform/runtime in Xcode
+- watchOS 26+ companion for Mood, Speak, Record, and Recent, with privacy-safe complication and Smart Stack entry points
+- Durable WatchConnectivity sync with metadata transfer, audio file transfer, retry/backoff state, iPhone receipts, and idempotent imports
+- Multiple `AudioAttachment` recordings per day, kept in JSON and encrypted backups
 
-## Planned
+### v1.5 — Private by Default, Friday On-Device, Mac
+**Safety and trust**
+- One safety check (`JournalRiskClassifier`) on every AI surface. Self-harm and suicide content gets one supportive line and the Get Support sheet, never analysis or quotes.
+- Get Support sheet with the region's crisis line, emergency number, Message Someone You Trust, and Find a Helpline. It works offline.
+- Friday is labeled as an AI in onboarding and the chat header.
+- Friday's profile is rebuilt from your entries whenever the journal changes, and Settings has Rebuild Friday.
+- Friday's profile, chat, memory edits, generated titles, and Go Deeper questions live in a local folder that never syncs and is excluded from device backups.
 
-### v1.5 — Watch QA + Proactive Reflection Polish
-- Paired-device Apple Watch QA for offline queue, reconnect, duplicate deliveries, long audio, interruptions, privacy previews, Reduce Motion, and large text
-- Full OffRecord, OffRecordWatch, and OffRecordWatchWidget build verification after installing the watchOS 26.2 platform/runtime
-- Future transcript improvements that keep Apple Speech consent explicit and avoid server transcription in the watch MVP
-- Proactive Friday cards beyond Weekly Reflection, including unusual entries, theme shifts, and decision/regret follow-ups
-- "Themes taking shape" insight from repeated topics and entities across recent entries, always with source evidence
-- Context-aware Today prompts that appear only when they can help the next reflection
-- Privacy-safe Friday smart reminders that never expose names, places, snippets, or sensitive content on the Lock Screen
-- Decision follow-up loop: detect patterns like "I decided to...", "I regret...", and "I chose...", then let users mark them reflected
-- Evidence-first framing for proactive insights: every card explains why it appeared and links back to supporting entries
-- Optional String Catalog groundwork for new or changed v1.5 copy; no full multi-language claim until at least one locale is complete and QA'd
+**Privacy controls**
+- Keep Out of Friday on any entry, with an optional Skip Weekly Reflection.
+- The Friday switch. Turning Friday off deletes what she learned and said.
+- Erase All Data. With iCloud Sync on, the deletion reaches iCloud too.
+- Backups keep Keep Out of Friday, tags, and journal membership.
 
-### v1.6 — Native macOS
-- Native macOS target using the shared SwiftUI codebase
-- Sidebar navigation and desktop-optimized Timeline, Friday, and Settings surfaces
-- Friday accessible from the desktop, with the same local-only evidence rules
+**Friday on Apple's on-device model**
+- Multi-turn chat that looks things up with three journal tools (search, mood counts, people) and cites only what they returned.
+- Short generated titles for entries, Go Deeper questions written for the entry, and rephrased Weekly Reflection cover lines and summaries.
+- Every generated line passes the voice and safety checks or falls back to deterministic wording. Grounding goldens run through Apple's Evaluations on iOS 27.
+- One shared sentiment and name engine replaces five older copies.
+- Proactive cards for patterns, resurfaced topics, and decision and regret follow-ups; Smart Prompts from Friday; and a “Why?” sheet for every insight.
 
-### v2.0 — Optional Foundation Models Enhancements *(iOS 26, Apple Intelligence-capable devices)*
-- Deeper Apple Foundation Models integration where `SystemLanguageModel.default.availability` allows it
-- LanguageModelSession for richer multi-turn wording after evidence retrieval
-- Tool calling experiments that query local app data through explicit, evidence-preserving tools
-- @Generable for type-safe structured outputs that map observations to retrieved evidence IDs
-- Multi-tier personality conditioning for Friday conversations (demographic + behavioral + psychometric prompts, informed by recent persona-modeling research)
-- "How would I react?" — Friday predicts your response to situations based on past patterns and personality
-- Friday replies in your voice using Apple Personal Voice API (AVSpeechSynthesizer)
-- Autobiographical memory consolidation: monthly distillation of journal entries into semantic self-knowledge ("I tend to...", "I always...")
-- ~~Move every transcription path to SpeechAnalyzer~~ ✅ Shipped: SpeechTranscriber for primary accuracy, DictationTranscriber for additional locale coverage, and no server-recognition fallback
-- Zero network calls for journal text, embeddings, Friday prompts, or retrieved evidence
+**Looking back**
+- Month in Review and Year in Review, with a shareable year card that hides names by default.
+- Session Prep: a summary of a date range for a session with a therapist or coach, exported as PDF, Markdown, or plain text.
+- Forgiving streaks: one rest day in any 7 days, or weekly streaks, with the same number in the app and the widgets.
 
-### v2.5 — LoRA Fine-Tuning
-- Personal LoRA adapter training on Mac (macOS app becomes the training environment)
-- ~160 MB adapter delivered via Background Assets
-- Train Friday to sound and think like you
-- Export entries as JSONL for training
-- Validated Big Five personality scoring from journal narratives (Openness, Conscientiousness, Extraversion, Agreeableness, Neuroticism)
-- Scientific personality profile based on [language-based personality modeling research](https://arxiv.org/abs/2506.19258)
-- Identity evolution tracking: diff monthly personality snapshots to show how you've changed over time
+**Organizing**
+- Tags: add on an entry, filter Timeline, search with `#`, and rename, merge, or delete in Settings.
+- Multiple journals, each with its own entry per day, a journal picker for capture and Timeline, and PDF export of one journal.
+- A page for each person, place, and topic in My World.
+- Import from Day One, Apple Journal, Markdown or text files, and CSV, with a preview and no duplicates on re-import.
 
-### v3.0 — True Private Assistant *(vision)*
+**Siri and system**
+- Create Entry, Create Audio Entry, and Search adopt Apple's journal schemas; the entry entity carries no text.
+- Ask Friday answers inside Siri with a summary only, and Siri knows which entry is on screen.
+- Journaling Suggestions on iPhone start an entry from Apple's suggestions.
 
-The goal of v3.0 is a private assistant with deep understanding of your journaling patterns — one that remembers what you've shared, sees patterns you might miss, and can respond in your voice. Entirely on-device, entirely yours.
+**Sync and platforms**
+- iCloud sync status in Settings, and turning sync on or off applies without a relaunch.
+- A recovery screen when the journal can't open: Try Again, Export a Copy, and Contact Support. Nothing is deleted.
+- Recordings from another device say where they were made and where to play them.
+- Mac app through Mac Catalyst, with a sidebar and menu commands. This replaces the earlier plan for a separate native macOS target.
 
-**What Friday can do at v3.0:**
+**Design and copy**
+- Liquid Glass tab bar with a Record bar, a new capture sheet, Timeline List, Calendar, and Photos views, Swift Charts on Insights, dark mode, and a Record control for Control Center and the Lock Screen.
+- Every screen, widget, watch face, Siri phrase, and export rewritten to one copy standard, checked by `scripts/copy-lint.sh`.
+- Dynamic Type, 44pt tap targets, chart summaries for VoiceOver, and Reduce Motion everywhere.
 
-- Talk like you — your vocabulary, phrasing, tone, and reasoning patterns
-- Sound like you — replies spoken with Apple Personal Voice (Personal Voice)
-- Know what you care about — values, people, topics, ranked by emotional weight
-- Know how you've felt across years — full emotional history with temporal patterns
-- Predict your likely reaction to familiar situations — grounded in your actual past decisions
-- Explain why you feel the way you do — causal reasoning citing specific past entries
-- Show how you've changed over time — personality evolution across months and years
+## Next
 
-**What Friday cannot do (and why):**
+### Device QA
+These need real hardware:
+- **Siri:** Ask Friday answers after Face ID and its Open in Friday button works; a heavy question opens Get Support over the Lock Screen.
+- **Journaling Suggestions:** the picker on iPhone starts an entry and attaches photos, up to 5.
+- **iCloud:** turning Sync on and off with a real account; a second device sees entries, tags, and journals after the CloudKit schema for model version 3 is deployed.
+- **Mac app:** visual QA of the sidebar, menu commands (⌘N, ⇧⌘R, ⌘F, ⌘,), and Settings.
+- **Apple Watch:** paired-device QA for the offline queue, reconnect, duplicate deliveries, long audio, interruptions, privacy previews, Reduce Motion, and large text; captures land in the main journal.
+- **On-device model quality** on an Apple Intelligence device: chat tools, titles, Go Deeper, and Weekly Reflection wording.
 
-- Replace you in a conversation — it knows your narrated self, not your complete self. The thoughts you don't journal are invisible to it
-- Handle truly novel situations — it extrapolates from personality traits, but humans are inconsistent and surprise even themselves
-- Feel what you feel — no embodied experience (fatigue, hunger, physical state) or subconscious drives
+### Localization
+- Spanish: in progress, needs native review. No multi-language claim until a locale is complete and reviewed.
 
-**The honest framing:** This is not a replacement for you. It is a private assistant that gets more useful every day you journal. After years of daily entries, it becomes something no one else has — a private, evolving, on-device record of who you are and who you've been.
+### Open ideas
+- Monthly self-knowledge: a few “You tend to…” lines in Month in Review, each linked to the entries behind it.
+- Change over time: compare months to show how moods and themes shifted, with sources.
+- Export what Friday learned (knowledge graph and emotional patterns) in an open format.
 
-**Technical capabilities:**
+## Not Planned
 
-- Full RAG implementation with personal knowledge base
-- Personal LoRA adapter loaded at runtime
-- Autonomous tool calling for data access
-- Context condensation for long conversations
-- Full causal reasoning: "Why did I feel this way?" with cited evidence from past entries
-- Exportable private assistant archive — your Friday's personality model, knowledge graph, emotional history, and voice in an open format
+- **LoRA fine-tuning (a personal adapter trained on Mac):** it would mean exporting journal text for training and shipping a large adapter, and the on-device model with journal tools already grounds Friday in your entries.
+- **Friday in your voice (Personal Voice):** Friday is labeled as an AI, and speaking in your own voice would blur that.
+- **“How would I react?” predictions:** predicting your behavior from old entries invites false certainty; Friday answers only from what your entries say.
+- **Big Five personality scores and psychometric prompt conditioning:** trait scores from journal text can't be checked for one person, and Friday makes no clinical claims.
 
 ---
 
-For technical details, see [ARCHITECTURE.md](ARCHITECTURE.md), [SEMANTIC_MEMORY_FRIDAY.md](SEMANTIC_MEMORY_FRIDAY.md), [WEEKLY_REFLECTION.md](WEEKLY_REFLECTION.md), and the [Technology page](https://offrecord.example.com/technology.html).
+For technical details, see [ARCHITECTURE.md](ARCHITECTURE.md), [SEMANTIC_MEMORY_FRIDAY.md](SEMANTIC_MEMORY_FRIDAY.md), [WEEKLY_REFLECTION.md](WEEKLY_REFLECTION.md), and the [Technology page](https://saransh-sharma.github.io/Off-Record/technology.html).

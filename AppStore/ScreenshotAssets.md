@@ -3,10 +3,10 @@
 ## Screenshot Specifications
 
 ### Required Sizes
-- **iPhone 6.7" (iPhone 15 Pro Max)**: 1290 x 2796 pixels
-- **iPhone 6.5" (iPhone 14 Plus)**: 1284 x 2778 pixels
-- **iPhone 5.5" (iPhone 8 Plus)**: 1242 x 2208 pixels
-- **iPad 12.9" (iPad Pro)**: 2048 x 2732 pixels
+- **iPhone 6.9"**: 1320 x 2868 pixels (App Store Connect scales these down for smaller iPhones)
+- **iPad 13"**: 2064 x 2752 pixels (scaled down for smaller iPads)
+
+Both sets are produced by `AppStore/capture-screenshots.sh` into `AppStore/screenshots/iPhone_69/` and `AppStore/screenshots/iPad_13/`, in light and dark.
 
 ### Optional Apple Watch Assets
 - Capture Apple Watch Quick Capture Home, Mood, Record, and privacy-safe complication/Smart Stack states after the watchOS 26.2 runtime is installed.
@@ -63,7 +63,7 @@
 ---
 
 ## Screenshot 4: Emotional Insights
-**Caption**: "9 Emotions Tracked. Zero Manual Input."
+**Caption**: "8 Moods Tracked. Zero Manual Input."
 **Layout**:
 - Show Friday emotions section
 - Emotional baseline meters (Valence, Arousal, Range)
@@ -225,7 +225,7 @@ Apple Watch Quick Capture extends that privacy posture to your wrist: mood, dict
 ---
 
 ## App Store Categories & Similar Apps
-**Primary Category**: Health & Fitness
+**Primary Category**: Lifestyle
 **Secondary Category**: Lifestyle
 
 **Positioning**: Unlike Day One (cloud-based), Journey (social features), or generic journal apps, OffRecord AI Journal is positioned as the **privacy-first AI companion** with Friday. No other diary app offers on-device personality modeling, emotional signature tracking, or a personal knowledge graph.

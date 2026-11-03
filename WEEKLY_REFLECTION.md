@@ -4,7 +4,9 @@
 
 Weekly Reflection is OffRecord's local end-of-week ritual. It builds a calm report from started journal entries in the current Monday-Sunday period, shows the current state on Home, keeps report history in Insights, and lets users review sources, save a takeaway, regenerate with report-level source changes, and export the result.
 
-The product invariant is local first. Weekly Reflection uses deterministic generation over existing journal data and persists Codable report payloads in existing AI state. It does not add a Core Data migration, cloud AI, developer-server processing, global entry privacy flags, or app-wide source exclusion controls.
+The product invariant is local first. Weekly Reflection uses deterministic generation over existing journal data and persists Codable report payloads in existing AI state. It does not use cloud AI or developer-server processing.
+
+Per-entry exclusion comes from the app-wide "Keep Out of Friday" control (see Entry Exclusion below), not from Weekly Reflection itself. Report-level source hiding still exists and stays version scoped.
 
 ## User-Facing Behavior
 
@@ -30,6 +32,25 @@ Eligibility is evaluated after applying report-hidden entry IDs:
 
 Started entries only are eligible. Deleted or unavailable entries are not used for generation. Unavailable IDs from an older report version remain visible as unavailable source metadata when relevant.
 
+## Entry Exclusion
+
+Each entry carries a `JournalAIExclusion` level (`DiaryEntry.aiExclusion`, nil means `.included`), set from the entry's More menu:
+
+| Menu | Level | Weekly Reflection |
+|---|---|---|
+| Neither toggle | `included` | Counted, read, and quotable |
+| Keep Out of Friday | `excludedFromAI` | Counted toward entries, words, days, and mood; never read, themed, or quoted |
+| Keep Out of Friday + Skip Weekly Reflection | `excludedFromAIAndReflection` | Invisible: not counted, not listed in Sources, not reported as deleted |
+
+Enforcement:
+
+- `WeeklyReflectionEntrySnapshot(entry:)` returns nil for `excludedFromAIAndReflection`. For `excludedFromAI` it returns a snapshot whose `text` is empty; `wordCount`, `mood`, and dates are kept, and `sentiment` comes from the mood alone.
+- Generation filters `permitsReflection` again, reads and quotes only `permitsReflectionQuotes` entries, and fills `privateEntryCount` with the number of `excludedFromAI` entries in the period. The summary says how many were only counted.
+- A week where every readable entry is kept out gets a totals-only report: no themes, no evidence refs, wins and questions that don't depend on text.
+- `inputSignature` adds the exclusion level for entries that aren't included, and the exclusion setter bumps `updatedAt`, so changing it regenerates the current report.
+- When an entry is kept out, `WeeklyReflectionController.forgetQuotes(fromEntryID:)` removes its evidence refs from every saved report.
+- Entries left out of Weekly Reflection are passed as `leftOutEntryIds`, so an earlier version that included them doesn't list them as deleted.
+
 ## Generation Pipeline
 
 Weekly Reflection takes compact snapshots from `DiaryEntry`:
@@ -37,15 +58,17 @@ Weekly Reflection takes compact snapshots from `DiaryEntry`:
 - entry ID
 - date and updated date
 - mood
-- text
+- text (empty for entries kept out of Friday)
 - word count
 - source type: text, voice transcript, or photo note
 - sentiment from `ProactiveReflectionAnalyzer`
+- AI exclusion level
 
-The generator splits entries into two sets:
+The generator splits entries into three sets:
 
-- `periodEntries`: all eligible non-hidden started entries in the week. These drive counts, included IDs, source management, input signature, and safety level.
-- `insightEntries`: `periodEntries` minus high-risk entries. These drive topics, emotional arc, themes, evidence refs, snippets, wins, frictions, questions, and export quotes.
+- `periodEntries`: all eligible non-hidden started entries in the week that permit reflection. These drive counts, included IDs, source management, and the input signature.
+- `readableEntries`: `periodEntries` that may be quoted. These drive the safety level.
+- `insightEntries`: `readableEntries` minus high-risk entries. These drive topics, themes, evidence refs, snippets, wins, frictions, questions, and export quotes. The emotional arc also uses the moods of entries kept out of Friday.
 
 Output limits:
 
@@ -131,8 +154,8 @@ Notification requirements:
 
 - identifier is separate from daily reminders
 - trigger is a recurring weekly `UNCalendarNotificationTrigger`
-- title is exactly `Your weekly reflection is ready`
-- body is exactly `A private look back at your week.`
+- title is exactly `Weekly Reflection`
+- body is exactly `Your week is ready to look back on.`
 - notification payload must not include journal text, snippets, names, themes, summaries, quotes, or source metadata
 
 Cold-launch notification taps store the route until private content can be navigated. Active-app taps route immediately when onboarding and app lock state allow private navigation.
@@ -146,6 +169,7 @@ Automated coverage should include:
 - repository save, load, version, supersede, dismiss, delete, and history visibility
 - hidden source regeneration and re-inclusion
 - high-risk exclusion from insight fields, evidence refs, and export
+- per-entry exclusion: kept-out entries counted but never quoted, left-out entries invisible, totals-only weeks, signature changes (`OffRecordTests/AIExclusionGateTests.swift`)
 - validation of output limits and evidence refs
 - notification content and recurring trigger privacy
 - source sheet open-entry and include-toggle paths
@@ -172,8 +196,8 @@ Before changing Weekly Reflection:
 - Keep generation deterministic and local-only.
 - Do not add developer-server processing or non-Apple AI APIs.
 - Keep report persistence in AI state unless a migration is explicitly planned.
-- Keep source hiding report-version scoped.
-- Do not add global entry private/exclude controls as part of this feature.
+- Keep source hiding report-version scoped; per-entry exclusion belongs to "Keep Out of Friday".
+- Never read, theme, or quote an entry whose exclusion level doesn't permit quotes.
 - Keep notification copy static and journal-free.
 - Keep high-risk text out of generated insight fields and exports.
 - Add or update tests when changing eligibility, safety, generation, source management, notifications, deep links, or export.

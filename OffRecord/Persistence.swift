@@ -53,54 +53,22 @@ struct PersistenceController {
     }()
 
     let container: NSPersistentCloudKitContainer
+    /// Loading state for `container`: why it didn't open, and the live iCloud switch.
+    let session: PersistenceStoreSession
 
     // MARK: - Initialization
     
     init(inMemory: Bool = false) {
         container = NSPersistentCloudKitContainer(name: "OffRecord")
 
-        // Configure store location
-        // Data is stored in the shared App Group container so widgets can access it
-        let storeURL: URL
-        if inMemory {
-            storeURL = URL(fileURLWithPath: "/dev/null")
-        } else if let appGroupURL = FileManager.default.containerURL(forSecurityApplicationGroupIdentifier: PersistenceController.appGroupIdentifier) {
-            storeURL = appGroupURL.appendingPathComponent("OffRecord.sqlite")
-        } else {
-            // Fallback to default directory if App Group is unavailable
-            storeURL = NSPersistentCloudKitContainer.defaultDirectoryURL().appendingPathComponent("OffRecord.sqlite")
-        }
-
-        let description = NSPersistentStoreDescription(url: storeURL)
-
-        // Only enable CloudKit if iCloud is available and properly configured.
-        if !inMemory && PersistenceController.shouldEnableCloudKit {
-            description.cloudKitContainerOptions = NSPersistentCloudKitContainerOptions(
-                containerIdentifier: PersistenceController.cloudKitContainerIdentifier
-            )
-        }
-
-        // File protection (iOS only - not available on macOS)
-        #if os(iOS)
-        description.setOption(FileProtectionType.complete as NSObject,
-                              forKey: NSPersistentStoreFileProtectionKey)
-        #endif
-
-        // Enable history tracking (works with or without CloudKit)
-        description.setOption(true as NSNumber, forKey: NSMigratePersistentStoresAutomaticallyOption)
-        description.setOption(true as NSNumber, forKey: NSInferMappingModelAutomaticallyOption)
-        description.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
-        description.setOption(true as NSNumber, forKey: NSPersistentStoreRemoteChangeNotificationPostOptionKey)
-
-        container.persistentStoreDescriptions = [description]
-        let persistentContainer = container
-
-        container.loadPersistentStores { (storeDescription, error) in
-            if let error = error as NSError? {
-                persistenceLogger.error("Failed to load persistent store at \(storeDescription.url?.absoluteString ?? "unknown", privacy: .public): \(error.localizedDescription, privacy: .public) \(String(describing: error.userInfo), privacy: .public)")
-            } else if !inMemory {
-                PhotoStorageManager.shared.migrateLegacyPhotos(in: persistentContainer.viewContext)
-            }
+        // The store lives in the App Group container so widgets can read the snapshot
+        // beside it. Loading, the iCloud setting, and failures live in the session.
+        session = PersistenceStoreSession(
+            container: container,
+            configuration: inMemory ? .inMemory : .app()
+        )
+        if !inMemory && session.isLoaded {
+            PhotoStorageManager.shared.migrateLegacyPhotos(in: container.viewContext)
         }
 
         // Configure view context
@@ -122,12 +90,6 @@ struct PersistenceController {
         }
     }
 
-    /// Check if CloudKit should be enabled (requires both iCloud availability and user preference)
-    private static var shouldEnableCloudKit: Bool {
-        let userEnabled = UserDefaults.standard.object(forKey: "iCloudSyncEnabled") as? Bool ?? true
-        return userEnabled && FileManager.default.ubiquityIdentityToken != nil
-    }
-
     // MARK: - Sync Control
 
     /// Check if iCloud is available
@@ -135,9 +97,16 @@ struct PersistenceController {
         FileManager.default.ubiquityIdentityToken != nil
     }
 
-    /// Store the user's CloudKit preference. The persistent store reads it during app launch.
-    func setCloudSyncEnabled(_ enabled: Bool) {
-        UserDefaults.standard.set(enabled, forKey: "iCloudSyncEnabled")
-        persistenceLogger.info("CloudKit sync preference changed to \(enabled, privacy: .public); restart required for store reconfiguration.")
+    /// Stores the user's CloudKit preference and reopens the store with or without
+    /// mirroring. The preference stays as it was unless the store reopened with it.
+    @MainActor
+    @discardableResult
+    func setCloudSyncEnabled(_ enabled: Bool) -> StoreReloadOutcome {
+        let outcome = session.reload(mirrorsToCloudKit: enabled)
+        if outcome == .reloaded {
+            UserDefaults.standard.set(enabled, forKey: PersistenceStoreConfiguration.syncPreferenceKey)
+        }
+        persistenceLogger.info("CloudKit sync preference \(enabled, privacy: .public): \(String(describing: outcome), privacy: .public)")
+        return outcome
     }
 }

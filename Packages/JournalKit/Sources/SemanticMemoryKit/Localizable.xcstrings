@@ -8,17 +8,95 @@
             "state" : "new",
             "value" : "%1$lld of ^[%2$lld entry](inflect: true)"
           }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$lld de ^[%2$lld entrada](inflect: true)"
+          }
         }
       }
     },
-    "Building…" : {},
-    "Couldn’t search" : {},
-    "Exact words" : {},
-    "Not ready yet" : {},
-    "Paused to save power" : {},
-    "Recent" : {},
-    "Same person or topic" : {},
-    "Similar meaning" : {}
+    "Building…" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Creando…"
+          }
+        }
+      }
+    },
+    "Couldn’t search" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo buscar"
+          }
+        }
+      }
+    },
+    "Exact words" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Palabras exactas"
+          }
+        }
+      }
+    },
+    "Not ready yet" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aún no está listo"
+          }
+        }
+      }
+    },
+    "Paused to save power" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En pausa para ahorrar batería"
+          }
+        }
+      }
+    },
+    "Recent" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recientes"
+          }
+        }
+      }
+    },
+    "Same person or topic" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Misma persona o tema"
+          }
+        }
+      }
+    },
+    "Similar meaning" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Significado similar"
+          }
+        }
+      }
+    }
   },
   "version" : "1.0"
 }

@@ -45,7 +45,7 @@ final class WeeklyReflectionController: ObservableObject {
         WeeklyReflectionNotificationScheduler.reconcile(settings: next)
     }
 
-    func refreshIfNeeded(entries: [DiaryEntry], now: Date = Date(), force: Bool = false) {
+    func refreshIfNeeded(entries: [DiaryEntry], now: Date = AppClock.now, force: Bool = false) {
         guard settings.isEnabled else {
             currentReport = nil
             return
@@ -64,10 +64,10 @@ final class WeeklyReflectionController: ObservableObject {
             return
         }
 
-        prepareReport(entries: snapshots, period: period, hiddenEntryIds: hidden, previousVersion: currentVisibleReport(for: period), now: now)
+        prepareReport(entries: snapshots, period: period, hiddenEntryIds: hidden, previousVersion: currentVisibleReport(for: period), leftOutEntryIds: Self.leftOutEntryIDs(entries), now: now)
     }
 
-    func openCurrentReport(entries: [DiaryEntry], now: Date = Date()) -> WeeklyReflectionReport? {
+    func openCurrentReport(entries: [DiaryEntry], now: Date = AppClock.now) -> WeeklyReflectionReport? {
         refreshIfNeeded(entries: entries, now: now, force: false)
         let period = WeeklyReflectionEligibilityService.period(containing: now)
         return currentVisibleReport(for: period) ?? currentReport
@@ -96,10 +96,38 @@ final class WeeklyReflectionController: ObservableObject {
         update(reportID: report.id) { $0.savedTakeaway = trimmed.isEmpty ? nil : trimmed }
     }
 
-    func regenerate(report: WeeklyReflectionReport, hiding entryIds: [UUID], entries: [DiaryEntry], now: Date = Date()) {
+    func regenerate(report: WeeklyReflectionReport, hiding entryIds: [UUID], entries: [DiaryEntry], now: Date = AppClock.now) {
         let snapshots = entries.compactMap(WeeklyReflectionEntrySnapshot.init(entry:))
         let hidden = Array(Set(entryIds))
-        prepareReport(entries: snapshots, period: report.period, hiddenEntryIds: hidden, previousVersion: report, now: now)
+        prepareReport(entries: snapshots, period: report.period, hiddenEntryIds: hidden, previousVersion: report, leftOutEntryIds: Self.leftOutEntryIDs(entries), now: now)
+    }
+
+    /// Removes quotes from an entry that was just kept out of Friday, in every saved report.
+    func forgetQuotes(fromEntryID entryID: UUID) {
+        var changed = false
+        for reportIndex in reports.indices {
+            for themeIndex in reports[reportIndex].themes.indices {
+                let before = reports[reportIndex].themes[themeIndex].evidenceRefs.count
+                reports[reportIndex].themes[themeIndex].evidenceRefs.removeAll { $0.entryId == entryID }
+                changed = changed || reports[reportIndex].themes[themeIndex].evidenceRefs.count != before
+            }
+        }
+        guard changed else { return }
+        currentReport = Self.currentReport(in: reports)
+        persist()
+    }
+
+    /// Clears every report but keeps the settings. Erase All Data calls this before deleting rows.
+    func resetAfterErase() {
+        reports = []
+        currentReport = nil
+        isPreparing = false
+        persist()
+    }
+
+    /// Entries the person left out of Weekly Reflection, which no report may mention.
+    private static func leftOutEntryIDs(_ entries: [DiaryEntry]) -> Set<UUID> {
+        Set(entries.filter { !$0.journalAIExclusion.permitsReflection }.compactMap(\.id))
     }
 
     var visibleReports: [WeeklyReflectionReport] {
@@ -113,6 +141,7 @@ final class WeeklyReflectionController: ObservableObject {
         period: WeeklyReflectionPeriod,
         hiddenEntryIds: [UUID],
         previousVersion: WeeklyReflectionReport?,
+        leftOutEntryIds: Set<UUID>,
         now: Date
     ) {
         isPreparing = true
@@ -124,6 +153,7 @@ final class WeeklyReflectionController: ObservableObject {
             entries: entries,
             hiddenEntryIds: hiddenEntryIds,
             previousVersion: previousVersion,
+            leftOutEntryIds: leftOutEntryIds,
             now: now
         )
         reports.append(report)
@@ -131,6 +161,23 @@ final class WeeklyReflectionController: ObservableObject {
         isPreparing = false
         persist()
         WeeklyReflectionNotificationScheduler.reconcile(settings: settings, now: now)
+        narrate(report, entries: entries)
+    }
+
+    /// Swaps in the on-device cover line and summary once they pass validation.
+    /// The deterministic report is already saved and shown, so nothing waits on the model.
+    private func narrate(_ report: WeeklyReflectionReport, entries: [WeeklyReflectionEntrySnapshot]) {
+        Task { [weak self] in
+            let narrated = await WeeklyReflectionGenerationService.narrated(report, entries: entries)
+            guard let self,
+                  narrated.heroSentence != report.heroSentence || narrated.summary != report.summary else { return }
+            self.update(reportID: report.id) { value in
+                // A report changed in the meantime keeps its own text.
+                guard value.heroSentence == report.heroSentence, value.summary == report.summary else { return }
+                value.heroSentence = narrated.heroSentence
+                value.summary = narrated.summary
+            }
+        }
     }
 
     private func update(reportID: UUID, persistAfterUpdate: Bool = true, mutate: (inout WeeklyReflectionReport) -> Void) {

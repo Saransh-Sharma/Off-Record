@@ -203,9 +203,7 @@ final class JournalSpotlightIndexer {
         activity.isEligibleForPublicIndexing = false
         activity.persistentIdentifier = metadata.uniqueIdentifier
         activity.targetContentIdentifier = metadata.uniqueIdentifier
-        if #available(iOS 18.2, *) {
-            activity.appEntityIdentifier = EntityIdentifier(for: JournalEntryEntity(metadata: metadata))
-        }
+        activity.appEntityIdentifier = EntityIdentifier(for: JournalEntryEntity(metadata: metadata))
         activity.contentAttributeSet = attributeSet(for: metadata)
         activity.userInfo = [
             CSSearchableItemActivityIdentifier: metadata.uniqueIdentifier

@@ -6,6 +6,8 @@
 //  only: no prompt, transcript, or journal text ever reaches the Lock Screen.
 //
 
+// Live Activities don't exist on Mac, so the Mac app leaves this model out.
+#if !targetEnvironment(macCatalyst)
 import ActivityKit
 import Foundation
 
@@ -22,3 +24,4 @@ struct CaptureActivityAttributes: ActivityAttributes {
         }
     }
 }
+#endif

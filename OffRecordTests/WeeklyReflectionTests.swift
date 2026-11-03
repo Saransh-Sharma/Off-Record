@@ -62,7 +62,9 @@ struct WeeklyReflectionTests {
     }
 
     @Test func regenerationSupersedesPreviousReportAndStoresHiddenIdsOnlyOnReport() throws {
-        let now = Date()
+        // A fixed Wednesday, so "1 day ago" is in the same Monday–Sunday week
+        // whatever day the suite runs.
+        let now = try midweekNoon()
         let period = WeeklyReflectionEligibilityService.period(containing: now)
         let first = makeSnapshot(daysAgo: 0, text: mediumText, now: now)
         let second = makeSnapshot(daysAgo: 1, text: mediumText, now: now)
@@ -263,6 +265,26 @@ struct WeeklyReflectionTests {
         #expect(!hidden.includedEntryIds.contains(first.id))
         #expect(reincluded.includedEntryIds.contains(first.id))
         #expect(reincluded.hiddenEntryIds.isEmpty)
+    }
+
+    @Test func mondayPeriodExcludesTheSundayBefore() throws {
+        let calendar = Calendar.current
+        let monday = try #require(calendar.date(from: DateComponents(year: 2026, month: 5, day: 25, hour: 9)))
+        #expect(calendar.component(.weekday, from: monday) == 2)
+        let period = WeeklyReflectionEligibilityService.period(containing: monday)
+        let mondayEntry = makeSnapshot(daysAgo: 0, text: mediumText, now: monday)
+        let sundayEntry = makeSnapshot(daysAgo: 1, text: mediumText, now: monday)
+
+        let report = WeeklyReflectionGenerationService.generate(period: period, entries: [mondayEntry, sundayEntry], now: monday)
+
+        #expect(report.includedEntryIds.contains(mondayEntry.id))
+        #expect(!report.includedEntryIds.contains(sundayEntry.id))
+    }
+
+    private func midweekNoon() throws -> Date {
+        let date = try #require(Calendar.current.date(from: DateComponents(year: 2026, month: 5, day: 27, hour: 12)))
+        #expect(Calendar.current.component(.weekday, from: date) == 4)
+        return date
     }
 
     private func makeSnapshot(daysAgo: Int, text: String, now: Date) -> WeeklyReflectionEntrySnapshot {

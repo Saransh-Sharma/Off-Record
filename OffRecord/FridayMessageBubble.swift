@@ -152,6 +152,11 @@ struct FridayMessageBubble: View {
                 .accessibilityIdentifier("friday.limitations")
         }
 
+        if message.needsSupport {
+            GetSupportButton()
+                .padding(.top, OffRecordSpacing.xs)
+        }
+
         if !message.evidence.isEmpty {
             FridayEvidenceRail(
                 messageID: message.id,

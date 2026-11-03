@@ -2,8 +2,9 @@
 //  StatsView.swift
 //  OffRecord
 //
-//  Insights: writing rhythm, mood charts, explainable AI insights, and the
-//  single Weekly Reflection surface for this tab.
+//  Insights: writing rhythm, mood charts, explainable AI insights, the
+//  single Weekly Reflection surface for this tab, Month and Year in Review,
+//  and Session Prep.
 //
 
 import SwiftUI
@@ -17,6 +18,7 @@ struct StatsView: View {
     @ObservedObject private var goalManager = GoalManager.shared
     @ObservedObject private var weeklyReflection = WeeklyReflectionController.shared
     @ObservedObject private var navigationRouter = OffRecordNavigationRouter.shared
+    private let periodReviews = PeriodReviewController.shared
     private let proactiveReflection = ProactiveReflectionController.shared
 
     @FetchRequest(
@@ -33,6 +35,8 @@ struct StatsView: View {
     @State private var selectedWeeklyReflection: WeeklyReflectionReport?
     @State private var evidenceContext: InsightEvidenceContext?
     @State private var shareInsights: [ShareableInsight] = []
+    @State private var reviewYears: [Int] = []
+    @State private var selectedReviewRoute: PeriodReviewRoute?
     @ScaledMetric(relativeTo: .title2) private var goalRingSize: CGFloat = 104
 
     private var isIPad: Bool { horizontalSizeClass == .regular }
@@ -85,8 +89,16 @@ struct StatsView: View {
         .navigationDestination(item: $selectedWeeklyReflection) { report in
             WeeklyReflectionReportView(report: report, entries: weeklyReflectionRouteEntries)
         }
+        .navigationDestination(item: $selectedReviewRoute) { route in
+            PeriodReviewScreen(route: route)
+        }
         .onAppear {
             openPendingWeeklyReflectionRouteIfNeeded()
+            openPendingReviewRouteIfNeeded()
+        }
+        .onChange(of: navigationRouter.routedReview) { _, route in
+            guard route != nil else { return }
+            openPendingReviewRouteIfNeeded()
         }
         .onChange(of: navigationRouter.shouldOpenCurrentWeeklyReflection) { _, shouldOpen in
             guard shouldOpen else { return }
@@ -109,6 +121,13 @@ struct StatsView: View {
         guard navigationRouter.shouldOpenCurrentWeeklyReflection else { return }
         selectedWeeklyReflection = weeklyReflection.openCurrentReport(entries: weeklyReflectionRouteEntries)
         navigationRouter.shouldOpenCurrentWeeklyReflection = false
+    }
+
+    /// Review links (`offrecord://review/…`) can also arrive before this view exists.
+    private func openPendingReviewRouteIfNeeded() {
+        guard let route = navigationRouter.routedReview else { return }
+        selectedReviewRoute = route
+        navigationRouter.routedReview = nil
     }
 
     @ViewBuilder
@@ -143,7 +162,10 @@ struct StatsView: View {
         MoodTrendChartCard(points: charts.moodTrend)
         aiInsightsCard
         WeeklyReflectionHistorySection(entries: weeklyReflectionRouteEntries)
+        MonthInReviewSection { selectedReviewRoute = $0 }
+        YearInReviewSection(years: reviewYears) { selectedReviewRoute = $0 }
         WeeklyInsightsSection(entries: startedEntriesForCards, insights: shareInsights)
+        SessionPrepCard()
     }
 
     private var deepDiveSection: some View {
@@ -355,6 +377,8 @@ struct StatsView: View {
         shareInsights = ShareableInsightGenerator.generateWeeklyInsights(from: currentEntries)
         proactiveReflection.refreshIfNeeded(entries: currentEntries)
         weeklyReflection.refreshIfNeeded(entries: currentEntries)
+        let reviewJournal = PeriodReviewJournal(entries: currentEntries)
+        reviewYears = periodReviews.availableYears(journal: reviewJournal, now: now)
         if let milestone = goalManager.checkMilestone(currentStreak: nextStats.currentStreak) {
             // MilestoneCelebrationView plays the success haptic itself.
             withOffRecordAnimation(OffRecordMotion.bouncy) {
@@ -362,6 +386,7 @@ struct StatsView: View {
             }
         }
         PerformanceSignposts.end(token)
+        await periodReviews.refreshMonths(journal: reviewJournal, now: now)
     }
 }
 

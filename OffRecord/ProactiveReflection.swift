@@ -8,6 +8,7 @@
 
 import CoreData
 import Foundation
+import JournalFoundation
 import os.log
 import SwiftUI
 
@@ -103,7 +104,11 @@ final class ProactiveReflectionController: ObservableObject {
 
     @discardableResult
     func refreshIfNeeded(entries: [DiaryEntry], now: Date = Date(), force: Bool = false) -> Task<Void, Never>? {
-        let snapshots = entries.compactMap(ReflectionEntrySnapshot.init(entry:))
+        guard FridayAvailability.isEnabled else {
+            clearDerivedState()
+            return nil
+        }
+        let snapshots = Self.analyzableSnapshots(entries)
         let signature = inputSignature(for: snapshots)
         if !force, signature == lastInputSignature, let lastRefreshAt, now.timeIntervalSince(lastRefreshAt) < debounceInterval {
             return nil
@@ -113,8 +118,45 @@ final class ProactiveReflectionController: ObservableObject {
 
     @discardableResult
     func refresh(entries: [DiaryEntry], now: Date = Date()) -> Task<Void, Never>? {
-        let snapshots = entries.compactMap(ReflectionEntrySnapshot.init(entry:))
+        guard FridayAvailability.isEnabled else {
+            clearDerivedState()
+            return nil
+        }
+        let snapshots = Self.analyzableSnapshots(entries)
         return refresh(snapshots: snapshots, signature: inputSignature(for: snapshots), now: now)
+    }
+
+    /// Proactive cards and Smart Prompts never quote, analyze, or follow up on
+    /// high-risk or hopeless entries, or on entries kept out of Friday, so those
+    /// never reach the analyzer.
+    static func analyzableSnapshots(_ entries: [DiaryEntry]) -> [ReflectionEntrySnapshot] {
+        entries
+            .filter { $0.journalAIExclusion.permitsAssistantEvidence }
+            .compactMap(ReflectionEntrySnapshot.init(entry:))
+            .filter { JournalRiskClassifier.level(for: $0.text) < .moderateConcern }
+    }
+
+    /// Drops every card, decision, and recap, as when Friday is turned off.
+    /// Saved and dismissed choices stay unless `includingFeedback` is set.
+    func clearDerivedState(includingFeedback: Bool = false) {
+        let hasState = !insights.isEmpty || !decisionMoments.isEmpty || !followUpStates.isEmpty
+            || weeklyRecap != nil || selectedPrompt != nil || lastInputSignature != nil
+        guard hasState || (includingFeedback && !cardFeedback.isEmpty) else { return }
+        analysisTask?.cancel()
+        analysisTask = nil
+        insights = []
+        decisionMoments = []
+        followUpStates = []
+        weeklyRecap = nil
+        selectedPrompt = nil
+        lastInputSignature = nil
+        lastRefreshAt = nil
+        cacheReminderBody()
+        save()
+        if includingFeedback {
+            cardFeedback = [:]
+            saveFeedback()
+        }
     }
 
     func markPrompted(_ insight: ReflectionInsight, now: Date = Date()) {

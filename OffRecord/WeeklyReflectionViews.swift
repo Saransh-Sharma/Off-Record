@@ -171,7 +171,7 @@ struct WeeklyReflectionHistorySection: View {
     private var reports: [WeeklyReflectionReport] { Array(controller.visibleReports.prefix(7)) }
 
     private var currentWeekReport: WeeklyReflectionReport? {
-        reports.first { $0.period.contains(Date()) }
+        reports.first { $0.period.contains(AppClock.now) }
     }
 
     private var earlierReports: [WeeklyReflectionReport] {
@@ -351,6 +351,7 @@ struct WeeklyReflectionReportView: View {
     @ObservedObject private var controller = WeeklyReflectionController.shared
     @Environment(\.managedObjectContext) private var viewContext
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var takeawayText: String = ""
     @State private var showSources = false
     @State private var showExport = false
@@ -499,21 +500,23 @@ struct WeeklyReflectionReportView: View {
                 .italic()
                 .fixedSize(horizontal: false, vertical: true)
 
-            ViewThatFits(in: .horizontal) {
-                HStack(spacing: OffRecordSpacing.md) {
-                    trustLabel
-                    Spacer(minLength: 0)
-                    sourcesButton
-                }
-                VStack(alignment: .leading, spacing: OffRecordSpacing.sm) {
-                    trustLabel
-                    sourcesButton
-                }
+            // One layout that changes axis keeps the same views as text grows; swapping views
+            // (as ViewThatFits does) leaves the accessibility audit measuring a view that never scales.
+            trustRowLayout {
+                trustLabel
+                    .frame(maxWidth: dynamicTypeSize.isAccessibilitySize ? nil : .infinity, alignment: .leading)
+                sourcesButton
             }
         }
         .padding(OffRecordSpacing.xl)
         .frame(maxWidth: .infinity, alignment: .leading)
         .offRecordContentCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceMint)
+    }
+
+    private var trustRowLayout: AnyLayout {
+        dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: OffRecordSpacing.sm))
+            : AnyLayout(HStackLayout(spacing: OffRecordSpacing.md))
     }
 
     private var trustLabel: some View {
@@ -529,7 +532,7 @@ struct WeeklyReflectionReportView: View {
             showSources = true
         } label: {
             Label("Sources", systemImage: "doc.text.magnifyingglass")
-                .lineLimit(1)
+                .fixedSize(horizontal: false, vertical: true)
         }
         .buttonStyle(OffRecordSoftButtonStyle(tint: OffRecordColor.textSage, fill: OffRecordColor.surfacePrimary.opacity(0.85)))
         .accessibilityIdentifier("weeklyReflection.sources.openSheet")
@@ -542,6 +545,7 @@ struct WeeklyReflectionReportView: View {
                 .font(OffRecordTypography.bodySmall)
                 .foregroundStyle(OffRecordColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
+            GetSupportButton()
         }
         .accessibilityIdentifier("weeklyReflection.support")
     }
@@ -717,7 +721,7 @@ private struct WeeklyReflectionSourcesSheet: View {
 
     private var availableEntries: [DiaryEntry] {
         sourceEntries.filter { entry in
-            guard entry.id != nil else { return false }
+            guard entry.id != nil, entry.journalAIExclusion.permitsReflection else { return false }
             return report.period.contains(entry.date ?? entry.createdAt ?? .distantPast)
         }
         .sorted { ($0.date ?? .distantPast) < ($1.date ?? .distantPast) }
@@ -912,8 +916,9 @@ private struct WeeklyReflectionExportSheet: View {
 private func dateRange(_ report: WeeklyReflectionReport) -> String {
     let end = max(report.periodEnd, report.periodStart)
     let range = report.periodStart..<end
-    let isThisYear = Calendar.current.isDate(report.periodStart, equalTo: Date(), toGranularity: .year)
-        && Calendar.current.isDate(end, equalTo: Date(), toGranularity: .year)
+    let now = AppClock.now
+    let isThisYear = Calendar.current.isDate(report.periodStart, equalTo: now, toGranularity: .year)
+        && Calendar.current.isDate(end, equalTo: now, toGranularity: .year)
     return isThisYear
         ? range.formatted(.interval.month(.abbreviated).day())
         : range.formatted(.interval.month(.abbreviated).day().year())

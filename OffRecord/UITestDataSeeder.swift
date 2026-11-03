@@ -12,6 +12,11 @@ import Foundation
 struct UITestDataSeeder {
     static func seedIfNeeded(context: NSManagedObjectContext) {
         let arguments = ProcessInfo.processInfo.arguments
+        if arguments.contains("-UITesting") {
+            resetFridayStateForUITesting()
+        }
+        if seedReviewsIfNeeded(arguments: arguments, context: context) { return }
+        if seedOrganizeIfNeeded(arguments: arguments, context: context) { return }
         guard arguments.contains("-HeroNudgeUITest")
                 || arguments.contains("-OnboardingUITest")
                 || arguments.contains("-SemanticMemoryUITest")
@@ -41,7 +46,6 @@ struct UITestDataSeeder {
         if arguments.contains("-SemanticMemoryUITest") {
             resetSemanticMemorySidecar()
             FridayAssistantEngine.shared.resetForUITesting()
-            LocalAIEngine.shared.userProfile = UserProfile()
             if !arguments.contains("-SemanticMemoryEmptyJournal") {
                 seedSemanticMemoryEntries(in: context)
             }
@@ -49,7 +53,6 @@ struct UITestDataSeeder {
             seedWeeklyReflectionState(arguments: arguments, context: context)
         } else if arguments.contains("-ProactiveReflectionUITest") {
             FridayAssistantEngine.shared.resetForUITesting()
-            LocalAIEngine.shared.userProfile = UserProfile()
             seedProactiveReflectionEntries(in: context)
             // Today shows one contextual card; keep the weekly card out of the way of the prompt under test.
             WeeklyReflectionController.shared.updateSettings { $0.showHomeCard = false }
@@ -63,6 +66,24 @@ struct UITestDataSeeder {
         }
 
         try? context.save()
+    }
+
+    /// Friday on/off key and Friday's local folder, by name. A UI test that stops midway
+    /// can leave Friday off or her files behind, which would break the next Friday test.
+    static let fridayEnabledDefaultsKey = FridayAvailability.defaultsKey
+    static let fridayLocalDirectoryName = "FridayLocal"
+
+    /// Every -UITesting launch starts with Friday on and no leftover Friday files.
+    static func resetFridayStateForUITesting(
+        defaults: UserDefaults = .standard,
+        applicationSupport: URL? = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first
+    ) {
+        defaults.removeObject(forKey: fridayEnabledDefaultsKey)
+        guard let applicationSupport else { return }
+        let directory = applicationSupport.appendingPathComponent(fridayLocalDirectoryName, isDirectory: true)
+        if FileManager.default.fileExists(atPath: directory.path) {
+            try? FileManager.default.removeItem(at: directory)
+        }
     }
 
     static func seedPendingRouteIfNeeded(arguments: [String]) {
@@ -97,7 +118,7 @@ struct UITestDataSeeder {
 
     private static func insertEntry(daysAgo: Int, text: String, context: NSManagedObjectContext) {
         let calendar = Calendar.current
-        let now = Date()
+        let now = AppClock.now
         let date = calendar.date(byAdding: .day, value: -daysAgo, to: now) ?? now
         let entry = DiaryEntry(context: context)
         entry.id = UUID()
@@ -230,8 +251,10 @@ struct UITestDataSeeder {
             ]
         }
 
-        for item in entries {
-            insertEntry(daysAgo: item.daysAgo, text: item.text, mood: item.mood, starred: false, context: context)
+        // Fixtures go on distinct days inside the week under test, which `daysAgo` alone can't
+        // promise early in the week: on a Monday, one and two days ago are last week.
+        for (item, date) in zip(entries, weeklyFixtureDates(count: entries.count)) {
+            insertEntry(on: date, text: item.text, mood: item.mood, starred: false, context: context)
         }
 
         if arguments.contains("-WeeklyReflectionDismissed") {
@@ -263,7 +286,7 @@ struct UITestDataSeeder {
             id: UUID(),
             periodStart: period.start,
             periodEnd: period.end,
-            generatedAt: Date(),
+            generatedAt: AppClock.now,
             versionNumber: 1,
             processingMode: .local,
             status: status,
@@ -286,10 +309,25 @@ struct UITestDataSeeder {
         )
     }
 
+    /// Distinct days inside the Weekly Reflection week that contains `now`, newest first.
+    /// They walk back from today and, when the week has fewer days behind today than
+    /// fixtures (a Monday), continue forward into the same week.
+    static func weeklyFixtureDates(count: Int, now: Date = AppClock.now, calendar: Calendar = .current) -> [Date] {
+        let period = WeeklyReflectionEligibilityService.period(containing: now, calendar: calendar)
+        let daysIntoWeek = calendar.dateComponents([.day], from: period.start, to: calendar.startOfDay(for: now)).day ?? 0
+        return (0..<count).compactMap { index in
+            let offset = index <= daysIntoWeek ? -index : index - daysIntoWeek
+            return calendar.date(byAdding: .day, value: offset, to: now)
+        }
+    }
+
     private static func insertEntry(daysAgo: Int, text: String, mood: String, starred: Bool, context: NSManagedObjectContext) {
-        let calendar = Calendar.current
-        let now = Date()
-        let date = calendar.date(byAdding: .day, value: -daysAgo, to: now) ?? now
+        let now = AppClock.now
+        let date = Calendar.current.date(byAdding: .day, value: -daysAgo, to: now) ?? now
+        insertEntry(on: date, text: text, mood: mood, starred: starred, context: context)
+    }
+
+    private static func insertEntry(on date: Date, text: String, mood: String, starred: Bool, context: NSManagedObjectContext) {
         let entry = DiaryEntry(context: context)
         entry.id = UUID()
         entry.date = date

@@ -1,103 +1,64 @@
 # OffRecord AI Journal - App Store Metadata
 
 ## App Name
-OffRecord AI Journal - AI Voice Journal
+OffRecord AI Journal
 
 ## Subtitle (30 characters max)
 Private Journal & Mood Tracker
 
 ## Promotional Text (170 characters max)
-NEW: Apple Watch Quick Capture for mood, dictation, and audio notes. Saved on watch first, synced privately to iPhone.
+Now on Mac. Friday runs on Apple's on-device model, plus Month and Year in Review, tags, journals, and imports from Day One and Apple Journal.
 
 ## Description (4000 characters max)
 
-OffRecord AI Journal is a private voice journal that turns your spoken thoughts into a searchable diary with AI mood tracking. Speak your thoughts, and OffRecord AI Journal transforms them into a living journal while building a private AI assistant that reflects your inner world.
+OffRecord AI Journal is a private voice journal for iPhone, iPad, Mac, and Apple Watch. Talk or type, and your entries stay on your device. Friday, your journal's AI, finds patterns in what you write and answers questions with the entries she used.
 
-APPLE WATCH QUICK CAPTURE
-Capture from your wrist without browsing your private journal on watch:
+RECORD OR WRITE
+- Talk, and Apple SpeechAnalyzer transcribes on your device. No speech server.
+- Add text, recordings, photos (up to 5), and a mood to each day's entry.
+- Start from a prompt, or from Journaling Suggestions on iPhone.
+- Capture a mood, a quick note, or a recording from Apple Watch.
 
-- Mood: choose from OffRecord's eight moods with a watch-optimized dial
-- Speak: dictate a quick thought and save it to today's entry
-- Record: save raw voice audio first, even when your iPhone is not reachable
-- Recent: see the last 20 watch captures as private outbox status
-- Complication and Smart Stack: generic launch and queue status only
+FRIDAY, ON YOUR DEVICE
+- Ask Friday about your journal. Answers cite the entries she used.
+- On devices with Apple Intelligence, she uses Apple's on-device model to look things up and phrase answers. Nothing is sent to a server.
+- Go Deeper asks one follow-up question about an entry.
+- Pages for the people, places, and topics you mention, with Rename and Forget.
+- Keep any entry out of Friday, or turn Friday off.
 
-The iPhone remains your full journal. Apple Watch is for fast, private capture.
+LOOK BACK
+- Weekly Reflection, Month in Review, and Year in Review.
+- Mood trends, a time-of-day heatmap, and Year in Pixels.
+- Streaks that allow a rest day, or weekly streaks.
+- Session Prep: a summary of a date range to bring to a therapist or coach. You choose what to include.
 
-YOUR VOICE, YOUR DIARY
-Record your thoughts naturally with voice. OffRecord AI Journal uses Apple SpeechAnalyzer for transcription after clearly asking permission. Transcription runs entirely on-device with a system-managed language model, and your original audio stays saved alongside the transcript.
+ORGANIZE
+- Tags, multiple journals, and search by meaning or by #tag.
+- Timeline as a list, calendar, or photo grid.
+- Import from Day One, Apple Journal, Markdown or text files, and CSV.
+- Export to PDF, Markdown, JSON, CSV, plain text, or a password-protected backup.
 
-YOUR DIGITAL TWIN
-This is what makes OffRecord AI Journal different. As you journal, OffRecord AI Journal tracks and visualizes patterns in your life:
+ON MAC
+A Mac app with a sidebar, menu commands, and keyboard shortcuts.
 
-- Personal World Map: People, places, and topics you mention — and how they connect
-- Mood Trends: See how your mood shifts across mornings, evenings, weekdays, and weekends
-- Writing Patterns: When you journal, how much you write, your streaks and consistency
-- Top Themes: The subjects that come up most in your entries, ranked by importance
+SIRI AND SHORTCUTS
+Create entries, record, and search with Siri. Ask Friday inside Siri for a short summary that never reads your entries aloud.
 
-Your assistant grows with every entry, giving you a clearer picture of your journaling journey over time.
+PRIVATE BY DESIGN
+- No account, no ads, no analytics in the app.
+- Face ID or Touch ID lock.
+- Optional iCloud Sync through your own Apple account, with clear sync status.
+- Widgets, Spotlight, and Apple Watch faces never show journal text.
+- Erase All Data in Settings.
+- If an entry or question is about self-harm, Friday doesn't analyze it. She offers crisis lines instead.
 
-SMART INSIGHTS
-OffRecord AI Journal uses Apple's on-device NLP to surface patterns you might not notice:
-
-- Sentiment analysis that tracks your emotional trends over weeks and months
-- Named entity recognition to build your personal knowledge graph
-- Smart search suggestions powered by the people and topics in your entries
-- Friday insights, mood analysis, Semantic Memory, and journal analysis run on your device
-
-BEAUTIFUL INSIGHTS
-Track your emotional journey with:
-- Writing streaks and consistency scores
-- Mood trends with interactive charts
-- Weekly activity patterns
-- AI-generated insights about your patterns
-- Weekly summaries of your emotional arc
-
-RICH JOURNALING
-- Voice recording with real-time audio visualization
-- Apple Watch mood, dictation, and audio Quick Capture
-- Enhanced audio playback with progress bar, scrubbing, and speed control (0.5x-2x)
-- Multiple audio notes per day, including Apple Watch recordings
-- Photo attachments (up to 5 per entry, stored on-device only)
-- Search and filter your entire history
-- Smart search with knowledge graph-powered suggestions
-- Star your favorite entries
-- Mood tagging for every entry
-- Journaling goals with weekly targets and milestone celebrations
-- Export to PDF, JSON, Markdown, CSV, or plain text
-
-LOCK SCREEN & WIDGETS
-Quick-access widgets for your Home Screen and Lock Screen:
-- Today's entry preview
-- Streak counter
-- Mood tracker
-- One-tap recording shortcut
-- Apple Watch complication and Smart Stack Quick Capture entry
-
-SECURITY & PRIVACY
-- Face ID / Touch ID app lock
-- Password-protected encrypted backups (AES-256-GCM)
-- Local Friday insights, mood analysis, and Semantic Memory
-- Watch captures save locally first and sync to iPhone with Apple WatchConnectivity
-- Watch complications and Smart Stack widgets do not show journal text
-- Optional iCloud sync (encrypted with your Apple ID)
-- No accounts required
-- No tracking, no analytics, no ads
-- No developer AI servers or non-Apple third-party AI services
-
-8 BEAUTIFUL THEMES
-System, Light, Sage, Lavender, Rose, Ocean, Warm, and Dark themes to match your style.
-
-BUILT FOR CONSISTENCY
-Daily reminders, writing prompts, and weekly goals help you build a consistent journaling habit.
-
-Your thoughts deserve a home. OffRecord AI Journal is that home.
+Free, with no subscriptions or in-app purchases.
 
 ## Keywords (100 characters max, comma-separated)
 diary,journal,voice,mood,private AI,private,speech to text,mindfulness,encrypted,anxiety
 
 ## Category
-Primary: Health & Fitness
+Primary: Lifestyle
 Secondary: Productivity
 
 ## Age Rating
@@ -111,6 +72,22 @@ https://saransh-sharma.github.io/Off-Record/support.html
 
 ## Privacy Policy URL
 https://saransh-sharma.github.io/Off-Record/privacy.html
+
+## What's New (Version 1.5)
+New in v1.5:
+
+- OffRecord on Mac, with menu commands and keyboard shortcuts.
+- Friday on Apple's on-device model: with Apple Intelligence, she keeps a conversation going, looks things up in your journal, and cites the entries she used. Entries can get short titles.
+- Month in Review and Year in Review.
+- Session Prep: a summary of a date range for a session with a therapist or coach.
+- Tags, multiple journals, and a page for each person, place, and topic.
+- Import from Day One, Apple Journal, Markdown or text files, and CSV.
+- Siri can add to your journal, search it, and ask Friday. Siri gets a summary only, never quotes.
+- Journaling Suggestions on iPhone.
+- Keep Out of Friday on any entry, a switch to turn Friday off, and Erase All Data.
+- Streaks allow one rest day in any 7 days, or switch to weekly streaks.
+- iCloud sync status in Settings, and a recovery screen if your journal can't open.
+- Get Support shows your region's crisis line and works offline.
 
 ## What's New (Version 1.4)
 New in v1.4:

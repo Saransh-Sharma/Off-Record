@@ -15,14 +15,14 @@ OffRecord AI Journal is a voice-first journaling app that turns spoken thoughts 
 - Weekly Reflection with summary, themes, wins, frictions, questions, saved takeaways, history, source choices, and export
 - Shareable Personality Card (like Spotify Wrapped for your inner world)
 - Writing streaks and journaling statistics
-- AES-256-GCM encrypted entries and backups
+- AES-256-GCM encrypted backups; entries are protected by iOS Data Protection
 - Face ID / Touch ID biometric lock
 - Photo attachments (up to 5 per entry, stored locally)
 - 8 visual themes (System, Light, Sage, Lavender, Rose, Ocean, Warm, Dark)
 - Lock Screen and Home Screen widgets
 - Privacy-safe Apple Watch complication and Smart Stack entry
 - iCloud sync between your own devices (encrypted, Apple CloudKit only)
-- Works 100% offline — no internet required
+- Works offline — no internet required after iOS downloads the on-device speech model once
 - Export to PDF, JSON, Markdown, CSV
 - Weekly Reflection export to Markdown or plain text, with source quotes off unless the user chooses them
 
@@ -42,7 +42,7 @@ OffRecord AI Journal is a voice-first journaling app that turns spoken thoughts 
 - Apple Watch captures save locally first and sync to the paired iPhone when nearby
 - Weekly Reflection reports stay in the app; reminders do not include journal text
 - All processing happens on-device using Apple frameworks
-- Entries encrypted with AES-256-GCM
+- Entries stored with iOS complete file protection; backups encrypted with AES-256-GCM
 - Biometric lock with Face ID / Touch ID
 - iCloud sync is optional and uses only Apple's private CloudKit infrastructure
 - Apple App Privacy label: "Data Not Collected"

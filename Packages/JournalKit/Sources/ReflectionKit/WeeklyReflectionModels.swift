@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import JournalFoundation
 
 public enum WeeklyReflectionProcessingMode: String, Codable, Sendable {
     case local
@@ -241,21 +242,36 @@ public struct WeeklyReflectionEntrySnapshot: Identifiable, Hashable, Sendable {
     public let date: Date
     public let updatedAt: Date
     public let mood: String?
+    /// Empty when `aiExclusion` forbids quoting; `wordCount` still counts the real text.
     public let text: String
     public let wordCount: Int
     public let sourceType: WeeklyReflectionSourceType
     public let sentiment: Double
+    /// The entry's AI participation. Entries that can't be quoted still count
+    /// toward aggregates (entries, words, days, mood) but carry no text.
+    public let aiExclusion: JournalAIExclusion
 
-    public init(id: UUID, date: Date, updatedAt: Date, mood: String?, text: String, sourceType: WeeklyReflectionSourceType) {
+    public init(
+        id: UUID,
+        date: Date,
+        updatedAt: Date,
+        mood: String?,
+        text: String,
+        sourceType: WeeklyReflectionSourceType,
+        aiExclusion: JournalAIExclusion = .included
+    ) {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let readable = aiExclusion.permitsReflectionQuotes ? trimmed : ""
         self.id = id
         self.date = date
         self.updatedAt = updatedAt
         self.mood = mood
-        self.text = trimmed
+        self.text = readable
         self.wordCount = trimmed.split { $0.isWhitespace || $0.isNewline }.count
         self.sourceType = sourceType
-        self.sentiment = ReflectionSentiment.score(text: trimmed, mood: mood)
+        // Unreadable entries contribute their mood only.
+        self.sentiment = ReflectionSentiment.score(text: readable, mood: mood)
+        self.aiExclusion = aiExclusion
     }
 }
 
@@ -275,7 +291,7 @@ public enum WeeklyReflectionEligibilityEngine {
         entries: [WeeklyReflectionEntrySnapshot],
         in period: WeeklyReflectionPeriod
     ) -> WeeklyReflectionEligibility {
-        let eligible = entries.filter { period.contains($0.date) && !$0.text.isEmpty }
+        let eligible = entries.filter { period.contains($0.date) && $0.wordCount > 0 && $0.aiExclusion.permitsReflection }
         let words = eligible.reduce(0) { $0 + $1.wordCount }
         let kind: WeeklyReflectionEligibilityKind
         if words < minimumVisibleWordCount {

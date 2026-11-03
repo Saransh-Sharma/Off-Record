@@ -25,10 +25,19 @@ typeset -A FOLDER
 FOLDER[iphone]="iPhone_69"
 FOLDER[ipad]="iPad_13"
 
-runtime=$(xcrun simctl list runtimes -j | python3 -c '
+# The newest available iOS runtime that supports the device type. Some runtimes
+# (iOS 27.1 build 24A94425) only support new device types, so "newest" alone isn't enough.
+runtime_for() {
+  xcrun simctl list runtimes -j | python3 -c '
 import json, sys
-runtimes = [r for r in json.load(sys.stdin)["runtimes"] if r["platform"] == "iOS" and r["isAvailable"]]
-print(sorted(runtimes, key=lambda r: [int(p) for p in r["version"].split(".")])[-1]["identifier"])')
+device_type = sys.argv[1]
+runtimes = [r for r in json.load(sys.stdin)["runtimes"]
+            if r["platform"] == "iOS" and r["isAvailable"]
+            and any(t["identifier"] == device_type for t in r.get("supportedDeviceTypes", []))]
+if not runtimes:
+    sys.exit("No available iOS runtime supports " + device_type)
+print(sorted(runtimes, key=lambda r: [int(p) for p in r["version"].split(".")])[-1]["identifier"])' "$1"
+}
 
 device_id() {
   local name=$1 type=$2
@@ -41,7 +50,7 @@ for devices in json.load(sys.stdin)["devices"].values():
         if d["name"] == name:
             print(d["udid"]); sys.exit()' "$name")
   if [[ -z $id ]]; then
-    id=$(xcrun simctl create "$name" "$type" "$runtime")
+    id=$(xcrun simctl create "$name" "$type" "$(runtime_for "$type")")
   fi
   echo "$id"
 }

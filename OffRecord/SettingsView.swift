@@ -30,7 +30,6 @@ struct SettingsView: View {
 
     @State private var showPermissionDeniedAlert = false
     @State private var showWeeklyNotificationPermissionDeniedAlert = false
-    @State private var showCloudSyncRestartAlert = false
     @State private var showDeleteSemanticIndexConfirm = false
 
     // Export states
@@ -40,6 +39,7 @@ struct SettingsView: View {
     @State private var selectedExportPeriod: ExportPeriod = .yearly
     @State private var selectedPaperSize: PDFPaperSize = .a4
     @State private var starredOnly: Bool = false
+    @State private var exportJournalScope: JournalScope = .all
     @State private var isExporting = false
     @State private var exportURL: URL?
     @State private var exportError: String?
@@ -109,7 +109,10 @@ struct SettingsView: View {
                         title: String(localized: "Journal & Reminders"),
                         columns: columns,
                         items: [
+                            .init(id: "journals", keywords: JournalsSettingsSection.searchKeywords, view: AnyView(JournalsSettingsSection())),
+                            .init(id: "tags", keywords: TagsSettingsSection.searchKeywords, view: AnyView(TagsSettingsSection())),
                             .init(id: "goal", keywords: "weekly goal journaling target habit", view: AnyView(journalingGoalSection)),
+                            .init(id: "streak", keywords: "streak daily weekly rest day grace missed habit", view: AnyView(StreakSettingsSection())),
                             .init(id: "reminder", keywords: "daily reminder notification time", view: AnyView(dailyReminderSection)),
                             .init(id: "weekly", keywords: "weekly reflection report notification", view: AnyView(weeklyReflectionSection))
                         ]
@@ -121,6 +124,7 @@ struct SettingsView: View {
                         items: [
                             .init(id: "lock", keywords: "lock face id touch id passcode privacy security", view: AnyView(securitySection)),
                             .init(id: "localAI", keywords: "on-device ai transcription speech offline privacy", view: AnyView(localAIPrivacySection)),
+                            .init(id: "friday", keywords: FridaySettingsSection.searchKeywords, view: AnyView(FridaySettingsSection())),
                             .init(id: "health", keywords: "apple health state of mind mood sync", view: AnyView(healthSection)),
                             .init(id: "semantic", keywords: "search index meaning friday rebuild delete", view: AnyView(semanticMemorySection)),
                             .init(id: "spotlight", keywords: "siri spotlight system search shortcuts", view: AnyView(systemSearchSection))
@@ -133,8 +137,10 @@ struct SettingsView: View {
                         items: [
                             .init(id: "export", keywords: "export pdf print", view: AnyView(exportSection)),
                             .init(id: "backup", keywords: "backup encrypted json markdown csv import restore", view: AnyView(backupSection)),
-                            .init(id: "icloud", keywords: "icloud sync cloud devices", view: AnyView(iCloudSection)),
-                            .init(id: "storage", keywords: "storage space audio photos delete", view: AnyView(storageSection))
+                            .init(id: "import", keywords: "import day one apple journal markdown text csv", view: AnyView(importSection)),
+                            .init(id: "icloud", keywords: SyncSettingsSection.searchKeywords, view: AnyView(SyncSettingsSection())),
+                            .init(id: "storage", keywords: "storage space audio photos delete", view: AnyView(storageSection)),
+                            .init(id: "erase", keywords: EraseAllDataSettingsSection.searchKeywords, view: AnyView(EraseAllDataSettingsSection()))
                         ]
                     )
 
@@ -163,6 +169,12 @@ struct SettingsView: View {
                 .frame(maxWidth: .infinity)
                 .padding(.horizontal, metrics.pageHorizontalPadding)
                 .padding(.vertical, OffRecordSpacing.screenY)
+            }
+            .task {
+                // The iCloud switch rebuilds every screen; land back on its card.
+                if let target = CloudSyncMonitor.shared.takeScrollTarget() {
+                    scrollProxy.scrollTo(target, anchor: .top)
+                }
             }
             }
         }
@@ -208,11 +220,6 @@ struct SettingsView: View {
             Button("OK", role: .cancel) { }
         } message: {
             Text(exportError ?? "")
-        }
-        .alert("Restart OffRecord", isPresented: $showCloudSyncRestartAlert) {
-            Button("OK", role: .cancel) { }
-        } message: {
-            Text("Close and reopen OffRecord to apply the iCloud change.")
         }
         .alert("Delete Search Index?", isPresented: $showDeleteSemanticIndexConfirm) {
             Button("Delete Index", role: .destructive) {
@@ -275,8 +282,10 @@ struct SettingsView: View {
             "lock face id touch id passcode privacy security", "on-device ai transcription speech offline privacy",
             "apple health state of mind mood sync", "search index meaning friday rebuild delete",
             "siri spotlight system search shortcuts", "export pdf print", "backup encrypted json markdown csv import restore",
-            "icloud sync cloud devices", "storage space audio photos delete", "theme appearance dark light color accent",
-            "privacy policy data not collected", "about version support"
+            SyncSettingsSection.searchKeywords, "storage space audio photos delete", "theme appearance dark light color accent",
+            "privacy policy data not collected", "about version support",
+            JournalsSettingsSection.searchKeywords, TagsSettingsSection.searchKeywords,
+            FridaySettingsSection.searchKeywords, EraseAllDataSettingsSection.searchKeywords
         ]
     }
 
@@ -440,6 +449,8 @@ struct SettingsView: View {
                         }
 
                         Toggle("Starred Only", isOn: $starredOnly)
+
+                        ExportJournalPicker(scope: $exportJournalScope)
                     }
                     .padding(.top, OffRecordSpacing.sm)
                 } label: {
@@ -626,6 +637,16 @@ struct SettingsView: View {
                 .buttonStyle(SettingsSecondaryButtonStyle(tint: OffRecordColor.textCoral, fill: OffRecordColor.backgroundBlushTint))
                 .accessibilityIdentifier("semanticMemory.delete")
                 .disabled(semanticMemory.isBuilding || semanticMemory.chunkCount == 0)
+
+                Button {
+                    FridayProfileRebuilder.shared.rebuildNow()
+                    HapticManager.shared.selectionChanged()
+                } label: {
+                    Label("Rebuild Friday", systemImage: "sparkles")
+                }
+                .buttonStyle(SettingsSecondaryButtonStyle(tint: OffRecordColor.textLavender, fill: OffRecordColor.surfaceLavender))
+                .accessibilityHint("Relearns Friday’s patterns from your entries.")
+                .accessibilityIdentifier("settings.friday.rebuild")
             }
             .accessibilityElement(children: .contain)
             .accessibilityIdentifier("semanticMemory.section")
@@ -648,11 +669,14 @@ struct SettingsView: View {
                 .foregroundColor(OffRecordColor.textSecondary)
                 .fixedSize(horizontal: false, vertical: true)
 
+            #if !targetEnvironment(macCatalyst)
+            // Siri tips don't exist on Mac.
             ShortcutsLink()
                 .accessibilityIdentifier("settings.systemSearch.shortcutsLink")
 
             SiriTipView(intent: SearchJournalIntent(), isVisible: $showSearchSiriTip)
                 .siriTipViewStyle(.automatic)
+            #endif
 
             Button {
                 JournalSpotlightIndexer.shared.rebuild(entries: startedEntries)
@@ -782,50 +806,6 @@ struct SettingsView: View {
                 }
             }
         }
-    }
-
-    @ViewBuilder
-    private var iCloudSection: some View {
-        SettingsCard(
-            title: String(localized: "iCloud Sync"),
-            subtitle: syncStatusText,
-            footer: iCloudSyncEnabled ? String(localized: "Recordings stay on this \(DeviceNoun.current) and don’t sync.") : nil,
-            systemImage: iCloudSyncEnabled && PersistenceController.isCloudAvailable ? "icloud.fill" : "icloud.slash",
-            tint: iCloudSyncEnabled && PersistenceController.isCloudAvailable ? OffRecordColor.textSky : OffRecordColor.textTertiary,
-            fill: OffRecordColor.surfaceBlue
-        ) {
-            Toggle(isOn: $iCloudSyncEnabled) {
-                Text("iCloud Sync")
-            }
-            .onChange(of: iCloudSyncEnabled) { _, newValue in
-                PersistenceController.shared.setCloudSyncEnabled(newValue)
-                showCloudSyncRestartAlert = true
-            }
-
-            if iCloudSyncEnabled && !PersistenceController.isCloudAvailable {
-                HStack(spacing: 8) {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .foregroundColor(OffRecordColor.textPeach)
-                        .font(OffRecordTypography.metadata)
-                        .accessibilityHidden(true)
-                    Text("Sign in to iCloud in Settings to sync.")
-                        .font(OffRecordTypography.metadata)
-                        .foregroundColor(OffRecordColor.textSecondary)
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                .padding(.vertical, 4)
-            }
-        }
-    }
-
-    private var syncStatusText: String {
-        if !iCloudSyncEnabled {
-            return String(localized: "Off", comment: "iCloud Sync status: turned off")
-        }
-        if PersistenceController.isCloudAvailable {
-            return String(localized: "On", comment: "iCloud Sync status: turned on")
-        }
-        return String(localized: "Not Signed In", comment: "iCloud Sync status: no iCloud account")
     }
 
     @ViewBuilder
@@ -1047,7 +1027,7 @@ struct SettingsView: View {
 
         Task {
             do {
-                let exportEntries = startedEntries
+                let exportEntries = exportJournalScope.filter(startedEntries)
                 let baseEntries: [DiaryEntry]
                 if starredOnly {
                     baseEntries = exportEntries.filter { $0.isStarred }

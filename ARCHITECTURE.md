@@ -9,7 +9,7 @@ Microphone → AudioRecorder (AAC 44.1kHz)
     ↓
 TranscriptionKit (SpeechAnalyzer + SpeechTranscriber/DictationTranscriber)
     ↓
-LocalAIEngine + InsightsEngine (NLTagger analysis)
+SentimentScorer + EntityExtractor (SemanticMemoryKit) → InsightsEngine / EntryInsightAnalyzer
     ↓
 FridayAssistantEngine (personality modeling)
     ↓
@@ -105,13 +105,28 @@ Core iPhone source files are in `OffRecord/`. Shared watch/iPhone capture models
 |---|---|---|
 | **AudioRecorder** | `AudioRecorder.swift` | AVAudioRecorder wrapper. Records AAC at 44.1kHz, provides real-time audio levels. Stores recordings in the app sandbox. |
 | **TranscriptionKit** | `Packages/JournalKit/Sources/TranscriptionKit` | iOS 26+ speech-to-text through Apple SpeechAnalyzer. SpeechTranscriber is preferred, DictationTranscriber expands locale coverage, and system-managed models run entirely on-device. |
-| **LocalAIEngine** | `LocalAIEngine.swift` | NLP analysis using NaturalLanguage framework. Sentiment analysis, topic extraction, intent recognition. Maintains a UserProfile for learned patterns. |
+| **Text analysis** | `Packages/JournalKit/Sources/SemanticMemoryKit/TextAnalysis.swift` | The only NLP: `SentimentScorer` (every paragraph, length-weighted) and `EntityExtractor` (names with repeats, nouns, tagged words). `TextSignals` and `ReflectionSentiment` delegate to it. `EntryInsightAnalyzer` writes the entry's From Friday notes. |
+| **On-device model** | `FridayLanguageModel.swift`, `FridayOutputValidator.swift`, `FridayConversation.swift`, `FridayConversationTools.swift`, `GoDeeperQuestionProvider`, `FridayEntryTitles.swift`, `WeeklyReflectionNarrator.swift` | `FridayLanguageModel` gates availability. It is off under UI tests and screenshots unless `-EnableOnDeviceModel` is passed. The pipeline: deterministic risk gate → retrieval → `SystemLanguageModel` with tools (`searchJournal`, `moodStats`, `person`) → `FridayOutputValidator` (Voice, clinical terms, risk, grounding) → fallback to the deterministic text. Generated text lives in `FridayGeneratedTextCache` under `FridayLocal/`, never in Core Data. |
+| **Reviews** | `Packages/JournalKit/Sources/ReflectionKit/ReflectionPeriodKind.swift`, `PeriodReviewModels.swift`, `PeriodReviewGenerator.swift`, `PeriodReviewController.swift` | Week, month, and year periods share the weekly pipeline and safety filter. Month and year reviews are stored in their own `period_reviews` AIState row; the weekly format is unchanged. |
+| **Session Prep** | `SessionPrepBuilder.swift`, `SessionPrepView.swift`, `PDFExportService.generateDocumentPDF` | Deterministic summary of a range, quotes chosen by the user, name replacement, and PDF, Markdown, or text output. |
+| **Importers** | `ZipArchive*.swift`, `JournalImport*.swift` | A read-only ZIP reader with no third-party code, plus parsers for Day One, Apple Journal, Markdown/text, and CSV. `JournalImportService` merges same-day entries as text blocks and dedupes through `JournalBlock.sourceCaptureID`. |
+| **Siri** | `JournalSchemaIntents.swift`, `AskFridaySiri.swift`, `AppIntents.swift` | Journal schemas are adopted with empty content, so `JournalEntryEntity` never exposes text. `AskFridaySiri` is the only Siri answer path: summary only, quote filter, risk gate before the engine. `.appEntityIdentifier` on entry detail and Timeline rows. |
+| **Streaks** | `OffRecordSystemShared/JournalStreak.swift` | One streak engine (daily with a rest day, or weekly). The widget snapshot carries the rules so widgets match the app. |
+| **Test clock** | `AppClock.swift` | `AppClock.now` reads `-UITestNow` in debug builds; Weekly Reflection and the UI seeders use it. |
+| **Store session** | `PersistenceStoreSession.swift`, `StoreRecoveryView.swift`, `StoreFileCopier.swift` | Loads the store and records why it failed. It reloads it, with or without CloudKit, keeping the same container. A reload counter is used as the identity of the app's root view. Erase and recording place reload holds. Under unit tests the store lives in a temporary folder. |
+| **Sync status** | `CloudSyncMonitor.swift`, `CloudSyncStatus.swift` | Reduces `NSPersistentCloudKitContainer` events and the CloudKit account status into plain-language status. |
+| **Mac** | `OffRecordCommands.swift`, `OffRecord-macCatalyst.entitlements` | Mac Catalyst (Scaled to Match iPad), same bundle ID and iCloud container. Watch app and widget extension are filtered by platform. Live Activities, Siri tips, and Apple Health are guarded off on Mac. |
+| **Organize** | `TagStore.swift`, `TagStore+Organize.swift`, `EntryTagsEditor.swift`, `TimelineTagViews.swift`, `Settings+Tags.swift`, `JournalStore.swift`, `JournalStore+Organize.swift`, `JournalPickers.swift`, `Settings+Journals.swift`, `ImportedTagMapper.swift` | Tags are normalized, case-insensitively unique, and merged on rename. Journals are a `Journal` entity, where nil means the main journal. `DiaryEntryDailyStore` keys a day by (day, journal), so the daily merge never crosses journals; Watch, Siri, and import writes resolve the main journal. |
+| **Knowledge pages** | `KnowledgePageView.swift`, `KnowledgeMentionAggregator.swift` | A page per person, place, or topic from `PersonalKnowledgeGraph` plus a scan of started entries. It honors Forget and Rename and skips high-risk and kept-out entries. |
+| **Privacy controls** | `DiaryEntry+AIExclusion.swift`, `FridayAvailability.swift`, `FridayProfileStore`, `FridayLocalDirectory`, `JournalEraser.swift` | Per-entry `aiExclusion` is enforced at the index, evidence, Weekly, Friday learning, proactive, and saved-chat gates. `FridayAvailability` (key `offrecord_friday_enabled`) is the global switch. Friday's files live under `FridayLocal/`. `JournalEraser` posts `.offRecordDidEraseAllData` so `ContentView` rebuilds its tabs. |
 | **InsightsEngine** | `InsightsEngine.swift` | Generates insight cards from journal data. Sentiment trends, topic frequency, journaling patterns. |
 | **FridayAssistantEngine** | `FridayAssistantEngine.swift` | Core personality model with four sub-models (see below). Processes NLTagger output per entry. Serializes to JSON in Core Data (~12 KB). |
+| **FridayProfileRebuilder** | `FridayProfileRebuilder.swift` | Treats Friday's profile as derived data. After any journal store save it compares a fingerprint of started entry IDs and edit times. On a change, it relearns the profile from every entry in a scratch engine and swaps it in. High-risk entries are skipped. |
+| **Safety** | `JournalKit/Sources/JournalFoundation/JournalRiskClassifier.swift`, `GetSupportView.swift` | Every AI surface classifies text and follows `SensitiveDomainPolicy`. Support-only content is never analyzed or quoted; it gets Friday's support line and the Get Support sheet. |
 | **Semantic Memory** | `SemanticMemory.swift` | Local-only chunking, embeddings, hybrid search, index lifecycle, and evidence references. |
 | **Weekly Reflection** | `WeeklyReflectionModels.swift`, `WeeklyReflectionServices.swift`, `WeeklyReflectionController.swift` | Local weekly eligibility, deterministic report generation, safety filtering, AIState persistence, report versioning, export, and local notification scheduling. |
 | **Foundation Models Friday** | `FoundationModelsFridayResponder.swift` | Optional iOS 26 phrasing layer that validates observations against retrieved evidence. |
-| **Persistence** | `Persistence.swift` | Core Data with NSPersistentCloudKitContainer. Stores entries, synced photo attachments, audio metadata, and AI state. App Group for WidgetKit data sharing. |
+| **Persistence** | `Persistence.swift` | Core Data with NSPersistentCloudKitContainer, model version "OffRecord 3": `DiaryEntry.aiExclusion`, a `Tag` entity (Swift class `JournalTag`) many-to-many with entries, and a `Journal` entity (nil means the main journal). Stores entries, synced photo attachments, audio metadata, and AI state. App Group for WidgetKit data sharing. Deploy the CloudKit schema to production before shipping a model change. |
 | **System Discoverability** | `AppIntents.swift`, `JournalSpotlightIndexer.swift`, `OffRecordNavigationRouter.swift` | App Shortcuts, privacy-safe `JournalEntryEntity`, Core Spotlight metadata indexing, NSUserActivity prediction/search donation, and `offrecord://` route handling. |
 | **Watch Capture Import** | `WatchCaptureImporter.swift`, `AudioAttachmentStore.swift` | WatchConnectivity receiver, daily-entry import, local-only receipts, multi-audio attachment storage, and duplicate replay protection. |
 | **Watch Shared Models** | `OffRecordShared/WatchCaptureModels.swift` | `WatchCaptureEnvelope`, `WatchCaptureKind`, `WatchSyncState`, `WatchAudioManifest`, `WatchCaptureSourceSurface`, and queue policy types shared by iPhone tests and watch code. |
@@ -145,8 +160,8 @@ Friday engine (`FridayAssistantEngine.swift`) maintains four interconnected mode
 
 | Module | File | Purpose |
 |---|---|---|
-| **EncryptionService** | `EncryptionService.swift` | AES-256-GCM via CryptoKit. File format: `[DVX1 magic][salt][nonce][ciphertext+tag]` |
-| **AppLockManager** | `AppLockManager.swift` | Face ID / Touch ID via LocalAuthentication |
+| **EncryptionService** | `Packages/JournalKit/Sources/JournalSecurityKit/EncryptionService.swift` | AES-256-GCM via CryptoKit with a PBKDF2-SHA256 key (100,000 iterations). File format: `[DVX2 magic][iteration count][salt][nonce][ciphertext+tag]`. Legacy DVX1 (HKDF) backups still decrypt. |
+| **AppLockManager** | `AppLockManager.swift` (core in `JournalSecurityKit/AppLock.swift`) | Face ID / Touch ID via LocalAuthentication |
 | **ThemeManager** | `ThemeManager.swift` | 8 themes (System, Light, Sage, Lavender, Rose, Ocean, Warm, Dark) |
 | **PhotoStorageManager** | `PhotoStorageManager.swift` | On-device photo attachment storage (up to 5 per entry) |
 | **GoalManager** | `GoalManager.swift` | Journaling goals, streaks, milestones |
@@ -218,6 +233,8 @@ System-facing metadata must never include raw journal text, transcript snippets,
 - **Watch privacy** — Watch complications, Smart Stack widgets, notifications, and Recent with previews disabled must not expose journal text, transcript snippets, or audio filenames
 - **Watch import integrity** — Audio watch captures require file delivery before receipt creation; replayed transfers must be idempotent by `captureID`
 - **Evidence-first Friday** — Substantive Friday claims must cite retrieved `EvidenceReference` values or hedge/refuse
+- **Safety gate** — Questions, evidence, Go Deeper, proactive input, weekly reports, and Friday learning all pass `JournalRiskClassifier`. High-risk text is never analyzed, quoted, or asked about.
+- **Derived Friday profile** — The profile is rebuilt from entries when the journal changes and can be rebuilt from Settings; it is never edited in place
 - **Optional Foundation Models** — Availability-gated phrasing only; retrieved journal evidence remains the source of truth
 - **Privacy label** — Apple "Data Not Collected"
 
@@ -225,7 +242,7 @@ For canonical feature designs, see [SEMANTIC_MEMORY_FRIDAY.md](SEMANTIC_MEMORY_F
 
 ## Building
 
-1. Open `OffRecord/OffRecord.xcodeproj` in Xcode 15+
+1. Open `OffRecord.xcodeproj` in Xcode 26+
 2. Select the `OffRecord` scheme
 3. Build and run on an iOS 26+ Simulator or device
 4. Tests: `OffRecordTests` (unit) and `OffRecordUITests` (UI)

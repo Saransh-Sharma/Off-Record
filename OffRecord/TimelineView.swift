@@ -38,6 +38,8 @@ struct TimelineView: View {
     @State private var selectedMoodFilter: Mood? = nil
     @State private var startDate: Date? = nil
     @State private var endDate: Date? = nil
+    @State private var journalScope: JournalScope = .all
+    @State private var selectedTagID: UUID?
     @State private var isListening: Bool = false
     @State private var searchSuggestions: [FridayAssistantEngine.SearchSuggestion] = []
     @State private var semanticResults: [UUID: EvidenceReference] = [:]
@@ -85,6 +87,8 @@ struct TimelineView: View {
             selectedMoodFilter?.rawValue ?? "",
             String(startDate?.timeIntervalSinceReferenceDate ?? 0),
             String(endDate?.timeIntervalSinceReferenceDate ?? 0),
+            journalScope.signature,
+            selectedTagID?.uuidString ?? "",
             semanticSearchQuery,
             isSemanticSearching.description,
             semanticSearchAvailable.description,
@@ -229,17 +233,12 @@ struct TimelineView: View {
             }
             refreshTimelineCache()
         }
-        .background(timelineKeyboardShortcuts)
-    }
-
-    private var timelineKeyboardShortcuts: some View {
-        Button("Search") {
+        // Search Entries (⌘F) lives in the menu bar; it lands here.
+        .onChange(of: navigationRouter.wantsTimelineSearchFocus, initial: true) { _, wantsFocus in
+            guard wantsFocus else { return }
+            navigationRouter.wantsTimelineSearchFocus = false
             isSearchFocused = true
         }
-        .keyboardShortcut("f", modifiers: .command)
-        .frame(width: 0, height: 0)
-        .opacity(0)
-        .accessibilityHidden(true)
     }
 
     private func timelineList(
@@ -275,6 +274,7 @@ struct TimelineView: View {
                     #endif
 
                     if !entries.isEmpty {
+                        TimelineJournalPicker(scope: $journalScope)
                         lensPicker
                     }
 
@@ -325,9 +325,9 @@ struct TimelineView: View {
         !searchText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
     }
 
-    /// Entries not waiting on an undoable delete.
+    /// Entries in the chosen journals that aren't waiting on an undoable delete.
     private var visibleEntries: [DiaryEntry] {
-        entries.startedEntries.filter { $0.objectID != pendingDeletion?.objectID }
+        entries.startedEntries.filter { $0.objectID != pendingDeletion?.objectID && journalScope.includes($0) }
     }
 
     private var summaryTitle: String {
@@ -792,6 +792,8 @@ struct TimelineView: View {
                 }
             }
 
+            TimelineTagFilterRow(selectedTagID: $selectedTagID)
+
             HStack(spacing: 12) {
                 DateRangeButton(title: String(localized: "From", comment: "Button that sets the start date of the date filter."), date: $startDate)
                 DateRangeButton(title: String(localized: "To", comment: "Button that sets the end date of the date filter."), date: $endDate)
@@ -833,6 +835,12 @@ struct TimelineView: View {
                 if let mood = selectedMoodFilter {
                     FilterChip(label: mood.displayName, mood: mood, style: mood.readableStyle) {
                         selectedMoodFilter = nil
+                    }
+                }
+
+                if let selectedTagID {
+                    TimelineTagFilterChip(tagID: selectedTagID) {
+                        self.selectedTagID = nil
                     }
                 }
 
@@ -934,7 +942,7 @@ struct TimelineView: View {
 
     private func handleSearchTextChanged(_ newValue: String) {
         let trimmed = newValue.trimmingCharacters(in: .whitespacesAndNewlines)
-        if trimmed.count >= 2 {
+        if trimmed.count >= 2, TagSearch.hashtagQuery(trimmed) == nil {
             searchSuggestions = assistant.searchSuggestions(for: trimmed)
             scheduleSemanticSearch(trimmed)
         } else {
@@ -971,7 +979,8 @@ struct TimelineView: View {
         currentSearchActivity?.resignCurrent()
         currentSearchActivity = nil
 
-        guard trimmed.count >= 2,
+        // Tag searches stay out of Siri suggestions.
+        guard trimmed.count >= 2, TagSearch.hashtagQuery(trimmed) == nil,
               let activity = JournalSpotlightIndexer.shared.predictionActivity(
                 type: "com.singularity.offrecord.searchTimeline",
                 title: String(localized: "Search OffRecord Timeline"),
@@ -1045,13 +1054,14 @@ struct TimelineView: View {
     // MARK: - Filter Helpers
 
     private var hasActiveFilters: Bool {
-        showStarredOnly || selectedMoodFilter != nil || startDate != nil || endDate != nil
+        showStarredOnly || selectedMoodFilter != nil || selectedTagID != nil || startDate != nil || endDate != nil
     }
 
     private func clearAllFilters() {
         withOffRecordAnimation(OffRecordMotion.snappy) {
             showStarredOnly = false
             selectedMoodFilter = nil
+            selectedTagID = nil
             startDate = nil
             endDate = nil
             searchText = ""
@@ -1086,6 +1096,8 @@ struct TimelineView: View {
             guard let entryDate = entry.date else { return false }
 
             if showStarredOnly && !entry.isStarred { return false }
+            if !journalScope.includes(entry) { return false }
+            if let selectedTagID, !TagSearch.entry(entry, hasTagWithID: selectedTagID) { return false }
 
             if let moodFilter = selectedMoodFilter {
                 let entryMood = entry.value(forKey: "mood") as? String ?? ""
@@ -1103,7 +1115,12 @@ struct TimelineView: View {
 
             let searchTrimmed = searchText.trimmingCharacters(in: .whitespacesAndNewlines)
             if !searchTrimmed.isEmpty {
-                if semanticSearchQuery == searchTrimmed, !isSemanticSearching, semanticSearchAvailable, !semanticResults.isEmpty {
+                if let hashtag = TagSearch.hashtagQuery(searchTrimmed) {
+                    // "#work" searches tags only.
+                    if !TagSearch.entry(entry, matchesHashtag: hashtag) { return false }
+                } else if TagSearch.entry(entry, hasTagNamed: searchTrimmed) {
+                    // An entry tagged with exactly the search text matches as well.
+                } else if semanticSearchQuery == searchTrimmed, !isSemanticSearching, semanticSearchAvailable, !semanticResults.isEmpty {
                     guard let id = entry.id else { return false }
                     if semanticResults[id] == nil { return false }
                 } else {

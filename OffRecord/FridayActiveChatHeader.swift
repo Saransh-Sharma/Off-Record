@@ -22,9 +22,11 @@ struct FridayActiveChatHeader: View {
                     .foregroundStyle(OffRecordColor.textHeading)
                     .accessibilityAddTraits(.isHeader)
 
-                Label("On-device", systemImage: "lock.shield.fill")
+                // Says plainly that Friday is an AI, as companion-chatbot rules require.
+                Label("AI · On-device", systemImage: "lock.shield.fill")
                     .font(OffRecordTypography.labelSmall)
                     .foregroundStyle(OffRecordColor.textSage)
+                    .accessibilityLabel("AI, on-device")
             }
 
             Spacer(minLength: 0)

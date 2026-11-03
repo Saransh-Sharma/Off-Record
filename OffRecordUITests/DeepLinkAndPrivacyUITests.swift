@@ -31,6 +31,25 @@ final class DeepLinkAndPrivacyUITests: XCTestCase {
         XCTAssertTrue(userMessage.label.localizedCaseInsensitiveContains("work stress"))
     }
 
+    func testHighRiskFridayQuestionOffersSupportInsteadOfAnAnswer() throws {
+        let question = "Why do I want to hurt myself?"
+        let encodedQuestion = question.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? question
+        let app = launchRoutedApp(
+            route: "offrecord://friday?question=\(encodedQuestion)",
+            arguments: semanticMemoryArguments
+        )
+
+        let supportButton = app.buttons["getSupport.button"].firstMatch
+        XCTAssertTrue(supportButton.waitForExistence(timeout: 12))
+        XCTAssertFalse(app.descendants(matching: .any)["friday.evidenceStrength"].firstMatch.exists)
+        XCTAssertFalse(app.descendants(matching: .any)["friday.followUps"].firstMatch.exists)
+
+        supportButton.tap()
+        XCTAssertTrue(app.navigationBars["Get Support"].waitForExistence(timeout: 6))
+        XCTAssertTrue(app.descendants(matching: .any)["getSupport.emergency"].firstMatch.waitForExistence(timeout: 4))
+        XCTAssertTrue(app.descendants(matching: .any)["getSupport.directory"].firstMatch.exists)
+    }
+
     func testWeeklyReflectionCurrentDeepLinkOpensReport() throws {
         let app = launchRoutedApp(
             route: "offrecord://weekly-reflection/current",
@@ -69,7 +88,7 @@ final class DeepLinkAndPrivacyUITests: XCTestCase {
         [
             "-UITesting",
             "-WeeklyReflectionUITest"
-        ]
+        ] + weeklyReflectionClockArguments
     }
 
     private func launchRoutedApp(route: String, arguments: [String]) -> XCUIApplication {

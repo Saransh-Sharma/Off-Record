@@ -119,7 +119,8 @@ final class WidgetSnapshotExporter {
                     totalEntries: total,
                     todayKey: WidgetDayKey.key(for: now, calendar: calendar),
                     todayWordCount: todayEntries.reduce(0) { $0 + $1.startedEntryWordCount },
-                    todayHasVoice: todayEntries.contains { $0.hasStartedEntryAudio }
+                    todayHasVoice: todayEntries.contains { $0.hasStartedEntryAudio },
+                    streakRules: GoalManager.storedStreakRules()
                 )
             } catch {
                 exporterLogger.error("Widget snapshot fetch failed: \(error.localizedDescription, privacy: .public)")

@@ -10,19 +10,19 @@ name({
 })
 
 subtitle({
-  "en-US" => "Your Private AI Assistant"
+  "en-US" => "Private Journal & Mood Tracker"
 })
 
 keywords({
-  "en-US" => "diary,journal,voice,AI,private AI assistant,mood,mindfulness,private,mental health,companion,recording"
+  "en-US" => "diary,journal,voice,mood tracker,private AI assistant,private,speech to text,mindfulness,encrypted,anxiety"
 })
 
 promotional_text({
-  "en-US" => "NEW: Friday is your private AI assistant for journaling. See personality, emotion, and thought patterns evolve locally."
+  "en-US" => "Now on Mac. Friday runs on Apple's on-device model, plus Month and Year in Review, tags, journals, and imports from Day One and Apple Journal."
 })
 
 release_notes({
-  "en-US" => "Welcome to OffRecord AI Journal - your private AI voice diary with Friday.\n\n- Record diary entries with your voice\n- Apple Speech transcription with clear permission\n- Local Friday insights and mood trends\n- Watch Friday evolve as it learns about you\n- Track moods, streaks, and emotional patterns\n- 8 beautiful themes\n- Face ID security\n- Lock Screen & Home Screen widgets\n- Export your journal in multiple formats\n- Privacy-first: no developer AI servers or non-Apple AI services"
+  "en-US" => "New in v1.5:\n\n- OffRecord on Mac, with menu commands and keyboard shortcuts.\n- Friday on Apple's on-device model: with Apple Intelligence, she keeps a conversation going, looks things up in your journal, and cites the entries she used. Entries can get short titles.\n- Month in Review and Year in Review.\n- Session Prep: a summary of a date range for a session with a therapist or coach.\n- Tags, multiple journals, and a page for each person, place, and topic.\n- Import from Day One, Apple Journal, Markdown or text files, and CSV.\n- Siri can add to your journal, search it, and ask Friday. Siri gets a summary only, never quotes.\n- Journaling Suggestions on iPhone.\n- Keep Out of Friday on any entry, a switch to turn Friday off, and Erase All Data.\n- Streaks allow one rest day in any 7 days, or switch to weekly streaks.\n- iCloud sync status in Settings, and a recovery screen if your journal can't open.\n- Get Support shows your region's crisis line and works offline."
 })
 
 privacy_url "https://saransh-sharma.github.io/Off-Record/privacy.html"
@@ -31,8 +31,8 @@ marketing_url "https://saransh-sharma.github.io/Off-Record/"
 
 copyright "2026 OffRecord AI Journal"
 
-primary_category "HEALTH_AND_FITNESS"
-secondary_category "LIFESTYLE"
+primary_category "LIFESTYLE"
+secondary_category "PRODUCTIVITY"
 
 # Pricing
 price_tier 0  # Free

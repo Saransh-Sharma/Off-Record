@@ -24,6 +24,7 @@
 import Foundation
 import NaturalLanguage
 import CoreData
+import SemanticMemoryKit
 @_exported import KnowledgeGraphKit
 
 // Profile and knowledge-graph types now live in KnowledgeGraphKit.
@@ -99,16 +100,52 @@ final class FridayAssistantEngine: ObservableObject {
     @Published var behavioralPatterns = BehavioralPatterns()
     @Published var summary = FridaySummary()
 
-    // NLP
-    private let sentimentTagger = NLTagger(tagSchemes: [.sentimentScore])
-    private let entityTagger = NLTagger(tagSchemes: [.nameType, .lexicalClass])
+    // NLP (sentiment and entities come from SemanticMemoryKit's shared scorer and extractor)
     private let tokenizer = NLTokenizer(unit: .word)
     private let sentenceTokenizer = NLTokenizer(unit: .sentence)
+
+    /// Nil for a scratch engine, which learns without touching the saved profile.
+    private let profileStore: FridayProfileStore?
 
     // MARK: - Initialization
 
     private init() {
+        // UI tests and screenshots seed Friday on every launch and keep nothing on disk.
+        let arguments = ProcessInfo.processInfo.arguments
+        let isFixtureRun = arguments.contains("-UITesting") || arguments.contains("-ScreenshotMode")
+        profileStore = isFixtureRun ? nil : FridayProfileStore(legacyContext: PersistenceController.shared.container.viewContext)
         load()
+    }
+
+    private init(scratch: Void) {
+        profileStore = nil
+    }
+
+    /// An empty engine that learns without saving, so a rebuild can run off to the side.
+    static func makeScratch() -> FridayAssistantEngine {
+        FridayAssistantEngine(scratch: ())
+    }
+
+    /// Replaces this profile with `other`'s, refreshes the summary, and saves.
+    func adoptProfile(from other: FridayAssistantEngine) {
+        communicationStyle = other.communicationStyle
+        emotionalSignature = other.emotionalSignature
+        thoughtPatterns = other.thoughtPatterns
+        knowledgeGraph = other.knowledgeGraph
+        behavioralPatterns = other.behavioralPatterns
+        updateSummary()
+        save()
+    }
+
+    /// Forgets everything Friday learned and deletes the saved profile.
+    func deleteProfile() {
+        communicationStyle = CommunicationStyle()
+        emotionalSignature = EmotionalSignature()
+        thoughtPatterns = ThoughtPatterns()
+        knowledgeGraph = PersonalKnowledgeGraph()
+        behavioralPatterns = BehavioralPatterns()
+        summary = FridaySummary()
+        profileStore?.delete()
     }
 
     func resetForUITesting() {
@@ -138,101 +175,6 @@ final class FridayAssistantEngine: ObservableObject {
         updateSummary()
 
         // Persist
-        save()
-    }
-
-    /// Re-process an edited entry — updates entity labels in the knowledge graph
-    func reprocessEditedEntry(oldText: String, newText: String, mood: String?, date: Date, duration: Double) {
-        guard !newText.isEmpty else { return }
-
-        // Extract entities from old and new text to detect name changes
-        let oldEntities = extractNamedEntities(from: oldText)
-        let newEntities = extractNamedEntities(from: newText)
-
-        // Find entities that were renamed (same position/context, different text)
-        // Simple heuristic: if old had "Jhon" and new has "John", update the label
-        for oldEntity in oldEntities {
-            let oldKey = oldEntity.lowercased()
-            if knowledgeGraph.nodes[oldKey] != nil {
-                // Check if this entity is missing from new text
-                let stillPresent = newEntities.contains { $0.lowercased() == oldKey }
-                if !stillPresent {
-                    // Look for a similar new entity that could be a correction
-                    for newEntity in newEntities {
-                        let newKey = newEntity.lowercased()
-                        if knowledgeGraph.nodes[newKey] == nil && levenshteinSimilar(oldKey, newKey) {
-                            // Transfer the old node data to the new key
-                            if var node = knowledgeGraph.nodes[oldKey] {
-                                node.label = newEntity
-                                knowledgeGraph.nodes[newKey] = PersonalKnowledgeGraph.KnowledgeNode(
-                                    id: newKey,
-                                    label: newEntity,
-                                    type: node.type,
-                                    mentions: node.mentions,
-                                    firstSeen: node.firstSeen,
-                                    lastSeen: Date(),
-                                    sentimentAssociation: node.sentimentAssociation,
-                                    importance: node.importance
-                                )
-                                knowledgeGraph.nodes.removeValue(forKey: oldKey)
-                                // Update edges too
-                                for i in 0..<knowledgeGraph.edges.count {
-                                    if knowledgeGraph.edges[i].from == oldKey {
-                                        knowledgeGraph.edges[i].from = newKey
-                                    }
-                                    if knowledgeGraph.edges[i].to == oldKey {
-                                        knowledgeGraph.edges[i].to = newKey
-                                    }
-                                }
-                            }
-                            break
-                        }
-                    }
-                }
-            }
-        }
-
-        // Now do the standard processing with new text
-        processEntry(text: newText, mood: mood, date: date, duration: duration)
-    }
-
-    /// Extract named entities from text
-    private func extractNamedEntities(from text: String) -> [String] {
-        guard !text.isEmpty else { return [] }
-        var entities: [String] = []
-        entityTagger.string = text
-        entityTagger.enumerateTags(in: text.startIndex..<text.endIndex, unit: .word, scheme: .nameType, options: [.omitWhitespace, .joinNames]) { tag, range in
-            let entity = String(text[range])
-            if entity.count > 1, tag == .personalName || tag == .placeName || tag == .organizationName {
-                entities.append(entity)
-            }
-            return true
-        }
-        return entities
-    }
-
-    /// Check if two strings are similar enough to be a typo correction (Levenshtein distance <= 2)
-    private func levenshteinSimilar(_ a: String, _ b: String) -> Bool {
-        let aChars = Array(a)
-        let bChars = Array(b)
-        let m = aChars.count, n = bChars.count
-        guard abs(m - n) <= 2 else { return false }
-        var dp = Array(repeating: Array(repeating: 0, count: n + 1), count: m + 1)
-        for i in 0...m { dp[i][0] = i }
-        for j in 0...n { dp[0][j] = j }
-        for i in 1...m {
-            for j in 1...n {
-                dp[i][j] = aChars[i-1] == bChars[j-1] ? dp[i-1][j-1] : min(dp[i-1][j-1], dp[i-1][j], dp[i][j-1]) + 1
-            }
-        }
-        return dp[m][n] <= 2 && dp[m][n] > 0
-    }
-
-    /// Process a chat message (lighter analysis)
-    func processChatMessage(_ text: String) {
-        guard !text.isEmpty else { return }
-        analyzeCommunicationStyle(text)
-        analyzeEmotionalSignature(text, mood: nil, date: Date())
         save()
     }
 
@@ -294,7 +236,7 @@ final class FridayAssistantEngine: ObservableObject {
         communicationStyle.directness = lerp(communicationStyle.directness, directnessScore, alpha)
 
         // Track signature words (filter stopwords and common words)
-        let significantWords = words.filter { $0.count > 3 && !Self.commonWords.contains($0.lowercased()) }
+        let significantWords = words.filter { $0.count > 3 && !EntityExtractor.commonWords.contains($0.lowercased()) }
         for word in significantWords {
             communicationStyle.signatureWords[word.lowercased(), default: 0] += 1
         }
@@ -314,9 +256,7 @@ final class FridayAssistantEngine: ObservableObject {
         let alpha = 1.0 / n
 
         // Sentiment
-        sentimentTagger.string = text
-        let (tag, _) = sentimentTagger.tag(at: text.startIndex, unit: .paragraph, scheme: .sentimentScore)
-        let sentiment = Double(tag?.rawValue ?? "0") ?? 0
+        let sentiment = SentimentScorer.score(text)
 
         // Update baseline
         emotionalSignature.baselineValence = lerp(emotionalSignature.baselineValence, sentiment, alpha)
@@ -488,18 +428,15 @@ final class FridayAssistantEngine: ObservableObject {
     private func updateKnowledgeGraph(_ text: String, date: Date) {
         let sentiment = getSentiment(text)
 
-        // Extract entities
-        entityTagger.string = text
+        // Extract entities (every mention counts, so repeats are kept)
         var extractedPeople: [String] = []
         var extractedPlaces: [String] = []
         var extractedTopics: [String] = []
 
-        entityTagger.enumerateTags(in: text.startIndex..<text.endIndex, unit: .word, scheme: .nameType, options: [.omitWhitespace, .joinNames]) { tag, range in
-            let entity = String(text[range])
-            guard entity.count > 1 else { return true }
-
-            switch tag {
-            case .personalName:
+        for occurrence in EntityExtractor.nameOccurrences(in: text) {
+            let entity = occurrence.text
+            switch occurrence.kind {
+            case .person:
                 // Validate: filter out places, festivals, objects mis-tagged as people
                 if isLikelyNotPerson(entity) {
                     // Re-classify as place or topic based on suffix
@@ -517,16 +454,13 @@ final class FridayAssistantEngine: ObservableObject {
                     extractedPeople.append(entity)
                     knowledgeGraph.addOrUpdate(id: entity, label: entity, type: .person, sentiment: sentiment)
                 }
-            case .placeName:
+            case .place:
                 extractedPlaces.append(entity)
                 knowledgeGraph.addOrUpdate(id: entity, label: entity, type: .place, sentiment: sentiment)
-            case .organizationName:
+            case .organization:
                 knowledgeGraph.addOrUpdate(id: entity, label: entity, type: .topic, sentiment: sentiment)
                 extractedTopics.append(entity)
-            default:
-                break
             }
-            return true
         }
 
         // Extract topic words
@@ -793,24 +727,11 @@ final class FridayAssistantEngine: ObservableObject {
     }
 
     private func extractTopicWords(_ text: String) -> [String] {
-        var topics: [String] = []
-        entityTagger.string = text
-        entityTagger.enumerateTags(in: text.startIndex..<text.endIndex, unit: .word, scheme: .lexicalClass, options: [.omitWhitespace, .omitPunctuation]) { tag, range in
-            if tag == .noun {
-                let word = String(text[range]).lowercased()
-                if word.count > 3 && !Self.commonWords.contains(word) {
-                    topics.append(word)
-                }
-            }
-            return true
-        }
-        return topics
+        EntityExtractor.nouns(in: text, minimumLength: 4, excluding: EntityExtractor.commonWords)
     }
 
     private func getSentiment(_ text: String) -> Double {
-        sentimentTagger.string = text
-        let (tag, _) = sentimentTagger.tag(at: text.startIndex, unit: .paragraph, scheme: .sentimentScore)
-        return Double(tag?.rawValue ?? "0") ?? 0
+        SentimentScorer.score(text)
     }
 
     private func lerp(_ from: Double, _ to: Double, _ t: Double) -> Double {
@@ -819,68 +740,31 @@ final class FridayAssistantEngine: ObservableObject {
 
     // MARK: - Persistence
 
-    private struct FridayPayload: Codable {
-        var communicationStyle: CommunicationStyle
-        var emotionalSignature: EmotionalSignature
-        var thoughtPatterns: ThoughtPatterns
-        var knowledgeGraph: PersonalKnowledgeGraph
-        var behavioralPatterns: BehavioralPatterns
-        var summary: FridaySummary
-    }
-
+    // Saved by FridayProfileStore in a protected local file that never syncs.
     private func save() {
-        let payload = FridayPayload(
+        guard let profileStore else { return }
+        profileStore.save(FridayProfilePayload(
             communicationStyle: communicationStyle,
             emotionalSignature: emotionalSignature,
             thoughtPatterns: thoughtPatterns,
             knowledgeGraph: knowledgeGraph,
             behavioralPatterns: behavioralPatterns,
             summary: summary
-        )
-        guard let data = try? JSONEncoder().encode(payload) else { return }
-
-        let context = PersistenceController.shared.container.newBackgroundContext()
-        context.perform {
-            let request = NSFetchRequest<AIState>(entityName: "AIState")
-            request.predicate = NSPredicate(format: "type == %@", "friday_assistant")
-            let existing = try? context.fetch(request).first
-
-            let state = existing ?? AIState(context: context)
-            if existing == nil {
-                state.id = UUID()
-                state.type = "friday_assistant"
-            }
-            state.payload = data
-            state.updatedAt = Date()
-            try? context.save()
-        }
+        ))
     }
 
     private func load() {
-        let context = PersistenceController.shared.container.viewContext
-        let request = NSFetchRequest<AIState>(entityName: "AIState")
-        request.predicate = NSPredicate(format: "type IN %@", ["friday_assistant", "digital_twin"])
-        request.sortDescriptors = [
-            NSSortDescriptor(keyPath: \AIState.updatedAt, ascending: false)
-        ]
-
-        if let state = try? context.fetch(request).first, let data = state.payload {
-            let decoder = JSONDecoder()
-            if let payload = try? decoder.decode(FridayPayload.self, from: data) {
-                communicationStyle = payload.communicationStyle
-                emotionalSignature = payload.emotionalSignature
-                thoughtPatterns = payload.thoughtPatterns
-                knowledgeGraph = payload.knowledgeGraph
-                behavioralPatterns = payload.behavioralPatterns
-                summary = payload.summary
-                // The snapshot sentences are derived copy, so rebuild them from the loaded
-                // models; otherwise a saved summary keeps old wording until the next entry.
-                updateSummary()
-                if state.type == "digital_twin" {
-                    save()
-                }
-                return
-            }
+        if let payload = profileStore?.load() {
+            communicationStyle = payload.communicationStyle
+            emotionalSignature = payload.emotionalSignature
+            thoughtPatterns = payload.thoughtPatterns
+            knowledgeGraph = payload.knowledgeGraph
+            behavioralPatterns = payload.behavioralPatterns
+            summary = payload.summary
+            // The snapshot sentences are derived copy, so rebuild them from the loaded
+            // models; otherwise a saved summary keeps old wording until the next entry.
+            updateSummary()
+            return
         }
 
         // One-time migration from UserDefaults
@@ -914,20 +798,4 @@ final class FridayAssistantEngine: ObservableObject {
         f.dateFormat = "yyyy-'W'ww"
         return f
     }()
-
-    private static let commonWords: Set<String> = [
-        "the", "a", "an", "and", "or", "but", "in", "on", "at", "to", "for",
-        "of", "with", "by", "from", "as", "is", "was", "are", "were", "been",
-        "be", "have", "has", "had", "do", "does", "did", "will", "would",
-        "could", "should", "may", "might", "must", "shall", "can", "need",
-        "this", "that", "these", "those", "i", "you", "he", "she", "it",
-        "we", "they", "what", "which", "who", "when", "where", "why", "how",
-        "all", "each", "every", "both", "few", "more", "most", "other",
-        "some", "such", "no", "nor", "not", "only", "own", "same", "so",
-        "than", "too", "very", "just", "also", "now", "here", "there",
-        "about", "like", "really", "much", "still", "well", "back", "even",
-        "then", "thing", "things", "know", "think", "want", "get", "got",
-        "going", "make", "made", "come", "came", "take", "took", "give",
-        "gave", "tell", "told", "say", "said", "good", "time", "day"
-    ]
 }

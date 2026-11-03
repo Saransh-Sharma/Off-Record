@@ -6,13 +6,13 @@
 //  feel personal but reveal nothing private: names of people are hidden from
 //  shared images unless the person explicitly opts in.
 //
-//  Built from existing data in FridayAssistantEngine, LocalAIEngine, and
-//  raw diary entries.
+//  Built from existing data in FridayAssistantEngine and the entries
+//  themselves.
 //
 
 import CoreData
 import Foundation
-import NaturalLanguage
+import SemanticMemoryKit
 
 // MARK: - Shareable Insight Model
 
@@ -69,17 +69,10 @@ enum ShareableInsightPrivacy {
 
     /// Personal names that NaturalLanguage finds in `texts`.
     static func detectedNames(in texts: [String]) -> [String] {
-        let tagger = NLTagger(tagSchemes: [.nameType])
         var names: [String] = []
         for text in texts where !text.isEmpty {
-            tagger.string = text
-            let options: NLTagger.Options = [.omitWhitespace, .omitPunctuation, .joinNames]
-            tagger.enumerateTags(in: text.startIndex..<text.endIndex, unit: .word, scheme: .nameType, options: options) { tag, range in
-                if tag == .personalName {
-                    let name = String(text[range])
-                    if name.count > 1, !names.contains(name) { names.append(name) }
-                }
-                return true
+            for name in EntityExtractor.personalNames(in: text) where !names.contains(name) {
+                names.append(name)
             }
         }
         return names
@@ -155,8 +148,6 @@ struct ShareableInsightGenerator {
 
         guard weekEntries.count >= 3 else { return [] }
 
-        let profile = LocalAIEngine.shared.userProfile
-
         var insights: [ShareableInsight] = []
 
         // Try each generator, collect all, then pick the best 3
@@ -174,7 +165,7 @@ struct ShareableInsightGenerator {
         if let insight = dayOfWeekMoodInsight(weekEntries: weekEntries) {
             candidates.append(insight)
         }
-        if let insight = topicAvoidanceInsight(weekEntries: weekEntries, profile: profile) {
+        if let insight = topicAvoidanceInsight(weekEntries: weekEntries) {
             candidates.append(insight)
         }
         if let insight = entryLengthEmotionInsight(weekEntries: weekEntries) {
@@ -243,10 +234,7 @@ struct ShareableInsightGenerator {
     }
 
     private static func sentiment(of text: String) -> Double? {
-        let tagger = NLTagger(tagSchemes: [.sentimentScore])
-        tagger.string = text
-        let (tag, _) = tagger.tag(at: text.startIndex, unit: .paragraph, scheme: .sentimentScore)
-        return tag.flatMap { Double($0.rawValue) }
+        SentimentScorer.languageScore(for: text)
     }
 
     // MARK: - Insight Generators
@@ -274,29 +262,21 @@ struct ShareableInsightGenerator {
 
     /// "You mentioned Sarah 8 times this week."
     private static func personSentimentInsight(weekEntries: [DiaryEntry]) -> ShareableInsight? {
-        let tagger = NLTagger(tagSchemes: [.nameType])
         var personSentiments: [String: (count: Int, totalSentiment: Double, entries: [DiaryEntry])] = [:]
 
         for entry in weekEntries {
             guard let text = entry.text, !text.isEmpty else { continue }
-            tagger.string = text
-            let options: NLTagger.Options = [.omitWhitespace, .omitPunctuation, .joinNames]
             let entrySentiment = sentiment(of: text) ?? 0
 
-            tagger.enumerateTags(in: text.startIndex..<text.endIndex, unit: .word, scheme: .nameType, options: options) { tag, range in
-                if tag == .personalName {
-                    let name = String(text[range])
-                    if name.count > 1 {
-                        var existing = personSentiments[name] ?? (count: 0, totalSentiment: 0, entries: [])
-                        existing.count += 1
-                        existing.totalSentiment += entrySentiment
-                        if !existing.entries.contains(where: { $0.objectID == entry.objectID }) {
-                            existing.entries.append(entry)
-                        }
-                        personSentiments[name] = existing
-                    }
+            for occurrence in EntityExtractor.nameOccurrences(in: text) where occurrence.kind == .person {
+                let name = occurrence.text
+                var existing = personSentiments[name] ?? (count: 0, totalSentiment: 0, entries: [])
+                existing.count += 1
+                existing.totalSentiment += entrySentiment
+                if !existing.entries.contains(where: { $0.objectID == entry.objectID }) {
+                    existing.entries.append(entry)
                 }
-                return true
+                personSentiments[name] = existing
             }
         }
 
@@ -431,17 +411,18 @@ struct ShareableInsightGenerator {
     }
 
     /// "You haven't mentioned [topic] this week."
-    private static func topicAvoidanceInsight(weekEntries: [DiaryEntry], profile: UserProfile) -> ShareableInsight? {
+    private static func topicAvoidanceInsight(weekEntries: [DiaryEntry]) -> ShareableInsight? {
         let weekText = weekEntries.compactMap { $0.text }.joined(separator: " ").lowercased()
 
-        // Find top historical topics that are absent this week
-        let topHistorical = profile.commonTopics
-            .sorted { $0.value > $1.value }
-            .prefix(5)
+        // Find Friday's most-mentioned topics that are absent this week
+        let topHistorical = FridayAssistantEngine.shared.knowledgeGraph
+            .fridayVisibleNodes(ofType: .topic, limit: 5)
+            .sorted { $0.mentions > $1.mentions }
+            // The id is the name as written in entries; the label honors any rename.
+            .map { (match: $0.id, topic: $0.label, count: $0.mentions) }
 
-        for (topic, count) in topHistorical where count >= 5 {
-            let lowered = topic.lowercased()
-            if !weekText.contains(lowered) {
+        for (match, topic, count) in topHistorical where count >= 5 {
+            if !weekText.contains(match) {
                 return ShareableInsight(
                     headline: String(localized: "\u{201C}\(topic)\u{201D} didn’t come up this week."),
                     subtext: String(localized: "It used to come up often."),
@@ -657,24 +638,11 @@ struct ShareableInsightGenerator {
 
     /// "Your #1 topic this week: work."
     private static func topConcernInsight(weekEntries: [DiaryEntry]) -> ShareableInsight? {
-        let tagger = NLTagger(tagSchemes: [.lexicalClass])
         var topicEntries: [String: [DiaryEntry]] = [:]
 
         for entry in weekEntries {
             guard let text = entry.text, !text.isEmpty else { continue }
-            tagger.string = text
-            var entryTopics: Set<String> = []
-
-            let options: NLTagger.Options = [.omitWhitespace, .omitPunctuation]
-            tagger.enumerateTags(in: text.startIndex..<text.endIndex, unit: .word, scheme: .lexicalClass, options: options) { tag, range in
-                if tag == .noun {
-                    let word = String(text[range]).lowercased()
-                    if word.count > 3 && !LocalAIEngine.shared.isStopWord(word) {
-                        entryTopics.insert(word)
-                    }
-                }
-                return true
-            }
+            let entryTopics = Set(EntityExtractor.nouns(in: text, minimumLength: 4))
 
             for topic in entryTopics {
                 topicEntries[topic, default: []].append(entry)
@@ -704,13 +672,5 @@ struct ShareableInsightGenerator {
             supportingEntryIDs: evidence(topTopic.value),
             personNames: ShareableInsightPrivacy.isLikelyPersonName(topic) ? [topic] : []
         )
-    }
-}
-
-// MARK: - LocalAIEngine Extension
-
-extension LocalAIEngine {
-    func isStopWord(_ word: String) -> Bool {
-        Self.stopWords.contains(word)
     }
 }

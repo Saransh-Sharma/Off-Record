@@ -1,6 +1,7 @@
 import CoreData
 import Foundation
-import NaturalLanguage
+import SemanticMemoryKit
+import JournalFoundation
 import os.log
 import UserNotifications
 
@@ -20,7 +21,7 @@ enum WeeklyReflectionEligibilityService {
         return calendar
     }
 
-    static func period(containing date: Date = Date(), calendar baseCalendar: Calendar = .current) -> WeeklyReflectionPeriod {
+    static func period(containing date: Date = AppClock.now, calendar baseCalendar: Calendar = .current) -> WeeklyReflectionPeriod {
         let calendar = calendar(from: baseCalendar)
         let components = calendar.dateComponents([.yearForWeekOfYear, .weekOfYear], from: date)
         let start = calendar.date(from: components).map { calendar.startOfDay(for: $0) } ?? calendar.startOfDay(for: date)
@@ -44,30 +45,27 @@ enum WeeklyReflectionEligibilityService {
 }
 
 enum WeeklyReflectionSafetyFilter {
-    private static let highRiskTerms = [
-        "kill myself", "suicide", "end my life", "self harm", "self-harm", "hurt myself"
-    ]
-
-    private static let forbiddenOutputTerms = [
+    /// Phrases no reflection or other generated text may contain.
+    static let forbiddenOutputTerms = [
         "you are depressed", "you have depression", "you are anxious", "you have anxiety",
         "burnout diagnosis", "treatment plan", "stop taking medication",
         "you are burned out", "you have burnout"
     ]
 
+    /// The forbidden phrases found in `text`, for checking model output.
+    static func forbiddenTermViolations(in text: String) -> [String] {
+        let lowered = text.lowercased()
+        return forbiddenOutputTerms.filter(lowered.contains)
+    }
+
     static func isHighRisk(_ entry: WeeklyReflectionEntrySnapshot) -> Bool {
-        let text = entry.text.lowercased()
-        return highRiskTerms.contains(where: text.contains)
+        JournalRiskClassifier.level(for: entry.text) == .highRiskExcluded
     }
 
     static func safetyLevel(for entries: [WeeklyReflectionEntrySnapshot]) -> WeeklyReflectionSafetyLevel {
-        if entries.contains(where: isHighRisk) {
-            return .highRiskExcluded
-        }
-        let joined = entries.map(\.text).joined(separator: " ").lowercased()
-        if joined.contains("overwhelmed") || joined.contains("exhausted") || joined.contains("panic") {
-            return .mildDistress
-        }
-        return .none
+        // Reports store the weekly ladder, which shares the shared ladder's cases.
+        let level = JournalRiskClassifier.level(forAll: entries.map(\.text))
+        return WeeklyReflectionSafetyLevel(rawValue: level.rawValue) ?? .none
     }
 
     static func sanitized(_ text: String) -> String {
@@ -94,17 +92,26 @@ enum WeeklyReflectionGenerationService {
         entries allEntries: [WeeklyReflectionEntrySnapshot],
         hiddenEntryIds: [UUID] = [],
         previousVersion: WeeklyReflectionReport? = nil,
-        now: Date = Date()
+        leftOutEntryIds: Set<UUID> = [],
+        now: Date = AppClock.now
     ) -> WeeklyReflectionReport {
         let hiddenSet = Set(hiddenEntryIds)
         let periodEntries = allEntries
-            .filter { period.contains($0.date) && !hiddenSet.contains($0.id) }
+            .filter { period.contains($0.date) && !hiddenSet.contains($0.id) && $0.aiExclusion.permitsReflection }
             .sorted { $0.date < $1.date }
         let eligibility = WeeklyReflectionEligibilityService.evaluate(entries: periodEntries)
-        let highRiskIDs = Set(periodEntries.filter(WeeklyReflectionSafetyFilter.isHighRisk).map(\.id))
-        let insightEntries = periodEntries.filter { !highRiskIDs.contains($0.id) }
+        // Entries kept out of Friday count toward totals and mood, but are never read, quoted, or themed.
+        let readableEntries = periodEntries.filter { $0.aiExclusion.permitsReflectionQuotes }
+        let privateEntryCount = periodEntries.count - readableEntries.count
+        let highRiskIDs = Set(readableEntries.filter(WeeklyReflectionSafetyFilter.isHighRisk).map(\.id))
+        let insightEntries = readableEntries.filter { !highRiskIDs.contains($0.id) }
+        let arcEntries = periodEntries.filter { entry in
+            guard !highRiskIDs.contains(entry.id) else { return false }
+            return entry.aiExclusion.permitsReflectionQuotes || hasMood(entry)
+        }
+        // Entries left out of Weekly Reflection aren't deleted, so they aren't reported as unavailable.
         let unavailable = previousVersion?.includedEntryIds.filter { id in
-            !allEntries.contains(where: { $0.id == id })
+            !allEntries.contains(where: { $0.id == id }) && !leftOutEntryIds.contains(id)
         } ?? []
 
         if eligibility.kind == .empty {
@@ -124,11 +131,12 @@ enum WeeklyReflectionGenerationService {
                 wins: [],
                 frictions: [],
                 questions: [String(localized: "What’s one small moment worth writing down this week?")],
-                safetyLevel: .none
+                safetyLevel: .none,
+                privateEntryCount: privateEntryCount
             )
         }
 
-        let safetyLevel = WeeklyReflectionSafetyFilter.safetyLevel(for: periodEntries)
+        let safetyLevel = WeeklyReflectionSafetyFilter.safetyLevel(for: readableEntries)
         if safetyLevel == .highRiskExcluded, insightEntries.isEmpty {
             return baseReport(
                 period: period,
@@ -146,20 +154,44 @@ enum WeeklyReflectionGenerationService {
                 wins: [String(localized: "You kept writing through a hard week.")],
                 frictions: [String(localized: "I left the heaviest entries out of this reflection.")],
                 questions: [String(localized: "Who could you lean on this week?"), String(localized: "What’s one small thing that would make next week easier?")],
-                safetyLevel: safetyLevel
+                safetyLevel: safetyLevel,
+                privateEntryCount: privateEntryCount
+            )
+        }
+
+        let entryDays = Set(periodEntries.map { Calendar.current.startOfDay(for: $0.date) }).count
+        let daysWritten = String(AttributedString(localized: "You wrote on ^[\(entryDays) day](inflect: true).").characters)
+        if insightEntries.isEmpty {
+            // Everything readable this week is kept out of Friday: totals and mood only.
+            let arc = makeEmotionalArc(entries: arcEntries)
+            return baseReport(
+                period: period,
+                eligibility: eligibility.kind,
+                status: .ready,
+                entries: periodEntries,
+                hiddenEntryIds: hiddenEntryIds,
+                unavailableEntryIds: unavailable,
+                previousVersion: previousVersion,
+                now: now,
+                heroSentence: String(localized: "A short look back at your week."),
+                summary: summaryText(entries: periodEntries, topics: [], arc: arc, eligibility: eligibility, safetyLevel: .none, privateEntryCount: privateEntryCount),
+                emotionalArc: arc,
+                themes: [],
+                wins: [daysWritten],
+                frictions: [],
+                questions: makeQuestions(topics: [], eligibility: eligibility.kind),
+                safetyLevel: .none,
+                privateEntryCount: privateEntryCount
             )
         }
 
         let topics = topTopics(in: insightEntries, limit: eligibility.kind == .full ? 4 : 2)
         let themes = makeThemes(topics: topics, entries: insightEntries, limit: eligibility.kind == .full ? 4 : 2)
-        let arc = makeEmotionalArc(entries: insightEntries)
-        let entryDays = Set(periodEntries.map { Calendar.current.startOfDay(for: $0.date) }).count
+        let arc = makeEmotionalArc(entries: arcEntries)
         let hero = heroSentence(for: eligibility.kind, topics: topics, arc: arc, safetyLevel: safetyLevel)
-        let summary = summaryText(entries: periodEntries, topics: topics, arc: arc, eligibility: eligibility, safetyLevel: safetyLevel)
+        let summary = summaryText(entries: periodEntries, topics: topics, arc: arc, eligibility: eligibility, safetyLevel: safetyLevel, privateEntryCount: privateEntryCount)
 
-        var wins = [
-            String(AttributedString(localized: "You wrote on ^[\(entryDays) day](inflect: true).").characters)
-        ]
+        var wins = [daysWritten]
         if insightEntries.contains(where: { $0.sentiment > 0.25 }) {
             wins.append(String(localized: "Some entries were upbeat or grateful."))
         }
@@ -197,8 +229,15 @@ enum WeeklyReflectionGenerationService {
             wins: wins,
             frictions: frictions,
             questions: questions,
-            safetyLevel: safetyLevel
+            safetyLevel: safetyLevel,
+            privateEntryCount: privateEntryCount
         )
+    }
+
+    /// `report` with its cover line and summary phrased on-device when the week
+    /// allows it (see `WeeklyReflectionNarrator`); the facts stay deterministic.
+    static func narrated(_ report: WeeklyReflectionReport, entries: [WeeklyReflectionEntrySnapshot]) async -> WeeklyReflectionReport {
+        await WeeklyReflectionNarrator.narrated(report, entries: entries)
     }
 
     static func validate(_ report: WeeklyReflectionReport) -> Bool {
@@ -234,7 +273,8 @@ enum WeeklyReflectionGenerationService {
         wins: [String],
         frictions: [String],
         questions: [String],
-        safetyLevel: WeeklyReflectionSafetyLevel
+        safetyLevel: WeeklyReflectionSafetyLevel,
+        privateEntryCount: Int
     ) -> WeeklyReflectionReport {
         let report = WeeklyReflectionReport(
             id: UUID(),
@@ -248,7 +288,7 @@ enum WeeklyReflectionGenerationService {
             includedEntryIds: entries.map(\.id),
             hiddenEntryIds: hiddenEntryIds,
             unavailableEntryIds: unavailableEntryIds,
-            privateEntryCount: 0,
+            privateEntryCount: privateEntryCount,
             inputSignature: inputSignature(for: entries, hiddenEntryIds: hiddenEntryIds),
             heroSentence: WeeklyReflectionSafetyFilter.sanitized(heroSentence),
             summary: WeeklyReflectionSafetyFilter.sanitized(summary),
@@ -294,8 +334,13 @@ enum WeeklyReflectionGenerationService {
 
     static func inputSignature(for entries: [WeeklyReflectionEntrySnapshot], hiddenEntryIds: [UUID] = []) -> String {
         let entryPart = entries
+            .filter { $0.aiExclusion.permitsReflection }
             .sorted { $0.id.uuidString < $1.id.uuidString }
-            .map { "\($0.id.uuidString):\($0.updatedAt.timeIntervalSinceReferenceDate):\($0.wordCount)" }
+            .map { entry in
+                // Included entries keep their old signature, so existing reports stay current.
+                let exclusion = entry.aiExclusion == .included ? "" : ":\(entry.aiExclusion.rawValue)"
+                return "\(entry.id.uuidString):\(entry.updatedAt.timeIntervalSinceReferenceDate):\(entry.wordCount)\(exclusion)"
+            }
             .joined(separator: "|")
         let hiddenPart = hiddenEntryIds.map(\.uuidString).sorted().joined(separator: "|")
         return "\(entryPart)#hidden:\(hiddenPart)"
@@ -330,7 +375,8 @@ enum WeeklyReflectionGenerationService {
         topics: [String],
         arc: WeeklyReflectionEmotionalArc?,
         eligibility: WeeklyReflectionEligibility,
-        safetyLevel: WeeklyReflectionSafetyLevel
+        safetyLevel: WeeklyReflectionSafetyLevel,
+        privateEntryCount: Int
     ) -> String {
         var parts: [String] = []
         if !topics.isEmpty {
@@ -343,7 +389,16 @@ enum WeeklyReflectionGenerationService {
         if safetyLevel == .highRiskExcluded {
             parts.append(String(localized: "Some entries were heavy, so I’ve kept this brief."))
         }
+        if privateEntryCount > 0 {
+            parts.append(String(AttributedString(localized: "I only counted the ^[\(privateEntryCount) entry](inflect: true) you kept out of Friday.").characters))
+        }
         return parts.joined(separator: " ")
+    }
+
+    /// Whether an entry has a mood that says something about the day.
+    private static func hasMood(_ entry: WeeklyReflectionEntrySnapshot) -> Bool {
+        guard let mood = entry.mood?.trimmingCharacters(in: .whitespacesAndNewlines), !mood.isEmpty else { return false }
+        return mood != Mood.none.rawValue
     }
 
     /// Stored English identifiers; `WeeklyReflectionEmotionalArc.localizedLabel` is the display form.
@@ -408,7 +463,7 @@ enum WeeklyReflectionGenerationService {
         return Array(questions.prefix(eligibility == .full ? 3 : 2))
     }
 
-    private static func topTopics(in entries: [WeeklyReflectionEntrySnapshot], limit: Int) -> [String] {
+    static func topTopics(in entries: [WeeklyReflectionEntrySnapshot], limit: Int) -> [String] {
         let stopWords: Set<String> = [
             "about", "after", "again", "also", "and", "because", "been", "but", "could", "from",
             "have", "into", "just", "like", "more", "much", "that", "the", "this", "was", "were",
@@ -433,35 +488,26 @@ enum WeeklyReflectionGenerationService {
         var names: [String: String] = [:]
         // Themes are things people write about, so only nouns count; verbs like "gave" and
         // "feels" otherwise top the list and read as nonsense ("mostly about feels").
-        let tagger = NLTagger(tagSchemes: [.lexicalClass, .nameType])
-        let options: NLTagger.Options = [.omitWhitespace, .omitPunctuation]
-        let nameTags: Set<NLTag> = [.personalName, .placeName, .organizationName]
         for entry in entries {
-            let text = entry.text
-            tagger.string = text
-            if let language = NLLanguageRecognizer.dominantLanguage(for: text) {
-                tagger.setLanguage(language, range: text.startIndex..<text.endIndex)
-            }
-            tagger.enumerateTags(in: text.startIndex..<text.endIndex, unit: .word, scheme: .lexicalClass, options: options) { tag, range in
-                let original = String(text[range]).trimmingCharacters(in: CharacterSet.alphanumerics.inverted)
+            for word in EntityExtractor.words(in: entry.text) {
+                let original = word.text
                 let token = original.lowercased()
                 guard token.count >= 4, !stopWords.contains(token), token.rangeOfCharacter(from: .decimalDigits) == nil else {
-                    return true
+                    continue
                 }
-                if tag != nil { sawLexicalClass = true }
-                let isMidSentenceName = original.first?.isUppercase == true && Self.isMidSentence(range.lowerBound, in: text)
+                if word.lexicalKind != nil { sawLexicalClass = true }
+                let isMidSentenceName = original.first?.isUppercase == true && word.isMidSentence
                 let looksLikeVerb = token.count >= 5 && (token.hasSuffix("ed") || token.hasSuffix("ing"))
                 if !fallbackStopWords.contains(token), isMidSentenceName || !looksLikeVerb {
                     fallbackCounts[token, default: 0] += 1
                     if isMidSentenceName { fallbackNames[token] = original }
                 }
-                guard tag == .noun else { return true }
+                guard word.lexicalKind == .noun else { continue }
                 counts[token, default: 0] += 1
                 // Keep names capitalized ("Sarah"), but not ordinary nouns that start a sentence.
-                if let nameTag = tagger.tag(at: range.lowerBound, unit: .word, scheme: .nameType).0, nameTags.contains(nameTag) {
+                if word.nameKind != nil {
                     names[token] = original
                 }
-                return true
             }
         }
         // Without a part-of-speech model (some simulators), fall back to plain words minus common verbs.
@@ -475,18 +521,6 @@ enum WeeklyReflectionGenerationService {
         }
         .prefix(limit)
         .map { names[$0.key] ?? $0.key }
-    }
-
-    /// Whether a word sits inside a sentence rather than starting one, so a capital marks a name.
-    private static func isMidSentence(_ index: String.Index, in text: String) -> Bool {
-        var cursor = index
-        while cursor > text.startIndex {
-            cursor = text.index(before: cursor)
-            let character = text[cursor]
-            if character.isWhitespace { continue }
-            return !".!?\"“”".contains(character)
-        }
-        return false
     }
 }
 

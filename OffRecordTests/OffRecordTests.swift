@@ -176,7 +176,7 @@ struct SystemDiscoverabilityTests {
 
         let entity = JournalEntryEntity(metadata: metadata)
 
-        #expect(entity.title.contains("Journal Entry"))
+        #expect(entity.displayTitle.contains("Journal Entry"))
         #expect(entity.subtitle.contains("Happy mood"))
         #expect(entity.subtitle.contains("42 words"))
         #expect(entity.subtitle.contains("recording"))
@@ -562,7 +562,8 @@ struct DiaryEntryDailyStoreTests {
         #expect(merged.objectID == primary.objectID)
         #expect(merged.text?.contains("First") == true)
         #expect(merged.text?.contains("Second") == true)
-        #expect(merged.mood == Mood.happy.rawValue)
+        // The most recently updated mood wins, the same rule widgets use.
+        #expect(merged.mood == Mood.calm.rawValue)
         #expect(merged.audioFileName == "voice.m4a")
         #expect(merged.isStarred)
         #expect(photo.entry?.objectID == primary.objectID)
@@ -621,7 +622,6 @@ struct DiaryEntryDailyStoreTests {
     @Test func backfillingLegacyBlocksIsIdempotent() throws {
         let context = PersistenceController(inMemory: true).container.viewContext
         let entry = makeEntry(in: context, date: makeDate(day: 25, hour: 8), text: "Legacy text", mood: Mood.happy.rawValue)
-        let originalUpdatedAt = try #require(entry.updatedAt)
         let photo = PhotoAttachment(context: context)
         photo.id = UUID()
         photo.createdAt = makeDate(day: 25, hour: 10)
@@ -638,6 +638,9 @@ struct DiaryEntryDailyStoreTests {
             in: context
         )
         try context.save()
+        // Attaching audio is a real edit, so compare against the timestamp
+        // backfill starts from: backfill itself must not touch it.
+        let originalUpdatedAt = try #require(entry.updatedAt)
 
         JournalBlockTimelineStore.backfillBlocksIfNeeded(for: entry, in: context)
         JournalBlockTimelineStore.backfillBlocksIfNeeded(for: entry, in: context)
@@ -1034,7 +1037,8 @@ struct SemanticMemoryTests {
         #expect(VectorMath.cosine(lhs, unrelated) < 0.01)
     }
 
-    @Test func sentenceEmbeddingProviderProducesStableVectors() async throws {
+    @Test(.enabled(if: NaturalLanguageAssets.hasSentenceEmbeddings, "Needs Apple's sentence embeddings"))
+    func sentenceEmbeddingProviderProducesStableVectors() async throws {
         let provider = NLSentenceEmbeddingProvider()
         let embedded = try await provider.embedding(
             for: "Work pressure felt lighter after a long walk.",
@@ -1588,7 +1592,8 @@ struct ProactiveReflectionTests {
         #expect(insights.first?.evidence.contains { $0.role == .baseline } == true)
     }
 
-    @Test func quietEntityUsesBaselineEvidenceOnly() {
+    @Test(.enabled(if: NaturalLanguageAssets.tagsNames, "Needs Apple's name-tagging data"))
+    func quietEntityUsesBaselineEvidenceOnly() {
         let now = Date(timeIntervalSince1970: 1_800_000_000)
         let entries = [
             makeReflectionEntry(daysAgo: 1, sentiment: 0.0, text: "A quiet walk helped me settle after work.", now: now),
@@ -2166,11 +2171,11 @@ struct DaypartHeroTests {
     }
 
     @Test func assetPrefixMappingCoversSuppliedImages() {
-        #expect(DaypartHeroLibrary.assets.count == 17)
-        #expect(DaypartHeroLibrary.assets.filter { $0.dayPart == .morning }.count == 4)
-        #expect(DaypartHeroLibrary.assets.filter { $0.dayPart == .afternoon }.count == 5)
-        #expect(DaypartHeroLibrary.assets.filter { $0.dayPart == .evening }.count == 6)
-        #expect(DaypartHeroLibrary.assets.filter { $0.dayPart == .night }.count == 2)
+        #expect(DaypartHeroLibrary.assets.count == 12)
+        for dayPart in [DayPart.morning, .afternoon, .evening, .night] {
+            #expect(DaypartHeroLibrary.assets.filter { $0.dayPart == dayPart }.count == 3)
+        }
+        #expect(DaypartHeroAsset(imageName: "home_bg_night_02")?.dayPart == .night)
         #expect(DaypartHeroAsset(imageName: "morning_04_sunlit_window_coffee")?.dayPart == .morning)
         #expect(DaypartHeroAsset(imageName: "not_a_daypart") == nil)
     }

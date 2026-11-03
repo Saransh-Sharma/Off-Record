@@ -10,6 +10,28 @@ enum OffRecordRoute: Equatable {
     case friday(question: String?)
     case weeklyReflectionCurrent
     case weeklyReflection(UUID)
+    /// `offrecord://review/month/2026-09`
+    case monthInReview(year: Int, month: Int)
+    /// `offrecord://review/year/2026`
+    case yearInReview(Int)
+
+    /// The Get Support sheet, as after a high-risk question in Siri.
+    case support
+
+    /// Routes that show no journal content, so they open even while the app is locked
+    /// or before onboarding finishes. Crisis resources should never wait on a passcode.
+    var isAvailableWithoutUnlocking: Bool {
+        self == .support
+    }
+}
+
+/// A Month in Review or Year in Review to open on Insights.
+struct PeriodReviewRoute: Hashable, Identifiable {
+    let kind: ReflectionPeriodKind
+    let year: Int
+    let month: Int?
+
+    var id: String { month.map { "\(year)-\($0)" } ?? "\(year)" }
 }
 
 struct TypedNoteRequest: Equatable {
@@ -29,19 +51,24 @@ final class OffRecordNavigationRouter: ObservableObject {
     @Published var fridayQuestion: String?
     @Published var routedWeeklyReflectionID: UUID?
     @Published var shouldOpenCurrentWeeklyReflection = false
+    @Published var routedReview: PeriodReviewRoute?
     @Published var shouldStartRecording = false
+    /// Shows the Get Support sheet over whatever is on screen.
+    @Published var presentsSupport = false
     /// True while a screen with its own composer (Friday chat) is showing, so the
     /// Record bar doesn't sit on top of it or ride up over it with the keyboard.
     @Published var hidesCaptureAccessory = false
     /// Set when Write is tapped outside Today; Today opens the editor and clears it.
     @Published var pendingTypedNote: TypedNoteRequest?
+    /// Set by Search Entries (⌘F); Timeline focuses its search field and clears it.
+    @Published var wantsTimelineSearchFocus = false
 
     private var deferredRoute: OffRecordRoute?
 
     private init() {}
 
     func route(_ route: OffRecordRoute, canNavigate: Bool) {
-        guard canNavigate else {
+        guard canNavigate || route.isAvailableWithoutUnlocking else {
             deferredRoute = route
             return
         }
@@ -60,7 +87,7 @@ final class OffRecordNavigationRouter: ObservableObject {
               let route = Self.route(from: url) else {
             return
         }
-        if canNavigate {
+        if canNavigate || route.isAvailableWithoutUnlocking {
             self.route(route, canNavigate: true)
             UserDefaults.standard.removeObject(forKey: Self.pendingRouteDefaultsKey)
         } else {
@@ -118,7 +145,8 @@ final class OffRecordNavigationRouter: ObservableObject {
             routedEntryID = id
         case .friday(let question):
             selectedTab = .friday
-            fridayQuestion = question
+            // With Friday off the tab shows her off state, and the question is dropped.
+            fridayQuestion = FridayAvailability.isEnabled ? question : nil
         case .weeklyReflectionCurrent:
             selectedTab = .insights
             routedWeeklyReflectionID = nil
@@ -127,12 +155,25 @@ final class OffRecordNavigationRouter: ObservableObject {
             selectedTab = .insights
             shouldOpenCurrentWeeklyReflection = false
             routedWeeklyReflectionID = id
+        case .monthInReview(let year, let month):
+            selectedTab = .insights
+            routedReview = PeriodReviewRoute(kind: .month, year: year, month: month)
+        case .yearInReview(let year):
+            selectedTab = .insights
+            routedReview = PeriodReviewRoute(kind: .year, year: year, month: nil)
+        case .support:
+            presentsSupport = true
         }
     }
 
     func requestTypedNote(promptContext: String? = nil) {
         selectedTab = .today
         pendingTypedNote = TypedNoteRequest(promptContext: promptContext)
+    }
+
+    func requestTimelineSearch() {
+        selectedTab = .timeline
+        wantsTimelineSearchFocus = true
     }
 
     nonisolated static func storePendingRoute(_ route: OffRecordRoute) {
@@ -161,6 +202,8 @@ final class OffRecordNavigationRouter: ObservableObject {
             return .entry(id)
         case "friday":
             return .friday(question: question)
+        case "support":
+            return .support
         case "weekly-reflection":
             if pathComponents.first?.lowercased() == "current" {
                 return .weeklyReflectionCurrent
@@ -169,6 +212,29 @@ final class OffRecordNavigationRouter: ObservableObject {
                 return nil
             }
             return .weeklyReflection(id)
+        case "review":
+            return reviewRoute(pathComponents)
+        default:
+            return nil
+        }
+    }
+
+    /// `year/2026` or `month/2026-09`. Years run 1–9999 and months 1–12.
+    nonisolated private static func reviewRoute(_ components: [String]) -> OffRecordRoute? {
+        guard components.count == 2 else { return nil }
+        let value = components[1]
+        let isDigit: (Character) -> Bool = { $0.isASCII && $0.isNumber }
+        switch components[0].lowercased() {
+        case "year":
+            guard value.count == 4, value.allSatisfy(isDigit), let year = Int(value), year >= 1 else { return nil }
+            return .yearInReview(year)
+        case "month":
+            let parts = value.split(separator: "-", omittingEmptySubsequences: false)
+            guard parts.count == 2, parts[0].count == 4, (1...2).contains(parts[1].count),
+                  parts.allSatisfy({ $0.allSatisfy(isDigit) }),
+                  let year = Int(parts[0]), let month = Int(parts[1]),
+                  year >= 1, (1...12).contains(month) else { return nil }
+            return .monthInReview(year: year, month: month)
         default:
             return nil
         }
@@ -202,6 +268,14 @@ final class OffRecordNavigationRouter: ObservableObject {
         case .weeklyReflection(let id):
             components.host = "weekly-reflection"
             components.path = "/\(id.uuidString)"
+        case .monthInReview(let year, let month):
+            components.host = "review"
+            components.path = String(format: "/month/%04d-%02d", year, month)
+        case .yearInReview(let year):
+            components.host = "review"
+            components.path = String(format: "/year/%04d", year)
+        case .support:
+            components.host = "support"
         }
 
         return components.url

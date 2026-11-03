@@ -1,0 +1,123 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "Ask Friday in ${applicationName}" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringSet" : {
+            "state" : "new",
+            "values" : [
+              "Ask Friday in ${applicationName}",
+              "Talk to Friday in ${applicationName}"
+            ]
+          }
+        },
+        "es" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Preguntar a Friday en ${applicationName}",
+              "Hablar con Friday en ${applicationName}"
+            ]
+          }
+        }
+      }
+    },
+    "Record in ${applicationName}" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringSet" : {
+            "state" : "new",
+            "values" : [
+              "Record in ${applicationName}",
+              "Start recording in ${applicationName}",
+              "Record an entry in ${applicationName}"
+            ]
+          }
+        },
+        "es" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Grabar en ${applicationName}",
+              "Empezar a grabar en ${applicationName}",
+              "Grabar una entrada en ${applicationName}"
+            ]
+          }
+        }
+      }
+    },
+    "Search my journal in ${applicationName}" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringSet" : {
+            "state" : "new",
+            "values" : [
+              "Search my journal in ${applicationName}",
+              "Find an entry in ${applicationName}"
+            ]
+          }
+        },
+        "es" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Buscar en mi diario de ${applicationName}",
+              "Buscar una entrada en ${applicationName}"
+            ]
+          }
+        }
+      }
+    },
+    "Set my mood in ${applicationName}" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringSet" : {
+            "state" : "new",
+            "values" : [
+              "Set my mood in ${applicationName}",
+              "Log my mood in ${applicationName}"
+            ]
+          }
+        },
+        "es" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Registrar mi ánimo en ${applicationName}",
+              "Anotar mi ánimo en ${applicationName}"
+            ]
+          }
+        }
+      }
+    },
+    "Write in ${applicationName}" : {
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringSet" : {
+            "state" : "new",
+            "values" : [
+              "Write in ${applicationName}",
+              "Add to my journal in ${applicationName}"
+            ]
+          }
+        },
+        "es" : {
+          "stringSet" : {
+            "state" : "translated",
+            "values" : [
+              "Escribir en ${applicationName}",
+              "Añadir a mi diario en ${applicationName}"
+            ]
+          }
+        }
+      }
+    }
+  },
+  "version" : "1.0"
+}

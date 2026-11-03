@@ -427,7 +427,7 @@ Copy should be short, specific, and calm. It should read like a well-made Apple 
 - Never write “Friday noticed.” No card starts with “I noticed.” At most one “I” per card.
 - Thin evidence is said once, with a number: “I’m not sure yet. Only 2 entries mention this.”
 - “Not enough data” always gives the real threshold from code.
-- Heavy content gets one plain line and no advice: “That sounds heavy. Talking to someone you trust could help.”
+- Heavy content gets one plain line and no advice: “That sounds heavy. Talking to someone you trust could help.” The only exception is the Get Support sheet (see Safety).
 - Explanations start with “Based on…” and stay at 12 words or fewer.
 
 #### Glossary
@@ -446,6 +446,16 @@ Copy should be short, specific, and calm. It should read like a well-made Apple 
 | **streak**, **days in a row** | rhythm |
 | **Lock** | Privacy Lock |
 | **OffRecord** (in the app) | OffRecord AI Journal (App Store and marketing only), AI Voice Diary |
+| **Keep Out of Friday** (per entry; a fixed 4-word term) | Private, Hide, Exclude |
+| **Skip Weekly Reflection** | Hide from report |
+| **Turn On Friday** / **Turn Off Friday** | Enable, Disable |
+| **Erase All Data** | Reset, Wipe |
+| **Month in Review**, **Year in Review** | Recap, Wrapped |
+| **Session Prep** | therapy, therapy prep, session notes |
+| **Entries That Mattered** | highlights, best entries |
+| **Year in Pixels** | mood grid |
+| **tag** (a word you add to an entry; shown as #tag in search) | label, category, hashtag |
+| **journal** (a named collection; the default is the main journal) | notebook, folder, space |
 | **iPhone** / **iPad** (via `DeviceNoun`) | this device, your device, locally |
 
 #### Length
@@ -487,10 +497,22 @@ Copy should be short, specific, and calm. It should read like a well-made Apple 
 2. The privacy sheet on Today.
 3. The Privacy card in Settings.
 4. Permission strings.
-5. Moments where data would leave the app: share cards, export, the Apple Health toggle, the iCloud toggle, transcription consent, and the Spotlight toggle.
-6. One small “On-device” label in the Friday chat header.
+5. Moments where data would leave the app: share cards, export (including Session Prep and the Year in Review card), the Apple Health toggle, the iCloud toggle, transcription consent, the Spotlight toggle, and the Erase All Data alert (the one place that says data is removed from iCloud).
+6. One small “AI · On-device” label in the Friday chat header.
 
 Everywhere else, leave it out.
+
+#### Safety
+
+Every AI surface runs `JournalRiskClassifier` and follows `SensitiveDomainPolicy`:
+
+- **Normal:** answer as usual.
+- **Gentle** (stress, hopelessness): answer, but ask nothing. No Go Deeper, no follow-up chips, no proactive card about the entry.
+- **Support only** (self-harm or suicide, direct or indirect): no analysis and no quotes. Friday says the one heavy-content line, and a **Get Support** button opens the Get Support sheet.
+
+The Get Support sheet is the one place OffRecord gives advice. It lists the region’s crisis line with Call and Text, emergency services, a way to message someone you trust, and Find a Helpline for other countries. It ends with “OffRecord isn’t an emergency service.” Keep its copy short and direct. Verify any helpline number on the service’s own site before changing it, and record the date in `GetSupportView.swift`.
+
+Friday says she is an AI in two places: the onboarding privacy page (“Friday is AI”) and the chat header. Never call a feature therapy.
 
 #### Examples
 

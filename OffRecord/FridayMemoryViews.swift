@@ -3,8 +3,9 @@
 //  OffRecord
 //
 //  "What Friday remembers": the people, places, themes, goals, and worries
-//  Friday has picked up from the journal, with local controls to rename an
-//  item or ask Friday to forget it. KnowledgeGraphKit has no delete API and
+//  Friday has picked up from the journal. Each row opens a page
+//  (KnowledgePageView) with its entries and controls to rename the item or
+//  ask Friday to forget it. KnowledgeGraphKit has no delete API and
 //  re-learns names from new entries, so forgetting is a local suppression
 //  list and renaming is a local alias map — both applied wherever Friday
 //  shows or talks about her world. Stored on device only.
@@ -60,6 +61,13 @@ final class FridayMemoryPreferences: ObservableObject {
     func restoreAll() {
         forgottenIDs.removeAll()
         persist()
+    }
+
+    /// Clears every forget and rename and deletes the file. Used when Friday is turned off.
+    func reset() {
+        forgottenIDs.removeAll()
+        aliases.removeAll()
+        file.delete()
     }
 
     func rename(_ node: PersonalKnowledgeGraph.KnowledgeNode, to name: String) {
@@ -247,171 +255,5 @@ struct FridayMemoryRow: View {
 
     private var mentionText: String {
         String(AttributedString(localized: "^[\(node.mentions) mention](inflect: true)").characters)
-    }
-}
-
-// MARK: - Detail sheet
-
-struct FridayMemoryDetailSheet: View {
-    /// The raw graph node; `label` is the name as written in the journal.
-    let node: PersonalKnowledgeGraph.KnowledgeNode
-
-    @Environment(\.dismiss) private var dismiss
-    @ObservedObject private var preferences = FridayMemoryPreferences.shared
-    @State private var isRenaming = false
-    @State private var renameText = ""
-    @State private var isConfirmingForget = false
-    @State private var forgetTrigger = 0
-
-    var body: some View {
-        NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: OffRecordSpacing.xl) {
-                    header
-                    stats
-                    FridayImportanceBar(importance: node.importance)
-                        .padding(OffRecordSpacing.lg)
-                        .offRecordCard(cornerRadius: OffRecordRadius.lg, fill: OffRecordColor.surfaceWarm, shadow: false)
-                    actions
-                }
-                .padding(.horizontal, OffRecordSpacing.xxl)
-                .padding(.vertical, OffRecordSpacing.lg)
-            }
-            .background(OffRecordAppBackground().ignoresSafeArea())
-            .navigationTitle(preferences.displayName(for: node))
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
-                }
-            }
-            .alert("Rename \(FridayMemoryTone.typeNoun(node.type).capitalized)", isPresented: $isRenaming) {
-                TextField("Name", text: $renameText)
-                Button("Save") { preferences.rename(node, to: renameText) }
-                if preferences.aliases[node.id] != nil {
-                    Button("Reset Name") { preferences.rename(node, to: node.label) }
-                }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("I’ll use this name from now on. Your entries won’t change.")
-            }
-            .confirmationDialog(
-                "Forget \(preferences.displayName(for: node))?",
-                isPresented: $isConfirmingForget,
-                titleVisibility: .visible
-            ) {
-                Button("Forget", role: .destructive) {
-                    forgetTrigger += 1
-                    preferences.forget(node)
-                    dismiss()
-                }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("I’ll stop bringing this up. Your entries won’t change, and you can restore it in My World.")
-            }
-            .sensoryFeedback(.success, trigger: forgetTrigger)
-        }
-    }
-
-    private var header: some View {
-        HStack(spacing: OffRecordSpacing.md) {
-            OffRecordIconBubble(
-                systemImage: FridayMemoryTone.icon(node.type),
-                tint: OffRecordColor.textLavender,
-                fill: OffRecordColor.backgroundLavenderTint,
-                size: 48,
-                iconSize: 20
-            )
-            VStack(alignment: .leading, spacing: OffRecordSpacing.xxs) {
-                Text(preferences.displayName(for: node))
-                    .font(OffRecordTypography.titleSmall)
-                    .foregroundStyle(OffRecordColor.textHeading)
-                Text(subtitle)
-                    .font(OffRecordTypography.metadata)
-                    .foregroundStyle(OffRecordColor.textSecondary)
-            }
-        }
-        .accessibilityElement(children: .combine)
-    }
-
-    private var subtitle: String {
-        let noun = FridayMemoryTone.typeNoun(node.type).capitalized
-        if preferences.aliases[node.id] != nil {
-            return String(localized: "\(noun) · written as “\(node.label)”", comment: "The first placeholder is a kind, like Person; the second is the name as written in the journal")
-        }
-        return noun
-    }
-
-    private var stats: some View {
-        HStack(spacing: OffRecordSpacing.md) {
-            statTile(
-                value: "\(node.mentions)",
-                label: node.mentions == 1 ? String(localized: "Mention", comment: "Label under a count of 1") : String(localized: "Mentions", comment: "Label under a count other than 1"),
-                valueColor: OffRecordColor.textLavender
-            )
-            statTile(
-                value: FridayMemoryTone.sentimentLabel(node.sentimentAssociation),
-                label: String(localized: "Tone", comment: "Label for how positive or heavy the entries feel"),
-                valueColor: FridayMemoryTone.sentimentText(node.sentimentAssociation)
-            )
-            statTile(
-                value: node.lastSeen.formatted(.dateTime.month(.abbreviated).day()),
-                label: String(localized: "Last Mentioned"),
-                valueColor: OffRecordColor.textPrimary
-            )
-        }
-    }
-
-    private func statTile(value: String, label: String, valueColor: Color) -> some View {
-        VStack(alignment: .leading, spacing: OffRecordSpacing.xs) {
-            Text(value)
-                .font(OffRecordTypography.labelLarge)
-                .foregroundStyle(valueColor)
-                .fixedSize(horizontal: false, vertical: true)
-            Text(label)
-                .font(OffRecordTypography.annotation)
-                .foregroundStyle(OffRecordColor.textSecondary)
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(OffRecordSpacing.md)
-        .offRecordCard(cornerRadius: OffRecordRadius.md, fill: OffRecordColor.surfaceWarm, shadow: false)
-        .accessibilityElement(children: .combine)
-    }
-
-    private var actions: some View {
-        VStack(spacing: OffRecordSpacing.sm) {
-            Button {
-                dismiss()
-                OffRecordNavigationRouter.shared.route(.timeline(query: node.label), canNavigate: true)
-            } label: {
-                Label("Show Entries", systemImage: "text.magnifyingglass")
-                    .frame(maxWidth: .infinity)
-            }
-            .buttonStyle(OffRecordSoftButtonStyle(tint: OffRecordColor.textOnAccent, fill: OffRecordColor.brandLavenderDark))
-            .accessibilityHint("Searches your timeline for \(node.label).")
-            .accessibilityIdentifier("friday.memory.seeEntries")
-
-            HStack(spacing: OffRecordSpacing.sm) {
-                Button {
-                    renameText = preferences.displayName(for: node)
-                    isRenaming = true
-                } label: {
-                    Label("Rename", systemImage: "pencil")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(OffRecordSoftButtonStyle(tint: OffRecordColor.textBrand, fill: OffRecordColor.surfacePrimary))
-                .accessibilityIdentifier("friday.memory.rename")
-
-                Button {
-                    isConfirmingForget = true
-                } label: {
-                    Label("Forget", systemImage: "eye.slash")
-                        .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(OffRecordSoftButtonStyle(tint: OffRecordColor.textCoral, fill: OffRecordColor.surfacePrimary))
-                .accessibilityHint("Hides this from Friday.")
-                .accessibilityIdentifier("friday.memory.forget")
-            }
-        }
     }
 }

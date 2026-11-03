@@ -10,6 +10,12 @@
             "state" : "new",
             "value" : "OffRecord"
           }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OffRecord"
+          }
         }
       }
     },
@@ -21,6 +27,12 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Lets you record journal entries from your watch."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Te permite grabar entradas desde el reloj."
           }
         }
       }

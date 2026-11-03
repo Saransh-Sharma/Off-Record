@@ -9,6 +9,7 @@
 
 import Foundation
 import JournalSecurityKit
+import JournalFoundation
 import CoreData
 import UniformTypeIdentifiers
 #if canImport(UIKit)
@@ -160,6 +161,24 @@ struct ExportableJournalBlock: Codable, Identifiable {
     }
 }
 
+/// A tag as saved in a backup. Matched on import by ID, then by name.
+struct ExportableTag: Codable, Equatable {
+    let id: UUID
+    let name: String
+    let createdAt: Date?
+}
+
+/// A journal as saved in a backup. Matched on import by ID, then by name.
+struct ExportableJournal: Codable, Equatable {
+    let id: UUID
+    let name: String
+    let iconName: String?
+    let colorName: String?
+    let sortOrder: Int64
+    let createdAt: Date?
+    let isArchived: Bool
+}
+
 /// Represents a single diary entry for export/import
 struct ExportableEntry: Codable, Identifiable {
     let id: UUID
@@ -175,6 +194,10 @@ struct ExportableEntry: Codable, Identifiable {
     let blocks: [ExportableJournalBlock]?
     let photoFileNames: String?
     let photos: [ExportablePhotoAttachment]
+    /// Raw `JournalAIExclusion`; nil when the entry is included. Older backups have none of these three.
+    let aiExclusion: String?
+    let tags: [ExportableTag]?
+    let journal: ExportableJournal?
 
     init(from entry: DiaryEntry) {
         self.id = entry.id ?? UUID()
@@ -202,6 +225,27 @@ struct ExportableEntry: Codable, Identifiable {
         self.blocks = blockRows.isEmpty ? nil : blockRows
         self.photoFileNames = entry.value(forKey: "photoFileNames") as? String
         self.photos = PhotoStorageManager.shared.attachments(for: entry).map { ExportablePhotoAttachment(from: $0) }
+        self.aiExclusion = entry.journalAIExclusion == .included ? nil : entry.journalAIExclusion.rawValue
+        let tagRows = ((entry.tags as? Set<JournalTag>) ?? [])
+            .filter { !$0.isDeleted }
+            .compactMap { tag -> ExportableTag? in
+                guard let id = tag.id, let name = tag.name else { return nil }
+                return ExportableTag(id: id, name: name, createdAt: tag.createdAt)
+            }
+            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+        self.tags = tagRows.isEmpty ? nil : tagRows
+        self.journal = entry.journal.flatMap { journal in
+            guard let id = journal.id, let name = journal.name else { return nil }
+            return ExportableJournal(
+                id: id,
+                name: name,
+                iconName: journal.iconName,
+                colorName: journal.colorName,
+                sortOrder: journal.sortOrder,
+                createdAt: journal.createdAt,
+                isArchived: journal.isArchived
+            )
+        }
     }
 
     private init(
@@ -217,7 +261,10 @@ struct ExportableEntry: Codable, Identifiable {
         audioAttachments: [ExportableAudioAttachment]?,
         blocks: [ExportableJournalBlock]?,
         photoFileNames: String?,
-        photos: [ExportablePhotoAttachment]
+        photos: [ExportablePhotoAttachment],
+        aiExclusion: String?,
+        tags: [ExportableTag]?,
+        journal: ExportableJournal?
     ) {
         self.id = id
         self.date = date
@@ -232,6 +279,9 @@ struct ExportableEntry: Codable, Identifiable {
         self.blocks = blocks
         self.photoFileNames = photoFileNames
         self.photos = photos
+        self.aiExclusion = aiExclusion
+        self.tags = tags
+        self.journal = journal
     }
 
     func embeddingAudioPayloads() -> ExportableEntry {
@@ -248,7 +298,10 @@ struct ExportableEntry: Codable, Identifiable {
             audioAttachments: audioAttachments?.map { $0.embeddingAudioPayload() },
             blocks: blocks,
             photoFileNames: photoFileNames,
-            photos: photos
+            photos: photos,
+            aiExclusion: aiExclusion,
+            tags: tags,
+            journal: journal
         )
     }
 }
@@ -546,6 +599,7 @@ final class BackupService {
                 importJournalBlocks(exportedEntry.blocks ?? [], into: newEntry, context: context)
                 JournalBlockTimelineStore.backfillBlocksIfNeeded(for: newEntry, in: context)
                 JournalBlockTimelineStore.recomposeLegacyFields(for: newEntry, touchUpdatedAt: false)
+                importOrganization(of: exportedEntry, into: newEntry, context: context)
                 newEntry.updatedAt = exportedEntry.updatedAt
 
                 importedCount += 1
@@ -781,6 +835,7 @@ final class BackupService {
                 importJournalBlocks(exportedEntry.blocks ?? [], into: newEntry, context: context)
                 JournalBlockTimelineStore.backfillBlocksIfNeeded(for: newEntry, in: context)
                 JournalBlockTimelineStore.recomposeLegacyFields(for: newEntry, touchUpdatedAt: false)
+                importOrganization(of: exportedEntry, into: newEntry, context: context)
                 newEntry.updatedAt = exportedEntry.updatedAt
 
                 importedCount += 1
@@ -835,6 +890,53 @@ final class BackupService {
             attachment.setValue(audio.transcriptionUpdatedAt, forKey: "transcriptionUpdatedAt")
             attachment.setValue(entry, forKey: "entry")
         }
+    }
+
+    /// Restores the entry's Friday setting, tags, and journal. Tags and journals
+    /// already on this iPhone are reused, matched by ID and then by name.
+    private func importOrganization(of exported: ExportableEntry, into entry: DiaryEntry, context: NSManagedObjectContext) {
+        let exclusion = exported.aiExclusion.flatMap(JournalAIExclusion.init(rawValue:)) ?? .included
+        entry.aiExclusion = exclusion == .included ? nil : exclusion.rawValue
+
+        for exportedTag in exported.tags ?? [] {
+            let name = TagStore.normalizedName(exportedTag.name)
+            guard !name.isEmpty else { continue }
+            let tag = Self.first(JournalTag.self, "Tag", NSPredicate(format: "id == %@", exportedTag.id as CVarArg), in: context)
+                ?? Self.first(JournalTag.self, "Tag", NSPredicate(format: "name =[c] %@", name), in: context)
+                ?? {
+                let created = JournalTag(context: context)
+                created.id = exportedTag.id
+                created.name = name
+                created.createdAt = exportedTag.createdAt ?? Date()
+                return created
+            }()
+            entry.addToTags(tag)
+        }
+
+        if let exportedJournal = exported.journal {
+            let name = JournalStore.normalizedName(exportedJournal.name)
+            guard !name.isEmpty else { return }
+            entry.journal = Self.first(Journal.self, "Journal", NSPredicate(format: "id == %@", exportedJournal.id as CVarArg), in: context)
+                ?? Self.first(Journal.self, "Journal", NSPredicate(format: "name =[c] %@", name), in: context)
+                ?? {
+                let created = Journal(context: context)
+                created.id = exportedJournal.id
+                created.name = name
+                created.iconName = exportedJournal.iconName
+                created.colorName = exportedJournal.colorName
+                created.sortOrder = exportedJournal.sortOrder
+                created.createdAt = exportedJournal.createdAt ?? Date()
+                created.isArchived = exportedJournal.isArchived
+                return created
+            }()
+        }
+    }
+
+    private static func first<Object: NSManagedObject>(_ type: Object.Type, _ entityName: String, _ predicate: NSPredicate, in context: NSManagedObjectContext) -> Object? {
+        let request = NSFetchRequest<Object>(entityName: entityName)
+        request.predicate = predicate
+        request.fetchLimit = 1
+        return try? context.fetch(request).first
     }
 
     private func importPhotos(_ photos: [ExportablePhotoAttachment], into entry: DiaryEntry, context: NSManagedObjectContext) {

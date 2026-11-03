@@ -165,3 +165,67 @@ struct SensitiveDomainPolicyTests {
         #expect(SensitiveDomainPolicy.clinicalTermViolations(in: "You had calmer evenings this week.").isEmpty)
     }
 }
+
+struct JournalRiskClassifierTests {
+
+    @Test func directSelfHarmLanguageIsHighRisk() {
+        for text in [
+            "I thought about suicide last night.",
+            "Some days I want to kill myself.",
+            "I started cutting myself again",
+            "I don’t want to be alive anymore",
+            "I just want to end it all",
+        ] {
+            #expect(JournalRiskClassifier.level(for: text) == .highRiskExcluded, "\(text)")
+        }
+    }
+
+    @Test func indirectWordingIsHighRisk() {
+        for text in [
+            "Everyone would be better off without me.",
+            "Sometimes I think it would be easier if I wasn't here",
+            "I keep wishing I could disappear forever",
+            "There's no reason to live like this",
+        ] {
+            #expect(JournalRiskClassifier.level(for: text) == .highRiskExcluded, "\(text)")
+        }
+    }
+
+    @Test func figuresOfSpeechAreNotFlagged() {
+        for text in [
+            "This commute is killing me",
+            "I'm dying to see the new movie",
+            "I laughed so hard I almost died",
+            "My phone battery died again",
+            "I can't wait for this project to be over",
+            "I want to disappear into a good book this weekend",
+            "Self-care Sunday: a long walk and tea",
+        ] {
+            #expect(JournalRiskClassifier.level(for: text) == .none, "\(text)")
+        }
+    }
+
+    @Test func hopelessnessIsModerateAndStressIsMild() {
+        #expect(JournalRiskClassifier.level(for: "Everything feels hopeless lately") == .moderateConcern)
+        #expect(JournalRiskClassifier.level(for: "I can’t cope with this week") == .moderateConcern)
+        #expect(JournalRiskClassifier.level(for: "Work left me overwhelmed") == .mildDistress)
+        #expect(JournalRiskClassifier.level(for: "I panicked before the call") == .mildDistress)
+    }
+
+    @Test func phrasesMatchWholeWordsOnly() {
+        #expect(JournalRiskClassifier.level(for: "The number of tasks was fine") == .none)
+        #expect(JournalRiskClassifier.level(for: "suicidesquad rewatch") == .none)
+    }
+
+    @Test func highestLevelWinsAcrossTexts() {
+        let level = JournalRiskClassifier.level(forAll: ["A calm day", "Felt overwhelmed", "I want to die"])
+        #expect(level == .highRiskExcluded)
+        #expect(JournalRiskClassifier.level(forAll: [String]()) == .none)
+    }
+
+    @Test func standardPolicyMapsHighRiskToSupportOnly() {
+        #expect(JournalRiskClassifier.responseMode(for: "I want to hurt myself") == .supportOnly)
+        #expect(JournalRiskClassifier.responseMode(for: "I feel hopeless") == .gentle)
+        #expect(JournalRiskClassifier.responseMode(for: "Lunch with Maya") == .normal)
+    }
+}

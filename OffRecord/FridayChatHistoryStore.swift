@@ -20,17 +20,27 @@ private let fridayHistoryLogger = Logger(subsystem: "com.singularity.offrecord",
 
 // MARK: - Protected JSON file
 
+/// Every Friday file lives here, so deleting this folder deletes them all.
+enum FridayLocalDirectory {
+    static var url: URL {
+        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
+        return base.appendingPathComponent("FridayLocal", isDirectory: true)
+    }
+}
+
 /// A small JSON document in Application Support, written atomically with
 /// `.completeFileProtection` and excluded from device backups.
 struct FridayProtectedJSONFile<Value: Codable> {
     let fileName: String
+    /// Application Support/FridayLocal unless a test passes its own folder.
+    let directoryURL: URL
 
-    private static var directoryURL: URL {
-        let base = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        return base.appendingPathComponent("FridayLocal", isDirectory: true)
+    init(fileName: String, directoryURL: URL? = nil) {
+        self.fileName = fileName
+        self.directoryURL = directoryURL ?? FridayLocalDirectory.url
     }
 
-    var url: URL { Self.directoryURL.appendingPathComponent(fileName) }
+    var url: URL { directoryURL.appendingPathComponent(fileName) }
 
     func load() -> Value? {
         guard let data = try? Data(contentsOf: url) else { return nil }
@@ -61,7 +71,7 @@ struct FridayProtectedJSONFile<Value: Codable> {
     }
 
     private func prepareDirectory() throws {
-        var directory = Self.directoryURL
+        var directory = directoryURL
         if !FileManager.default.fileExists(atPath: directory.path) {
             try FileManager.default.createDirectory(
                 at: directory,
@@ -106,6 +116,8 @@ struct FridayStoredMessage: Codable, Equatable {
     let confidence: Double?
     let limitations: String?
     let followUps: [FridayStoredFollowUp]
+    /// Optional so threads saved before this field still decode.
+    var needsSupport: Bool?
 }
 
 struct FridayStoredThread: Codable {
@@ -166,7 +178,8 @@ enum FridayChatHistoryStore {
             },
             confidence: message.confidence,
             limitations: message.limitations,
-            followUps: message.followUps.map { FridayStoredFollowUp(title: $0.title, prompt: $0.prompt, questionID: $0.question?.rawValue) }
+            followUps: message.followUps.map { FridayStoredFollowUp(title: $0.title, prompt: $0.prompt, questionID: $0.question?.rawValue) },
+            needsSupport: message.needsSupport ? true : nil
         )
     }
 
@@ -175,9 +188,15 @@ enum FridayChatHistoryStore {
             return FridayChatMessage(id: stored.id, timestamp: stored.timestamp, text: stored.summary, isUser: true)
         }
 
-        // Re-resolve every citation against the live journal.
+        // Re-resolve every citation against the live journal. Entries kept out
+        // of Friday since the answer are dropped like deleted ones.
+        var droppedKeptOut = false
         let evidence: [EvidenceReference] = stored.citations.compactMap { citation in
             guard let entry = entryProvider(citation.entryID) else { return nil }
+            guard entry.journalAIExclusion.permitsAssistantEvidence else {
+                droppedKeptOut = true
+                return nil
+            }
             let date = entry.date ?? entry.createdAt ?? stored.timestamp
             let mood = entry.value(forKey: "mood") as? String
             return EvidenceReference(
@@ -206,9 +225,16 @@ enum FridayChatHistoryStore {
 
         var limitations = stored.limitations
         if droppedAny {
-            let note = evidence.isEmpty
-                ? String(localized: "The entries behind this answer were deleted.")
-                : String(localized: "Some entries behind this answer were deleted.")
+            let note: String
+            if droppedKeptOut {
+                note = evidence.isEmpty
+                    ? String(localized: "The entries behind this answer are kept out of Friday.")
+                    : String(localized: "Some entries behind this answer are kept out of Friday.")
+            } else {
+                note = evidence.isEmpty
+                    ? String(localized: "The entries behind this answer were deleted.")
+                    : String(localized: "Some entries behind this answer were deleted.")
+            }
             limitations = [limitations, note].compactMap { $0 }.joined(separator: " ")
         }
 
@@ -223,7 +249,8 @@ enum FridayChatHistoryStore {
             limitations: limitations,
             followUps: stored.followUps.map {
                 FridayFollowUp(title: $0.title, prompt: $0.prompt, question: $0.questionID.flatMap(FridayQuestion.init(rawValue:)))
-            }
+            },
+            needsSupport: stored.needsSupport ?? false
         )
     }
 }
