@@ -953,6 +953,7 @@
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Lets you lock your journal with Face ID.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "OffRecord doesn't read your Health data. It only saves the moods you choose to Apple Health.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Saves the moods you choose to Apple Health. Your journal text is never shared.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Lets you record journal entries by speaking. Recordings stay on your device.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Lets you add photos to your entries.";
@@ -1010,6 +1011,7 @@
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.lifestyle";
 				INFOPLIST_KEY_NSFaceIDUsageDescription = "Lets you lock your journal with Face ID.";
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "OffRecord doesn't read your Health data. It only saves the moods you choose to Apple Health.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "Saves the moods you choose to Apple Health. Your journal text is never shared.";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Lets you record journal entries by speaking. Recordings stay on your device.";
 				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "Lets you add photos to your entries.";
