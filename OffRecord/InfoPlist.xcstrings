@@ -10,6 +10,12 @@
             "state" : "new",
             "value" : "OffRecord"
           }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OffRecord"
+          }
         }
       }
     },
@@ -21,6 +27,12 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Lets you lock your journal with Face ID."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Te permite bloquear tu diario con Face ID."
           }
         }
       }
@@ -34,6 +46,12 @@
             "state" : "new",
             "value" : "Saves the moods you choose to Apple Health. Your journal text is never shared."
           }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guarda en Apple Health los estados de ánimo que elijas. El texto de tu diario nunca se comparte."
+          }
         }
       }
     },
@@ -46,6 +64,12 @@
             "state" : "new",
             "value" : "Lets you record journal entries by speaking. Recordings stay on your device."
           }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Te permite grabar entradas hablando. Las grabaciones se quedan en tu dispositivo."
+          }
         }
       }
     },
@@ -57,6 +81,12 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "Lets you add photos to your entries."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Te permite añadir fotos a tus entradas."
           }
         }
       }
