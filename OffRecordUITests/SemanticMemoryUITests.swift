@@ -230,6 +230,11 @@ final class SemanticMemoryUITests: XCTestCase {
         waitForSemanticIndexReady(app)
 
         askFriday("What did I write about work stress?", in: app)
+        // The field is disabled while Friday answers, so a tap before she finishes raises no keyboard.
+        let answer = app.staticTexts.matching(NSPredicate(format: "identifier BEGINSWITH %@", "friday.answerMessage.")).firstMatch
+        XCTAssertTrue(answer.waitForExistence(timeout: 15))
+        let field = app.descendants(matching: .any)["friday.askField"].firstMatch
+        XCTAssertTrue(wait(for: field, matching: NSPredicate(format: "isEnabled == true"), timeout: 15))
         _ = focusFridayAskField(in: app)
 
         XCTAssertTrue(
@@ -329,7 +334,7 @@ final class SemanticMemoryUITests: XCTestCase {
         XCTAssertTrue(deleteButton.waitForExistence(timeout: 4))
         deleteButton.tap()
 
-        let confirm = app.alerts.buttons["Delete Index"]
+        let confirm = app.alerts.buttons["Delete Index"].firstMatch
         XCTAssertTrue(confirm.waitForExistence(timeout: 4))
         confirm.tap()
     }

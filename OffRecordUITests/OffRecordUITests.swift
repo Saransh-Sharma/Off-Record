@@ -245,9 +245,13 @@ final class OffRecordUITests: XCTestCase {
         let dateTitle = app.descendants(matching: .any)["homeHero.dateTitle"].firstMatch
         XCTAssertTrue(dateTitle.waitForExistence(timeout: 4))
 
-        let formatter = DateFormatter()
-        formatter.dateFormat = "MMMM d"
-        XCTAssertTrue(dateTitle.label.contains(formatter.string(from: Date())))
+        // The region decides the order ("November 3" in the US, "3 November" in India), so check
+        // today's month and day separately.
+        let now = Date()
+        let month = now.formatted(.dateTime.month(.wide))
+        let day = now.formatted(.dateTime.day())
+        XCTAssertTrue(dateTitle.label.contains(month), "\(dateTitle.label) lacks \(month)")
+        XCTAssertTrue(dateTitle.label.contains(day), "\(dateTitle.label) lacks \(day)")
         XCTAssertGreaterThan(dateTitle.frame.height, 72)
     }
 
