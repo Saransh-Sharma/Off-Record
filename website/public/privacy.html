@@ -4,12 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Privacy Policy - OffRecord AI Journal</title>
-  <meta name="description" content="OffRecord AI Journal does not use developer servers, analytics, advertising, or non-Apple AI services. Weekly reflections stay in the app, and Apple Watch captures save locally first.">
+  <meta name="description" content="OffRecord AI Journal does not use developer servers, analytics, advertising, or non-Apple AI services. Friday runs on your device, her profile and chat never sync, and Apple Watch captures save locally first.">
   <meta name="theme-color" content="#05081a">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://saransh-sharma.github.io/Off-Record/privacy.html">
   <meta property="og:title" content="Privacy Policy - OffRecord AI Journal">
-  <meta property="og:description" content="Private journaling with Weekly Reflection, Apple Watch quick capture, optional iCloud Sync, and on-device SpeechAnalyzer transcription.">
+  <meta property="og:description" content="Private journaling on iPhone, iPad, Mac, and Apple Watch, with on-device Friday, optional iCloud Sync, and on-device SpeechAnalyzer transcription.">
   <link rel="canonical" href="https://saransh-sharma.github.io/Off-Record/privacy.html">
   <link rel="stylesheet" href="style.css">
   <link rel="icon" href="/Off-Record/app-icon.png">
@@ -32,22 +32,26 @@
   <main class="container">
     <div class="page-header">
       <h1>Privacy Policy</h1>
-      <p class="updated">Last Updated: October 1, 2026</p>
+      <p class="updated">Last Updated: November 3, 2026</p>
     </div>
 
     <div class="page-content">
       <h2>Our Promise</h2>
       <p>OffRecord AI Journal is built for private journaling. We do not run developer servers that receive your journal, we do not sell data, and we do not use analytics, advertising SDKs, tracking SDKs, or non-Apple third-party AI services.</p>
+      <p>This policy covers OffRecord on iPhone, iPad, Mac, and Apple Watch.</p>
 
       <h2>What Data OffRecord Processes</h2>
       <ul>
         <li><strong>Voice Recordings</strong> - audio files recorded through the app</li>
         <li><strong>Transcriptions</strong> - text converted from voice recordings on device using Apple SpeechAnalyzer</li>
-        <li><strong>Journal Entries</strong> - text you write or dictate</li>
+        <li><strong>Journal Entries</strong> - text you write or dictate, including entries you import</li>
         <li><strong>Mood Data</strong> - mood selections you make for entries</li>
-        <li><strong>AI Analysis</strong> - emotional patterns, personality insights, Semantic Memory, and your Friday model</li>
+        <li><strong>Tags and Journals</strong> - tags you add and journals you create</li>
+        <li><strong>Privacy Choices</strong> - Keep Out of Friday and Skip Weekly Reflection on entries</li>
+        <li><strong>AI Analysis</strong> - emotional patterns, personality insights, the search index, Month and Year in Review, and Session Prep summaries</li>
+        <li><strong>Friday Data</strong> - Friday's profile, chat, memory edits, generated entry titles, and Go Deeper questions</li>
         <li><strong>Weekly Reflections</strong> - private weekly reports, saved takeaways, source choices, and export choices</li>
-        <li><strong>Photos</strong> - images you attach to diary entries</li>
+        <li><strong>Photos</strong> - images you attach to entries, including from a Journaling Suggestion you pick or an import</li>
         <li><strong>Apple Watch Captures</strong> - quick moods, dictated text, and voice notes saved from your watch</li>
         <li><strong>Settings</strong> - preferences such as theme, reminders, Weekly Reflection, app lock, iCloud sync, Apple Health, and on-device transcription consent</li>
       </ul>
@@ -58,14 +62,34 @@
         <li>OffRecord shows an in-app disclosure before transcription begins.</li>
         <li><code>SpeechTranscriber</code> is preferred, with <code>DictationTranscriber</code> for additional locale coverage.</li>
         <li>Recognition runs entirely on your device. Audio is not sent to Apple or a speech-recognition server.</li>
-        <li>iOS may download a language model from Apple before first use.</li>
-        <li>If your language is unsupported, or you turn off transcription, your recording remains saved locally and you can type manually.</li>
+        <li>Your device may download a language model from Apple before first use.</li>
+        <li>If your language is unsupported, or you turn off transcription, your recording remains saved on the device and you can type manually.</li>
         <li>You can turn off on-device transcription in Settings.</li>
       </ul>
-      <p>OffRecord does not send your audio, transcripts, journal entries, photos, Friday prompts, Semantic Memory, or AI analysis to developer servers, speech-recognition servers, or non-Apple AI services.</p>
+      <p>OffRecord does not send your audio, transcripts, journal entries, photos, Friday prompts, the search index, or AI analysis to developer servers, speech-recognition servers, or non-Apple AI services.</p>
+
+      <h2>On-Device Language Model</h2>
+      <p>When Apple Intelligence is available on your device, Friday uses Apple's on-device language model (<code>SystemLanguageModel</code>).</p>
+      <ul>
+        <li>It holds Friday's chat, looks things up in your journal with three tools (search, mood counts, and people), writes short entry titles and Go Deeper questions, and can rephrase a Weekly Reflection's cover line and summary.</li>
+        <li>The model runs on your device. OffRecord does not use Private Cloud Compute or any server model.</li>
+        <li>Everything it writes is checked against OffRecord's voice and safety rules, or the app's own wording is shown instead.</li>
+        <li>High-risk text about self-harm or suicide is never sent to the model, analyzed, or quoted. Friday offers the Get Support sheet instead.</li>
+      </ul>
 
       <h2>Where Your Data Lives</h2>
-      <p>By default, your journal is stored locally on your iPhone or iPad. Quick captures made on Apple Watch are saved on the watch first, then added to your journal when your paired iPhone is nearby.</p>
+      <p>By default, your journal is stored on your iPhone, iPad, or Mac. Quick captures made on Apple Watch are saved on the watch first, then added to your journal when your paired iPhone is nearby.</p>
+
+      <h2>Friday's Local Folder</h2>
+      <p>Friday's profile, chat, memory edits, generated entry titles, and Go Deeper questions are kept in one folder on the device.</p>
+      <ul>
+        <li>Files are written with complete file protection.</li>
+        <li>The folder is excluded from device backups and never syncs through iCloud. Each device rebuilds Friday's profile from your entries.</li>
+        <li>Turning Friday off, or Erase All Data, deletes the whole folder.</li>
+      </ul>
+
+      <h2>Mac App</h2>
+      <p>The Mac app (Mac Catalyst) stores your journal the same way, in its own sandboxed container, and uses the same iCloud container when iCloud Sync is on. Apple Health, widgets, Live Activities, Journaling Suggestions, and the Apple Watch app are not part of the Mac app.</p>
 
       <h2>Apple Watch Quick Capture</h2>
       <p>The Apple Watch companion is for fast capture, not browsing your journal. You can save a mood, dictate a short thought, record audio, and check whether recent captures have reached your iPhone.</p>
@@ -80,10 +104,46 @@
       <p>Weekly Reflection is a private look back at your week. It is made from your own started entries and stays in the app.</p>
       <ul>
         <li>Weekly reports can include a short summary, themes, wins, friction points, questions, saved takeaways, and history.</li>
-        <li>You can choose which entries are included in a regenerated reflection without changing the original entries.</li>
+        <li>You can choose which entries are included in a regenerated reflection without changing the original entries. Skip Weekly Reflection on an entry leaves it out of every report.</li>
         <li>If a reflection is exported, source quotes stay out unless you choose to include them.</li>
         <li>Weekly reminders use simple static wording and do not include journal text, names, quotes, themes, or summaries.</li>
         <li>OffRecord does not send Weekly Reflection reports to developer servers or non-Apple AI services.</li>
+      </ul>
+
+      <h2>Month in Review, Year in Review, and Session Prep</h2>
+      <ul>
+        <li>Reviews are generated on your device from your entries.</li>
+        <li>The Year in Review share card replaces people's names with "someone" unless you turn names on.</li>
+        <li>Session Prep includes no quotes unless you pick them, and replaces names unless you turn them on.</li>
+        <li>They leave the app only when you share or export them.</li>
+      </ul>
+
+      <h2>Keep Out of Friday and the Friday Switch</h2>
+      <ul>
+        <li><strong>Keep Out of Friday</strong> (per entry): the entry is never indexed for search by meaning, cited, learned from, quoted, or used in Friday's cards or saved chat. Weekly Reflection still counts it unless you also choose Skip Weekly Reflection.</li>
+        <li><strong>Friday switch</strong> (Settings): with Friday off, she reads nothing. Turning her off deletes her profile, chat, memory edits, cards, generated titles, and Go Deeper questions.</li>
+      </ul>
+
+      <h2>Journaling Suggestions (iPhone)</h2>
+      <ul>
+        <li>Apple prepares suggestions on your iPhone. OffRecord can't see them.</li>
+        <li>When you pick a suggestion, OffRecord receives only that one. It keeps the suggestion's title or reflection prompt and attaches its photos, up to five.</li>
+        <li>Nothing from suggestions you don't pick reaches OffRecord.</li>
+      </ul>
+
+      <h2>Importing From Other Apps</h2>
+      <ul>
+        <li>You choose the files (Day One, Apple Journal, Markdown or text, or CSV) in the system file picker. OffRecord can read only those files.</li>
+        <li>Files are read on your device. Nothing is uploaded.</li>
+        <li>OffRecord shows a preview before anything is saved.</li>
+      </ul>
+
+      <h2>Siri and Apple Intelligence</h2>
+      <ul>
+        <li>The entry that Create Entry, Create Audio Entry, and Search return to Siri carries metadata only (date, mood, starred state, word count, and whether it has a recording or photos), never journal text or photos.</li>
+        <li>Ask Friday in Siri answers with a summary only: no quotes, no snippets, and no citations.</li>
+        <li>A high-risk question gets Friday's support line, and the app opens to the Get Support sheet.</li>
+        <li>Intents that read or change the journal ask for device authentication. What you say to Siri is handled by Apple under Apple's privacy policy.</li>
       </ul>
 
       <h2>Optional Apple Health</h2>
@@ -92,21 +152,32 @@
         <li>Only the mood and the time are saved. Journal text, transcripts, photos, and recordings are never written to Health.</li>
         <li>OffRecord asks for permission to write State of Mind data only. It never reads any Health data.</li>
         <li>Apple Health is off by default. You can turn it off in Settings or manage access in the Health app.</li>
+        <li>Apple Health is not available in the Mac app.</li>
       </ul>
 
       <h2>Optional iCloud Sync</h2>
-      <p>If iCloud Sync is enabled, entries and attached photos sync through your personal Apple iCloud account using Apple's CloudKit infrastructure.</p>
+      <p>If iCloud Sync is enabled, your journal syncs through your personal Apple iCloud account using Apple's CloudKit infrastructure.</p>
       <ul>
+        <li>What syncs: entries, photos, tags, journals, Keep Out of Friday choices, and reports (Weekly Reflection, Month in Review, and Year in Review, including any wording the on-device model wrote for them).</li>
+        <li>What doesn't sync: recordings, the search index, and Friday's local folder. Recordings stay on the device where they were recorded.</li>
         <li>Sync uses your Apple ID and Apple's iCloud protections.</li>
         <li>OffRecord has no developer server access to your iCloud data.</li>
-        <li>Audio recordings stay on the device where they were recorded.</li>
-        <li>You can disable iCloud Sync in Settings.</li>
+        <li>Settings shows the sync status. Turning iCloud Sync off leaves your entries on the device and in iCloud.</li>
+      </ul>
+
+      <h2>Erase All Data</h2>
+      <p>Settings &rsaquo; Erase All Data deletes every entry, recording, photo, tag, journal, and report; Friday's local folder; the search index; OffRecord's Spotlight entries; the widget snapshot; and delivered notifications. Settings that hold no journal content, such as Lock and theme, stay.</p>
+      <ul>
+        <li>With iCloud Sync on, the deletions sync, so the data is removed from iCloud too.</li>
+        <li>With iCloud Sync off, copies already in iCloud stay. The confirmation says which applies.</li>
+        <li>Moods already saved to Apple Health stay in Health.</li>
       </ul>
 
       <h2>What We Do Not Do</h2>
       <ul>
         <li>We do not collect personal data on developer servers.</li>
         <li>We do not use OpenAI, Anthropic, Gemini, or other non-Apple third-party AI services.</li>
+        <li>We do not use Apple's Private Cloud Compute or any server-based language model.</li>
         <li>We do not use third-party analytics or tracking.</li>
         <li>We do not use third-party advertising.</li>
         <li>We do not share, sell, or transfer your data for advertising or marketing.</li>
@@ -114,12 +185,14 @@
       </ul>
 
       <h2>AI Processing</h2>
-      <p>OffRecord's journal intelligence is designed to stay local:</p>
+      <p>OffRecord's journal intelligence stays on your device:</p>
       <ul>
         <li><strong>Mood Analysis</strong> - on-device using Apple's NaturalLanguage framework</li>
-        <li><strong>Friday Engine</strong> - on-device logic that builds your personal model</li>
-        <li><strong>Semantic Memory</strong> - on-device search index and embeddings derived from journal entries</li>
-        <li><strong>Foundation Models Friday Responder</strong> - optional on-device Apple Foundation Models phrasing layer on supported systems</li>
+        <li><strong>Friday Engine</strong> - on-device logic that builds your personal model, rebuilt from your entries on each device</li>
+        <li><strong>On-Device Language Model</strong> - Apple Foundation Models (<code>SystemLanguageModel</code>) when Apple Intelligence is available</li>
+        <li><strong>Weekly Reflection, Month and Year in Review</strong> - reports built on your device</li>
+        <li><strong>Search by Meaning</strong> - on-device search index and embeddings derived from journal entries, never synced</li>
+        <li><strong>Safety Check</strong> - on-device classifier that keeps high-risk text out of analysis and quotes</li>
       </ul>
       <p>Voice transcription is separate from these journal analysis features and runs on device with Apple SpeechAnalyzer as described above.</p>
 
@@ -136,23 +209,24 @@
           <tr><td>Apple Health (write only)</td><td>Save the moods you choose as State of Mind</td><td>If you turn on Save Moods to Health</td></tr>
         </tbody>
       </table>
-      <p>On-device transcription with SpeechAnalyzer does not need the separate Speech Recognition permission; it uses microphone access only.</p>
+      <p>On-device transcription with SpeechAnalyzer does not need the separate Speech Recognition permission; it uses microphone access only. Journaling Suggestions and imports use system pickers, so OffRecord sees only what you pick.</p>
 
       <h2>Photo Storage</h2>
       <p>Photos are stored in the app's sandboxed data store, may sync through your personal iCloud account if iCloud Sync is enabled, and are not uploaded to developer servers.</p>
 
       <h2>Data Retention</h2>
       <ul>
-        <li>Local journal data stays on your device until you delete it.</li>
+        <li>Journal data stays on your device until you delete it or use Erase All Data.</li>
         <li>Uninstalling the app removes local app data.</li>
         <li>iCloud data can be managed through your iCloud settings.</li>
         <li>Audio files are stored locally in the app's sandboxed directory.</li>
         <li>Weekly Reflection reports stay in local app data until you delete them, delete local app data, or uninstall the app.</li>
-        <li>Derived Semantic Memory data can be deleted and rebuilt from Settings.</li>
+        <li>The search index can be deleted and rebuilt from Settings.</li>
+        <li>Friday's local folder is deleted when you turn Friday off or erase your data.</li>
       </ul>
 
       <h2>Third-Party Services</h2>
-      <p>OffRecord uses Apple SpeechAnalyzer for on-device transcription, Apple NaturalLanguage, Apple Foundation Models on supported systems, Apple CloudKit for optional iCloud Sync, Apple HealthKit for optional write-only mood samples, and Apple WidgetKit. We do not integrate non-Apple third-party SDKs, analytics tools, advertising networks, or third-party AI APIs.</p>
+      <p>OffRecord uses Apple SpeechAnalyzer for on-device transcription, Apple NaturalLanguage, Apple Foundation Models (on-device only) on devices with Apple Intelligence, Apple CloudKit for optional iCloud Sync, Apple HealthKit for optional write-only mood samples, Apple Journaling Suggestions on iPhone, Apple App Intents for Siri and Shortcuts, Apple WatchConnectivity, and Apple WidgetKit. We do not integrate non-Apple third-party SDKs, analytics tools, advertising networks, or third-party AI APIs.</p>
 
       <h2>App Store Privacy Labels</h2>
       <ul>
@@ -165,7 +239,9 @@
       <ul>
         <li>Export your data from Settings.</li>
         <li>Export Weekly Reflection reports, with source quotes off unless you choose to include them.</li>
-        <li>Delete individual entries or all local app data.</li>
+        <li>Delete individual entries, or delete everything with Erase All Data.</li>
+        <li>Keep any entry out of Friday, and out of Weekly Reflection.</li>
+        <li>Turn Friday off, which deletes what she learned.</li>
         <li>Dismiss or delete Weekly Reflection reports from the app.</li>
         <li>Disable iCloud Sync in Settings.</li>
         <li>Turn off on-device transcription in Settings.</li>
