@@ -256,26 +256,6 @@ struct EntryDetailView: View {
         }
     }
 
-    /// How Friday may respond to this entry; high-risk text is never analyzed or asked about.
-    private var entryResponseMode: SensitiveResponseMode {
-        JournalRiskClassifier.responseMode(for: text)
-    }
-
-    private var entrySupportCard: some View {
-        VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
-            Text(FridayPersonality.riskSafeSupport)
-                .font(OffRecordTypography.bodyLarge)
-                .foregroundStyle(OffRecordColor.textBrand)
-                .fixedSize(horizontal: false, vertical: true)
-            GetSupportButton()
-        }
-        .padding(OffRecordSpacing.lg)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .offRecordCard(cornerRadius: OffRecordRadius.lg)
-        .accessibilityElement(children: .contain)
-        .accessibilityIdentifier("entryDetail.support")
-    }
-
     private var addToDaySection: some View {
         VStack(alignment: .leading, spacing: OffRecordSpacing.md) {
             sectionLabel(String(localized: "Add", comment: "Section header above the Add Text and Add Photos buttons."))
