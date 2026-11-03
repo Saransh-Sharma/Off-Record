@@ -1976,7 +1976,7 @@ struct EntryDetailView: View {
         if moodChanged, selectedMood != .none {
             JournalBlockTimelineStore.appendMoodBlock(
                 mood: selectedMood,
-                createdAt: entryTimestampNow(),
+                createdAt: JournalBlockTimelineStore.moodTimestamp(proposed: entryTimestampNow(), for: entry),
                 to: entry,
                 in: viewContext
             )
@@ -2025,7 +2025,7 @@ struct EntryDetailView: View {
     private func saveMood() {
         JournalBlockTimelineStore.appendMoodBlock(
             mood: selectedMood,
-            createdAt: entryTimestampNow(),
+            createdAt: JournalBlockTimelineStore.moodTimestamp(proposed: entryTimestampNow(), for: entry),
             to: entry,
             in: viewContext
         )

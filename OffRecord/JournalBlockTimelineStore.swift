@@ -193,6 +193,18 @@ enum JournalBlockTimelineStore {
         return entry
     }
 
+    /// When a mood picked now should be stamped on `entry`.
+    ///
+    /// The entry's mood is its last mood block, but a past entry stamps new blocks with its own day
+    /// and today's time. Changing last night's mood the next morning would land before last night's
+    /// blocks and be ignored. So the new block goes just after the entry's latest block instead.
+    static func moodTimestamp(proposed: Date, for entry: DiaryEntry) -> Date {
+        guard let latest = blocks(for: entry).last?.blockCreatedAt, latest >= proposed else {
+            return proposed
+        }
+        return latest.addingTimeInterval(0.001)
+    }
+
     @discardableResult
     static func appendMoodBlock(
         mood: Mood,
