@@ -23,58 +23,526 @@
       },
       "shouldTranslate" : false
     },
-    "All Synced" : {},
-    "All synced" : {},
-    "All synced. Captures wait here until they reach your iPhone." : {},
-    "Almost at the limit." : {},
-    "Angry" : {},
-    "Anxious" : {},
-    "Back" : {},
-    "Calm" : {},
-    "Cancel" : {},
-    "Captures wait here until they reach your iPhone." : {},
-    "Couldn’t start recording." : {},
-    "Dictation" : {},
-    "Excited" : {},
-    "Grateful" : {},
-    "Happy" : {},
-    "I feel %@." : {},
-    "I feel neutral." : {},
-    "Listening" : {},
-    "Log how you feel" : {},
-    "Mood" : {},
-    "Mood: %@" : {},
-    "Neutral" : {},
-    "OffRecord" : {},
-    "On Watch" : {},
-    "On iPhone" : {},
-    "Ready to save" : {},
-    "Recent" : {},
-    "Recording" : {},
-    "Recording not found." : {},
-    "Recording paused." : {},
-    "Recording time %@" : {},
-    "Recording, %@" : {},
-    "Retrying" : {},
-    "Sad" : {},
-    "Save" : {},
-    "Save mood" : {},
-    "Saved" : {},
-    "Say what’s on your mind" : {},
-    "Say what’s on your mind." : {},
-    "Sending" : {},
-    "Speak" : {},
-    "Speak now" : {},
-    "Start" : {},
-    "Start recording" : {},
-    "Stop" : {},
-    "Stop recording" : {},
-    "Tired" : {},
-    "Transcribed on iPhone." : {},
-    "Try again" : {},
-    "Turn on microphone access in Settings." : {},
-    "Turn the Digital Crown or choose a mood, then save." : {},
-    "Watch storage is full." : {}
+    "All Synced" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todo sincronizado"
+          }
+        }
+      }
+    },
+    "All synced" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todo sincronizado"
+          }
+        }
+      }
+    },
+    "All synced. Captures wait here until they reach your iPhone." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todo sincronizado. Las capturas esperan aquí hasta llegar a tu iPhone."
+          }
+        }
+      }
+    },
+    "Almost at the limit." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Casi en el límite."
+          }
+        }
+      }
+    },
+    "Angry" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enfado"
+          }
+        }
+      }
+    },
+    "Anxious" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ansiedad"
+          }
+        }
+      }
+    },
+    "Back" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Atrás"
+          }
+        }
+      }
+    },
+    "Calm" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calma"
+          }
+        }
+      }
+    },
+    "Cancel" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelar"
+          }
+        }
+      }
+    },
+    "Captures wait here until they reach your iPhone." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las capturas esperan aquí hasta llegar a tu iPhone."
+          }
+        }
+      }
+    },
+    "Couldn’t start recording." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo empezar a grabar."
+          }
+        }
+      }
+    },
+    "Dictation" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dictado"
+          }
+        }
+      }
+    },
+    "Excited" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entusiasmo"
+          }
+        }
+      }
+    },
+    "Grateful" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gratitud"
+          }
+        }
+      }
+    },
+    "Happy" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alegría"
+          }
+        }
+      }
+    },
+    "I feel %@." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siento %@."
+          }
+        }
+      }
+    },
+    "I feel neutral." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Me siento neutral."
+          }
+        }
+      }
+    },
+    "Listening" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escuchando"
+          }
+        }
+      }
+    },
+    "Log how you feel" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registra cómo te sientes"
+          }
+        }
+      }
+    },
+    "Mood" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ánimo"
+          }
+        }
+      }
+    },
+    "Mood: %@" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ánimo: %@"
+          }
+        }
+      }
+    },
+    "Neutral" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Neutral"
+          }
+        }
+      }
+    },
+    "OffRecord" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OffRecord"
+          }
+        }
+      }
+    },
+    "On Watch" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En el reloj"
+          }
+        }
+      }
+    },
+    "On iPhone" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En el iPhone"
+          }
+        }
+      }
+    },
+    "Ready to save" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Lista para guardar"
+          }
+        }
+      }
+    },
+    "Recent" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Recientes"
+          }
+        }
+      }
+    },
+    "Recording" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grabación"
+          }
+        }
+      }
+    },
+    "Recording not found." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se encontró la grabación."
+          }
+        }
+      }
+    },
+    "Recording paused." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grabación en pausa."
+          }
+        }
+      }
+    },
+    "Recording time %@" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tiempo de grabación %@"
+          }
+        }
+      }
+    },
+    "Recording, %@" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grabación, %@"
+          }
+        }
+      }
+    },
+    "Retrying" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reintentando"
+          }
+        }
+      }
+    },
+    "Sad" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tristeza"
+          }
+        }
+      }
+    },
+    "Save" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guardar"
+          }
+        }
+      }
+    },
+    "Save mood" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guardar ánimo"
+          }
+        }
+      }
+    },
+    "Saved" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guardado"
+          }
+        }
+      }
+    },
+    "Say what’s on your mind" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Di lo que piensas"
+          }
+        }
+      }
+    },
+    "Say what’s on your mind." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Di lo que piensas."
+          }
+        }
+      }
+    },
+    "Sending" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enviando"
+          }
+        }
+      }
+    },
+    "Speak" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dictar"
+          }
+        }
+      }
+    },
+    "Speak now" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Habla ahora"
+          }
+        }
+      }
+    },
+    "Start" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empezar"
+          }
+        }
+      }
+    },
+    "Start recording" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empezar a grabar"
+          }
+        }
+      }
+    },
+    "Stop" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Detener"
+          }
+        }
+      }
+    },
+    "Stop recording" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Detener grabación"
+          }
+        }
+      }
+    },
+    "Tired" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cansancio"
+          }
+        }
+      }
+    },
+    "Transcribed on iPhone." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Se transcribe en el iPhone."
+          }
+        }
+      }
+    },
+    "Try again" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reintentar"
+          }
+        }
+      }
+    },
+    "Turn on microphone access in Settings." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Activa el acceso al micrófono en Ajustes."
+          }
+        }
+      }
+    },
+    "Turn the Digital Crown or choose a mood, then save." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gira la Digital Crown o elige un ánimo y guarda."
+          }
+        }
+      }
+    },
+    "Watch storage is full." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "El almacenamiento del reloj está lleno."
+          }
+        }
+      }
+    }
   },
   "version" : "1.0"
 }
