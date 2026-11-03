@@ -16,6 +16,7 @@ struct UITestDataSeeder {
             resetFridayStateForUITesting()
         }
         if seedReviewsIfNeeded(arguments: arguments, context: context) { return }
+        if seedOrganizeIfNeeded(arguments: arguments, context: context) { return }
         guard arguments.contains("-HeroNudgeUITest")
                 || arguments.contains("-OnboardingUITest")
                 || arguments.contains("-SemanticMemoryUITest")
