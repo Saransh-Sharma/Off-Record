@@ -55,6 +55,10 @@ All notable changes to OffRecord AI Journal are documented here.
   - Export one journal as a PDF.
   - Friday, Insights, Weekly Reflection, and search cover all journals.
   - Apple Watch captures go to the main journal.
+- **Spanish:**
+  - The app, widgets, Apple Watch app, and Siri phrases are translated. Needs native review before release.
+  - Get Support has no Spain or Latin America helplines yet. Spanish-region users see their emergency number and Find a Helpline.
+- **The safety check understands Spanish**, including indirect wording, and ignores missing accents.
 - **Pages for people, places, and topics:**
   - In Friday's My World, each one opens a page: mentions over time, mood when mentioned, the entries that mention it, Rename, and Forget.
   - Entries kept out of Friday and high-risk entries are never cited.
@@ -93,6 +97,7 @@ All notable changes to OffRecord AI Journal are documented here.
   - Settings adds **Rebuild Friday**.
 
 ### Changed
+- **String catalogs are synced with the code**; retired strings are removed.
 - **Requests for App Store reviews** use `AppStore.requestReview(in:)`.
 - **One color palette** shared by the app and widgets.
 - **Dead code removed:** 27 availability checks below iOS 26.
