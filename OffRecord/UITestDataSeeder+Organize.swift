@@ -69,7 +69,6 @@ extension UITestDataSeeder {
         // Maya is added directly so the fixture doesn't depend on the name tagger.
         let assistant = FridayAssistantEngine.shared
         assistant.resetForUITesting()
-        LocalAIEngine.shared.userProfile = UserProfile()
         assistant.learn(from: inputs)
         if assistant.knowledgeGraph.nodes["maya"] == nil {
             for _ in mayaEntries {
