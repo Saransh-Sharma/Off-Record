@@ -2,7 +2,14 @@
   "sourceLanguage" : "en",
   "strings" : {
     "%@ journaled" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ con entrada"
+          }
+        }
+      }
     },
     "%@ · mostly %@" : {
       "localizations" : {
@@ -11,6 +18,12 @@
             "state" : "new",
             "value" : "%1$@ · mostly %2$@"
           }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ · sobre todo %2$@"
+          }
         }
       }
     },
@@ -18,178 +31,670 @@
       "shouldTranslate" : false
     },
     "%lld of the last 7 days journaled" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%lld de los últimos 7 días con entrada"
+          }
+        }
+      }
     },
     "%lld-day streak" : {
-
+      "localizations" : {
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Racha de %lld día"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Racha de %lld días"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "%lld-day streak so far." : {
-
+      "localizations" : {
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Racha de %lld día por ahora."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Racha de %lld días por ahora."
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "%lld-day streak." : {
-      "comment" : "Insight description, e.g. “7-day streak.”"
+      "comment" : "Insight description, e.g. “7-day streak.”",
+      "localizations" : {
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Racha de %lld día."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Racha de %lld días."
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "%lld-week streak" : {
-
+      "localizations" : {
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Racha de %lld semana"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Racha de %lld semanas"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "%lld-week streak so far." : {
-
+      "localizations" : {
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Racha de %lld semana por ahora."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Racha de %lld semanas por ahora."
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "%lld-week streak." : {
-      "comment" : "Insight description, e.g. “4-week streak.”"
+      "comment" : "Insight description, e.g. “4-week streak.”",
+      "localizations" : {
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Racha de %lld semana."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Racha de %lld semanas."
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "Add More" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Añadir más"
+          }
+        }
+      }
     },
     "Angry" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enfado"
+          }
+        }
+      }
     },
     "Anxious" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ansiedad"
+          }
+        }
+      }
     },
     "Calm" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calma"
+          }
+        }
+      }
     },
     "Days in a row with at least one entry." : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Días seguidos con al menos una entrada."
+          }
+        }
+      }
     },
     "Days with an entry, allowing one rest day a week." : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Días con entrada, con un día de descanso por semana."
+          }
+        }
+      }
     },
     "Done today" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hecho hoy"
+          }
+        }
+      }
     },
     "Excited" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entusiasmo"
+          }
+        }
+      }
     },
     "Grateful" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gratitud"
+          }
+        }
+      }
     },
     "Happy" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alegría"
+          }
+        }
+      }
     },
     "Journaled today" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoy ya hay entrada"
+          }
+        }
+      }
     },
     "Journaled today, %@" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoy ya hay entrada, %@"
+          }
+        }
+      }
     },
     "Journaled · %@" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Con entrada · %@"
+          }
+        }
+      }
     },
     "Log %@" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrar %@"
+          }
+        }
+      }
     },
     "Log Mood" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registrar ánimo"
+          }
+        }
+      }
     },
     "Mood" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ánimo"
+          }
+        }
+      }
     },
     "No mood" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ninguno"
+          }
+        }
+      }
     },
     "Not yet today" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoy aún no"
+          }
+        }
+      }
     },
     "Nothing yet today" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoy aún no hay nada"
+          }
+        }
+      }
     },
     "OffRecord" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OffRecord"
+          }
+        }
+      }
     },
     "Opening OffRecord." : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abriendo OffRecord."
+          }
+        }
+      }
     },
     "Pause" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pausar"
+          }
+        }
+      }
     },
     "Pause or Resume Recording" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pausar o reanudar grabación"
+          }
+        }
+      }
     },
     "Paused" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En pausa"
+          }
+        }
+      }
     },
     "Paused at %@" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "En pausa tras %@"
+          }
+        }
+      }
     },
     "Pauses or resumes the recording." : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Pausa o reanuda la grabación."
+          }
+        }
+      }
     },
     "Quick Record" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grabación rápida"
+          }
+        }
+      }
     },
     "Record" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grabar"
+          }
+        }
+      }
     },
     "Record Entry" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grabar entrada"
+          }
+        }
+      }
     },
     "Record today’s entry" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grabar la entrada de hoy"
+          }
+        }
+      }
     },
     "Recording" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Grabando"
+          }
+        }
+      }
     },
     "Resume" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Reanudar"
+          }
+        }
+      }
     },
     "Sad" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tristeza"
+          }
+        }
+      }
     },
     "See if you’ve journaled today and start a recording." : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consulta si hoy ya hay entrada y empieza a grabar."
+          }
+        }
+      }
     },
     "See or set today’s mood." : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consulta o elige el ánimo de hoy."
+          }
+        }
+      }
     },
     "See your journaling streak." : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consulta tu racha."
+          }
+        }
+      }
     },
     "See your year, colored by mood." : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Consulta tu año, coloreado según tu ánimo."
+          }
+        }
+      }
     },
     "Sets today’s mood." : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Registra el ánimo de hoy."
+          }
+        }
+      }
     },
     "Start a recording in one tap." : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Empieza a grabar con un toque."
+          }
+        }
+      }
     },
     "Starts a recording in OffRecord." : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Inicia una grabación en OffRecord."
+          }
+        }
+      }
     },
     "Stop Recording" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Detener grabación"
+          }
+        }
+      }
     },
     "Stop and save" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Detener y guardar"
+          }
+        }
+      }
     },
     "Stops and saves the recording." : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Detiene y guarda la grabación."
+          }
+        }
+      }
     },
     "Streak" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Racha"
+          }
+        }
+      }
     },
     "Tired" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cansancio"
+          }
+        }
+      }
     },
     "Today" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hoy"
+          }
+        }
+      }
     },
     "Weeks in a row that met your weekly goal." : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Semanas seguidas en que cumpliste tu meta semanal."
+          }
+        }
+      }
     },
     "Weeks in a row with at least one entry." : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Semanas seguidas con al menos una entrada."
+          }
+        }
+      }
     },
     "What’s on your mind?" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué tienes en mente?"
+          }
+        }
+      }
     },
     "Year in Pixels" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Año en píxeles"
+          }
+        }
+      }
     },
     "^[%lld day](inflect: true)" : {
-
+      "localizations" : {
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld día"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld días"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "^[%lld day](inflect: true) journaled in %@" : {
       "localizations" : {
@@ -198,32 +703,122 @@
             "state" : "new",
             "value" : "^[%1$lld day](inflect: true) journaled in %2$@"
           }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "^[%1$lld día](inflect: true) con entrada en %2$@"
+          }
         }
       }
     },
     "^[%lld week](inflect: true)" : {
-
+      "localizations" : {
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld semana"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld semanas"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "^[%lld word](inflect: true)" : {
-
+      "localizations" : {
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld palabra"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld palabras"
+                }
+              }
+            }
+          }
+        }
+      }
     },
     "day" : {
-      "comment" : "Unit shown after a streak count of 1"
+      "comment" : "Unit shown after a streak count of 1",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "día"
+          }
+        }
+      }
     },
     "day streak" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "días de racha"
+          }
+        }
+      }
     },
     "days" : {
-      "comment" : "Unit shown after a streak count other than 1"
+      "comment" : "Unit shown after a streak count other than 1",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "días"
+          }
+        }
+      }
     },
     "week" : {
-      "comment" : "Unit shown after a weekly streak count of 1"
+      "comment" : "Unit shown after a weekly streak count of 1",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "semana"
+          }
+        }
+      }
     },
     "week streak" : {
-
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "semanas de racha"
+          }
+        }
+      }
     },
     "weeks" : {
-      "comment" : "Unit shown after a weekly streak count other than 1"
+      "comment" : "Unit shown after a weekly streak count other than 1",
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "semanas"
+          }
+        }
+      }
     }
   },
   "version" : "1.0"
