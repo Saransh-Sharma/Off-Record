@@ -454,6 +454,8 @@ Copy should be short, specific, and calm. It should read like a well-made Apple 
 | **Session Prep** | therapy, therapy prep, session notes |
 | **Entries That Mattered** | highlights, best entries |
 | **Year in Pixels** | mood grid |
+| **tag** (a word you add to an entry; shown as #tag in search) | label, category, hashtag |
+| **journal** (a named collection; the default is the main journal) | notebook, folder, space |
 | **iPhone** / **iPad** (via `DeviceNoun`) | this device, your device, locally |
 
 #### Length

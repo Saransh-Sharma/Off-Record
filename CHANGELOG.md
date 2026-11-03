@@ -41,7 +41,23 @@ All notable changes to OffRecord AI Journal are documented here.
   - Weekly Reflection still counts them unless they're skipped too.
 - **Friday switch** in Settings. Turning Friday off deletes what she learned, her chat, and generated titles and questions.
 - **Erase All Data** in Settings. It deletes the journal, files, indexes, and Friday's data. When iCloud sync is on, the deletion reaches iCloud too, and the confirmation says so.
-- **Tags and journals data model** (model version 3). See the organizing features below.
+- **Tags:**
+  - Add or remove tags on an entry, with suggestions.
+  - Tags show on the entry and on Timeline cards.
+  - Timeline filters by tag; search with "#tag" or the tag's name.
+  - Rename, merge, and delete tags in Settings.
+  - Imported Day One and Markdown tags carry over.
+- **Journals:**
+  - Create, rename, archive, and delete journals in Settings. Deleting asks whether to move entries to the main journal or delete them.
+  - Each journal has its own page for the day.
+  - Record and Write let you pick the journal.
+  - Timeline shows all journals, the main journal, or one journal.
+  - Export one journal as a PDF.
+  - Friday, Insights, Weekly Reflection, and search cover all journals.
+  - Apple Watch captures go to the main journal.
+- **Pages for people, places, and topics:**
+  - In Friday's My World, each one opens a page: mentions over time, mood when mentioned, the entries that mention it, Rename, and Forget.
+  - Entries kept out of Friday and high-risk entries are never cited.
 - **Siri and Apple Intelligence:**
   - Create Entry, Create Audio Entry, and Search adopt Apple's journal schemas. The entry entity carries no journal text.
   - Ask Friday answers inside Siri with a summary only, never quotes. Heavy questions open Get Support (`offrecord://support`, which opens even while locked).
