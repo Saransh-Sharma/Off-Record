@@ -39,17 +39,17 @@ struct EntryDetailView: View {
     @State var editingBlockText = ""
     @State var blockEditError: String?
     @State var isComposingTextBlock = false
-    @State private var newTextBlockText = ""
-    @State private var newTextBlockError: String?
+    @State var newTextBlockText = ""
+    @State var newTextBlockError: String?
     @State var showDeleteDayConfirm = false
     @State var pendingBlockDeletion: JournalBlockTimelineItem?
     @State private var deeperQuestion: String?
     @State private var isFetchingDeeperQuestion = false
-    @State private var composerPrompt: String?
+    @State var composerPrompt: String?
     @State private var isDeletingDay = false
     @AppStorage(FridayAvailability.defaultsKey) private var isFridayEnabled = true
     private let deleteEmptyDraftOnDisappear: Bool
-    private let promptContext: String?
+    let promptContext: String?
     private let heroPromptID: String?
     let showsDismissButton: Bool
     @State private var currentActivity: NSUserActivity?
@@ -63,7 +63,7 @@ struct EntryDetailView: View {
     @State var photoThumbnailByID: [UUID: UIImage] = [:]
     #endif
 
-    private var isIPad: Bool { horizontalSizeClass == .regular }
+    var isIPad: Bool { horizontalSizeClass == .regular }
     /// Go Deeper and entry insights need Friday on and this entry not kept out of her.
     private var fridayReadsEntry: Bool { isFridayEnabled && entry.journalAIExclusion.permitsAssistantEvidence }
     private var compactMoodPickerBinding: Binding<Bool> {
@@ -408,69 +408,6 @@ struct EntryDetailView: View {
                 .frame(minHeight: 52)
                 .background(OffRecordReadableTintStyle.journal.fill, in: Capsule())
                 .overlay(Capsule().stroke(OffRecordReadableTintStyle.journal.border, lineWidth: 1))
-        }
-    }
-
-    private var newTextBlockComposer: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            if let promptContext = composerPrompt ?? promptContext, !promptContext.isEmpty {
-                HStack(alignment: .top, spacing: 10) {
-                    Image(systemName: "sparkles")
-                        .font(OffRecordTypography.labelMedium)
-                        .foregroundStyle(OffRecordColor.textLavender)
-                        .padding(.top, 2)
-
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text("Writing prompt")
-                            .font(OffRecordTypography.labelSmall)
-                            .foregroundStyle(OffRecordColor.textPeach)
-                        Text(promptContext)
-                            .font(OffRecordTypography.bodySmall)
-                            .foregroundStyle(OffRecordColor.textPrimary)
-                            .fixedSize(horizontal: false, vertical: true)
-                    }
-
-                    Spacer(minLength: 0)
-                }
-                .padding(14)
-                .offRecordContentCard(cornerRadius: 14, fill: OffRecordColor.surfaceLavender)
-            }
-
-            TextEditor(text: $newTextBlockText)
-                .font(OffRecordTypography.journalBody)
-                .foregroundColor(OffRecordColor.textPrimary)
-                .lineSpacing(6)
-                .focused($isTextFocused)
-                .scrollContentBackground(.hidden)
-                .frame(minHeight: isIPad ? 360 : 320)
-                .padding(18)
-                .background(OffRecordColor.surfaceWarm, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 20, style: .continuous)
-                        .stroke(newTextBlockError == nil ? OffRecordColor.borderWarm : OffRecordColor.brandCoral.opacity(0.42), lineWidth: 1)
-                )
-                .shadow(color: OffRecordShadow.cardColor, radius: 18, x: 0, y: 8)
-                .accessibilityLabel("New text")
-                .accessibilityIdentifier("entryDetail.newTextBlock")
-
-            if let newTextBlockError {
-                Text(newTextBlockError)
-                    .font(OffRecordTypography.metadata)
-                    .foregroundColor(OffRecordColor.brandCoral)
-            }
-
-            HStack(spacing: 8) {
-                Text("^[\(newTextBlockText.split { $0.isWhitespace || $0.isNewline }.count) word](inflect: true)")
-                    .font(OffRecordTypography.metadata)
-                    .foregroundColor(OffRecordColor.textSecondary)
-
-                Spacer()
-            }
-        }
-        .padding(.top, 10)
-        .padding(.bottom, 8)
-        .onAppear {
-            isTextFocused = true
         }
     }
 
