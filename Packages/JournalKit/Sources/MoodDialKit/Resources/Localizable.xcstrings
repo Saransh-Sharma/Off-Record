@@ -1,30 +1,246 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Angry" : {},
-    "Anxious" : {},
-    "Calm" : {},
-    "Cancel" : {},
-    "Closes without changing the mood." : {},
-    "Done" : {},
-    "Excited" : {},
-    "Grateful" : {},
-    "Happy" : {},
-    "I feel angry." : {},
-    "I feel anxious." : {},
-    "I feel calm." : {},
-    "I feel excited." : {},
-    "I feel grateful." : {},
-    "I feel happy." : {},
-    "I feel neutral." : {},
-    "I feel sad." : {},
-    "I feel tired." : {},
-    "Mood Dial" : {},
-    "No mood" : {},
-    "Sad" : {},
-    "Saves the selected mood." : {},
-    "Swipe up or down to change the mood." : {},
-    "Tired" : {}
+    "Angry" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Enfado"
+          }
+        }
+      }
+    },
+    "Anxious" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ansiedad"
+          }
+        }
+      }
+    },
+    "Calm" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Calma"
+          }
+        }
+      }
+    },
+    "Cancel" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cancelar"
+          }
+        }
+      }
+    },
+    "Closes without changing the mood." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cierra sin cambiar el ánimo."
+          }
+        }
+      }
+    },
+    "Done" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OK"
+          }
+        }
+      }
+    },
+    "Excited" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Entusiasmo"
+          }
+        }
+      }
+    },
+    "Grateful" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Gratitud"
+          }
+        }
+      }
+    },
+    "Happy" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Alegría"
+          }
+        }
+      }
+    },
+    "I feel angry." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siento enfado."
+          }
+        }
+      }
+    },
+    "I feel anxious." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siento ansiedad."
+          }
+        }
+      }
+    },
+    "I feel calm." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siento calma."
+          }
+        }
+      }
+    },
+    "I feel excited." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siento entusiasmo."
+          }
+        }
+      }
+    },
+    "I feel grateful." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siento gratitud."
+          }
+        }
+      }
+    },
+    "I feel happy." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siento alegría."
+          }
+        }
+      }
+    },
+    "I feel neutral." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Me siento neutral."
+          }
+        }
+      }
+    },
+    "I feel sad." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siento tristeza."
+          }
+        }
+      }
+    },
+    "I feel tired." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Siento cansancio."
+          }
+        }
+      }
+    },
+    "Mood Dial" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Selector de ánimo"
+          }
+        }
+      }
+    },
+    "No mood" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ninguno"
+          }
+        }
+      }
+    },
+    "Sad" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tristeza"
+          }
+        }
+      }
+    },
+    "Saves the selected mood." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Guarda el ánimo elegido."
+          }
+        }
+      }
+    },
+    "Swipe up or down to change the mood." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Desliza arriba o abajo para cambiar el ánimo."
+          }
+        }
+      }
+    },
+    "Tired" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cansancio"
+          }
+        }
+      }
+    }
   },
   "version" : "1.0"
 }

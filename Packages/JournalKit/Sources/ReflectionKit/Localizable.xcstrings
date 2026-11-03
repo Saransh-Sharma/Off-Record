@@ -1,17 +1,128 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "%@ feels heavier now" : {},
-    "%@ feels lighter now" : {},
-    "%@ is back" : {},
-    "%@ keeps coming up" : {},
-    "%@ seems to lift you" : {},
-    "%@ seems to weigh on you" : {},
-    "A decision or regret came up in ^[%lld entry](inflect: true)." : {},
-    "About as much as last week." : {},
-    "About the same as last week." : {},
-    "Anything you held back?" : {},
-    "Anything you want to say about %@?" : {},
+    "%@ feels heavier now" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ pesa más ahora"
+          }
+        }
+      }
+    },
+    "%@ feels lighter now" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ pesa menos ahora"
+          }
+        }
+      }
+    },
+    "%@ is back" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ ha vuelto"
+          }
+        }
+      }
+    },
+    "%@ keeps coming up" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ sigue apareciendo"
+          }
+        }
+      }
+    },
+    "%@ seems to lift you" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ parece animarte"
+          }
+        }
+      }
+    },
+    "%@ seems to weigh on you" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ parece pesarte"
+          }
+        }
+      }
+    },
+    "A decision or regret came up in ^[%lld entry](inflect: true)." : {
+      "localizations" : {
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Una decisión o un arrepentimiento aparece en %lld entrada."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Una decisión o un arrepentimiento aparece en %lld entradas."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "About as much as last week." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Más o menos lo mismo que la semana pasada."
+          }
+        }
+      }
+    },
+    "About the same as last week." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Parecido a la semana pasada."
+          }
+        }
+      }
+    },
+    "Anything you held back?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Algo que te guardaste?"
+          }
+        }
+      }
+    },
+    "Anything you want to say about %@?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Algo que quieras decir sobre %@?"
+          }
+        }
+      }
+    },
     "Based on ^[%lld entry](inflect: true) about %@." : {
       "localizations" : {
         "en" : {
@@ -19,10 +130,37 @@
             "state" : "new",
             "value" : "Based on ^[%1$lld entry](inflect: true) about %2$@."
           }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Según ^[%1$lld entrada](inflect: true) sobre %2$@."
+          }
         }
       }
     },
-    "Based on ^[%lld entry](inflect: true)." : {},
+    "Based on ^[%lld entry](inflect: true)." : {
+      "localizations" : {
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Según %lld entrada."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Según %lld entradas."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "Based on ^[%lld recent entry](inflect: true) vs. ^[%lld earlier entry](inflect: true)." : {
       "localizations" : {
         "en" : {
@@ -30,102 +168,921 @@
             "state" : "new",
             "value" : "Based on ^[%1$lld recent entry](inflect: true) vs. ^[%2$lld earlier entry](inflect: true)."
           }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Según ^[%1$lld entrada reciente](inflect: true) frente a ^[%2$lld entrada anterior](inflect: true)."
+          }
         }
       }
     },
-    "Based on ^[%lld recent entry](inflect: true)." : {},
-    "Based on a recent entry." : {},
-    "Based on earlier entries and the last 2 weeks." : {},
-    "Based on patterns in your journal." : {},
-    "Based on recent entries and ones from over a month ago." : {},
-    "Based on the gaps between recent entries." : {},
-    "Based on this entry’s wording." : {},
-    "Based on this week’s entries." : {},
-    "Based on your last 3 entries vs. earlier ones." : {},
-    "Based on your last 5 entries." : {},
-    "Based on your last few entries." : {},
-    "Based on your recent and earlier %@ entries." : {},
-    "Based on your recent entry lengths." : {},
-    "Compared with your recent entries." : {},
-    "Each one read a bit heavier than the last." : {},
-    "Entries about %@ read heavier than your others." : {},
-    "Entries about %@ read lighter than your others." : {},
-    "How could you make more room for it?" : {},
-    "How did this week compare to last week?" : {},
-    "How do I feel about %@ lately?" : {},
-    "How do you feel about it now?" : {},
-    "How does %@ affect my mood?" : {},
-    "How has %@ changed since I first wrote about it?" : {},
-    "How often have I been writing lately?" : {},
-    "I have enough from this week for a recap." : {},
-    "I haven’t seen %@ in the last 2 weeks. They used to come up often." : {},
-    "I pulled a question from this week’s entries." : {},
-    "Less writing than last week." : {},
-    "Longer than your recent entries." : {},
-    "More writing than last week." : {},
-    "Shorter than your recent entries." : {},
-    "Something new is coming up" : {},
-    "This entry reads heavier than usual" : {},
-    "This entry reads lighter than usual" : {},
-    "This question has come up in ^[%lld entry](inflect: true)." : {},
-    "This week read heavier than last." : {},
-    "This week read lighter than last." : {},
-    "This week’s patterns" : {},
-    "Time to check in on a decision" : {},
-    "Time to revisit a regret" : {},
-    "What brought you back?" : {},
-    "What changed?" : {},
-    "What decisions have I written about lately?" : {},
-    "What do I keep asking about %@?" : {},
-    "What from this week do you want to keep?" : {},
-    "What have I been writing about lately?" : {},
-    "What have I written about %@?" : {},
-    "What made this entry feel lighter?" : {},
-    "What made today heavier?" : {},
-    "What made today lighter?" : {},
-    "What needed the extra space?" : {},
-    "What regrets have I written about lately?" : {},
-    "What stood out in my week?" : {},
-    "What would make it easier?" : {},
-    "What would make the next few days easier?" : {},
-    "What would you do differently now?" : {},
-    "What’s been helping me lately?" : {},
-    "What’s been weighing on me?" : {},
-    "What’s changed with %@?" : {},
-    "What’s different this time?" : {},
-    "What’s going on with %@?" : {},
-    "What’s helping?" : {},
-    "What’s made it harder to write lately?" : {},
-    "What’s making it harder?" : {},
-    "What’s your honest answer right now?" : {},
-    "When do I write less than usual?" : {},
-    "When do I write more than usual?" : {},
-    "Which decision from this week needs another look?" : {},
-    "Why did this entry feel heavier?" : {},
-    "You haven’t mentioned %@ lately" : {},
-    "You keep asking about %@" : {},
-    "You wrote about a decision recently." : {},
-    "You wrote about a regret recently." : {},
-    "You wrote less than usual" : {},
-    "You wrote more than usual" : {},
-    "Your last 3 entries cover different ground than usual." : {},
-    "Your last 5 entries got heavier" : {},
-    "Your last few entries read lighter than usual." : {},
-    "Your last few entries were closer together than usual." : {},
-    "Your last few entries were further apart than usual." : {},
-    "Your recent entries feel lighter" : {},
-    "Your week so far" : {},
-    "You’re writing about %@ again after more than a month." : {},
-    "You’re writing about %@ again, and it reads heavier than before." : {},
-    "You’re writing about %@ again, and it reads lighter than before." : {},
-    "You’re writing less often" : {},
-    "You’re writing more often" : {},
+    "Based on ^[%lld recent entry](inflect: true)." : {
+      "localizations" : {
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Según %lld entrada reciente."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Según %lld entradas recientes."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "Based on a recent entry." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Según una entrada reciente."
+          }
+        }
+      }
+    },
+    "Based on earlier entries and the last 2 weeks." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Según entradas anteriores y las últimas 2 semanas."
+          }
+        }
+      }
+    },
+    "Based on patterns in your journal." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Según patrones de tu diario."
+          }
+        }
+      }
+    },
+    "Based on recent entries and ones from over a month ago." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Según entradas recientes y de hace más de un mes."
+          }
+        }
+      }
+    },
+    "Based on the gaps between recent entries." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Según el tiempo entre tus entradas recientes."
+          }
+        }
+      }
+    },
+    "Based on this entry’s wording." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Según las palabras de esta entrada."
+          }
+        }
+      }
+    },
+    "Based on this week’s entries." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Según las entradas de esta semana."
+          }
+        }
+      }
+    },
+    "Based on your last 3 entries vs. earlier ones." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Según tus últimas 3 entradas frente a las anteriores."
+          }
+        }
+      }
+    },
+    "Based on your last 5 entries." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Según tus últimas 5 entradas."
+          }
+        }
+      }
+    },
+    "Based on your last few entries." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Según tus últimas entradas."
+          }
+        }
+      }
+    },
+    "Based on your recent and earlier %@ entries." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Según tus entradas recientes y anteriores sobre %@."
+          }
+        }
+      }
+    },
+    "Based on your recent entry lengths." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Según la extensión de tus entradas recientes."
+          }
+        }
+      }
+    },
+    "Compared with your recent entries." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Comparado con tus entradas recientes."
+          }
+        }
+      }
+    },
+    "Each one read a bit heavier than the last." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cada una pesaba un poco más que la anterior."
+          }
+        }
+      }
+    },
+    "Entries about %@ read heavier than your others." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las entradas sobre %@ pesan más que las demás."
+          }
+        }
+      }
+    },
+    "Entries about %@ read lighter than your others." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Las entradas sobre %@ pesan menos que las demás."
+          }
+        }
+      }
+    },
+    "How could you make more room for it?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Cómo podrías darle más lugar?"
+          }
+        }
+      }
+    },
+    "How did this week compare to last week?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Cómo fue esta semana frente a la anterior?"
+          }
+        }
+      }
+    },
+    "How do I feel about %@ lately?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Cómo me siento últimamente con %@?"
+          }
+        }
+      }
+    },
+    "How do you feel about it now?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Cómo lo ves ahora?"
+          }
+        }
+      }
+    },
+    "How does %@ affect my mood?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Cómo afecta %@ a mi ánimo?"
+          }
+        }
+      }
+    },
+    "How has %@ changed since I first wrote about it?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Cómo ha cambiado %@ desde que empecé a escribir sobre ello?"
+          }
+        }
+      }
+    },
+    "How often have I been writing lately?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Con qué frecuencia escribo últimamente?"
+          }
+        }
+      }
+    },
+    "I have enough from this week for a recap." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ya tengo suficiente de esta semana para un resumen."
+          }
+        }
+      }
+    },
+    "I haven’t seen %@ in the last 2 weeks. They used to come up often." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ no aparece desde hace 2 semanas. Antes salía a menudo."
+          }
+        }
+      }
+    },
+    "I pulled a question from this week’s entries." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Saqué una pregunta de las entradas de esta semana."
+          }
+        }
+      }
+    },
+    "Less writing than last week." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escribiste menos que la semana pasada."
+          }
+        }
+      }
+    },
+    "Longer than your recent entries." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Más larga que tus entradas recientes."
+          }
+        }
+      }
+    },
+    "More writing than last week." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escribiste más que la semana pasada."
+          }
+        }
+      }
+    },
+    "Shorter than your recent entries." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Más corta que tus entradas recientes."
+          }
+        }
+      }
+    },
+    "Something new is coming up" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Aparece algo nuevo"
+          }
+        }
+      }
+    },
+    "This entry reads heavier than usual" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta entrada pesa más de lo habitual"
+          }
+        }
+      }
+    },
+    "This entry reads lighter than usual" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta entrada pesa menos de lo habitual"
+          }
+        }
+      }
+    },
+    "This question has come up in ^[%lld entry](inflect: true)." : {
+      "localizations" : {
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Esta pregunta aparece en %lld entrada."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "Esta pregunta aparece en %lld entradas."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "This week read heavier than last." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta semana pesó más que la anterior."
+          }
+        }
+      }
+    },
+    "This week read lighter than last." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Esta semana pesó menos que la anterior."
+          }
+        }
+      }
+    },
+    "This week’s patterns" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Patrones de esta semana"
+          }
+        }
+      }
+    },
+    "Time to check in on a decision" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Es momento de revisar una decisión"
+          }
+        }
+      }
+    },
+    "Time to revisit a regret" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Es momento de volver a un arrepentimiento"
+          }
+        }
+      }
+    },
+    "What brought you back?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué te hizo volver?"
+          }
+        }
+      }
+    },
+    "What changed?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué cambió?"
+          }
+        }
+      }
+    },
+    "What decisions have I written about lately?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Sobre qué decisiones he escrito últimamente?"
+          }
+        }
+      }
+    },
+    "What do I keep asking about %@?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué sigo preguntándome sobre %@?"
+          }
+        }
+      }
+    },
+    "What from this week do you want to keep?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué quieres conservar de esta semana?"
+          }
+        }
+      }
+    },
+    "What have I been writing about lately?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Sobre qué he escrito últimamente?"
+          }
+        }
+      }
+    },
+    "What have I written about %@?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué he escrito sobre %@?"
+          }
+        }
+      }
+    },
+    "What made this entry feel lighter?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué hizo más ligera esta entrada?"
+          }
+        }
+      }
+    },
+    "What made today heavier?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué hizo que hoy pesara más?"
+          }
+        }
+      }
+    },
+    "What made today lighter?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué hizo que hoy pesara menos?"
+          }
+        }
+      }
+    },
+    "What needed the extra space?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué necesitaba más espacio?"
+          }
+        }
+      }
+    },
+    "What regrets have I written about lately?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Sobre qué arrepentimientos he escrito últimamente?"
+          }
+        }
+      }
+    },
+    "What stood out in my week?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué destacó en mi semana?"
+          }
+        }
+      }
+    },
+    "What would make it easier?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué lo haría más fácil?"
+          }
+        }
+      }
+    },
+    "What would make the next few days easier?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué haría más fáciles los próximos días?"
+          }
+        }
+      }
+    },
+    "What would you do differently now?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué harías distinto ahora?"
+          }
+        }
+      }
+    },
+    "What’s been helping me lately?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué me ha ayudado últimamente?"
+          }
+        }
+      }
+    },
+    "What’s been weighing on me?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué me ha estado pesando?"
+          }
+        }
+      }
+    },
+    "What’s changed with %@?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué ha cambiado con %@?"
+          }
+        }
+      }
+    },
+    "What’s different this time?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué es distinto esta vez?"
+          }
+        }
+      }
+    },
+    "What’s going on with %@?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué pasa con %@?"
+          }
+        }
+      }
+    },
+    "What’s helping?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué te está ayudando?"
+          }
+        }
+      }
+    },
+    "What’s made it harder to write lately?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué te ha hecho más difícil escribir últimamente?"
+          }
+        }
+      }
+    },
+    "What’s making it harder?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué lo está haciendo más difícil?"
+          }
+        }
+      }
+    },
+    "What’s your honest answer right now?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Cuál es tu respuesta sincera ahora mismo?"
+          }
+        }
+      }
+    },
+    "When do I write less than usual?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Cuándo escribo menos de lo habitual?"
+          }
+        }
+      }
+    },
+    "When do I write more than usual?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Cuándo escribo más de lo habitual?"
+          }
+        }
+      }
+    },
+    "Which decision from this week needs another look?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Qué decisión de esta semana merece otra mirada?"
+          }
+        }
+      }
+    },
+    "Why did this entry feel heavier?" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "¿Por qué esta entrada pesaba más?"
+          }
+        }
+      }
+    },
+    "You haven’t mentioned %@ lately" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ no aparece últimamente"
+          }
+        }
+      }
+    },
+    "You keep asking about %@" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Sigues preguntando por %@"
+          }
+        }
+      }
+    },
+    "You wrote about a decision recently." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hace poco escribiste sobre una decisión."
+          }
+        }
+      }
+    },
+    "You wrote about a regret recently." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hace poco escribiste sobre un arrepentimiento."
+          }
+        }
+      }
+    },
+    "You wrote less than usual" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escribiste menos de lo habitual"
+          }
+        }
+      }
+    },
+    "You wrote more than usual" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escribiste más de lo habitual"
+          }
+        }
+      }
+    },
+    "Your last 3 entries cover different ground than usual." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus últimas 3 entradas tratan temas distintos de lo habitual."
+          }
+        }
+      }
+    },
+    "Your last 5 entries got heavier" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus últimas 5 entradas pesan cada vez más"
+          }
+        }
+      }
+    },
+    "Your last few entries read lighter than usual." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus últimas entradas pesan menos de lo habitual."
+          }
+        }
+      }
+    },
+    "Your last few entries were closer together than usual." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus últimas entradas estuvieron más seguidas de lo habitual."
+          }
+        }
+      }
+    },
+    "Your last few entries were further apart than usual." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus últimas entradas estuvieron más espaciadas de lo habitual."
+          }
+        }
+      }
+    },
+    "Your recent entries feel lighter" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus entradas recientes pesan menos"
+          }
+        }
+      }
+    },
+    "Your week so far" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tu semana hasta ahora"
+          }
+        }
+      }
+    },
+    "You’re writing about %@ again after more than a month." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vuelves a escribir sobre %@ tras más de un mes."
+          }
+        }
+      }
+    },
+    "You’re writing about %@ again, and it reads heavier than before." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vuelves a escribir sobre %@, y pesa más que antes."
+          }
+        }
+      }
+    },
+    "You’re writing about %@ again, and it reads lighter than before." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Vuelves a escribir sobre %@, y pesa menos que antes."
+          }
+        }
+      }
+    },
+    "You’re writing less often" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escribes con menos frecuencia"
+          }
+        }
+      }
+    },
+    "You’re writing more often" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Escribes con más frecuencia"
+          }
+        }
+      }
+    },
     "You’ve mentioned %@ in ^[%lld recent entry](inflect: true)." : {
       "localizations" : {
         "en" : {
           "stringUnit" : {
             "state" : "new",
             "value" : "You’ve mentioned %1$@ in ^[%2$lld recent entry](inflect: true)."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%1$@ aparece en ^[%2$lld entrada reciente](inflect: true)."
           }
         }
       }
@@ -136,6 +1093,12 @@
           "stringUnit" : {
             "state" : "new",
             "value" : "^[%1$lld entry](inflect: true), ^[%2$lld word](inflect: true)."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "^[%1$lld entrada](inflect: true), ^[%2$lld palabra](inflect: true)."
           }
         }
       }

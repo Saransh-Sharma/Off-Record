@@ -1,13 +1,76 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "No speech was recognized." : {},
-    "The speech model couldn’t be downloaded. Try again later." : {},
-    "This device doesn’t support transcription." : {},
-    "This recording couldn’t be transcribed." : {},
-    "Transcription doesn’t support your language yet." : {},
-    "Transcription is turned off." : {},
-    "Transcription needs iOS 26 or later." : {}
+    "No speech was recognized." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se reconoció ninguna voz."
+          }
+        }
+      }
+    },
+    "The speech model couldn’t be downloaded. Try again later." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo descargar el modelo de voz. Inténtalo más tarde."
+          }
+        }
+      }
+    },
+    "This device doesn’t support transcription." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Este dispositivo no admite la transcripción."
+          }
+        }
+      }
+    },
+    "This recording couldn’t be transcribed." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "No se pudo transcribir esta grabación."
+          }
+        }
+      }
+    },
+    "Transcription doesn’t support your language yet." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La transcripción aún no admite tu idioma."
+          }
+        }
+      }
+    },
+    "Transcription is turned off." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La transcripción está desactivada."
+          }
+        }
+      }
+    },
+    "Transcription needs iOS 26 or later." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "La transcripción requiere iOS 26 o posterior."
+          }
+        }
+      }
+    }
   },
   "version" : "1.0"
 }

@@ -1,11 +1,68 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "%lld waiting on watch" : {},
-    "All synced" : {},
-    "Capture" : {},
-    "Opens OffRecord for a quick capture." : {},
-    "Quick Capture" : {}
+    "%lld waiting on watch" : {
+      "localizations" : {
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld pendiente"
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld pendientes"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "All synced" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Todo sincronizado"
+          }
+        }
+      }
+    },
+    "Capture" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Capturar"
+          }
+        }
+      }
+    },
+    "Opens OffRecord for a quick capture." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Abre OffRecord para una captura rápida."
+          }
+        }
+      }
+    },
+    "Quick Capture" : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Captura rápida"
+          }
+        }
+      }
+    }
   },
   "version" : "1.0"
 }
