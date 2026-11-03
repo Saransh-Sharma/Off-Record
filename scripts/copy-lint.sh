@@ -25,7 +25,7 @@ SKIP_LINE = re.compile(r"[Ll]ogger\.|Logger\(|print\(|os_log|privacy: \.public|a
 # Places the standard allows privacy reassurance.
 PRIVACY_FILES = {"OnboardingView.swift", "HomePrivacyExplanationView.swift", "SettingsView.swift",
                  # Onboarding pages, moved out of OnboardingView.swift.
-                 "OnboardingStep.swift", "WelcomeStep.swift",
+                 "OnboardingStep.swift", "WelcomeStep.swift", "PrivacyProofStep.swift",
                  # The iCloud toggle, moved out of SettingsView.swift.
                  "Settings+Sync.swift",
                  "OffRecordSettingsComponents.swift", "SpeechTranscriptionConsent.swift",
