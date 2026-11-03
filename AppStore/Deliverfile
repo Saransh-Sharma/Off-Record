@@ -18,11 +18,11 @@ keywords({
 })
 
 promotional_text({
-  "en-US" => "NEW: Apple Watch Quick Capture for mood, dictation, and audio notes. Saved on watch first, synced privately to iPhone."
+  "en-US" => "Now on Mac. Friday runs on Apple's on-device model, plus Month and Year in Review, tags, journals, and imports from Day One and Apple Journal."
 })
 
 release_notes({
-  "en-US" => "New in v1.4:\n\n- Apple Watch Quick Capture: Save Mood, Speak, and Record captures from your wrist.\n- Private Outbox: Watch captures save locally first and retry later if your iPhone is unreachable.\n- Watch Complication and Smart Stack: Open Quick Capture with generic, privacy-safe status only.\n- Better Audio Notes: Multiple watch recordings can attach to the same daily entry.\n- Safer Sync: Duplicate watch deliveries are ignored, and audio imports require the file before a receipt is created.\n- Still private: No analytics, no tracking, and no developer servers for watch captures."
+  "en-US" => "New in v1.5:\n\n- OffRecord on Mac, with menu commands and keyboard shortcuts.\n- Friday on Apple's on-device model: with Apple Intelligence, she keeps a conversation going, looks things up in your journal, and cites the entries she used. Entries can get short titles.\n- Month in Review and Year in Review.\n- Session Prep: a summary of a date range for a session with a therapist or coach.\n- Tags, multiple journals, and a page for each person, place, and topic.\n- Import from Day One, Apple Journal, Markdown or text files, and CSV.\n- Siri can add to your journal, search it, and ask Friday. Siri gets a summary only, never quotes.\n- Journaling Suggestions on iPhone.\n- Keep Out of Friday on any entry, a switch to turn Friday off, and Erase All Data.\n- Streaks allow one rest day in any 7 days, or switch to weekly streaks.\n- iCloud sync status in Settings, and a recovery screen if your journal can't open.\n- Get Support shows your region's crisis line and works offline."
 })
 
 privacy_url "https://saransh-sharma.github.io/Off-Record/privacy.html"
