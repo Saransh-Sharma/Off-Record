@@ -12,6 +12,7 @@ import Foundation
 struct UITestDataSeeder {
     static func seedIfNeeded(context: NSManagedObjectContext) {
         let arguments = ProcessInfo.processInfo.arguments
+        if seedOrganizeIfNeeded(arguments: arguments, context: context) { return }
         guard arguments.contains("-HeroNudgeUITest")
                 || arguments.contains("-OnboardingUITest")
                 || arguments.contains("-SemanticMemoryUITest")
