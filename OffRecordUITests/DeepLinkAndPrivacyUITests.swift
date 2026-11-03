@@ -88,7 +88,7 @@ final class DeepLinkAndPrivacyUITests: XCTestCase {
         [
             "-UITesting",
             "-WeeklyReflectionUITest"
-        ]
+        ] + weeklyReflectionClockArguments
     }
 
     private func launchRoutedApp(route: String, arguments: [String]) -> XCUIApplication {

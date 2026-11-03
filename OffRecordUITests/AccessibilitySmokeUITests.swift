@@ -47,7 +47,7 @@ final class AccessibilitySmokeUITests: XCTestCase {
         let app = launchOffRecord(arguments: [
             "-UITesting",
             "-WeeklyReflectionUITest"
-        ])
+        ] + weeklyReflectionClockArguments)
 
         let ready = app.descendants(matching: .any)["weeklyReflection.home.ready"].firstMatch
         scrollClearOfBottomBars(ready, in: app)
@@ -80,7 +80,7 @@ final class AccessibilitySmokeUITests: XCTestCase {
             "-WeeklyReflectionUITest",
             "-UIPreferredContentSizeCategoryName",
             "UICTContentSizeCategoryXXXL"
-        ])
+        ] + weeklyReflectionClockArguments)
 
         XCTAssertTrue(app.descendants(matching: .any)["todayDock.record"].firstMatch.waitForExistence(timeout: 8))
         tapOffRecordTab("friday", in: app)
