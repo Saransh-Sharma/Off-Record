@@ -1,9 +1,48 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "%lld entries relate to this." : {},
-    "1 entry relates to this." : {},
-    "Based on only a few entries." : {}
+    "%lld entries relate to this." : {
+      "localizations" : {
+        "es" : {
+          "variations" : {
+            "plural" : {
+              "one" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld entrada tiene relación con esto."
+                }
+              },
+              "other" : {
+                "stringUnit" : {
+                  "state" : "translated",
+                  "value" : "%lld entradas tienen relación con esto."
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "1 entry relates to this." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "1 entrada tiene relación con esto."
+          }
+        }
+      }
+    },
+    "Based on only a few entries." : {
+      "localizations" : {
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Según pocas entradas."
+          }
+        }
+      }
+    }
   },
   "version" : "1.0"
 }
