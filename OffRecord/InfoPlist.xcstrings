@@ -49,6 +49,24 @@
         }
       }
     },
+    "NSHealthShareUsageDescription" : {
+      "comment" : "Privacy - Health Share Usage Description",
+      "extractionState" : "extracted_with_value",
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "OffRecord doesn't read your Health data. It only saves the moods you choose to Apple Health."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "OffRecord no lee tus datos de Salud. Solo guarda en Apple Health los estados de ánimo que elijas."
+          }
+        }
+      }
+    },
     "NSHealthUpdateUsageDescription" : {
       "comment" : "Privacy - Health Update Usage Description",
       "extractionState" : "extracted_with_value",
