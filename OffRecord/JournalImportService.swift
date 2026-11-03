@@ -142,7 +142,7 @@ enum JournalImportService {
             if draft.isStarred {
                 entry.isStarred = true
             }
-            // Wave B: map imported tags once the Tag entity lands (draft.tags holds them until then).
+            ImportedTagMapper.apply(draft.tags, to: entry, in: context)
 
             for path in draft.photoPaths {
                 guard PhotoStorageManager.shared.attachments(for: entry).count < maximumPhotosPerEntry else {
