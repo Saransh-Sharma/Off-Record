@@ -38,6 +38,13 @@
 			remoteGlobalIDString = A10000000000000000000012;
 			remoteInfo = OffRecordWatch;
 		};
+		A30000000000000000000007 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = CFF97BE62EDE056600ED7317 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = A30000000000000000000009;
+			remoteInfo = OffRecordWidgetExtension;
+		};
 		CFF97C052EDE056900ED7317 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = CFF97BE62EDE056600ED7317 /* Project object */;
@@ -51,13 +58,6 @@
 			proxyType = 1;
 			remoteGlobalIDString = CFF97BED2EDE056600ED7317;
 			remoteInfo = OffRecord;
-		};
-		A30000000000000000000007 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = CFF97BE62EDE056600ED7317 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = A30000000000000000000009;
-			remoteInfo = OffRecordWidgetExtension;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -101,10 +101,10 @@
 		A10000000000000000000004 /* OffRecord/Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = OffRecord/Assets.xcassets; sourceTree = "<group>"; };
 		A10000000000000000000005 /* OffRecordWatch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OffRecordWatch.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		A10000000000000000000006 /* OffRecordWatchWidget.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = OffRecordWatchWidget.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		A30000000000000000000004 /* OffRecordWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = OffRecordWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		CFF97BEE2EDE056600ED7317 /* OffRecord.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = OffRecord.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		CFF97C042EDE056900ED7317 /* OffRecordTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OffRecordTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		CFF97C0E2EDE056900ED7317 /* OffRecordUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OffRecordUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-		A30000000000000000000004 /* OffRecordWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = OffRecordWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -122,19 +122,19 @@
 			);
 			target = A10000000000000000000013 /* OffRecordWatchWidget */;
 		};
-		CF4C16532EDE120000E722CA /* Exceptions for "OffRecord" folder in "OffRecord" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-			);
-			target = CFF97BED2EDE056600ED7317 /* OffRecord */;
-		};
 		A30000000000000000000003 /* Exceptions for "OffRecordWidget" folder in "OffRecordWidgetExtension" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
 			target = A30000000000000000000009 /* OffRecordWidgetExtension */;
+		};
+		CF4C16532EDE120000E722CA /* Exceptions for "OffRecord" folder in "OffRecord" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = CFF97BED2EDE056600ED7317 /* OffRecord */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
@@ -160,6 +160,19 @@
 			path = OffRecordWatchWidget;
 			sourceTree = "<group>";
 		};
+		A30000000000000000000001 /* OffRecordWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				A30000000000000000000003 /* Exceptions for "OffRecordWidget" folder in "OffRecordWidgetExtension" target */,
+			);
+			path = OffRecordWidget;
+			sourceTree = "<group>";
+		};
+		A30000000000000000000002 /* OffRecordSystemShared */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = OffRecordSystemShared;
+			sourceTree = "<group>";
+		};
 		CFF97BF02EDE056600ED7317 /* OffRecord */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
@@ -178,19 +191,6 @@
 			path = OffRecordUITests;
 			sourceTree = "<group>";
 		};
-		A30000000000000000000001 /* OffRecordWidget */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				A30000000000000000000003 /* Exceptions for "OffRecordWidget" folder in "OffRecordWidgetExtension" target */,
-			);
-			path = OffRecordWidget;
-			sourceTree = "<group>";
-		};
-		A30000000000000000000002 /* OffRecordSystemShared */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			path = OffRecordSystemShared;
-			sourceTree = "<group>";
-		};
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -203,6 +203,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		A1000000000000000000000F /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A3000000000000000000000B /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -233,13 +240,6 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		CFF97C0B2EDE056900ED7317 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		A3000000000000000000000B /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -512,6 +512,13 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+		A3000000000000000000000C /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		CFF97BEC2EDE056600ED7317 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -533,13 +540,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A3000000000000000000000C /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
@@ -551,6 +551,13 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		A1000000000000000000000D /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		A3000000000000000000000A /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
@@ -578,13 +585,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		A3000000000000000000000A /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -601,6 +601,13 @@
 			target = A10000000000000000000012 /* OffRecordWatch */;
 			targetProxy = A1000000000000000000001B /* PBXContainerItemProxy */;
 		};
+		A30000000000000000000008 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			name = OffRecordWidgetExtension;
+			platformFilter = ios;
+			target = A30000000000000000000009 /* OffRecordWidgetExtension */;
+			targetProxy = A30000000000000000000007 /* PBXContainerItemProxy */;
+		};
 		CFF97C062EDE056900ED7317 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = CFF97BED2EDE056600ED7317 /* OffRecord */;
@@ -610,13 +617,6 @@
 			isa = PBXTargetDependency;
 			target = CFF97BED2EDE056600ED7317 /* OffRecord */;
 			targetProxy = CFF97C0F2EDE056900ED7317 /* PBXContainerItemProxy */;
-		};
-		A30000000000000000000008 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			name = OffRecordWidgetExtension;
-			platformFilter = ios;
-			target = A30000000000000000000009 /* OffRecordWidgetExtension */;
-			targetProxy = A30000000000000000000007 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -939,7 +939,7 @@
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "OffRecord/OffRecord-macCatalyst.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 16;
 				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = NO;
 				DEVELOPMENT_ASSET_PATHS = "\"OffRecord/Preview Content\"";
 				DEVELOPMENT_TEAM = CJ43UNM3AR;
@@ -973,7 +973,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-				MARKETING_VERSION = 1.5.0;
+				MARKETING_VERSION = 1.5.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.singularity.offrecord;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -996,7 +996,7 @@
 				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = "OffRecord/OffRecord-macCatalyst.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 15;
+				CURRENT_PROJECT_VERSION = 16;
 				DERIVE_MACCATALYST_PRODUCT_BUNDLE_IDENTIFIER = NO;
 				DEVELOPMENT_ASSET_PATHS = "\"OffRecord/Preview Content\"";
 				DEVELOPMENT_TEAM = CJ43UNM3AR;
@@ -1030,7 +1030,7 @@
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown";
 				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
-				MARKETING_VERSION = 1.5.0;
+				MARKETING_VERSION = 1.5.1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.singularity.offrecord;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
