@@ -76,15 +76,19 @@ https://saransh-sharma.github.io/Off-Record/privacy.html
 ## What's New (Version 1.5)
 New in v1.5:
 
-- OffRecord on Mac, with menu commands and keyboard shortcuts.
-- Friday on Apple's on-device model: with Apple Intelligence, she keeps a conversation going, looks things up in your journal, and cites the entries she used. Entries can get short titles.
-- Month in Review and Year in Review.
-- Session Prep: a summary of a date range for a session with a therapist or coach.
-- Tags, multiple journals, and a page for each person, place, and topic.
+- OffRecord on Mac, with Write, Record, and Search in the menu bar and keyboard shortcuts.
+- OffRecord now speaks Spanish: the app, widgets, Apple Watch, and Siri phrases.
+- Friday on Apple's on-device model: with Apple Intelligence, she keeps a conversation going, looks things up in your journal, and cites the entries she used.
+- Entries can get short titles.
+- Month in Review and Year in Review, with a year card you can share.
+- Session Prep: a summary of a date range to bring to a session with a therapist or coach.
+- Tags: add them to entries, filter the Timeline by tag, and search with #.
+- Multiple journals, each with its own entry for the day. Export any journal as a PDF.
+- A page for each person, place, and topic in My World.
 - Import from Day One, Apple Journal, Markdown or text files, and CSV.
 - Siri can add to your journal, search it, and ask Friday. Siri gets a summary only, never quotes.
 - Journaling Suggestions on iPhone.
-- Keep Out of Friday on any entry, a switch to turn Friday off, and Erase All Data.
+- Keep any entry out of Friday, turn Friday off, or erase all data.
 - Streaks allow one rest day in any 7 days, or switch to weekly streaks.
 - iCloud sync status in Settings, and a recovery screen if your journal can't open.
 - Get Support shows your region's crisis line and works offline.
